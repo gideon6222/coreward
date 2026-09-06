@@ -1,0 +1,15 @@
+{
+  "name": "Coreward",
+  "short_name": "Coreward",
+  "description": "Dig to the core of a planet, upgrade your drill, and watch the whole world come apart.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
