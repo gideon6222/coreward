@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05070d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Coreward</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --ink:#e8f0ff; --dim:#8b9ab5; --panel:#0d131f; --line:#1e2a40;
+    --cyan:#3fe0ff; --amber:#ffc861; --red:#ff5c6b; --green:#4be08a;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden; background:#05070d; color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    user-select:none; -webkit-user-select:none; touch-action:none; overscroll-behavior:none;
+  }
+  #game{position:fixed; inset:0;}
+  canvas{display:block;}
+
+  #hud{position:fixed; inset:0; pointer-events:none; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;}
+  .row{display:flex; gap:8px; align-items:center;}
+  .top{justify-content:space-between;}
+  .chip{
+    background:rgba(8,12,20,.66); border:1px solid var(--line); border-radius:9px;
+    padding:5px 11px; font-size:13px; font-weight:600; letter-spacing:.04em; backdrop-filter:blur(6px);
+  }
+  .bars{margin-top:8px; gap:6px;}
+  .bar{
+    position:relative; flex:1; height:19px; border-radius:6px; overflow:hidden;
+    background:rgba(8,12,20,.66); border:1px solid var(--line);
+  }
+  .bar i{position:absolute; inset:0 auto 0 0; width:0%; display:block; transition:width .12s linear;}
+  .bar b{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:9.5px; font-weight:700; letter-spacing:.09em; text-shadow:0 1px 2px #000;
+  }
+  .fuel i{background:linear-gradient(90deg,#2c7a4a,var(--green));}
+  .hull i{background:linear-gradient(90deg,#7a2c33,var(--red));}
+  .cargo i{background:linear-gradient(90deg,#1f5a78,var(--cyan));}
+
+  #depth{
+    margin-top:8px; text-align:center; font-size:11.5px; letter-spacing:.16em;
+    color:var(--dim); text-shadow:0 1px 3px #000;
+  }
+  #toast{
+    position:absolute; left:0; right:0; top:34%; text-align:center; font-size:16px; font-weight:700;
+    letter-spacing:.03em; color:var(--amber); opacity:0; transition:opacity .3s; text-shadow:0 2px 8px #000;
+  }
+
+  #ctrl{
+    position:fixed; left:0; right:0; bottom:calc(var(--safe-b) + 14px);
+    display:flex; align-items:flex-end; justify-content:space-between; padding:0 18px; gap:12px;
+  }
+  #dpad{display:grid; grid-template-columns:repeat(3,60px); grid-template-rows:repeat(3,60px); gap:5px;}
+  .k{
+    border:1px solid var(--line); background:rgba(14,20,32,.8); color:var(--ink);
+    border-radius:13px; font-size:21px; line-height:1; touch-action:none;
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+  }
+  .k.on{background:rgba(63,224,255,.3); border-color:var(--cyan);}
+  .k[data-dir=up]{grid-area:1/2;} .k[data-dir=left]{grid-area:2/1;}
+  .k[data-dir=right]{grid-area:2/3;} .k[data-dir=down]{grid-area:3/2;}
+
+  #actions{display:flex; flex-direction:column; gap:9px;}
+  #actions button{
+    border:1px solid var(--line); background:rgba(14,20,32,.8); color:var(--ink);
+    border-radius:12px; padding:13px 15px; font-size:12px; font-weight:700; letter-spacing:.1em;
+    backdrop-filter:blur(6px);
+  }
+  #btnShop{border-color:#2f6f52; color:var(--green);}
+  #btnReturn{border-color:#2a5570; color:var(--cyan);}
+
+  .modal{
+    position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
+    display:flex; align-items:center; justify-content:center; padding:18px;
+    backdrop-filter:blur(3px);
+  }
+  .modal.hidden{display:none;}
+  .sheet{
+    width:100%; max-width:460px; max-height:86vh; overflow:auto;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px;
+  }
+  .sheet h2{margin:0 0 4px; font-size:19px; letter-spacing:.06em;}
+  .sheet p{color:var(--dim); font-size:14px; line-height:1.55;}
+  .sub{color:var(--amber); font-size:13px; font-weight:700; margin-bottom:14px;}
+  .up{
+    display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--line);
+  }
+  .upinfo{flex:1; min-width:0;}
+  .upname{font-size:14px; font-weight:700;}
+  .upeff{font-size:11.5px; color:var(--dim); margin-top:3px;}
+  .buy{
+    border:1px solid #2f6f52; background:rgba(75,224,138,.12); color:var(--green);
+    border-radius:9px; padding:10px 12px; font-size:12px; font-weight:700; white-space:nowrap;
+  }
+  .buy:disabled{border-color:var(--line); background:transparent; color:#4a5570;}
+  .wide{
+    width:100%; margin-top:16px; border:1px solid var(--line); background:rgba(63,224,255,.12);
+    color:var(--cyan); border-radius:11px; padding:14px; font-size:13px; font-weight:700; letter-spacing:.1em;
+  }
+
+  #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity .3s; z-index:30;}
+  #boot{
+    position:fixed; inset:0; z-index:40; background:#05070d; display:flex; align-items:center;
+    justify-content:center; flex-direction:column; gap:10px; color:var(--dim); font-size:13px; letter-spacing:.2em;
+  }
+  #boot.hidden{display:none;}
+  #err{
+    position:fixed; inset:0; z-index:99; background:#12060a; color:#ffb0b8; padding:20px;
+    font:12px/1.5 ui-monospace,monospace; white-space:pre-wrap; overflow:auto;
+  }
+  #err.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div id="game"></div>
+
+<div id="hud">
+  <div class="row top">
+    <div class="chip" id="planet">—</div>
+    <div class="chip">◈ <span id="credits">0</span></div>
+  </div>
+  <div class="row bars">
+    <div class="bar fuel"><i id="fuelBar"></i><b>FUEL</b></div>
+    <div class="bar hull"><i id="hullBar"></i><b>HULL</b></div>
+    <div class="bar cargo"><i id="cargoBar"></i><b id="cargoTxt">CARGO</b></div>
+  </div>
+  <div id="depth">DEPTH 0 m</div>
+  <div id="toast"></div>
+</div>
+
+<div id="ctrl">
+  <div id="dpad">
+    <button class="k" data-dir="up">▲</button>
+    <button class="k" data-dir="left">◀</button>
+    <button class="k" data-dir="right">▶</button>
+    <button class="k" data-dir="down">▼</button>
+  </div>
+  <div id="actions">
+    <button id="btnShop">SHOP</button>
+    <button id="btnReturn">RETURN</button>
+  </div>
+</div>
+
+<div id="shop" class="modal hidden">
+  <div class="sheet">
+    <h2>Outfitter</h2>
+    <div class="sub">Credits ◈ <span id="shopCredits">0</span></div>
+    <div id="upgrades"></div>
+    <button id="shopClose" class="wide">CLOSE</button>
+  </div>
+</div>
+
+<div id="event" class="modal hidden">
+  <div class="sheet">
+    <h2 id="evTitle"></h2>
+    <p id="evBody"></p>
+    <button id="evBtn" class="wide"></button>
+  </div>
+</div>
+
+<div id="flash"></div>
+<div id="boot">COREWARD<br><span style="font-size:10px">LOADING</span></div>
+<div id="err" class="hidden"></div>
+
+<script>
+  function showErr(m){
+    var e = document.getElementById('err');
+    e.classList.remove('hidden');
+    e.textContent += m + '\n\n';
+    var b = document.getElementById('boot');
+    if (b) b.classList.add('hidden');
+  }
+  window.addEventListener('error', function(e){
+    showErr('ERROR: ' + (e.message || e) + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    showErr('PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+</script>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.166.0/build/three.module.js"}}
+</script>
+<script type="module" src="app.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+</script>
+
+</body>
+</html>
