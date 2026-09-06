@@ -1,10 +1,10 @@
 import * as THREE from 'three';
+import { sfx, audioInit, setAudio, audioState, setDepth } from './audio.js';
 
 /* ============ config ============ */
 const W = 9;
 const SAVE_KEY = 'coreward.v2';
 const OLD_KEY = 'coreward.v1';
-const AUD_KEY = 'coreward.audio';
 const HULL_MAX = 100;
 const DIG_BASE = 0.5;
 
@@ -172,237 +172,7 @@ function findRoute() {
   return route.length > 1 ? route : null;
 }
 
-/* ============ audio, fully synthesised, no files ============ */
-const A = { ctx: null, master: null, music: null, sfx: null, noise: null, on: { music: true, sfx: true },
-            timer: null, step: 0, nextT: 0, drill: null, depth: 0 };
-
-try {
-  const saved = JSON.parse(localStorage.getItem(AUD_KEY) || 'null');
-  if (saved) { A.on.music = saved.music !== false; A.on.sfx = saved.sfx !== false; }
-} catch (e) { /* defaults */ }
-
-function audioSave() {
-  try { localStorage.setItem(AUD_KEY, JSON.stringify(A.on)); } catch (e) { /* ignore */ }
-}
-
-function audioInit() {
-  if (A.ctx) { if (A.ctx.state === 'suspended') A.ctx.resume(); return; }
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (!Ctx) return;
-  A.ctx = new Ctx();
-  const comp = A.ctx.createDynamicsCompressor();
-  comp.threshold.value = -10;
-  comp.ratio.value = 12;
-  comp.connect(A.ctx.destination);
-  A.master = A.ctx.createGain();
-  A.master.gain.value = 0.9;
-  A.master.connect(comp);
-  A.music = A.ctx.createGain();
-  A.music.gain.value = A.on.music ? 0.16 : 0;
-  A.music.connect(A.master);
-  A.sfx = A.ctx.createGain();
-  A.sfx.gain.value = A.on.sfx ? 0.5 : 0;
-  A.sfx.connect(A.master);
-  const len = A.ctx.sampleRate * 2;
-  A.noise = A.ctx.createBuffer(1, len, A.ctx.sampleRate);
-  const data = A.noise.getChannelData(0);
-  let lastV = 0;
-  for (let i = 0; i < len; i++) {
-    const white = Math.random() * 2 - 1;
-    lastV = (lastV + 0.02 * white) / 1.02;
-    data[i] = white * 0.5 + lastV * 3;
-  }
-  A.nextT = A.ctx.currentTime + 0.1;
-  A.timer = setInterval(schedule, 140);
-}
-
-function env(node, t, peak, attack, decay) {
-  node.gain.setValueAtTime(0.0001, t);
-  node.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t + attack);
-  node.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
-}
-
-function blip(freq, t, dur, type, peak, dest) {
-  if (!A.ctx) return;
-  const o = A.ctx.createOscillator();
-  const gn = A.ctx.createGain();
-  o.type = type || 'triangle';
-  o.frequency.setValueAtTime(freq, t);
-  env(gn, t, peak, 0.008, dur);
-  o.connect(gn); gn.connect(dest || A.sfx);
-  o.start(t); o.stop(t + dur + 0.05);
-  return o;
-}
-
-function noiseBurst(t, dur, cutoff, peak, type) {
-  if (!A.ctx) return;
-  const src = A.ctx.createBufferSource();
-  src.buffer = A.noise;
-  src.playbackRate.value = 0.7 + Math.random() * 0.6;
-  const f = A.ctx.createBiquadFilter();
-  f.type = type || 'bandpass';
-  f.frequency.setValueAtTime(cutoff, t);
-  f.frequency.exponentialRampToValueAtTime(Math.max(80, cutoff * 0.35), t + dur);
-  f.Q.value = 1.2;
-  const gn = A.ctx.createGain();
-  env(gn, t, peak, 0.006, dur);
-  src.connect(f); f.connect(gn); gn.connect(A.sfx);
-  src.start(t); src.stop(t + dur + 0.05);
-}
-
-const sfx = {
-  chip(hard) {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    noiseBurst(t, 0.09, 900 - Math.min(600, hard * 40) + Math.random() * 200, 0.35);
-  },
-  crack(hard) {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    noiseBurst(t, 0.16, 500 + Math.random() * 300, 0.5, 'lowpass');
-    blip(90 + Math.random() * 30 - hard, t, 0.12, 'square', 0.12);
-  },
-  collect(tone) {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    const base = 320 * Math.pow(1.09, tone || 1);
-    blip(base, t, 0.16, 'triangle', 0.3);
-    blip(base * 1.5, t + 0.05, 0.2, 'triangle', 0.22);
-    if ((tone || 0) >= 5) blip(base * 2, t + 0.1, 0.26, 'sine', 0.18);
-  },
-  sell() {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    [0, 4, 7, 12].forEach((s, i) => blip(392 * Math.pow(2, s / 12), t + i * 0.07, 0.3, 'triangle', 0.24));
-  },
-  buy() {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    blip(523, t, 0.1, 'square', 0.16);
-    blip(784, t + 0.07, 0.18, 'square', 0.14);
-  },
-  ui() {
-    if (!A.ctx || !A.on.sfx) return;
-    noiseBurst(A.ctx.currentTime, 0.05, 2200, 0.16, 'highpass');
-  },
-  alarm() {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    for (let i = 0; i < 3; i++) blip(180, t + i * 0.18, 0.14, 'sawtooth', 0.2);
-  },
-  boom() {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    noiseBurst(t, 1.6, 900, 0.9, 'lowpass');
-    noiseBurst(t + 0.1, 2.2, 300, 0.6, 'lowpass');
-    const o = A.ctx.createOscillator();
-    const gn = A.ctx.createGain();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(180, t);
-    o.frequency.exponentialRampToValueAtTime(24, t + 1.8);
-    env(gn, t, 0.7, 0.02, 1.9);
-    o.connect(gn); gn.connect(A.sfx);
-    o.start(t); o.stop(t + 2.2);
-  },
-  digStart(hard) {
-    if (!A.ctx || !A.on.sfx || A.drill) return;
-    const t = A.ctx.currentTime;
-    const src = A.ctx.createBufferSource();
-    src.buffer = A.noise; src.loop = true;
-    const f = A.ctx.createBiquadFilter();
-    f.type = 'bandpass';
-    f.frequency.value = 700 - Math.min(450, hard * 32);
-    f.Q.value = 4;
-    const o = A.ctx.createOscillator();
-    o.type = 'sawtooth';
-    o.frequency.value = 48 + hard * 3;
-    const og = A.ctx.createGain();
-    og.gain.value = 0.05;
-    const gn = A.ctx.createGain();
-    gn.gain.setValueAtTime(0.0001, t);
-    gn.gain.exponentialRampToValueAtTime(0.22, t + 0.06);
-    src.connect(f); f.connect(gn);
-    o.connect(og); og.connect(gn);
-    gn.connect(A.sfx);
-    src.start(t); o.start(t);
-    A.drill = { src: src, osc: o, gain: gn };
-  },
-  digStop() {
-    if (!A.drill || !A.ctx) return;
-    const d = A.drill;
-    A.drill = null;
-    const t = A.ctx.currentTime;
-    d.gain.gain.cancelScheduledValues(t);
-    d.gain.gain.setValueAtTime(Math.max(0.0001, d.gain.gain.value), t);
-    d.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-    try { d.src.stop(t + 0.12); d.osc.stop(t + 0.12); } catch (e) { /* already stopped */ }
-  },
-  thrust() {
-    if (!A.ctx || !A.on.sfx) return;
-    const t = A.ctx.currentTime;
-    noiseBurst(t, 0.7, 1400, 0.3, 'lowpass');
-    blip(140, t, 0.5, 'sawtooth', 0.1);
-  }
-};
-
-/* generative score, chord bed plus sparse plucks, darkens with depth */
-const PROG = [[0, 3, 7], [-2, 3, 8], [-4, 3, 7], [-5, 2, 7]];
-const PENT = [0, 3, 5, 7, 10, 12];
-
-function schedule() {
-  if (!A.ctx || !A.on.music) return;
-  const stepDur = 1.35;
-  while (A.nextT < A.ctx.currentTime + 0.6) {
-    const t = A.nextT;
-    const deep = clamp(A.depth / 160, 0, 1);
-    const chord = PROG[Math.floor(A.step / 4) % PROG.length];
-    const root = 55 * Math.pow(2, -Math.floor(deep * 1.6) / 2);
-    if (A.step % 4 === 0) {
-      for (let i = 0; i < chord.length; i++) {
-        const o = A.ctx.createOscillator();
-        const gn = A.ctx.createGain();
-        const f = A.ctx.createBiquadFilter();
-        f.type = 'lowpass';
-        f.frequency.value = 1500 - deep * 1050;
-        o.type = i === 0 ? 'sine' : 'triangle';
-        o.frequency.value = root * 2 * Math.pow(2, chord[i] / 12) * (i === 0 ? 1 : 2);
-        o.detune.value = (Math.random() - 0.5) * 14;
-        gn.gain.setValueAtTime(0.0001, t);
-        gn.gain.linearRampToValueAtTime(0.12 - i * 0.02, t + 1.2);
-        gn.gain.linearRampToValueAtTime(0.0001, t + stepDur * 4);
-        o.connect(f); f.connect(gn); gn.connect(A.music);
-        o.start(t); o.stop(t + stepDur * 4 + 0.2);
-      }
-      const b = A.ctx.createOscillator();
-      const bg = A.ctx.createGain();
-      b.type = 'sine';
-      b.frequency.value = root * Math.pow(2, chord[0] / 12);
-      env(bg, t, 0.3, 0.1, 1.6);
-      b.connect(bg); bg.connect(A.music);
-      b.start(t); b.stop(t + 2.2);
-    }
-    if (Math.random() < 0.45) {
-      const semi = PENT[Math.floor(Math.random() * PENT.length)] + chord[0];
-      const o = A.ctx.createOscillator();
-      const gn = A.ctx.createGain();
-      o.type = 'triangle';
-      o.frequency.value = root * 8 * Math.pow(2, semi / 12);
-      env(gn, t + Math.random() * 0.4, 0.09, 0.02, 1.1);
-      o.connect(gn); gn.connect(A.music);
-      o.start(t); o.stop(t + 2);
-    }
-    A.step++;
-    A.nextT += stepDur;
-  }
-}
-
-function setAudio(kind, on) {
-  A.on[kind] = on;
-  audioSave();
-  if (!A.ctx) return;
-  if (kind === 'music') A.music.gain.linearRampToValueAtTime(on ? 0.16 : 0, A.ctx.currentTime + 0.3);
-  else A.sfx.gain.linearRampToValueAtTime(on ? 0.5 : 0, A.ctx.currentTime + 0.15);
-}
+/* audio lives in audio.js so it can be tuned without touching the game */
 
 /* ============ three ============ */
 const scene = new THREE.Scene();
@@ -959,13 +729,13 @@ el('btnManifest').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); g.m
 el('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('hidden'); g.mode = 'play'; };
 
 function audioLabels() {
-  ui.btnMusic.textContent = 'MUSIC  ' + (A.on.music ? 'ON' : 'OFF');
-  ui.btnSfx.textContent = 'SOUND  ' + (A.on.sfx ? 'ON' : 'OFF');
-  ui.btnMusic.classList.toggle('off', !A.on.music);
-  ui.btnSfx.classList.toggle('off', !A.on.sfx);
+  ui.btnMusic.textContent = 'MUSIC  ' + (audioState.music ? 'ON' : 'OFF');
+  ui.btnSfx.textContent = 'SOUND  ' + (audioState.sfx ? 'ON' : 'OFF');
+  ui.btnMusic.classList.toggle('off', !audioState.music);
+  ui.btnSfx.classList.toggle('off', !audioState.sfx);
 }
-ui.btnMusic.onclick = () => { audioInit(); setAudio('music', !A.on.music); audioLabels(); };
-ui.btnSfx.onclick = () => { audioInit(); setAudio('sfx', !A.on.sfx); audioLabels(); sfx.ui(); };
+ui.btnMusic.onclick = () => { audioInit(); setAudio('music', !audioState.music); audioLabels(); };
+ui.btnSfx.onclick = () => { audioInit(); setAudio('sfx', !audioState.sfx); audioLabels(); sfx.ui(); };
 
 let resetArmed = 0;
 function disarmReset() {
@@ -1209,7 +979,7 @@ function frame(now) {
   }
 
   stepParticles(dt);
-  A.depth = g.pd;
+  setDepth(g.pd);
 
   /* ship transform */
   const px = worldX(g.px), py = -g.pd;
