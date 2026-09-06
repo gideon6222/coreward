@@ -25,12 +25,15 @@
   canvas{display:block;}
 
   #hud{position:fixed; inset:0; pointer-events:none; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;}
-  .row{display:flex; gap:8px; align-items:center;}
+  .row{display:flex; gap:6px; align-items:center;}
   .top{justify-content:space-between;}
   .chip{
     background:rgba(8,12,20,.66); border:1px solid var(--line); border-radius:9px;
-    padding:5px 11px; font-size:13px; font-weight:600; letter-spacing:.04em; backdrop-filter:blur(6px);
+    padding:5px 10px; font-size:12.5px; font-weight:600; letter-spacing:.03em; backdrop-filter:blur(6px);
+    white-space:nowrap;
   }
+  .chip.gold{color:var(--amber);}
+  .chip.haul{color:var(--cyan);}
   .bars{margin-top:8px; gap:6px;}
   .bar{
     position:relative; flex:1; height:19px; border-radius:6px; overflow:hidden;
@@ -45,10 +48,7 @@
   .hull i{background:linear-gradient(90deg,#7a2c33,var(--red));}
   .cargo i{background:linear-gradient(90deg,#1f5a78,var(--cyan));}
 
-  #depth{
-    margin-top:8px; text-align:center; font-size:11.5px; letter-spacing:.16em;
-    color:var(--dim); text-shadow:0 1px 3px #000;
-  }
+  #depth{margin-top:8px; text-align:center; font-size:11.5px; letter-spacing:.16em; color:var(--dim); text-shadow:0 1px 3px #000;}
   #toast{
     position:absolute; left:0; right:0; top:34%; text-align:center; font-size:16px; font-weight:700;
     letter-spacing:.03em; color:var(--amber); opacity:0; transition:opacity .3s; text-shadow:0 2px 8px #000;
@@ -68,19 +68,18 @@
   .k[data-dir=up]{grid-area:1/2;} .k[data-dir=left]{grid-area:2/1;}
   .k[data-dir=right]{grid-area:2/3;} .k[data-dir=down]{grid-area:3/2;}
 
-  #actions{display:flex; flex-direction:column; gap:9px;}
+  #actions{display:flex; flex-direction:column; gap:8px; align-items:stretch;}
   #actions button{
     border:1px solid var(--line); background:rgba(14,20,32,.8); color:var(--ink);
-    border-radius:12px; padding:13px 15px; font-size:12px; font-weight:700; letter-spacing:.1em;
-    backdrop-filter:blur(6px);
+    border-radius:12px; padding:12px 14px; font-size:11px; font-weight:700; letter-spacing:.09em;
+    backdrop-filter:blur(6px); white-space:nowrap;
   }
   #btnShop{border-color:#2f6f52; color:var(--green);}
-  #btnReturn{border-color:#2a5570; color:var(--cyan);}
+  #btnAuto{border-color:#2a5570; color:var(--cyan);}
 
   .modal{
     position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
-    display:flex; align-items:center; justify-content:center; padding:18px;
-    backdrop-filter:blur(3px);
+    display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(3px);
   }
   .modal.hidden{display:none;}
   .sheet{
@@ -90,12 +89,17 @@
   .sheet h2{margin:0 0 4px; font-size:19px; letter-spacing:.06em;}
   .sheet p{color:var(--dim); font-size:14px; line-height:1.55;}
   .sub{color:var(--amber); font-size:13px; font-weight:700; margin-bottom:14px;}
-  .up{
-    display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--line);
-  }
+  .up{display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--line);}
   .upinfo{flex:1; min-width:0;}
   .upname{font-size:14px; font-weight:700;}
   .upeff{font-size:11.5px; color:var(--dim); margin-top:3px;}
+  .mult{color:var(--dim); font-weight:600;}
+  .val{font-size:13px; font-weight:700; color:var(--amber); white-space:nowrap;}
+  .dot{width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 8px currentColor;}
+  .total{
+    display:flex; justify-content:space-between; align-items:center; margin-top:14px;
+    padding-top:12px; border-top:1px solid var(--line); font-size:15px; font-weight:700;
+  }
   .buy{
     border:1px solid #2f6f52; background:rgba(75,224,138,.12); color:var(--green);
     border-radius:9px; padding:10px 12px; font-size:12px; font-weight:700; white-space:nowrap;
@@ -126,12 +130,15 @@
 <div id="hud">
   <div class="row top">
     <div class="chip" id="planet">—</div>
-    <div class="chip">◈ <span id="credits">0</span></div>
+    <div class="row">
+      <div class="chip haul">HAUL ◈ <span id="haul">0</span></div>
+      <div class="chip gold">◈ <span id="credits">0</span></div>
+    </div>
   </div>
   <div class="row bars">
     <div class="bar fuel"><i id="fuelBar"></i><b>FUEL</b></div>
     <div class="bar hull"><i id="hullBar"></i><b>HULL</b></div>
-    <div class="bar cargo"><i id="cargoBar"></i><b id="cargoTxt">CARGO</b></div>
+    <div class="bar cargo"><i id="cargoBar"></i><b id="cargoTxt">0 / 60 KG</b></div>
   </div>
   <div id="depth">DEPTH 0 m</div>
   <div id="toast"></div>
@@ -145,8 +152,9 @@
     <button class="k" data-dir="down">▼</button>
   </div>
   <div id="actions">
+    <button id="btnManifest">MANIFEST</button>
     <button id="btnShop">SHOP</button>
-    <button id="btnReturn">RETURN</button>
+    <button id="btnAuto" style="display:none">AUTOPILOT</button>
   </div>
 </div>
 
@@ -156,6 +164,16 @@
     <div class="sub">Credits ◈ <span id="shopCredits">0</span></div>
     <div id="upgrades"></div>
     <button id="shopClose" class="wide">CLOSE</button>
+  </div>
+</div>
+
+<div id="manifest" class="modal hidden">
+  <div class="sheet">
+    <h2>Cargo Manifest</h2>
+    <div class="sub">Sold automatically when you touch the pad</div>
+    <div id="manifestRows"></div>
+    <div class="total"><span>TOTAL VALUE</span><span id="manifestTotal">◈ 0</span></div>
+    <button id="manifestClose" class="wide">CLOSE</button>
   </div>
 </div>
 

@@ -1,4 +1,4 @@
-const CACHE = 'coreward-v1';
+const CACHE = 'coreward-v2';
 const ASSETS = [
   './',
   './index.html',
