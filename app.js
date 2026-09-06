@@ -66,13 +66,16 @@ const UPGRADES = [
 ];
 const costOf = (u, lvl) => Math.round(u.base * Math.pow(u.mul, lvl));
 
+const START_X = Math.floor(W / 2);
+
 /* ============ state ============ */
 const g = {
   planet: 0, credits: 0, shards: 0,
   up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
   dug: new Set(),
-  px: Math.floor(W / 2), pd: -1,
+  px: START_X, pd: -1,
   face: 'down',
+  path: [[START_X, -1]],
   fuel: 90, hull: HULL_MAX,
   cargo: {}, weight: 0,
   mode: 'play'
@@ -122,6 +125,15 @@ const haulValue = () => {
   return Math.round(v * valueMult(g.planet));
 };
 
+/* breadcrumb trail, with loop removal so backtracking shortens the route */
+function pushPath(x, d) {
+  const n = g.path.length;
+  if (n >= 2 && g.path[n - 2][0] === x && g.path[n - 2][1] === d) { g.path.pop(); return; }
+  if (n >= 1 && g.path[n - 1][0] === x && g.path[n - 1][1] === d) return;
+  g.path.push([x, d]);
+  if (g.path.length > 3000) g.path.splice(0, 500);
+}
+
 /* ============ three ============ */
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 300);
@@ -159,7 +171,6 @@ const shade = (hex, f) => new THREE.Color(hex).multiplyScalar(f).getHex();
 
 const worldX = (x) => x - (W - 1) / 2;
 
-/* build one block: plain rock, or host rock studded with crystal shards */
 function makeBlock(x, d, b) {
   const jitter = 0.88 + rnd(x + 77, d + 31, g.planet) * 0.24;
   if (!b.ore) {
@@ -252,7 +263,6 @@ scene.add(player);
 
 const FACE_ANGLE = { down: 0, right: Math.PI / 2, left: -Math.PI / 2, up: Math.PI };
 
-/* surface pad */
 const pad = new THREE.Group();
 const slab = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.2, 1.4), new THREE.MeshLambertMaterial({ color: 0x39424f, emissive: 0x0c1016 }));
 slab.position.y = 0.6;
@@ -265,7 +275,7 @@ for (const sx of [-1.9, 1.9]) {
   tip.position.set(sx, 1.8, 0);
   pad.add(tip);
 }
-pad.position.x = worldX(Math.floor(W / 2));
+pad.position.x = worldX(START_X);
 scene.add(pad);
 
 /* ============ world meshes ============ */
@@ -302,6 +312,7 @@ const ui = {
   toast: el('toast'), shop: el('shop'), shopCredits: el('shopCredits'), upgrades: el('upgrades'),
   event: el('event'), evTitle: el('evTitle'), evBody: el('evBody'), evBtn: el('evBtn'),
   manifest: el('manifest'), manifestRows: el('manifestRows'), manifestTotal: el('manifestTotal'),
+  pause: el('pause'), pauseStats: el('pauseStats'), btnReset: el('btnReset'),
   flash: el('flash'), btnShop: el('btnShop'), btnAuto: el('btnAuto')
 };
 
@@ -324,8 +335,8 @@ function updateHUD() {
   ui.hull.style.width = clamp(g.hull / HULL_MAX, 0, 1) * 100 + '%';
   ui.cargoBar.style.width = clamp(g.weight / S.cargoCap(), 0, 1) * 100 + '%';
   ui.cargoTxt.textContent = g.weight.toFixed(1) + ' / ' + S.cargoCap() + ' KG';
-  ui.btnShop.style.display = atSurface() ? '' : 'none';
-  if (g.up.auto > 0 && !atSurface()) {
+  ui.btnShop.style.display = atSurface() && g.mode === 'play' ? '' : 'none';
+  if (g.up.auto > 0 && !atSurface() && g.mode === 'play') {
     ui.btnAuto.style.display = '';
     ui.btnAuto.textContent = 'AUTOPILOT  ' + Math.ceil(g.pd * S.autoRate()) + ' FUEL';
   } else {
@@ -397,20 +408,28 @@ function sell() {
 }
 
 function goSurface() {
-  g.px = Math.floor(W / 2); g.pd = -1; g.face = 'down';
-  moving = null; digging = null;
+  g.px = START_X; g.pd = -1; g.face = 'down';
+  g.path = [[START_X, -1]];
+  moving = null; digging = null; flight = null;
   g.fuel = S.fuelCap(); g.hull = HULL_MAX;
   syncBlocks(true);
   save();
 }
 
 function autopilot() {
-  if (g.up.auto === 0 || atSurface()) return;
+  if (g.up.auto === 0 || atSurface() || g.mode !== 'play') return;
   const cost = Math.ceil(g.pd * S.autoRate());
   if (g.fuel < cost) { toast('Autopilot needs ' + cost + ' fuel'); return; }
   g.fuel -= cost;
-  flash('rgba(110,220,255,.35)', 300);
-  goSurface(); sell();
+  const route = g.path.slice().reverse();
+  const lastPt = route[route.length - 1];
+  if (!lastPt || lastPt[0] !== START_X || lastPt[1] !== -1) route.push([START_X, -1]);
+  if (route.length < 2) { goSurface(); sell(); return; }
+  const dur = clamp(route.length / 26, 1.0, 4.5);
+  flight = { route: route, t: 0, speed: (route.length - 1) / dur };
+  moving = null; digging = null; held = null;
+  g.mode = 'fly';
+  toast('Autopilot engaged');
 }
 
 function tow(reason) {
@@ -466,8 +485,26 @@ function breakCore() {
   }, 1600);
 }
 
+function hardReset() {
+  try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) { /* ignore */ }
+  g.planet = 0; g.credits = 0; g.shards = 0;
+  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 };
+  g.dug = new Set();
+  g.cargo = {}; g.weight = 0;
+  for (const [, o] of meshes) scene.remove(o);
+  meshes.clear();
+  lastRow = null;
+  scene.background = new THREE.Color(skyOf(0));
+  lamp.distance = S.light();
+  goSurface();
+  g.mode = 'play';
+  ui.pause.classList.add('hidden');
+  flash('rgba(255,255,255,.5)', 400);
+  toast('Progress wiped. Fresh start on ' + planetName(0) + '.');
+}
+
 /* ============ input ============ */
-let held = null, moving = null, digging = null;
+let held = null, moving = null, digging = null, flight = null;
 
 document.querySelectorAll('#dpad .k').forEach((b) => {
   const dir = b.dataset.dir;
@@ -483,10 +520,45 @@ window.addEventListener('keydown', (e) => { if (KEYS[e.key]) { held = KEYS[e.key
 window.addEventListener('keyup', (e) => { if (KEYS[e.key] && held === KEYS[e.key]) held = null; });
 
 ui.btnAuto.onclick = autopilot;
-ui.btnShop.onclick = () => { if (!atSurface()) return; g.mode = 'shop'; buildShop(); ui.shop.classList.remove('hidden'); };
+ui.btnShop.onclick = () => { if (!atSurface() || g.mode !== 'play') return; g.mode = 'shop'; buildShop(); ui.shop.classList.remove('hidden'); };
 el('shopClose').onclick = () => { ui.shop.classList.add('hidden'); g.mode = 'play'; };
-el('btnManifest').onclick = () => { g.mode = 'manifest'; buildManifest(); ui.manifest.classList.remove('hidden'); };
+el('btnManifest').onclick = () => { if (g.mode !== 'play') return; g.mode = 'manifest'; buildManifest(); ui.manifest.classList.remove('hidden'); };
 el('manifestClose').onclick = () => { ui.manifest.classList.add('hidden'); g.mode = 'play'; };
+
+let resetArmed = 0;
+function disarmReset() {
+  resetArmed = 0;
+  ui.btnReset.textContent = 'RESTART PROGRESS';
+  ui.btnReset.classList.remove('armed');
+}
+el('btnPause').onclick = () => {
+  if (g.mode !== 'play') return;
+  g.mode = 'pause';
+  held = null;
+  disarmReset();
+  ui.pauseStats.innerHTML =
+    '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.planet) + '</div>' +
+    '<div class="upeff">Core at ' + coreDepth(g.planet) + ' m \u00b7 you are at ' + Math.max(0, Math.round(g.pd)) + ' m</div></div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">Credits</div>' +
+    '<div class="upeff">Haul aboard worth \u25c8 ' + haulValue().toLocaleString() + '</div></div>' +
+    '<div class="val">\u25c8 ' + Math.floor(g.credits).toLocaleString() + '</div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">Core Shards</div>' +
+    '<div class="upeff">Planets destroyed \u00b7 +' + (g.shards * 8) + '% drill power</div></div>' +
+    '<div class="val">' + g.shards + '</div></div>';
+  ui.pause.classList.remove('hidden');
+};
+el('btnResume').onclick = () => { ui.pause.classList.add('hidden'); g.mode = 'play'; };
+ui.btnReset.onclick = () => {
+  if (resetArmed === 0) {
+    resetArmed = 1;
+    ui.btnReset.textContent = 'TAP AGAIN TO WIPE EVERYTHING';
+    ui.btnReset.classList.add('armed');
+    setTimeout(disarmReset, 4000);
+    return;
+  }
+  hardReset();
+  disarmReset();
+};
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 /* ============ save ============ */
@@ -494,7 +566,8 @@ function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
-      dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight
+      dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight,
+      px: g.px, pd: g.pd, path: g.path
     }));
   } catch (e) { /* ignore */ }
 }
@@ -508,6 +581,9 @@ function load() {
       Object.assign(g.up, s.up || {});
       g.dug = new Set(s.dug || []);
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
+      if (Array.isArray(s.path) && s.path.length) g.path = s.path;
+      if (typeof s.px === 'number') g.px = s.px;
+      if (typeof s.pd === 'number') g.pd = s.pd;
       return;
     }
     const old = localStorage.getItem(OLD_KEY);
@@ -566,7 +642,27 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
 
-  if (g.mode === 'play') {
+  if (g.mode === 'fly' && flight) {
+    flight.t += dt * flight.speed;
+    const i = Math.floor(flight.t);
+    if (i >= flight.route.length - 1) {
+      flight = null;
+      goSurface();
+      g.mode = 'play';
+      sell();
+      flash('rgba(110,220,255,.28)', 260);
+    } else {
+      const a = flight.t - i;
+      const p0 = flight.route[i], p1 = flight.route[i + 1];
+      g.px = p0[0] + (p1[0] - p0[0]) * a;
+      g.pd = p0[1] + (p1[1] - p0[1]) * a;
+      const dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+      g.face = dy < 0 ? 'up' : dy > 0 ? 'down' : dx < 0 ? 'left' : 'right';
+      syncBlocks();
+      bit.rotation.y += dt * 14;
+      if (Math.random() < 0.8) spray(worldX(g.px), -g.pd, 0x5fd8ff, 2, 2.2, 0.3);
+    }
+  } else if (g.mode === 'play') {
     startAction();
 
     if (digging) {
@@ -622,6 +718,7 @@ function frame(now) {
       bit.rotation.y += dt * 8;
       if (a >= 1) {
         g.px = moving.x; g.pd = moving.d; moving = null;
+        pushPath(g.px, g.pd);
         syncBlocks();
         if (atSurface()) { sell(); g.fuel = S.fuelCap(); g.hull = HULL_MAX; }
       }
@@ -661,8 +758,9 @@ function frame(now) {
 
   const halfW = Math.tan((camera.fov * Math.PI) / 360) * camZ * camera.aspect;
   const lim = Math.max(0, W / 2 - halfW);
-  camera.position.x += (clamp(px, -lim, lim) - camera.position.x) * Math.min(1, dt * 6);
-  camera.position.y += (py - 0.8 - camera.position.y) * Math.min(1, dt * 7);
+  const lerpK = g.mode === 'fly' ? 12 : 6;
+  camera.position.x += (clamp(px, -lim, lim) - camera.position.x) * Math.min(1, dt * lerpK);
+  camera.position.y += (py - 0.8 - camera.position.y) * Math.min(1, dt * (lerpK + 1));
   camera.position.z = camZ;
   if (shake > 0) {
     camera.position.x += (Math.random() - 0.5) * shake;
@@ -682,7 +780,7 @@ lamp.distance = S.light();
 g.fuel = S.fuelCap();
 g.hull = HULL_MAX;
 scene.background = new THREE.Color(skyOf(g.planet));
-camera.position.set(0, 0, 13);
+camera.position.set(0, -g.pd - 0.8, 13);
 resize();
 syncBlocks(true);
 updateHUD();
