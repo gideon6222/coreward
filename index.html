@@ -21,58 +21,69 @@
     font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
     user-select:none; -webkit-user-select:none; touch-action:none; overscroll-behavior:none;
   }
-  #game{position:fixed; inset:0;}
+  #game{position:fixed; inset:0; background:linear-gradient(180deg,#0d2b52 0%,#5aa8dd 100%);}
   canvas{display:block;}
 
-  #hud{position:fixed; inset:0; pointer-events:none; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;}
+  #vignette{
+    position:fixed; inset:0; pointer-events:none; z-index:5;
+    background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,.58) 100%);
+  }
+  #heat{
+    position:fixed; inset:0; pointer-events:none; z-index:6; opacity:0;
+    background:radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0) 38%, rgba(255,45,55,.8) 100%);
+    transition:opacity .2s linear;
+  }
+
+  #hud{position:fixed; inset:0; pointer-events:none; z-index:8; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;}
   .row{display:flex; gap:6px; align-items:center;}
   .top{justify-content:space-between;}
   .chip{
-    background:rgba(8,12,20,.66); border:1px solid var(--line); border-radius:9px;
-    padding:5px 10px; font-size:12.5px; font-weight:600; letter-spacing:.03em; backdrop-filter:blur(6px);
-    white-space:nowrap;
+    background:rgba(6,10,18,.6); border:1px solid var(--line); border-radius:9px;
+    padding:5px 10px; font-size:12.5px; font-weight:600; letter-spacing:.03em; backdrop-filter:blur(8px);
+    white-space:nowrap; box-shadow:0 2px 10px rgba(0,0,0,.35);
   }
   .chip.gold{color:var(--amber);}
   .chip.haul{color:var(--cyan);}
   .bars{margin-top:8px; gap:6px;}
   .bar{
     position:relative; flex:1; height:19px; border-radius:6px; overflow:hidden;
-    background:rgba(8,12,20,.66); border:1px solid var(--line);
+    background:rgba(6,10,18,.6); border:1px solid var(--line); box-shadow:0 2px 10px rgba(0,0,0,.35);
   }
   .bar i{position:absolute; inset:0 auto 0 0; width:0%; display:block; transition:width .12s linear;}
   .bar b{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-size:9.5px; font-weight:700; letter-spacing:.09em; text-shadow:0 1px 2px #000;
+    font-size:9.5px; font-weight:700; letter-spacing:.09em; text-shadow:0 1px 3px #000;
   }
-  .fuel i{background:linear-gradient(90deg,#2c7a4a,var(--green));}
-  .hull i{background:linear-gradient(90deg,#7a2c33,var(--red));}
-  .cargo i{background:linear-gradient(90deg,#1f5a78,var(--cyan));}
+  .fuel i{background:linear-gradient(90deg,#1d5f38,var(--green)); box-shadow:0 0 12px rgba(75,224,138,.5);}
+  .hull i{background:linear-gradient(90deg,#6a2129,var(--red)); box-shadow:0 0 12px rgba(255,92,107,.5);}
+  .cargo i{background:linear-gradient(90deg,#164a63,var(--cyan)); box-shadow:0 0 12px rgba(63,224,255,.45);}
 
-  #depth{margin-top:8px; text-align:center; font-size:11.5px; letter-spacing:.16em; color:var(--dim); text-shadow:0 1px 3px #000;}
+  #depth{margin-top:8px; text-align:center; font-size:11.5px; letter-spacing:.16em; color:var(--dim); text-shadow:0 1px 4px #000;}
   #toast{
     position:absolute; left:0; right:0; top:34%; text-align:center; font-size:16px; font-weight:700;
-    letter-spacing:.03em; color:var(--amber); opacity:0; transition:opacity .3s; text-shadow:0 2px 8px #000;
+    letter-spacing:.03em; color:var(--amber); opacity:0; transition:opacity .3s; text-shadow:0 2px 10px #000;
   }
 
   #ctrl{
-    position:fixed; left:0; right:0; bottom:calc(var(--safe-b) + 14px);
+    position:fixed; left:0; right:0; bottom:calc(var(--safe-b) + 14px); z-index:9;
     display:flex; align-items:flex-end; justify-content:space-between; padding:0 18px; gap:12px;
   }
   #dpad{display:grid; grid-template-columns:repeat(3,60px); grid-template-rows:repeat(3,60px); gap:5px;}
   .k{
-    border:1px solid var(--line); background:rgba(14,20,32,.8); color:var(--ink);
+    border:1px solid var(--line); background:rgba(10,16,26,.74); color:var(--ink);
     border-radius:13px; font-size:21px; line-height:1; touch-action:none;
-    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);
+    box-shadow:0 3px 12px rgba(0,0,0,.4); transition:transform .06s, background .06s;
   }
-  .k.on{background:rgba(63,224,255,.3); border-color:var(--cyan);}
+  .k.on{background:rgba(63,224,255,.32); border-color:var(--cyan); transform:scale(.94);}
   .k[data-dir=up]{grid-area:1/2;} .k[data-dir=left]{grid-area:2/1;}
   .k[data-dir=right]{grid-area:2/3;} .k[data-dir=down]{grid-area:3/2;}
 
   #actions{display:flex; flex-direction:column; gap:8px; align-items:stretch;}
   #actions button{
-    border:1px solid var(--line); background:rgba(14,20,32,.8); color:var(--ink);
+    border:1px solid var(--line); background:rgba(10,16,26,.74); color:var(--ink);
     border-radius:12px; padding:12px 14px; font-size:11px; font-weight:700; letter-spacing:.09em;
-    backdrop-filter:blur(6px); white-space:nowrap;
+    backdrop-filter:blur(8px); white-space:nowrap; box-shadow:0 3px 12px rgba(0,0,0,.4);
   }
   #btnShop{border-color:#2f6f52; color:var(--green);}
   #btnAuto{border-color:#2a5570; color:var(--cyan);}
@@ -80,12 +91,13 @@
 
   .modal{
     position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
-    display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(3px);
+    display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px);
   }
   .modal.hidden{display:none;}
   .sheet{
     width:100%; max-width:460px; max-height:86vh; overflow:auto;
     background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
   }
   .sheet h2{margin:0 0 4px; font-size:19px; letter-spacing:.06em;}
   .sheet p{color:var(--dim); font-size:14px; line-height:1.55;}
@@ -96,7 +108,7 @@
   .upeff{font-size:11.5px; color:var(--dim); margin-top:3px;}
   .mult{color:var(--dim); font-weight:600;}
   .val{font-size:13px; font-weight:700; color:var(--amber); white-space:nowrap;}
-  .dot{width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 8px currentColor;}
+  .dot{width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 10px currentColor;}
   .total{
     display:flex; justify-content:space-between; align-items:center; margin-top:14px;
     padding-top:12px; border-top:1px solid var(--line); font-size:15px; font-weight:700;
@@ -106,8 +118,14 @@
     border-radius:9px; padding:10px 12px; font-size:12px; font-weight:700; white-space:nowrap;
   }
   .buy:disabled{border-color:var(--line); background:transparent; color:#4a5570;}
+  .toggles{display:flex; gap:8px; margin-top:14px;}
+  .tog{
+    flex:1; border:1px solid #2a5570; background:rgba(63,224,255,.1); color:var(--cyan);
+    border-radius:11px; padding:13px; font-size:11.5px; font-weight:700; letter-spacing:.08em;
+  }
+  .tog.off{border-color:var(--line); background:transparent; color:#4a5570;}
   .wide{
-    width:100%; margin-top:16px; border:1px solid var(--line); background:rgba(63,224,255,.12);
+    width:100%; margin-top:12px; border:1px solid var(--line); background:rgba(63,224,255,.12);
     color:var(--cyan); border-radius:11px; padding:14px; font-size:13px; font-weight:700; letter-spacing:.1em;
   }
   .danger{
@@ -133,6 +151,8 @@
 <body>
 
 <div id="game"></div>
+<div id="vignette"></div>
+<div id="heat"></div>
 
 <div id="hud">
   <div class="row top">
@@ -190,6 +210,10 @@
     <h2>Paused</h2>
     <div class="sub">Everything is frozen until you resume</div>
     <div id="pauseStats"></div>
+    <div class="toggles">
+      <button id="btnMusic" class="tog">MUSIC ON</button>
+      <button id="btnSfx" class="tog">SOUND ON</button>
+    </div>
     <button id="btnResume" class="wide">RESUME</button>
     <button id="btnReset" class="danger">RESTART PROGRESS</button>
     <div class="fine">Restarting wipes credits, upgrades, core shards and every tunnel you have dug. It cannot be undone.</div>
