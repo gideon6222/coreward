@@ -1,8 +1,9 @@
-const CACHE = 'coreward-v4';
+const CACHE = 'coreward-v5';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
+  './audio.js',
   './manifest.webmanifest',
   './icon.svg',
   'https://cdn.jsdelivr.net/npm/three@0.166.0/build/three.module.js'
