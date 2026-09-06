@@ -76,6 +76,7 @@
   }
   #btnShop{border-color:#2f6f52; color:var(--green);}
   #btnAuto{border-color:#2a5570; color:var(--cyan);}
+  #btnPause{color:var(--dim);}
 
   .modal{
     position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
@@ -109,6 +110,12 @@
     width:100%; margin-top:16px; border:1px solid var(--line); background:rgba(63,224,255,.12);
     color:var(--cyan); border-radius:11px; padding:14px; font-size:13px; font-weight:700; letter-spacing:.1em;
   }
+  .danger{
+    width:100%; margin-top:10px; border:1px solid #5a2530; background:transparent;
+    color:var(--red); border-radius:11px; padding:14px; font-size:12px; font-weight:700; letter-spacing:.09em;
+  }
+  .danger.armed{background:rgba(255,92,107,.18); border-color:var(--red);}
+  .fine{color:#5a6780; font-size:11px; text-align:center; margin-top:10px; line-height:1.5;}
 
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity .3s; z-index:30;}
   #boot{
@@ -152,6 +159,7 @@
     <button class="k" data-dir="down">▼</button>
   </div>
   <div id="actions">
+    <button id="btnPause">⏸ MENU</button>
     <button id="btnManifest">MANIFEST</button>
     <button id="btnShop">SHOP</button>
     <button id="btnAuto" style="display:none">AUTOPILOT</button>
@@ -174,6 +182,17 @@
     <div id="manifestRows"></div>
     <div class="total"><span>TOTAL VALUE</span><span id="manifestTotal">◈ 0</span></div>
     <button id="manifestClose" class="wide">CLOSE</button>
+  </div>
+</div>
+
+<div id="pause" class="modal hidden">
+  <div class="sheet">
+    <h2>Paused</h2>
+    <div class="sub">Everything is frozen until you resume</div>
+    <div id="pauseStats"></div>
+    <button id="btnResume" class="wide">RESUME</button>
+    <button id="btnReset" class="danger">RESTART PROGRESS</button>
+    <div class="fine">Restarting wipes credits, upgrades, core shards and every tunnel you have dug. It cannot be undone.</div>
   </div>
 </div>
 
