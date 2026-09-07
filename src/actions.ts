@@ -10,6 +10,7 @@ import { lamp } from './scene';
 import { worldX } from './materials';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { spray } from './particles';
+import { setMark } from './mark';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM } from './feel';
@@ -19,6 +20,14 @@ export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
   g.credits += v;
+  /* A best haul is worth calling out because it is the only feedback that
+     says a RUN went well, as opposed to a block being valuable. The first
+     sale of a save is not a record, it is just the first sale. */
+  if (v > g.best.haul) {
+    const first = g.best.haul === 0;
+    g.best.haul = v;
+    if (!first) { toast('Best haul yet · ◈ ' + v.toLocaleString()); sfx.record(); }
+  }
   /* The pad pays for the ore AND keeps the minerals on your account. It is not
      a second payment: the upgrades that want minerals want them on top of a
      credit price, so what this really records is where you have been. Rock is
@@ -33,6 +42,9 @@ export function sell() {
 }
 
 export function goSurface() {
+  /* Freeze the marker at the record as it stands now, before the next descent
+     starts pushing it deeper. */
+  setMark(g.best.depth);
   g.px = START_X; g.pd = -1; g.face = 'down';
   R.moving = null; R.digging = null; R.flight = null;
   sfx.digStop();

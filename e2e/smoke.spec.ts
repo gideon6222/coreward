@@ -354,6 +354,58 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* Personal bests, and the marker line that makes one visible.
+
+   The record only means something if crossing it is a moment, and a moment
+   that fires twice is not one. The latch lives in mark.ts precisely because
+   the caller is a frame loop; this checks it actually latches against a real
+   build rather than against the unit that owns it. */
+test('crossing your deepest reach is announced exactly once', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 8, cargo: 3, thrust: 5, tank: 6, cool: 4, scan: 6, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {},
+      best: { depth: 14, haul: 0 },
+      dug: [], rubble: [], cargo: {}, weight: 0, px: 6, pd: -1
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  /* Counted after the reload, not before it: the reload wipes the page's
+     globals, and an increment on an undefined counter is NaN rather than an
+     error - which reads as a failed assertion about the game. */
+  await page.evaluate(() => {
+    (window as any).__records = 0;
+    const el = document.querySelector('#toast') as HTMLElement;
+    new MutationObserver(() => {
+      if ((el.textContent || '').includes('New record')) (window as any).__records++;
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+  });
+
+  /* dig well past the 14 m record */
+  await holdUntil(page, 'down', async () => {
+    await expect(page.locator('#depth'))
+      .toContainText(/DEPTH (2[5-9]|[3-9][0-9]) m/, { timeout: DEEP_ENOUGH });
+  });
+
+  expect(await page.evaluate(() => (window as any).__records),
+    'the record announcement must fire once, not on every frame past the line')
+    .toBe(1);
+
+  /* and it is remembered */
+  await page.locator('#btnPause').dispatchEvent('click');
+  await expect(page.locator('#pauseStats')).toContainText('Deepest');
+  await expect(page.locator('#pauseStats')).not.toContainText('Deepest 14 m');
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* The mineral gate. Money alone must not buy a level past the free tier, and
    the row has to say what is missing and where to find it - that line is the
    entire navigation system for this mechanic.

@@ -866,6 +866,47 @@ amethyst's purple are neighbours.
 That cost one new geometry and one branch in `poolFor`; the pool system already
 keys on block id.
 
+## A goal that is yours: the deepest-reach marker (2026-09-07)
+
+Between "buy the next upgrade" and "break the core" there was nothing, and on a
+phone those two are a long way apart. The game had no notion of a run at all -
+you dug, you sold, you dug again, and nothing ever said whether that one went
+well.
+
+Two personal bests are kept now, deepest metre and best single sale, and the
+deepest one is drawn **into the world**: a faint cyan rule across the rock at
+the depth you had reached before this run started. Descending past it is the
+one moment in a descent that is purely yours. The core is a fixed target the
+game set; this is the target you set.
+
+Details that make it work:
+
+- **The line is frozen at the record you HAD when you left the pad**, not at
+  `g.best.depth`, which updates live as you descend. A line that retreats ahead
+  of you is not a line you can cross.
+- **It fades out over about fourteen metres once you are past it.** It has said
+  what it had to say; leaving it at full strength turns a moment into scenery.
+- **`crossedMark()` returns the line's depth, not a boolean.** At the instant
+  of crossing the ship is at 62-point-something, so reporting the ship's depth
+  would announce the record as the number it just beat: "New deepest reach ·
+  62 m" when 62 was the old one. It now reads "New record · deeper than 62 m".
+- **The latch lives in mark.ts, not at the call site.** The caller is a frame
+  loop, and "remember to reset this" is how a one-shot becomes a spam. There is
+  a smoke test counting the announcement against the real build.
+- **The first sale of a save is not a best haul**, it is just the first sale.
+
+Two draw calls, both additive and depth-write-free, so the line reads as light
+on the rock rather than as an object embedded in it.
+
+### A test-writing note
+
+The e2e initialised its counter before `page.reload()`, which wipes the page's
+globals - so the increment ran against `undefined` and produced `NaN`. That
+surfaces as "expected 1, received NaN", which reads like a claim about the
+game rather than about the test. **Anything a test installs on the page has to
+be installed after the last reload**, or through `addInitScript`, which
+survives one.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

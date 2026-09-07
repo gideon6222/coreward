@@ -1,5 +1,5 @@
 import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor } from './config';
-import type { Cargo, Dir, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
+import type { Best, Cargo, Dir, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
 export const g: {
@@ -18,6 +18,7 @@ export const g: {
   /* Minerals banked at the pad, spent on upgrades alongside credits. Counts
      only - the credits for the same ore were already paid on the same sale. */
   stock: Cargo;
+  best: Best;
   mode: Mode;
 } = {
   planet: 0, credits: 0, shards: 0,
@@ -29,6 +30,7 @@ export const g: {
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0,
   cargo: {}, weight: 0, stock: {},
+  best: { depth: 0, haul: 0 },
   mode: 'play'
 };
 
@@ -65,7 +67,7 @@ export function save() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
-      kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble)
+      kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best
     }));
   } catch (e) { /* ignore */ }
 }
@@ -78,6 +80,7 @@ export function load() {
       g.planet = s.planet || 0; g.credits = s.credits || 0; g.shards = s.shards || 0;
       Object.assign(g.up, s.up || {});
       Object.assign(g.kit, s.kit || {});
+      Object.assign(g.best, s.best || {});
       g.dug = new Set(s.dug || []);
       g.rubble = new Set(s.rubble || []);
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
