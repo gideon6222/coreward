@@ -10,7 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadPure, assertGolden } from './harness.mjs';
 
-const H = loadPure();
+const H = await loadPure();
 
 /* A 3-wide room from the surface down to d=10, with the ship parked off-axis at
    x=3 so that many equal-length routes to the pad at (4,-1) exist. */

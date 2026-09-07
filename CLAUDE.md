@@ -2,8 +2,8 @@
 
 > **MIGRATION STATUS.** Phases 0–3 are done and live: golden tests, Vite build,
 > Actions deploy, generated service worker, build stamp, and the TypeScript
-> rename. Phase 4 (split `src/app.ts` into modules) and Phase 5 (turn on
-> `strict` and add domain types) are not done. `pre-vite` tags the last
+> rename, and the module split. Phase 5 (turn on `strict` and add the domain
+> types) is not done. `pre-vite` tags the last
 > pre-migration commit (`83a862a`) if you ever need to get back to the
 > single-file static version.
 
@@ -34,8 +34,22 @@ Vite build, deployed to GitHub Pages by GitHub Actions.
 | Path | What it is |
 |---|---|
 | `index.html` | Shell: all CSS, HUD, d-pad, modals, error overlay, SW registration |
-| `src/app.ts` | The entire game: world gen, mining, economy, three.js scene, loop |
-| `src/audio.ts` | Synthesised score and SFX, split out so it can be retuned alone |
+| `src/main.ts` | Entry point. Boot sequence only |
+| `src/config.ts` | Tuning constants and pure functions over them. Imports nothing |
+| `src/util.ts` | `key`, `clamp`. Imports nothing |
+| `src/runtime.ts` | `R`, the mutable loop state that crosses modules. Imports nothing |
+| `src/state.ts` | `g`, derived stats `S`, save/load |
+| `src/world.ts` | Seeded world gen, `blockAt`, `haulValue`, autopilot `findRoute` |
+| `src/scene.ts` | Renderer, camera, lights, fog, `resize()` |
+| `src/materials.ts` | Shared materials, geometries, the fake-bloom glow sprite |
+| `src/blocks.ts` | Block meshes and the streaming window around the ship |
+| `src/particles.ts` | Debris, drifting dust, stars |
+| `src/ship.ts` / `src/pad.ts` | The two built models |
+| `src/ui.ts` | HUD, toast, shop, manifest. DOM only, no event wiring |
+| `src/input.ts` | All d-pad, keyboard and button wiring |
+| `src/actions.ts` | Game verbs: sell, tow, autopilot, break core, hard reset |
+| `src/loop.ts` | `frame()` — the only place per-frame simulation lives |
+| `src/audio.ts` | Synthesised score and SFX |
 | `src/env.d.ts` | Ambient declarations: the build-stamp globals, `webkitAudioContext` |
 | `tsconfig.json` | Typecheck config. **`strict` is off on purpose** — see below |
 | `public/manifest.webmanifest` | PWA manifest, fullscreen + portrait. Copied verbatim |
@@ -44,8 +58,32 @@ Vite build, deployed to GitHub Pages by GitHub Actions.
 | `test/` | Golden tests, see below |
 | `.github/workflows/deploy.yml` | Test, build, deploy |
 
-`src/app.ts` is ~1090 lines and holds everything. Splitting it into modules is
-Phase 4 of the migration; `src/audio.ts` is currently the only module boundary.
+The dependency graph is a DAG and must stay one:
+
+```
+config, util, runtime  (leaves, import nothing)
+   -> state -> world
+        -> scene -> materials -> blocks / particles / ship / pad
+             -> ui
+                  -> actions -> input
+                       -> loop -> main
+```
+
+**`config`, `util`, `state` and `world` never touch the DOM, three.js or the
+audio context.** That is not tidiness, it is what lets the golden tests import
+and run them under node. If a renderer ever leaks into that layer the tests stop
+working, which is the intended alarm.
+
+Two things that are easy to get wrong here:
+
+- **`R` exists because you cannot assign to an imported binding.** The frame
+  loop's shared state (`held`, `moving`, `digging`, `flight`, `shake`, `squash`,
+  `camZ`) is written in one module and read in another, so it lives on one
+  mutable object, exactly the way `g` does. State only the loop touches stays
+  local to `loop.ts`.
+- **`ui.ts` renders, `input.ts` wires.** Keeping event handlers out of `ui.ts` is
+  what stops a cycle: the pause menu's reset button needs `hardReset` from
+  `actions`, and `actions` already needs `ui`.
 
 **`strict` and `noImplicitAny` are deliberately off.** Phase 3 was a mechanical
 rename, kept behaviour-preserving; Phase 5 turns strictness on in one go and adds
@@ -66,7 +104,7 @@ pass**. Pages serves the uploaded `dist/` artifact.
 
 The Pages source must be set to **GitHub Actions**, not "Deploy from a branch".
 In branch mode the raw source is served and the site is broken, because
-`index.html` points at `/src/app.ts` — an unbundled module importing a bare
+`index.html` points at `/src/main.ts` — an unbundled module importing a bare
 `three` specifier.
 
 **There is no cache constant to bump any more.** Workbox derives the precache
@@ -123,8 +161,7 @@ of orphaned data, including the old CDN copy of three.js.
 
 ## Tests
 
-Golden safety net for the migration. **Zero dependencies** — it uses the built-in
-node test runner, so it needs no install to run locally.
+Golden safety net for the migration, using the built-in node test runner.
 
 ```
 npm test
@@ -132,21 +169,14 @@ npm test
 
 CI runs it on every push and pull request, and the deploy job depends on it.
 
-`test/harness.mjs` does not import `src/app.ts` — importing it would immediately
-touch `document` and build a WebGLRenderer. Instead it reads the real source,
-slices it at the `/* ============ three ============ */` banner, strips the
-`import` lines and evaluates the pure prelude. **The tests run against shipping
-code, not a copy of it.** If that banner is renamed, update `MARKER` in the
-harness.
+`test/harness.mjs` bundles `test/pure-entry.ts` with esbuild and imports the
+result, so the tests exercise the real modules through the real import graph.
+Before the split it sliced `app.ts` and evaluated the pure prelude with
+`new Function`, which parsed it as plain JavaScript — that would have become a
+SyntaxError the moment Phase 5 added a type annotation.
 
 Baselines live in `test/baseline/*.json`. To re-record one deliberately, delete
 the file and re-run.
-
-**Phase 5 will break this harness.** It evaluates the sliced prelude with
-`new Function`, which parses it as plain JavaScript. That still works because
-Phase 3 added no type annotations above the `three` banner. The first annotation
-in that region turns this into a SyntaxError, so move the harness onto real
-imports from the split modules during Phase 4, before turning on strict mode.
 
 Three things the harness handles that a naive snapshot gets wrong:
 

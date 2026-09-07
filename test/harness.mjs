@@ -1,63 +1,50 @@
-/* Phase 0 golden-test harness.
+/* Golden-test harness.
 
-   WARNING for Phase 5: this evaluates the sliced prelude with `new Function`,
-   which parses it as plain JavaScript. The prelude is still valid JS today
-   because Phase 3 added no type annotations above the `three` banner. The
-   moment a type annotation lands in that region, this throws a SyntaxError.
-   Migrate to real imports from the split modules (Phase 4) BEFORE turning on
-   strict mode and annotating (Phase 5).
+   Before the module split this read src/app.ts, sliced it at a section banner
+   and evaluated the pure prelude with `new Function`. That worked while the
+   game was one file, but it parses the slice as plain JavaScript, so the first
+   type annotation would have turned the whole suite into a SyntaxError.
 
-   Loads the pure prelude of app.js WITHOUT modifying it, by slicing the real
-   source at the existing section banner and stripping the module imports.
-   The tests therefore run against shipping code, not a copy of it.
-   After the Vite/TS migration, replace loadPure() with real imports from
-   src/config.ts + src/world.ts and keep every assertion unchanged. */
+   Now it bundles test/pure-entry.ts with esbuild and imports the result. The
+   tests still run against real shipping code — the same modules the game
+   imports, through the same import graph — and it survives Phase 5 adding
+   annotations and strict mode. */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(HERE, '..');
 
-const MARKER = '/* ============ three ============ */';
+let cached = null;
 
-/* every binding the pure prelude defines that a test might want */
-const NAMES = [
-  'W', 'SAVE_KEY', 'OLD_KEY', 'HULL_MAX', 'DIG_BASE', 'START_X',
-  'PLANET_NAMES', 'SKY_HI', 'SKY_LO', 'planetName', 'skyHi', 'skyLo',
-  'coreDepth', 'hardMult', 'valueMult',
-  'ORES', 'ROCKS', 'DEF', 'UPGRADES', 'costOf',
-  'g', 'S', 'key', 'clamp', 'rnd', 'blockAt', 'haulValue', 'findRoute'
-];
-
-export function loadPure() {
-  const src = readFileSync(join(REPO, 'src', 'app.ts'), 'utf8');
-  const cut = src.indexOf(MARKER);
-  if (cut < 0) {
-    throw new Error('harness: banner not found in src/app.ts: ' + MARKER +
-      '\nIf the banner moved or was renamed, update MARKER in test/harness.mjs.');
-  }
-  const prelude = src.slice(0, cut)
-    .split('\n')
-    .filter((l) => !/^\s*import\s/.test(l))
-    .join('\n');
-  if (/^\s*import\s/m.test(prelude)) throw new Error('harness: an import survived stripping');
-  if (!/function blockAt/.test(prelude)) throw new Error('harness: slice is missing blockAt');
-  if (!/function findRoute/.test(prelude)) throw new Error('harness: slice is missing findRoute');
-
-  /* lerpHex is the only THREE user in the prelude and no test calls it,
-     but stub THREE so nothing can throw at definition time */
-  const THREE = {
-    Color: class { constructor() {} lerp() { return this; } getHex() { return 0; } }
-  };
-  const body = prelude + '\n;return {' + NAMES.join(',') + '};';
-  return new Function('THREE', body)(THREE);
+/* Async because bundling is. Test files use top-level await, which node's ESM
+   test runner supports. */
+export async function loadPure() {
+  if (cached) return cached;
+  const outdir = mkdtempSync(join(tmpdir(), 'coreward-pure-'));
+  const outfile = join(outdir, 'pure.mjs');
+  await build({
+    entryPoints: [join(HERE, 'pure-entry.ts')],
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    outfile,
+    logLevel: 'silent'
+  });
+  cached = await import(pathToFileURL(outfile).href);
+  if (typeof cached.blockAt !== 'function') throw new Error('harness: blockAt missing from the bundle');
+  if (typeof cached.findRoute !== 'function') throw new Error('harness: findRoute missing from the bundle');
+  if (typeof cached.g !== 'object') throw new Error('harness: game state missing from the bundle');
+  return cached;
 }
 
-/* JSON.stringify turns Infinity into null, which would silently drop
-   bedrock's hard value and let a wrong snapshot compare equal to itself.
-   Encode non-finite numbers explicitly instead. */
+/* JSON.stringify turns Infinity into null, which would silently drop bedrock's
+   hard value and let a wrong snapshot compare equal to itself. Encode
+   non-finite numbers explicitly instead. */
 export function ser(value) {
   return JSON.stringify(value, (k, v) => {
     if (typeof v === 'number') {

@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadPure, assertGolden } from './harness.mjs';
 
-const H = loadPure();
+const H = await loadPure();
 const PLANETS = [0, 1, 2, 3, 4, 5];
 
 /* stable id -> char map, sorted so it never depends on iteration order */
