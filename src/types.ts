@@ -87,6 +87,14 @@ export interface Supply {
 
 export type Kit = Record<SupplyKey, number>;
 
+/* Personal bests. The game had no goal between "buy the next upgrade" and
+   "break the core", which on a phone is a long way apart. These are always
+   present, always visible, and cost nothing to pursue. */
+export interface Best {
+  depth: number;   /* deepest metre ever reached, on any planet */
+  haul: number;    /* most valuable single sale */
+}
+
 /* A planet's personality.
 
    Every field is a multiplier applied to something layered ON TOP of world
@@ -179,6 +187,7 @@ export interface SaveV2 {
   kit?: Partial<Kit>;
   stock?: Cargo;
   rubble?: string[];
+  best?: Partial<Best>;
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

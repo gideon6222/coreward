@@ -24,6 +24,7 @@ import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
 import { player, rig, bit, flames, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
+import { crossedMark, fadeMark } from './mark';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { sell, goSurface, tow, breakCore, tremor } from './actions';
 import { sfx, setDepth, setMood } from './audio';
@@ -232,6 +233,18 @@ export function frame(now: number) {
     /* Two metres of hysteresis, so hovering on the line cannot spam the
        warning every time the camera lerp nudges you across it. */
     if (R.wasHot && g.pd < HEAT_DEPTH - 2) R.wasHot = false;
+
+    /* ---------- personal best ----------
+       Updated live so it survives a tow, but the marker line stays where it
+       was when this run began - see mark.ts. */
+    if (g.pd > g.best.depth) g.best.depth = Math.floor(g.pd);
+    const beat = crossedMark(g.pd);
+    if (beat) {
+      toast('New record · deeper than ' + beat + ' m');
+      flash('rgba(140,230,255,.20)', 420);
+      sfx.record();
+    }
+    fadeMark(g.pd);
 
     /* ---------- tremors ----------
        The clock only runs inside the unstable band and is reset the moment

@@ -552,6 +552,25 @@ export const sfx = {
   /* Opening a cache. A latch, then a rising major arpeggio - the only
      unambiguously happy sound in the game, because it is the only
      unambiguously good thing that happens to you underground. */
+  /* A personal best. A clean rising fifth with a bright tail - short, so it
+     never competes with whatever else is happening when it lands. */
+  record() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    [659.25, 987.77].forEach((f, i) => {
+      for (const type of ['sine', 'triangle'] as OscillatorType[]) {
+        const o = G.ctx.createOscillator();
+        const gn = G.ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(f, t + i * 0.11);
+        env(gn, t + i * 0.11, type === 'sine' ? 0.2 : 0.07, 0.01, 0.55);
+        o.connect(gn); gn.connect(G.sfxBus);
+        o.start(t + i * 0.11); o.stop(t + i * 0.11 + 0.7);
+      }
+    });
+  },
+
   cache() {
     const G = live();
     if (!G) return;

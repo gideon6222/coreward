@@ -62,6 +62,10 @@ mustEl('btnPause').onclick = () => {
     '<div class="up"><div class="upinfo"><div class="upname">Credits</div>' +
     '<div class="upeff">Haul aboard worth ◈ ' + haulValue().toLocaleString() + '</div></div>' +
     '<div class="val">◈ ' + Math.floor(g.credits).toLocaleString() + '</div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">Records</div>' +
+    '<div class="upeff">Deepest ' + g.best.depth + ' m' +
+    (g.best.haul ? ' · best haul ◈ ' + g.best.haul.toLocaleString() : '') + '</div></div>' +
+    '<div class="val">' + g.best.depth + ' m</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Core Shards</div>' +
     '<div class="upeff">Planets destroyed · +' + (g.shards * 8) + '% drill power</div></div>' +
     '<div class="val">' + g.shards + '</div></div>';
