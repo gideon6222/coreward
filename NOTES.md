@@ -138,10 +138,25 @@ Nothing here is committed to; they are the live threads.
   and triangle counts. A change that quietly doubles them is invisible on a
   desktop and matters on a phone.
 
-## Not done, and deliberately
+## How changes get shipped
 
-- **No branch previews.** GitHub Pages serves one site per repo. The accepted
-  trade is: merge to `main`, check the stamp, revert if wrong. To test a branch
-  on the phone, run `npm run preview -- --host 0.0.0.0` and open the PC's LAN
-  address — no service worker over plain http, so that will not test offline
-  behaviour, but it is fine for checking feel.
+**Push straight to `main`.** CI is the gate: typecheck, golden tests, then smoke
+tests that boot the real built artifact and check the frame loop advances,
+digging and selling work, every panel opens and the stamp is populated. A build
+that fails any of it cannot deploy - the previous version stays up.
+
+Then check it on the phone. Expect the first open to show the old build; close
+it fully and open again. The stamp in the pause menu is the source of truth.
+
+If something plays badly: `git revert <sha>` and push. CI redeploys the previous
+state in about two minutes.
+
+This is deliberately not gated on a pre-merge preview. It costs less, it works
+from anywhere rather than only on the home wifi, and the safety net exists
+precisely so that shipping first is safe. The residual risk is a change that
+passes CI and still feels wrong, which is what the phone check is for.
+
+To preview a branch on the phone anyway - useful for something risky or purely
+visual - run `npm run preview -- --host 0.0.0.0` and open the PC's LAN address.
+No service worker over plain http, so it will not test offline behaviour, but it
+is fine for checking feel. Requires being on the same wifi.
