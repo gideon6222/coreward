@@ -1,5 +1,5 @@
 import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor } from './config';
-import type { Best, Cargo, Dir, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
+import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
 export const g: {
@@ -18,6 +18,10 @@ export const g: {
   /* Minerals banked at the pad, spent on upgrades alongside credits. Counts
      only - the credits for the same ore were already paid on the same sale. */
   stock: Cargo;
+  /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
+     so a cell can only ever hold one - which it can, because breaking a block
+     empties the cell it was in. */
+  drops: Drops;
   best: Best;
   mode: Mode;
 } = {
@@ -29,7 +33,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0,
-  cargo: {}, weight: 0, stock: {},
+  cargo: {}, weight: 0, stock: {}, drops: {},
   best: { depth: 0, haul: 0 },
   mode: 'play'
 };
@@ -67,7 +71,8 @@ export function save() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
-      kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best
+      kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
+      drops: g.drops
     }));
   } catch (e) { /* ignore */ }
 }
@@ -83,6 +88,7 @@ export function load() {
       Object.assign(g.best, s.best || {});
       g.dug = new Set(s.dug || []);
       g.rubble = new Set(s.rubble || []);
+      g.drops = s.drops || {};
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;

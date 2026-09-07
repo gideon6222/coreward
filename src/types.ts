@@ -136,6 +136,10 @@ export type MatCost = { id: string; need: number } | null;
    why this is a partial record rather than a total one. */
 export type Cargo = Record<string, number>;
 
+/* Ore left lying in the world: cell key -> block id. Not a Cargo, which counts
+   units of a material; this names a material at a place, one per cell. */
+export type Drops = Record<string, string>;
+
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
 /* g.mode gates input and the frame loop. */
@@ -188,6 +192,7 @@ export interface SaveV2 {
   stock?: Cargo;
   rubble?: string[];
   best?: Partial<Best>;
+  drops?: Drops;
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no
