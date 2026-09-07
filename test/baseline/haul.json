@@ -1,0 +1,198 @@
+[
+  {
+    "cargo": {},
+    "planet": 0,
+    "value": 0
+  },
+  {
+    "cargo": {},
+    "planet": 1,
+    "value": 0
+  },
+  {
+    "cargo": {},
+    "planet": 2,
+    "value": 0
+  },
+  {
+    "cargo": {},
+    "planet": 3,
+    "value": 0
+  },
+  {
+    "cargo": {
+      "dirt": 10
+    },
+    "planet": 0,
+    "value": 10
+  },
+  {
+    "cargo": {
+      "dirt": 10
+    },
+    "planet": 1,
+    "value": 16
+  },
+  {
+    "cargo": {
+      "dirt": 10
+    },
+    "planet": 2,
+    "value": 22
+  },
+  {
+    "cargo": {
+      "dirt": 10
+    },
+    "planet": 3,
+    "value": 28
+  },
+  {
+    "cargo": {
+      "dirt": 10,
+      "iron": 3
+    },
+    "planet": 0,
+    "value": 190
+  },
+  {
+    "cargo": {
+      "dirt": 10,
+      "iron": 3
+    },
+    "planet": 1,
+    "value": 304
+  },
+  {
+    "cargo": {
+      "dirt": 10,
+      "iron": 3
+    },
+    "planet": 2,
+    "value": 418
+  },
+  {
+    "cargo": {
+      "dirt": 10,
+      "iron": 3
+    },
+    "planet": 3,
+    "value": 532
+  },
+  {
+    "cargo": {
+      "coreite": 2,
+      "ruby": 5,
+      "gold": 100
+    },
+    "planet": 0,
+    "value": 104000
+  },
+  {
+    "cargo": {
+      "coreite": 2,
+      "ruby": 5,
+      "gold": 100
+    },
+    "planet": 1,
+    "value": 166400
+  },
+  {
+    "cargo": {
+      "coreite": 2,
+      "ruby": 5,
+      "gold": 100
+    },
+    "planet": 2,
+    "value": 228800
+  },
+  {
+    "cargo": {
+      "coreite": 2,
+      "ruby": 5,
+      "gold": 100
+    },
+    "planet": 3,
+    "value": 291200
+  },
+  {
+    "cargo": {
+      "stone": 40,
+      "granite": 12,
+      "basalt": 7,
+      "silver": 9
+    },
+    "planet": 0,
+    "value": 1732
+  },
+  {
+    "cargo": {
+      "stone": 40,
+      "granite": 12,
+      "basalt": 7,
+      "silver": 9
+    },
+    "planet": 1,
+    "value": 2771
+  },
+  {
+    "cargo": {
+      "stone": 40,
+      "granite": 12,
+      "basalt": 7,
+      "silver": 9
+    },
+    "planet": 2,
+    "value": 3810
+  },
+  {
+    "cargo": {
+      "stone": 40,
+      "granite": 12,
+      "basalt": 7,
+      "silver": 9
+    },
+    "planet": 3,
+    "value": 4850
+  },
+  {
+    "cargo": {
+      "magmite": 1,
+      "amethyst": 3,
+      "emerald": 6,
+      "copper": 25
+    },
+    "planet": 0,
+    "value": 23125
+  },
+  {
+    "cargo": {
+      "magmite": 1,
+      "amethyst": 3,
+      "emerald": 6,
+      "copper": 25
+    },
+    "planet": 1,
+    "value": 37000
+  },
+  {
+    "cargo": {
+      "magmite": 1,
+      "amethyst": 3,
+      "emerald": 6,
+      "copper": 25
+    },
+    "planet": 2,
+    "value": 50875
+  },
+  {
+    "cargo": {
+      "magmite": 1,
+      "amethyst": 3,
+      "emerald": 6,
+      "copper": 25
+    },
+    "planet": 3,
+    "value": 64750
+  }
+]

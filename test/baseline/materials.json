@@ -1,0 +1,168 @@
+{
+  "ores": [
+    {
+      "id": "coreite",
+      "name": "Coreite",
+      "color": 6750192,
+      "host": 2764602,
+      "hard": 16,
+      "wt": 16,
+      "value": 22000,
+      "min": 185,
+      "chance": 0.03,
+      "glow": 0.6,
+      "shards": 7,
+      "tone": 9
+    },
+    {
+      "id": "magmite",
+      "name": "Magmite",
+      "color": 16742936,
+      "host": 3023400,
+      "hard": 13,
+      "wt": 13,
+      "value": 9000,
+      "min": 145,
+      "chance": 0.038,
+      "glow": 0.5,
+      "shards": 6,
+      "tone": 8
+    },
+    {
+      "id": "ruby",
+      "name": "Ruby",
+      "color": 16726876,
+      "host": 3354682,
+      "hard": 10,
+      "wt": 10,
+      "value": 3600,
+      "min": 105,
+      "chance": 0.042,
+      "glow": 0.32,
+      "shards": 6,
+      "tone": 7
+    },
+    {
+      "id": "emerald",
+      "name": "Emerald",
+      "color": 3133562,
+      "host": 3095096,
+      "hard": 8.5,
+      "wt": 8.5,
+      "value": 1800,
+      "min": 78,
+      "chance": 0.048,
+      "glow": 0.3,
+      "shards": 5,
+      "tone": 6
+    },
+    {
+      "id": "amethyst",
+      "name": "Amethyst",
+      "color": 10510591,
+      "host": 3486271,
+      "hard": 7,
+      "wt": 7,
+      "value": 900,
+      "min": 56,
+      "chance": 0.055,
+      "glow": 0.28,
+      "shards": 5,
+      "tone": 5
+    },
+    {
+      "id": "gold",
+      "name": "Gold",
+      "color": 16764743,
+      "host": 4012596,
+      "hard": 5.5,
+      "wt": 9,
+      "value": 420,
+      "min": 36,
+      "chance": 0.06,
+      "glow": 0.2,
+      "shards": 5,
+      "tone": 4
+    },
+    {
+      "id": "silver",
+      "name": "Silver",
+      "color": 14213352,
+      "host": 3816512,
+      "hard": 4.5,
+      "wt": 6,
+      "value": 150,
+      "min": 22,
+      "chance": 0.07,
+      "glow": 0.16,
+      "shards": 4,
+      "tone": 3
+    },
+    {
+      "id": "iron",
+      "name": "Iron",
+      "color": 11581117,
+      "host": 3814960,
+      "hard": 3.5,
+      "wt": 4.5,
+      "value": 60,
+      "min": 11,
+      "chance": 0.085,
+      "glow": 0.1,
+      "shards": 4,
+      "tone": 2
+    },
+    {
+      "id": "copper",
+      "name": "Copper",
+      "color": 13136183,
+      "host": 3945516,
+      "hard": 2.6,
+      "wt": 3.5,
+      "value": 25,
+      "min": 4,
+      "chance": 0.1,
+      "glow": 0.1,
+      "shards": 4,
+      "tone": 1
+    }
+  ],
+  "rocks": [
+    {
+      "id": "dirt",
+      "name": "Dirt",
+      "color": 7031594,
+      "hard": 1,
+      "wt": 0.4,
+      "value": 1,
+      "glow": 0.02
+    },
+    {
+      "id": "stone",
+      "name": "Stone",
+      "color": 8419954,
+      "hard": 2.4,
+      "wt": 0.9,
+      "value": 3,
+      "glow": 0.02
+    },
+    {
+      "id": "granite",
+      "name": "Granite",
+      "color": 6183526,
+      "hard": 5,
+      "wt": 1.8,
+      "value": 9,
+      "glow": 0.02
+    },
+    {
+      "id": "basalt",
+      "name": "Basalt",
+      "color": 3814720,
+      "hard": 9,
+      "wt": 2.8,
+      "value": 22,
+      "glow": 0.03
+    }
+  ]
+}

@@ -1,0 +1,253 @@
+{
+  "drill": {
+    "name": "Drill Bit",
+    "base": 130,
+    "mul": 2,
+    "max": 9,
+    "tiers": [
+      "Steel",
+      "Tungsten",
+      "Carbide",
+      "Diamond",
+      "Ionized",
+      "Plasma",
+      "Graviton",
+      "Singularity",
+      "Starbreaker",
+      "Godcore"
+    ],
+    "costs": [
+      130,
+      260,
+      520,
+      1040,
+      2080,
+      4160,
+      8320,
+      16640,
+      33280,
+      66560
+    ],
+    "effects": [
+      "Power 1.00x",
+      "Power 1.95x",
+      "Power 2.90x",
+      "Power 3.85x",
+      "Power 4.80x",
+      "Power 5.75x",
+      "Power 6.70x",
+      "Power 7.65x",
+      "Power 8.60x",
+      "Power 9.55x"
+    ]
+  },
+  "cargo": {
+    "name": "Cargo Hold",
+    "base": 110,
+    "mul": 2,
+    "max": 9,
+    "tiers": null,
+    "costs": [
+      110,
+      220,
+      440,
+      880,
+      1760,
+      3520,
+      7040,
+      14080,
+      28160,
+      56320
+    ],
+    "effects": [
+      "60 kg",
+      "105 kg",
+      "150 kg",
+      "195 kg",
+      "240 kg",
+      "285 kg",
+      "330 kg",
+      "375 kg",
+      "420 kg",
+      "465 kg"
+    ]
+  },
+  "thrust": {
+    "name": "Thrusters",
+    "base": 100,
+    "mul": 1.95,
+    "max": 9,
+    "tiers": null,
+    "costs": [
+      100,
+      195,
+      380,
+      741,
+      1446,
+      2820,
+      5498,
+      10721,
+      20906,
+      40767
+    ],
+    "effects": [
+      "3.0 cells/s",
+      "3.7 cells/s",
+      "4.4 cells/s",
+      "5.1 cells/s",
+      "5.8 cells/s",
+      "6.5 cells/s",
+      "7.2 cells/s",
+      "7.9 cells/s",
+      "8.6 cells/s",
+      "9.3 cells/s"
+    ]
+  },
+  "tank": {
+    "name": "Fuel Tank",
+    "base": 200,
+    "mul": 2.1,
+    "max": 9,
+    "tiers": null,
+    "costs": [
+      200,
+      420,
+      882,
+      1852,
+      3890,
+      8168,
+      17153,
+      36022,
+      75646,
+      158856
+    ],
+    "effects": [
+      "90 fuel",
+      "130 fuel",
+      "170 fuel",
+      "210 fuel",
+      "250 fuel",
+      "290 fuel",
+      "330 fuel",
+      "370 fuel",
+      "410 fuel",
+      "450 fuel"
+    ]
+  },
+  "cool": {
+    "name": "Cooling Rig",
+    "base": 300,
+    "mul": 2.15,
+    "max": 9,
+    "tiers": null,
+    "costs": [
+      300,
+      645,
+      1387,
+      2982,
+      6410,
+      13782,
+      29631,
+      63707,
+      136971,
+      294488
+    ],
+    "effects": [
+      "0% heat shield",
+      "10% heat shield",
+      "20% heat shield",
+      "30% heat shield",
+      "40% heat shield",
+      "50% heat shield",
+      "60% heat shield",
+      "70% heat shield",
+      "80% heat shield",
+      "90% heat shield"
+    ]
+  },
+  "scan": {
+    "name": "Scanner Array",
+    "base": 140,
+    "mul": 1.9,
+    "max": 9,
+    "tiers": null,
+    "costs": [
+      140,
+      266,
+      505,
+      960,
+      1824,
+      3467,
+      6586,
+      12514,
+      23777,
+      45176
+    ],
+    "effects": [
+      "8m light",
+      "10m light",
+      "13m light",
+      "15m light",
+      "18m light",
+      "20m light",
+      "22m light",
+      "25m light",
+      "27m light",
+      "30m light"
+    ]
+  },
+  "tow": {
+    "name": "Tow Insurance",
+    "base": 180,
+    "mul": 2,
+    "max": 8,
+    "tiers": null,
+    "costs": [
+      180,
+      360,
+      720,
+      1440,
+      2880,
+      5760,
+      11520,
+      23040,
+      46080
+    ],
+    "effects": [
+      "Tow takes 50% of haul",
+      "Tow takes 45% of haul",
+      "Tow takes 40% of haul",
+      "Tow takes 35% of haul",
+      "Tow takes 30% of haul",
+      "Tow takes 25% of haul",
+      "Tow takes 20% of haul",
+      "Tow takes 15% of haul",
+      "Tow takes 10% of haul"
+    ]
+  },
+  "auto": {
+    "name": "Autopilot",
+    "base": 900,
+    "mul": 2.2,
+    "max": 6,
+    "tiers": null,
+    "costs": [
+      900,
+      1980,
+      4356,
+      9583,
+      21083,
+      46383,
+      102042
+    ],
+    "effects": [
+      "Not installed",
+      "0.55 fuel per metre",
+      "0.48 fuel per metre",
+      "0.40 fuel per metre",
+      "0.33 fuel per metre",
+      "0.25 fuel per metre",
+      "0.18 fuel per metre"
+    ]
+  }
+}
