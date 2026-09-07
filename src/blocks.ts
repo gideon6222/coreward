@@ -105,7 +105,8 @@ function poolFor(b: Block): Pool {
    never rotates, it only pans, so a quad in the XY plane always faces it and
    the billboarding a Sprite provides is not needed. Per-instance matrices carry
    position and the pulse scale, per-instance colours carry the ore colour. */
-const MAX_HALOS = 160;
+/* two instances per ore: a tight core and a wide, dim bloom */
+const MAX_HALOS = 340;
 const haloGeo = new THREE.PlaneGeometry(1, 1);
 const haloMat = new THREE.MeshBasicMaterial({
   map: glowTex, transparent: true, opacity: 0.5,
@@ -236,55 +237,30 @@ export function resetBlockCache() { lastRow = null; }
 
    The world edge counts as solid. Treating out-of-bounds as open would put a
    bright rim down both sides of the map for no reason. */
-/* One scan of the four orthogonal neighbours produces both effects, since they
-   need the same information. Results land in module scratch rather than a
-   returned object, because this runs for every streamed cell on every rebuild
-   and allocating there would be wasteful for no benefit. */
-let nOpen = 0;
-let nGlowR = 0, nGlowG = 0, nGlowB = 0, nGlowCount = 0;
-const bleedColor = new THREE.Color();
+/* Ambient occlusion needs to know how much of a cell is exposed, so it scans
+   the four orthogonal neighbours.
 
-function scanNeighbour(x: number, d: number) {
+   It used to also collect the colour of adjacent bright ore and tint the rock
+   toward it. That was wrong: instance colour is uniform across a whole cell, so
+   a vein produced hard square patches of colour rather than a glow. The glow is
+   now entirely the additive haloes, whose radial falloff does not know or care
+   where the cell boundaries are. */
+function openNeighbours(x: number, d: number): number {
+  let open = 0;
   /* The world edge counts as solid. Treating out-of-bounds as open would put a
      bright rim down both sides of the map for no reason. */
-  if (x < 0 || x >= W) return;
-  if (d < 0) { nOpen++; return; }          /* sky */
-  const nb = blockAt(x, d);
-  if (!nb) { nOpen++; return; }            /* dug */
-  /* Bright ore spills a little of its colour onto the rock it is embedded in.
-     Only the genuinely luminous ores - dull copper and iron would just muddy
-     the stone. */
-  if (nb.ore && (nb.glow || 0) >= 0.2) {
-    bleedColor.setHex(nb.color);
-    nGlowR += bleedColor.r; nGlowG += bleedColor.g; nGlowB += bleedColor.b;
-    nGlowCount++;
-  }
-}
-
-function scanNeighbours(x: number, d: number) {
-  nOpen = 0;
-  nGlowR = nGlowG = nGlowB = 0;
-  nGlowCount = 0;
-  scanNeighbour(x, d - 1);
-  scanNeighbour(x, d + 1);
-  scanNeighbour(x - 1, d);
-  scanNeighbour(x + 1, d);
+  if (x - 1 >= 0 && blockAt(x - 1, d) === null) open++;
+  if (x + 1 < W && blockAt(x + 1, d) === null) open++;
+  if (d - 1 < 0 || blockAt(x, d - 1) === null) open++;
+  if (blockAt(x, d + 1) === null) open++;
+  return open;
 }
 
 /* Rock buried in the mass gets no light; rock at the edge of a tunnel catches
    it. Gentle on purpose - a realistic falloff would black out a fresh planet,
    since nothing is dug yet. */
-function occlusionFromScan(): number {
-  return 0.72 + 0.28 * Math.min(1, nOpen / 2);
-}
-
-/* Tint a rock colour toward whatever bright ore is next to it, so a vein looks
-   like it is casting light into the surrounding stone rather than sitting in it
-   like a sticker. Free: it is the same per-instance colour write. */
-function bleedInto(target: THREE.Color) {
-  if (!nGlowCount) return;
-  const k = Math.min(0.22, 0.13 * nGlowCount);
-  target.lerp(bleedColor.setRGB(nGlowR / nGlowCount, nGlowG / nGlowCount, nGlowB / nGlowCount), k);
+function occlusion(x: number, d: number): number {
+  return 0.72 + 0.28 * Math.min(1, openNeighbours(x, d) / 2);
 }
 
 /* Cells are placed on the grid with no rotation and no scale, on purpose.
@@ -316,8 +292,7 @@ function rebuild() {
 
       const pool = poolFor(b);
       const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
-      scanNeighbours(x, d);
-      const ao = occlusionFromScan();
+      const ao = occlusion(x, d);
       const px = worldX(x), py = -d;
 
       if (!b.ore) {
@@ -325,9 +300,7 @@ function rebuild() {
         placeCell(px, py);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-        scratchColor.setHex(shade(b.color, jit * ao));
-        bleedInto(scratchColor);
-        pool.body.setColorAt(pool.bodies, scratchColor);
+        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit * ao)));
         pool.bodies++;
 
         if (rnd(x + 61, d + 17, g.planet) > 0.66) {
@@ -337,9 +310,7 @@ function rebuild() {
           scratch.scale.set(1, 1, 1);
           scratch.updateMatrix();
           pool.detail.setMatrixAt(pool.details, scratch.matrix);
-          scratchColor.setHex(shade(b.color, jit * 1.22 * ao));
-          bleedInto(scratchColor);
-          pool.detail.setColorAt(pool.details, scratchColor);
+          pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(b.color, jit * 1.22 * ao)));
           pool.details++;
         }
         continue;
@@ -375,10 +346,24 @@ function rebuild() {
         }
       }
 
-      const size = 1.5 + (b.tone || 1) * 0.11;
-      if (oreGlows.length < MAX_HALOS) {
+      /* Two additive quads per vein rather than one.
+
+         A single gradient falls off too fast to reach the neighbouring rock,
+         which is what tempted me into the per-cell tint in the first place. A
+         tight bright core plus a wide dim bloom gives a much longer, softer
+         tail, and because additive blending just sums, the dim one can be
+         three times the size for nothing.
+
+         Opacity is a shared material property, so the bloom is dimmed by
+         scaling its instance COLOUR instead. */
+      const core = 1.35 + (b.tone || 1) * 0.09;
+      const phase = rnd(x + 3, d + 91, g.planet) * 6.28;
+      if (oreGlows.length + 1 < MAX_HALOS) {
         haloMesh.setColorAt(oreGlows.length, scratchColor.setHex(b.color));
-        oreGlows.push({ x: px, y: py, phase: rnd(x + 3, d + 91, g.planet) * 6.28, baseScale: size });
+        oreGlows.push({ x: px, y: py, phase, baseScale: core });
+
+        haloMesh.setColorAt(oreGlows.length, scratchColor.setHex(b.color).multiplyScalar(0.30));
+        oreGlows.push({ x: px, y: py, phase, baseScale: core * 2.9 });
       }
     }
   }

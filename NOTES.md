@@ -333,6 +333,31 @@ only show through tunnels the player has actually dug.
 Still free: the draw-call budget test passes unchanged. Same shared cube, same
 instancing, the displacement is per-vertex on the GPU.
 
+## Crystal glow that spreads instead of tinting cells (2026-09-07)
+
+Playtest: "it looks like the glow of the crystals affect the full cubes next to
+them... make it so the glow isnt isolated to the full cube, and spreads and
+fades out more naturally."
+
+**The per-cell colour bleed was the wrong mechanism** and this is the second time
+that instinct has caused a problem. Instance colour is uniform across an entire
+cell, so tinting a neighbour toward its ore produced hard square patches of
+purple and gold rather than a glow. Anything that needs to fade across a
+boundary cannot be per-instance data.
+
+Removed entirely. The glow is now only the additive haloes, whose radial falloff
+has no idea where cell boundaries are.
+
+**Two quads per vein instead of one.** A single gradient falls off too fast to
+reach the neighbouring rock, which is exactly what tempted me into the per-cell
+tint originally. A tight bright core plus a wide dim bloom at 2.9x the size
+gives a much longer, softer tail. Additive blending just sums, so the second
+quad is nearly free, and since opacity is a shared material property the bloom
+is dimmed by scaling its instance **colour** to 0.30 instead.
+
+Still one draw call: they are extra instances in the same InstancedMesh, and the
+draw-call budget test confirms it.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
