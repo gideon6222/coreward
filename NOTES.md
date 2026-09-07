@@ -819,6 +819,53 @@ can read it. It also catches the failure that matters most: a throw inside the
 scheduler would take the whole `setInterval` down and silence the score, and
 the page-error listener turns that into a red test.
 
+## Supply caches: the discovery moment (2026-09-07)
+
+The research finding this answers, from the Dome Keeper design dive: routine
+mining goes stale without discovery, and "a touch of surprise" during a descent
+is what a resource loop is missing when every cell is worth a predictable
+number. Gas and geodes made a descent differ from the last one in what it
+**costs**. A cache makes one differ in what it **hands you**.
+
+Rare - about one every couple of runs - because a surprise you can plan around
+is a resource, and this is not meant to be a resource.
+
+**Contents are rolled from the cell's own coordinates**, not from
+`Math.random`. Same discipline as the rest of generation, and it buys two
+concrete things: the reward is testable, and it cannot be re-rolled by closing
+the tab at the right moment.
+
+The weighting: supplies 55%, minerals 31%, credits 14%.
+
+- **Supplies most often**, because a consumable you did not buy is the most
+  interesting thing to be handed - it changes what this run can attempt rather
+  than what the next one can afford. Coolant is the rarest of the three,
+  matching its price on the shelf.
+- **Minerals second, and always the deepest kind the depth allows.** After the
+  mineral gate the thing most likely to be blocking you is two emerald rather
+  than any amount of money, so this is the reward that can actually unstick a
+  run. It also means a deep cache is worth more than a shallow one without
+  needing a second table.
+- **Credits last and least.** Money is the one reward the game already hands
+  out constantly.
+
+A cache pays in something other than ore, so it never enters the hold. A full
+hold is therefore never a reason to leave one in the ground, and the prize is
+never competing with cargo weight.
+
+### Applying the hazard-readability lesson on purpose
+
+The gas pocket taught this the hard way: hue alone is not enough separation,
+and the fix is to change the **form**. So a cache is pink - nothing else in the
+ground is, and a thing left behind by people should not look like something the
+planet grew - but more importantly its contents are flat parallel-faced slabs
+where every ore is a pointed crystal. At thirty pixels the parallel faces are
+what separate man-made from mineral, and they survive the fact that pink and
+amethyst's purple are neighbours.
+
+That cost one new geometry and one branch in `poolFor`; the pool system already
+keys on block id.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

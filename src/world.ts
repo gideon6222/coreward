@@ -1,9 +1,9 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
-         GEODE, GAS, RUBBLE, RUBBLE_HARD, TREMOR_SAFE_RADIUS,
+         GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, TREMOR_SAFE_RADIUS,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
 import { key, mixHex } from './util';
 import { g } from './state';
-import type { Block } from './types';
+import type { Block, SupplyKey } from './types';
 
 export function rnd(x: number, y: number, p: number) {
   let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(p | 0, 1442695041);
@@ -54,6 +54,14 @@ export function blockAt(x: number, d: number): Block | null {
              shards: GAS.shards, tone: GAS.tone, hard: GAS.hard * hm, wt: GAS.wt,
              value: GAS.value, ore: true, hazard: true };
   }
+  /* Carved out of the middle of the same roll gas and geodes use, so caches
+     are independent of both and, like them, only ever overwrite - the ore
+     stream underneath is untouched. */
+  if (d >= CACHE.min && pr > 0.5 && pr < 0.5 + CACHE.chance) {
+    return { id: CACHE.id, name: CACHE.name, color: CACHE.color, host: CACHE.host, glow: CACHE.glow,
+             shards: CACHE.shards, tone: CACHE.tone, hard: CACHE.hard * hm, wt: CACHE.wt,
+             value: CACHE.value, ore: true, cache: true };
+  }
   if (d >= GEODE.min && pr > 1 - geodeChanceOn(g.planet)) {
     return { id: GEODE.id, name: GEODE.name, color: GEODE.color, host: GEODE.host, glow: GEODE.glow,
              shards: GEODE.shards, tone: GEODE.tone, hard: GEODE.hard * hm, wt: GEODE.wt,
@@ -75,6 +83,48 @@ export const haulValue = () => {
   for (const k in g.cargo) v += g.cargo[k] * DEF[k].value;
   return Math.round(v * valueMult(g.planet));
 };
+
+/* ---------- cache contents ----------
+
+   Rolled from the cell's own coordinates rather than from Math.random, so a
+   given cache on a given planet always holds the same thing. That is the same
+   discipline as the rest of generation and it buys two concrete things: the
+   reward is testable, and it cannot be re-rolled by closing the tab at the
+   right moment.
+
+   The weighting is deliberate. Supplies most often, because a consumable you
+   did not buy is the most interesting thing to be handed - it changes what
+   this run can attempt. Minerals second, and always the deepest kind the depth
+   allows, because after the mineral gate the thing most likely to be blocking
+   you is two emerald rather than any amount of money. Credits last and least:
+   money is the one reward the game already hands out constantly. */
+export type CachePrize =
+  | { kind: 'supply'; id: SupplyKey }
+  | { kind: 'mineral'; id: string; n: number }
+  | { kind: 'credits'; n: number };
+
+export function cachePrize(x: number, d: number): CachePrize {
+  const r = rnd(x + 601, d + 149, g.planet + 91);
+  const r2 = rnd(x + 907, d + 313, g.planet + 137);
+
+  if (r < 0.55) {
+    /* Coolant is the dearest thing on the shelf, so it is the rarest find. */
+    const id: SupplyKey = r2 < 0.42 ? 'cell' : r2 < 0.8 ? 'patch' : 'coolant';
+    return { kind: 'supply', id };
+  }
+
+  if (r < 0.86) {
+    /* the deepest three minerals this depth can hold, so a deep cache is
+       worth more than a shallow one without needing a separate table */
+    const reachable = ORES.filter((o) => o.min <= d);
+    const pick = reachable.slice(0, 3);
+    const o = (pick.length ? pick : reachable)[Math.floor(r2 * Math.max(1, pick.length)) % Math.max(1, pick.length)];
+    if (!o) return { kind: 'credits', n: 500 };
+    return { kind: 'mineral', id: o.id, n: 3 + Math.floor(r2 * 4) };
+  }
+
+  return { kind: 'credits', n: Math.round((400 + d * 22) * valueMult(g.planet)) };
+}
 
 /* ---------- collapse ----------
 

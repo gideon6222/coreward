@@ -549,6 +549,25 @@ export const sfx = {
     o.start(t); o.stop(t + 1.3);
   },
 
+  /* Opening a cache. A latch, then a rising major arpeggio - the only
+     unambiguously happy sound in the game, because it is the only
+     unambiguously good thing that happens to you underground. */
+  cache() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 0.12, 2200, 0.3, 'bandpass');
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      const o = G.ctx.createOscillator();
+      const gn = G.ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(f, t + 0.07 + i * 0.075);
+      env(gn, t + 0.07 + i * 0.075, 0.17, 0.008, 0.42);
+      o.connect(gn); gn.connect(G.sfxBus);
+      o.start(t + 0.07 + i * 0.075); o.stop(t + 0.07 + i * 0.075 + 0.5);
+    });
+  },
+
   gas() {
     const G = live();
     if (!G) return;

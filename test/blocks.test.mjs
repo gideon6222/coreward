@@ -13,7 +13,7 @@ const PLANETS = [0, 1, 2, 3, 4, 5];
 const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ALL_IDS = [
   ...H.ORES.map((o) => o.id), ...H.ROCKS.map((r) => r.id),
-  H.GEODE.id, H.GAS.id, 'core', 'bedrock', '(empty)'
+  H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, 'core', 'bedrock', '(empty)'
 ].sort();
 const CHAR = new Map(ALL_IDS.map((id, i) => [id, ALPHA[i]]));
 assert.ok(ALL_IDS.length <= ALPHA.length, 'ran out of snapshot characters');
@@ -102,7 +102,11 @@ test('dug cells read as empty', () => {
    Freeze, do not re-record, unless you are deliberately rebalancing ore. */
 const PRE = JSON.parse(
   readFileSync(new URL('./baseline/blocks-preadditive.json', import.meta.url), 'utf8'));
-const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id]);
+/* Everything allowed to sit on top of the ore stream. Adding an entry here is
+   a deliberate act and should come with a diff you have read: it says "this
+   new feature overwrites cells", which is fine, as opposed to "this new
+   feature moved the ore around", which is not. */
+const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id]);
 
 test('pockets and caves only overwrite cells, never reshuffle the ore stream', () => {
   let same = 0, changed = 0;
@@ -431,4 +435,89 @@ test('mixHex blends channels and stays inside 24 bits', () => {
     assert.ok(v >= 0 && v <= 0xffffff, 'mixHex escaped 24 bits at t=' + t);
     assert.equal(v, Math.round(v), 'mixHex produced a non-integer colour');
   }
+});
+
+/* ---------- supply caches ----------
+
+   The discovery moment. A cache pays in something other than ore, which means
+   it never touches the hold - so a full hold is never a reason to leave one in
+   the ground, and the prize is never in competition with cargo weight. */
+
+test('a cache is rare enough to be a surprise and common enough to be met', () => {
+  for (const p of PLANETS) {
+    H.g.planet = p;
+    H.g.dug = new Set();
+    H.g.rubble = new Set();
+    const cd = H.coreDepth(p);
+    let n = 0, cells = 0;
+    for (let d = 0; d < cd; d++) for (let x = 0; x < H.W; x++) {
+      cells++;
+      const b = H.blockAt(x, d);
+      if (b && b.cache) {
+        n++;
+        assert.ok(d >= H.CACHE.min, 'a cache appeared at ' + d + ' m, above its floor');
+        assert.equal(b.wt, 0, 'a cache must never cost cargo weight');
+        assert.equal(b.value, 0, 'a cache pays through its contents, not as ore');
+      }
+    }
+    /* A whole planet dug out end to end holds a handful. A run touches a
+       fraction of that, which is the point. */
+    assert.ok(n >= 2, 'planet ' + p + ' has only ' + n + ' caches - most runs would never see one');
+    assert.ok(n < cells * 0.012, 'planet ' + p + ' has ' + n + ' caches, which is terrain');
+  }
+});
+
+test('what a cache holds is fixed by where it is, not by when you open it', () => {
+  H.g.planet = 0;
+  const a = H.cachePrize(4, 61);
+  const b = H.cachePrize(4, 61);
+  assert.deepEqual(a, b, 'the same cache rolled differently twice');
+  /* and it is not the same everywhere */
+  const seen = new Set();
+  for (let d = 20; d < 200; d += 3)
+    for (let x = 0; x < H.W; x += 3) seen.add(JSON.stringify(H.cachePrize(x, d)));
+  assert.ok(seen.size > 20, 'cache contents barely vary: only ' + seen.size + ' outcomes');
+});
+
+test('every cache prize is something the game can actually give you', () => {
+  H.g.planet = 0;
+  const kinds = { supply: 0, mineral: 0, credits: 0 };
+  for (let d = H.CACHE.min; d < 280; d++)
+    for (let x = 0; x < H.W; x++) {
+      const p = H.cachePrize(x, d);
+      kinds[p.kind]++;
+      if (p.kind === 'supply') {
+        assert.ok(H.SUPPLY_OF[p.id], 'unknown supply in a cache: ' + p.id);
+      } else if (p.kind === 'mineral') {
+        const ore = H.DEF[p.id];
+        assert.ok(ore && H.isOre(ore), 'unknown mineral in a cache: ' + p.id);
+        assert.ok(ore.min <= d,
+          'a cache at ' + d + ' m held ' + p.id + ', which only exists at ' + ore.min + ' m');
+        assert.ok(p.n >= 3 && p.n <= 6, 'cache mineral count out of range: ' + p.n);
+      } else {
+        assert.ok(p.n > 0 && Number.isFinite(p.n), 'bad credit prize: ' + p.n);
+      }
+    }
+
+  /* Supplies most often - a consumable you did not buy changes what the run
+     can attempt, which is the most interesting thing to be handed. Money
+     least, because money is what the game already pays constantly. */
+  const total = kinds.supply + kinds.mineral + kinds.credits;
+  assert.ok(kinds.supply / total > 0.45, 'supplies should be the common find');
+  assert.ok(kinds.credits / total < 0.25, 'money should be the rare, dull find');
+  assert.ok(kinds.mineral > 0 && kinds.credits > 0, 'every prize kind must be reachable');
+});
+
+test('a deep cache holds deeper minerals than a shallow one', () => {
+  H.g.planet = 0;
+  const deepestAt = (d) => {
+    let best = 0;
+    for (let x = 0; x < H.W; x++) {
+      const p = H.cachePrize(x, d);
+      if (p.kind === 'mineral') best = Math.max(best, H.DEF[p.id].min);
+    }
+    return best;
+  };
+  assert.ok(deepestAt(160) > deepestAt(30),
+    'depth should change what a cache is worth, or every cache is the same cache');
 });

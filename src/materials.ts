@@ -157,6 +157,9 @@ export function displaceLikeRock(m: THREE.Material, bump: number) {
   m.customProgramCacheKey = () => 'rock' + bump.toFixed(3);
 }
 export const shardGeo = new THREE.OctahedronGeometry(1, 0);
+/* Cache contents. A flat slab rather than a crystal: at thirty pixels the only
+   thing that separates man-made from mineral is that the faces are parallel. */
+export const crateGeo = new THREE.BoxGeometry(1, 0.62, 0.62);
 export const crackGeo = new THREE.BoxGeometry(1, 0.045, 0.045);
 export const crackMat = new THREE.MeshBasicMaterial({ color: 0x08080c });
 
