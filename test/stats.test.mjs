@@ -23,7 +23,10 @@ test('upgrade costs are unchanged at every level', () => {
       name: u.name, base: u.base, mul: u.mul, max: u.max,
       tiers: u.tiers || null,
       costs: Array.from({ length: u.max + 1 }, (_, l) => H.costOf(u, l)),
-      effects: Array.from({ length: u.max + 1 }, (_, l) => u.effect(l))
+      effects: Array.from({ length: u.max + 1 }, (_, l) => u.effect(l)),
+      mat: u.mat,
+      mats: Array.from({ length: u.max }, (_, l) => H.matCost(u, l)),
+      matTotal: H.matTotalFor(u, u.max)
     };
   }
   assertGolden('upgrades', table);
@@ -177,4 +180,120 @@ test('the trait table and its assignment are unchanged', () => {
     assignment: Array.from({ length: 24 }, (_, p) => ({ planet: p, trait: H.traitOf(p).id })),
     caveCap: H.CAVE_CHANCE_CAP
   });
+});
+
+/* ---------- the material economy ----------
+
+   Credits alone made the upgrade ladder a grind against one number: any ore at
+   any depth bought any upgrade, so WHERE you dug never mattered. Past level
+   three each upgrade also wants the mineral it is built out of, and that
+   mineral's depth is the real gate. These tests are about the gate landing
+   where the design intends rather than about the numbers themselves. */
+
+test('every upgrade is built out of a real, reachable mineral', () => {
+  for (const u of H.UPGRADES) {
+    const def = H.DEF[u.mat];
+    assert.ok(def, u.key + ' names a mineral that does not exist: ' + u.mat);
+    assert.ok(H.isOre(def), u.key + ' is built out of ' + u.mat + ', which is rock');
+    assert.ok(def.min < H.coreDepth(0),
+      u.key + ' needs ' + u.mat + ' from ' + def.min + ' m, below the first core');
+  }
+});
+
+test('the opening hour is untouched, and requirements ramp after it', () => {
+  for (const u of H.UPGRADES) {
+    for (let lvl = 0; lvl < H.MAT_FROM_LEVEL - 1; lvl++)
+      assert.equal(H.matCost(u, lvl), null,
+        u.key + ' wants materials to reach level ' + (lvl + 1) + ', inside the free tier');
+    assert.ok(H.matCost(u, H.MAT_FROM_LEVEL - 1),
+      u.key + ' should start wanting materials at level ' + H.MAT_FROM_LEVEL);
+
+    let prev = 0;
+    for (let lvl = H.MAT_FROM_LEVEL - 1; lvl < u.max; lvl++) {
+      const m = H.matCost(u, lvl);
+      assert.equal(m.id, u.mat, u.key + ' changed mineral mid-ladder');
+      assert.ok(m.need > prev, u.key + ' requirement did not grow at level ' + (lvl + 1));
+      prev = m.need;
+    }
+  }
+});
+
+/* THE one that carries the design. */
+test('the Cooling Rig is gated behind a mineral inside the heat zone', () => {
+  const cool = H.UPGRADES.find((u) => u.key === 'cool');
+  const mat = H.DEF[cool.mat];
+  assert.ok(mat.min > H.HEAT_DEPTH,
+    'cooling must be bought with a mineral from below ' + H.HEAT_DEPTH + ' m, so a heat ' +
+    'run has to happen BEFORE the heat protection - ' + cool.mat + ' starts at ' + mat.min);
+  assert.ok(mat.min < H.HEAT_DEPTH + 20,
+    cool.mat + ' at ' + mat.min + ' m is so far into the zone that the gate is a wall');
+
+  /* and nothing else forces that trip except the luxury unlock */
+  for (const u of H.UPGRADES) {
+    if (u.key === 'cool' || u.key === 'auto') continue;
+    assert.ok(H.DEF[u.mat].min < H.HEAT_DEPTH,
+      u.key + ' also demands a heat run for ' + u.mat + '; only cooling and autopilot should');
+  }
+});
+
+test('the mineral gates climb in the same order as the upgrades matter', () => {
+  /* Cargo and drill are what a new player buys first, so they must ask for the
+     shallowest things. Autopilot is the last luxury and asks for the deepest. */
+  const depthOf = (key) => H.DEF[H.UPGRADES.find((u) => u.key === key).mat].min;
+  assert.ok(depthOf('cargo') <= depthOf('drill'));
+  assert.ok(depthOf('drill') < depthOf('thrust'));
+  assert.ok(depthOf('thrust') < depthOf('tank'));
+  assert.ok(depthOf('tank') < depthOf('scan'));
+  assert.ok(depthOf('scan') < depthOf('cool'));
+  assert.ok(depthOf('cool') < depthOf('auto'));
+});
+
+test('maxing everything is a lot of digging but not a wall', () => {
+  const need = {};
+  for (const u of H.UPGRADES) need[u.mat] = (need[u.mat] || 0) + H.matTotalFor(u, u.max);
+
+  for (const [id, n] of Object.entries(need)) {
+    const ore = H.DEF[id];
+    assert.ok(n >= 2, id + ' is asked for only ' + n + ' times - the gate is decorative');
+    /* Expected finds per hundred cells dug at or below the mineral's depth.
+       Anything needing more than a few runs' worth stops being a gate and
+       becomes a grind. */
+    const perHundredCells = ore.chance * 100;
+    const runsWorth = n / perHundredCells;
+    assert.ok(runsWorth < 12,
+      'maxing everything needs ' + n + ' ' + id + ', about ' + runsWorth.toFixed(1) +
+      ' hundred-cell runs of nothing but looking for it');
+  }
+});
+
+test('material requirements are unchanged', () => {
+  assertGolden('materials-required', {
+    fromLevel: H.MAT_FROM_LEVEL,
+    perUpgrade: H.UPGRADES.map((u) => ({
+      key: u.key, mat: u.mat, mineralDepth: H.DEF[u.mat].min,
+      steps: Array.from({ length: u.max }, (_, l) => H.matCost(u, l)),
+      total: H.matTotalFor(u, u.max)
+    }))
+  });
+});
+
+test('an old save is grandfathered exactly, never over-granted', () => {
+  const before = { ...H.g.up };
+  H.g.up.cool = 6; H.g.up.drill = 9; H.g.up.cargo = 2; H.g.up.auto = 0;
+  const stock = H.grandfatherStock();
+
+  const cool = H.UPGRADES.find((u) => u.key === 'cool');
+  assert.equal(stock[cool.mat], H.matTotalFor(cool, 6),
+    'a level 6 rig must be granted exactly the six levels it already paid for');
+  assert.equal(stock.copper, undefined,
+    'level 2 never cost materials, so nothing is owed for it');
+  assert.equal(stock.ruby, undefined, 'an uninstalled autopilot owes nothing');
+
+  /* and the grant leaves nothing over for the NEXT level */
+  const spentThrough6 = H.matTotalFor(cool, 6);
+  const nextLevel = H.matCost(cool, 6);
+  assert.ok(stock[cool.mat] - spentThrough6 === 0 && nextLevel.need > 0,
+    'grandfathering must not pay for a level the player has not bought');
+
+  Object.assign(H.g.up, before);
 });

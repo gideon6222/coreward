@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { W, HULL_MAX, DEF, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
+import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
          PATCH_HULL, CELL_FUEL, coreDepth, planetName, traitOf, valueMult } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
@@ -18,6 +18,13 @@ export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
   g.credits += v;
+  /* The pad pays for the ore AND keeps the minerals on your account. It is not
+     a second payment: the upgrades that want minerals want them on top of a
+     credit price, so what this really records is where you have been. Rock is
+     not banked - nothing is ever built out of dirt. */
+  for (const k in g.cargo) {
+    if (DEF[k] && isOre(DEF[k])) g.stock[k] = (g.stock[k] || 0) + g.cargo[k];
+  }
   g.cargo = {}; g.weight = 0;
   sfx.sell();
   toast('Sold haul for ◈ ' + v.toLocaleString());
@@ -152,6 +159,7 @@ export function hardReset() {
   g.planet = 0; g.credits = 0; g.shards = 0;
   g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0 };
+  g.stock = {};
   g.dug = new Set();
   g.cargo = {}; g.weight = 0;
   for (const k of Array.from(meshes.keys())) dropBlock(k);

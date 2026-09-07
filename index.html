@@ -215,6 +215,12 @@
   .upinfo{flex:1; min-width:0;}
   .upname{font-size:14px; font-weight:700;}
   .upeff{font-size:11.5px; color:var(--dim); margin-top:3px;}
+  /* The mineral requirement on a shop row. Green once you can afford it,
+     amber with the depth appended while you cannot - a requirement you cannot
+     meet has to tell you where to go and not just what is missing. */
+  .upmat{font-size:11.5px; color:var(--green); margin-top:4px; display:flex; align-items:center; gap:6px;}
+  .upmat.short{color:var(--amber);}
+  .upmat .dot{width:9px; height:9px; border-radius:2px;}
   .mult{color:var(--dim); font-weight:600;}
   .val{font-size:13px; font-weight:700; color:var(--amber); white-space:nowrap;}
   .dot{width:12px; height:12px; border-radius:3px; flex:0 0 auto; box-shadow:0 0 10px currentColor;}
@@ -323,6 +329,8 @@
     <div class="sub">Sold automatically when you touch the pad</div>
     <div id="manifestRows"></div>
     <div class="total"><span>TOTAL VALUE</span><span id="manifestTotal">◈ 0</span></div>
+    <div class="kithead">VAULT · BANKED WHEN YOU SELL</div>
+    <div id="vault"></div>
     <button id="manifestClose" class="wide">CLOSE</button>
   </div>
 </div>
