@@ -130,6 +130,63 @@ for (const sx of [-0.19, 0.19]) {
   flames.push({ cone: fl, glow: fg });
 }
 
+/* ---------- headlight ----------
+
+   A volumetric cone thrown from the drill in whatever direction the ship is
+   facing. It is parented to `rig`, so it swings with the ship for free.
+
+   Two things it fixes. The lamp was a point light: it lit the rock but the
+   ship itself showed no sign of being the thing doing the lighting, which at
+   this scale made it read as a glowing object rather than as a machine. And
+   the Scanner Array only ever changed `lamp.distance` - the most invisible
+   upgrade on the shelf. The cone's length now tracks it, so buying a level is
+   something you can see rather than something you take on trust.
+
+   The fade costs nothing. Under additive blending black IS transparent, so
+   vertex colours running white at the apex to black at the mouth give a soft
+   falloff without a texture, an alpha channel or a second draw call. */
+const CONE_LEN = 2.9;
+const coneGeo = new THREE.ConeGeometry(0.78, CONE_LEN, 14, 1, true);
+/* ConeGeometry already has its apex at +y and its mouth at -y, which is
+   exactly a beam pointing the way the drill points. The first attempt rotated
+   it 180 degrees on the assumption that cones "point up", which put the wide
+   end AT the ship: a funnel rather than a headlight. Only translate, so the
+   apex lands just under the drill. */
+coneGeo.translate(0, -CONE_LEN / 2 - 0.4, 0);
+{
+  const pos = coneGeo.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    /* apex sits at y = -0.4, mouth at -(CONE_LEN + 0.4) */
+    const t = (-pos.getY(i) - 0.4) / CONE_LEN;
+    const v = Math.pow(1 - Math.min(1, Math.max(0, t)), 2.1);
+    col[i * 3] = v; col[i * 3 + 1] = v * 0.94; col[i * 3 + 2] = v * 0.76;
+  }
+  coneGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+}
+
+export const headlight = new THREE.Mesh(
+  coneGeo,
+  /* FrontSide, not DoubleSide. Additive blending draws both walls of an
+     open cone on top of each other at the silhouette, which turns the edges
+     into two bright outlines and makes the whole thing read as a solid
+     trapezoid instead of as light. */
+  new THREE.MeshBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide
+  })
+);
+/* In FRONT of the rock face, not level with the ship.
+
+   At z = 0 the cone sits inside the block volume, so the terrain occludes it -
+   and since the ship spends almost all its time in a one-cell tunnel, that
+   meant a headlight with nowhere to shine. Pushed forward it reads as light
+   falling ON the wall ahead, which is what a beam looks like from this camera
+   anyway. The ore halos have always worked exactly this way. */
+headlight.position.z = 0.62;
+headlight.renderOrder = 1;
+rig.add(headlight);
+
 /* Shrunk against the terrain so the world reads as large. The squash animation
    scales `player`, so scaling `rig` here does not interfere with it. */
 rig.scale.setScalar(0.82);

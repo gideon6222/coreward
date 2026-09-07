@@ -907,6 +907,45 @@ game rather than about the test. **Anything a test installs on the page has to
 be installed after the last reload**, or through `addInitScript`, which
 survives one.
 
+## The headlight, and making an invisible upgrade visible (2026-09-07)
+
+The lamp was a point light. It lit the rock, but the ship showed no sign of
+being the thing doing the lighting, so at this scale it read as a glowing
+object rather than as a machine. And the Scanner Array only ever changed
+`lamp.distance` - the most invisible purchase on the shelf, and one you had to
+take on trust.
+
+A volumetric cone now throws from the drill in whatever direction the ship
+faces, parented to `rig` so it swings for free, and its length tracks
+`S.light()`. Buying a Scanner level is something you can see.
+
+The fade costs nothing: under additive blending black **is** transparent, so
+vertex colours running white at the apex to black at the mouth give the falloff
+without a texture, an alpha channel or a second draw call.
+
+Three attempts, and the wrong turns are the useful part:
+
+**Do not rotate the cone.** `ConeGeometry` already has its apex at +y and its
+mouth at -y, which is exactly a beam pointing the way the drill points. The
+first version rotated it 180 degrees on the assumption that cones "point up",
+which put the wide end at the ship: a funnel, not a headlight.
+
+**FrontSide, not DoubleSide.** Additive blending draws both walls of an open
+cone on top of each other at the silhouette, which turns the edges into two
+bright outlines and the whole thing into a solid grey trapezoid.
+
+**Draw it in FRONT of the rock, at z = 0.62.** At z = 0 the cone sits inside
+the block volume and the terrain occludes it - which meant a headlight with
+nowhere to shine, because the ship spends almost all its time in a one-cell
+tunnel. Pushed forward it reads as light falling ON the wall ahead, which is
+what a beam looks like from this camera anyway. The ore halos have always
+worked exactly this way; the rule was already in the codebase and I did not
+apply it until the effect failed.
+
+Length is mapped to one-to-two cone lengths rather than proportionally to the
+lamp radius: at max Scanner a proportional beam is eight cells long and stops
+reading as a beam at all.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

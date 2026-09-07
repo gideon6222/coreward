@@ -22,7 +22,7 @@ import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './sce
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
-import { player, rig, bit, flames, FACE_ANGLE } from './ship';
+import { player, rig, bit, flames, headlight, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
@@ -294,6 +294,21 @@ export function frame(now: number) {
   rig.rotation.y = bank;
   lamp.position.set(px, py, 1.7);
   lamp.distance = S.light();
+
+  /* The headlight. Invisible in daylight and mixed in with depth, because a
+     beam that is visible against a bright sky reads as a bug; scaled along its
+     length by the Scanner Array, so the upgrade has a silhouette. The 0.82 rig
+     scale is divided out so the beam reaches the distance the light actually
+     does rather than the distance the model implies. */
+  const dark = depthT(g.pd);
+  const beamMat = headlight.material as THREE.MeshBasicMaterial;
+  beamMat.opacity = 0.22 * dark;
+  headlight.visible = beamMat.opacity > 0.004;
+  /* Scanner runs 8 m at level 0 to 29.6 m at level 9. Mapped to a beam between
+     one and two lengths rather than proportionally, because a cone eight cells
+     long stops reading as a beam and starts reading as a wall. */
+  const reach = 1 + ((S.light() - 8) / 21.6) * 0.95;
+  headlight.scale.set(0.9 + reach * 0.1, reach, 1);
 
   if (g.mode !== 'fly') {
     const target = FACE_ANGLE[g.face];
