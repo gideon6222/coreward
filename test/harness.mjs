@@ -24,10 +24,10 @@ const NAMES = [
 ];
 
 export function loadPure() {
-  const src = readFileSync(join(REPO, 'app.js'), 'utf8');
+  const src = readFileSync(join(REPO, 'src', 'app.js'), 'utf8');
   const cut = src.indexOf(MARKER);
   if (cut < 0) {
-    throw new Error('harness: banner not found in app.js: ' + MARKER +
+    throw new Error('harness: banner not found in src/app.js: ' + MARKER +
       '\nIf the banner moved or was renamed, update MARKER in test/harness.mjs.');
   }
   const prelude = src.slice(0, cut)

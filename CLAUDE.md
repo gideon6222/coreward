@@ -1,5 +1,14 @@
 # Coreward
 
+> **MIGRATION IN PROGRESS (branch `vite-migration`).** This branch has moved to a
+> Vite build. The deploy section below still describes `main`, which is unchanged
+> and still serving the live game. Two things are knowingly broken on this branch
+> until Phase 2: `public/sw.js` still precaches `./app.js`, which no longer exists
+> at that path (the build emits `./assets/index-<hash>.js`), and there is no
+> Actions workflow yet, so **do not merge to `main` until Phase 2 lands** - `main`
+> serves the site directly and a merged Vite entry point would break the live
+> game. `pre-vite` tags the last known-good pre-migration commit.
+
 3D planet-mining PWA. Dig toward a planet core, sell ore at the surface pad, buy
 upgrades, break the core and the planet explodes, launch to a harder planet. Fuel
 and heat are the two pressures pushing you back up.

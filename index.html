@@ -7,6 +7,25 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Coreward</title>
+<!-- The error overlay must be the FIRST script in the document. On a phone
+     with no devtools it is the only way to see a stack trace, and Vite
+     hoists the bundled entry script into <head> during build, so a handler
+     left down in <body> would be registered too late to catch it. -->
+<script>
+  function showErr(m){
+    var e = document.getElementById('err');
+    e.classList.remove('hidden');
+    e.textContent += m + '\n\n';
+    var b = document.getElementById('boot');
+    if (b) b.classList.add('hidden');
+  }
+  window.addEventListener('error', function(e){
+    showErr('ERROR: ' + (e.message || e) + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    showErr('PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
@@ -232,26 +251,7 @@
 <div id="boot">COREWARD<br><span style="font-size:10px">LOADING</span></div>
 <div id="err" class="hidden"></div>
 
-<script>
-  function showErr(m){
-    var e = document.getElementById('err');
-    e.classList.remove('hidden');
-    e.textContent += m + '\n\n';
-    var b = document.getElementById('boot');
-    if (b) b.classList.add('hidden');
-  }
-  window.addEventListener('error', function(e){
-    showErr('ERROR: ' + (e.message || e) + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    showErr('PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
-  });
-</script>
-
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.166.0/build/three.module.js"}}
-</script>
-<script type="module" src="app.js"></script>
+<script type="module" src="/src/app.js"></script>
 
 <script>
   if ('serviceWorker' in navigator) {
