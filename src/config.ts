@@ -15,9 +15,15 @@ export const OLD_KEY = 'coreward.v1';
 export const HULL_MAX = 100;
 export const DIG_BASE = 0.5;
 
-const PLANET_NAMES = ['Verdax', 'Rustmoor', 'Cryon', 'Ashvault', 'Kryllon', 'Tessivar'];
-const SKY_HI = [0x0d2b52, 0x4a1d10, 0x0c3a44, 0x2a0f36, 0x101440, 0x0c331f];
-const SKY_LO = [0x5aa8dd, 0xe08a45, 0x54d4d8, 0xa055b8, 0x5560c8, 0x4fbf78];
+/* Twelve rather than six. The list cycles with a numeric suffix, so a long
+   session used to read "Verdax 2" by the seventh planet - which says "you have
+   seen everything" at exactly the point the game is asking for more time. */
+const PLANET_NAMES = ['Verdax', 'Rustmoor', 'Cryon', 'Ashvault', 'Kryllon', 'Tessivar',
+                      'Obrinth', 'Palewell', 'Serrik', 'Vantomir', 'Halcyne', 'Dross'];
+const SKY_HI = [0x0d2b52, 0x4a1d10, 0x0c3a44, 0x2a0f36, 0x101440, 0x0c331f,
+                0x3a1030, 0x1c2c2c, 0x40230c, 0x0a1d3e, 0x2e2a08, 0x1a0e1e];
+const SKY_LO = [0x5aa8dd, 0xe08a45, 0x54d4d8, 0xa055b8, 0x5560c8, 0x4fbf78,
+                0xe86fb0, 0x7fd8c4, 0xffa356, 0x6f9ae8, 0xd8c94a, 0xa878c8];
 
 export const planetName = (i: number) => {
   const base = PLANET_NAMES[i % PLANET_NAMES.length];
@@ -164,7 +170,24 @@ export const RUBBLE: Rock = {
   id: 'rubble', name: 'Rubble', color: 0x6d6459, hard: 1.4, wt: 1.2, value: 5, glow: 0.02
 };
 
+/* Ordered deepest first, and that order is load-bearing twice over.
+
+   blockAt() walks this list and takes the first entry whose depth gate is met,
+   so a deeper ore gets first refusal on a cell. Because each entry's `chance`
+   is also strictly lower than the one after it, a deeper ore can only ever
+   claim cells the next one up would have taken - which is what makes adding a
+   new deepest ore a narrow overwrite rather than a reshuffle of the whole
+   table. There is a test on that ordering; break it and every depth on every
+   planet quietly rebalances.
+
+   Umbrite and Solmarrow exist because the ladder used to stop at 185 m while
+   planet 5's core sits at 285. That is a hundred metres of the deepest, most
+   dangerous ground in the game with nothing new in it - which is the CRAFT
+   note about unreachable content bands turned inside out: not content you
+   cannot reach, but ground you can reach that has no content. */
 export const ORES: Ore[] = [
+  { id: 'solmarrow', name: 'Solmarrow', color: 0xfff0b0, host: 0x3a3226, hard: 23,   wt: 21,  value: 132000, min: 245, chance: 0.021, glow: 0.72, shards: 8, tone: 10 },
+  { id: 'umbrite',   name: 'Umbrite',   color: 0x9d7bff, host: 0x241f33, hard: 19.5, wt: 18,  value: 54000,  min: 210, chance: 0.026, glow: 0.58, shards: 7, tone: 10 },
   { id: 'coreite',  name: 'Coreite',  color: 0x66fff0, host: 0x2a2f3a, hard: 16,  wt: 16,  value: 22000, min: 185, chance: 0.030, glow: 0.60, shards: 7, tone: 9 },
   { id: 'magmite',  name: 'Magmite',  color: 0xff7a18, host: 0x2e2228, hard: 13,  wt: 13,  value: 9000,  min: 145, chance: 0.038, glow: 0.50, shards: 6, tone: 8 },
   { id: 'ruby',     name: 'Ruby',     color: 0xff3b5c, host: 0x33303a, hard: 10,  wt: 10,  value: 3600,  min: 105, chance: 0.042, glow: 0.32, shards: 6, tone: 7 },

@@ -946,6 +946,47 @@ Length is mapped to one-to-two cone lengths rather than proportionally to the
 lamp radius: at max Scanner a proportional beam is eight cells long and stops
 reading as a beam at all.
 
+## Umbrite, Solmarrow, and six more planets (2026-09-07)
+
+The ore ladder stopped at coreite, 185 m. Planet 5's core sits at 285. That is
+a hundred metres of the deepest and most dangerous ground in the game with
+nothing new in it - the CRAFT note about unreachable content bands turned
+inside out: not content you cannot reach, but ground you can reach that has no
+content.
+
+**Umbrite** at 210 m (54,000, 18 kg) and **Solmarrow** at 245 m (132,000,
+21 kg), continuing the roughly 2.4x-per-band value curve that ruby, magmite and
+coreite already followed. Both gated the way coreite is: effectively planet 4
+and planet 5.
+
+Planet names went from six to twelve. The list cycles with a numeric suffix, so
+the seventh planet used to be "Verdax 2" - which says "you have seen
+everything" at exactly the point the game is asking for more of your time.
+
+### Why adding a deepest ore is safe, and how that is now enforced
+
+`blockAt()` walks ORES in order and takes the first entry whose depth gate is
+met. Because **every entry's spawn chance is strictly lower than the one after
+it**, a deeper ore's cells are a strict subset of the cells the next one up
+would have claimed. So a new deepest ore only ever converts the ore directly
+above it - never rock, never a shallower ore, never anything at a depth it does
+not reach.
+
+The measured diff is exactly that: planets 0-2 unchanged, and on planets 3-5
+only coreite becomes umbrite or solmarrow. Nothing else moved.
+
+That is a **narrower** claim than "this feature overwrites cells", so it is
+stated narrowly. Rather than dropping the two ids into `OVERWRITERS` - which
+would have let any ore replace anything and quietly gutted the additive-only
+test - there is a `LADDER_EXTENSION` map saying "coreite may become umbrite or
+solmarrow", plus a test in stats.test.mjs asserting the chance ordering that
+makes it true. Break the ordering and the additive test stops meaning what it
+says, so the ordering now has its own assertion.
+
+There is also a test that no stretch longer than 45 m of reachable ground is
+without a new ore, and that the last stretch before planet 5's core is not
+either. That is the check that would have caught this a month ago.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

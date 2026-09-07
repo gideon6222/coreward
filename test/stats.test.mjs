@@ -297,3 +297,63 @@ test('an old save is grandfathered exactly, never over-granted', () => {
 
   Object.assign(H.g.up, before);
 });
+
+/* The invariant that makes extending the ore ladder safe.
+
+   blockAt() walks ORES in order and takes the first entry whose depth gate is
+   met. Because each entry's spawn chance is strictly lower than the one after
+   it, a deeper ore's cells are a strict SUBSET of the cells the next one up
+   would have claimed. That is why adding a new deepest ore only ever converts
+   the ore directly above it, rather than reshuffling every band.
+
+   Break this and the additive-only test in blocks.test.mjs stops meaning what
+   it says, silently. */
+test('ORES is ordered so a deeper ore claims a subset of the next one up', () => {
+  for (let i = 1; i < H.ORES.length; i++) {
+    const deeper = H.ORES[i - 1], shallower = H.ORES[i];
+    assert.ok(deeper.min >= shallower.min,
+      deeper.id + ' is listed above ' + shallower.id + ' but starts shallower');
+    assert.ok(deeper.chance < shallower.chance,
+      deeper.id + ' (' + deeper.chance + ') must be rarer than ' + shallower.id +
+      ' (' + shallower.chance + '), or it steals cells that were never the ' +
+      'other one\'s to give');
+  }
+});
+
+test('the deepest ores are reachable on some planet, and not before', () => {
+  /* The CRAFT lesson about content bands that fall outside the reachable
+     range, applied in both directions: an ore nobody can reach is dead, and
+     ground with no ore in it is a hundred metres of nothing. */
+  for (const o of H.ORES) {
+    let firstPlanet = -1;
+    for (let p = 0; p < 12 && firstPlanet < 0; p++)
+      if (H.coreDepth(p) > o.min + 4) firstPlanet = p;
+    assert.ok(firstPlanet >= 0, o.id + ' at ' + o.min + ' m is unreachable on any planet');
+    assert.ok(firstPlanet <= 5,
+      o.id + ' only appears from planet ' + firstPlanet + ', which nobody will see');
+  }
+
+  /* and no long stretch of the deepest reachable ground has nothing new in it */
+  const deepest = H.coreDepth(5);
+  const mins = H.ORES.map((o) => o.min).sort((a, b) => a - b);
+  let worst = 0, at = 0;
+  for (let i = 1; i < mins.length; i++)
+    if (mins[i] - mins[i - 1] > worst) { worst = mins[i] - mins[i - 1]; at = mins[i - 1]; }
+  const tail = deepest - mins[mins.length - 1];
+  assert.ok(worst <= 45, 'a ' + worst + ' m stretch from ' + at + ' m has no new ore in it');
+  assert.ok(tail <= 55,
+    'the last ' + tail + ' m before planet 5\'s core has nothing new in it');
+});
+
+test('planet names and skies do not run out before anyone stops playing', () => {
+  const names = new Set();
+  for (let p = 0; p < 12; p++) {
+    const n = H.planetName(p);
+    assert.ok(!/\d/.test(n),
+      'planet ' + p + ' is "' + n + '" - a numeric suffix says "you have seen ' +
+      'everything" at exactly the point the game is asking for more time');
+    names.add(n);
+    assert.ok(H.skyHi(p) !== H.skyLo(p), 'planet ' + p + ' has a flat sky');
+  }
+  assert.equal(names.size, 12, 'duplicate planet names inside one cycle');
+});

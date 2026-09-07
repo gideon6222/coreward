@@ -108,6 +108,18 @@ const PRE = JSON.parse(
    feature moved the ore around", which is not. */
 const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id]);
 
+/* Extending the ore ladder downward is the other legal change, and it is a
+   NARROWER claim than the one above, so it is stated narrowly rather than by
+   dropping the new ids into OVERWRITERS.
+
+   blockAt() takes the first ORES entry whose depth gate is met, and every
+   entry's spawn chance is strictly lower than the one after it. So a new
+   deepest ore can only ever claim cells the ore directly above it held -
+   never rock, never a shallower ore, never anything at a depth it does not
+   reach. That subset property is asserted separately in stats.test.mjs; this
+   map is what it buys. */
+const LADDER_EXTENSION = { coreite: new Set(['umbrite', 'solmarrow']) };
+
 test('pockets and caves only overwrite cells, never reshuffle the ore stream', () => {
   let same = 0, changed = 0;
   for (const snap of PRE) {
@@ -122,9 +134,10 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
         const at = 'planet ' + snap.planet + ' (' + x + ',' + d + ')';
         if (now === was) { same++; continue; }
         changed++;
-        assert.ok(OVERWRITERS.has(now),
-          at + ': ' + was + ' became ' + now + ', which is not a pocket or a cave - ' +
-          'something perturbed the ore rolls');
+        const ladder = LADDER_EXTENSION[was];
+        assert.ok(OVERWRITERS.has(now) || (ladder && ladder.has(now)),
+          at + ': ' + was + ' became ' + now + ', which is neither a pocket, a cave, ' +
+          'nor a legal extension of the ore ladder - something perturbed the ore rolls');
         assert.ok(was !== 'core' && was !== 'bedrock',
           at + ': ' + was + ' must never be overwritten');
       }
