@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, coreDepth, valueMult, skyHi, skyLo,
+import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, coreDepth, valueMult, skyHi, skyLo,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
@@ -201,7 +201,9 @@ export function frame(now: number) {
              cell it came from - ore waits to be flown through, plain rock is
              spoil and is thrown away, because a tunnel full of glowing dirt
              would be noise rather than a decision. */
-          const kept = b.ore && leaveDrop(R.digging.x, R.digging.d, b.id);
+          /* Worth-based rather than ore-based: seams are rock and are worth
+             coming back for, plain rock is spoil at any depth. */
+          const kept = b.value >= DROP_MIN_VALUE && leaveDrop(R.digging.x, R.digging.d, b.id);
           if (kept) sfx.drop();
           if (!R.warnedFull) {
             R.warnedFull = true;

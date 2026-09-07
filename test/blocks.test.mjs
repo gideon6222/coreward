@@ -13,15 +13,21 @@ const PLANETS = [0, 1, 2, 3, 4, 5];
 const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ALL_IDS = [
   ...H.ORES.map((o) => o.id), ...H.ROCKS.map((r) => r.id),
-  H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, 'core', 'bedrock', '(empty)'
+  H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, H.SEAM.id,
+  'core', 'bedrock', '(empty)'
 ].sort();
 const CHAR = new Map(ALL_IDS.map((id, i) => [id, ALPHA[i]]));
 assert.ok(ALL_IDS.length <= ALPHA.length, 'ran out of snapshot characters');
 
-/* A cell's full payload is determined by (planet, id): every numeric field is
-   either constant per id or base * hardMult(planet). The snapshot stores one
-   payload per distinct id plus a per-cell id grid, and the builder ASSERTS that
-   assumption on every cell rather than trusting it. */
+/* A cell's payload is determined by (planet, id, colour). It used to be just
+   (planet, id) - every numeric field was constant per id or scaled by
+   hardMult - but seams and rubble take the colour of the band they sit in, so
+   one id now legitimately has several payloads.
+
+   The snapshot stores one payload per distinct id+colour plus a per-cell id
+   grid, and the builder ASSERTS that assumption on every cell rather than
+   trusting it. Widening the key rather than dropping the assertion: the point
+   of it is to catch a field that starts varying by something nobody expected. */
 function snapshot(p) {
   H.g.planet = p;
   H.g.dug = new Set();
@@ -37,9 +43,10 @@ function snapshot(p) {
       counts[id] = (counts[id] || 0) + 1;
       if (!b) continue;
       const payload = { ...b };
-      if (!(id in defs)) defs[id] = payload;
-      else assert.deepEqual(payload, defs[id],
-        'blockAt payload for "' + id + '" varies within planet ' + p + ' at (' + x + ',' + d + ')');
+      const dk = id + ':' + b.color;
+      if (!(dk in defs)) defs[dk] = payload;
+      else assert.deepEqual(payload, defs[dk],
+        'blockAt payload for "' + dk + '" varies within planet ' + p + ' at (' + x + ',' + d + ')');
     }
   }
   return { planet: p, coreDepth: cd, cols: H.W, rowsFrom: -1, rowsTo: cd + 1, counts, defs, grid };
@@ -120,8 +127,24 @@ const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id]);
    map is what it buys. */
 const LADDER_EXTENSION = { coreite: new Set(['umbrite', 'solmarrow']) };
 
+/* Seams are the same shape of claim: they are rolled on their own seed and
+   checked only after every ore roll has failed, so a seam can only ever
+   replace PLAIN ROCK - never ore, never a pocket, never the core. Stated as a
+   rule rather than as an OVERWRITERS entry for the same reason as the ladder:
+   "rock may become a seam" is narrower and therefore worth more than "seams
+   may replace anything". */
+for (const r of H.ROCKS) LADDER_EXTENSION[r.id] = new Set(['seam']);
+
 test('pockets and caves only overwrite cells, never reshuffle the ore stream', () => {
-  let same = 0, changed = 0;
+  /* Two different kinds of legal change, counted apart.
+
+     A pocket or a cave dropping onto the world has to stay rare - that is what
+     "an event, not terrain" means, and the ceiling below is what enforces it.
+     A ladder extension or a seam is a different claim entirely: it converts a
+     whole category wholesale and is SUPPOSED to be common. Counting them
+     together meant seams tripped the pocket ceiling, which would have read as
+     "pockets have gone wrong" for a change that had nothing to do with them. */
+  let same = 0, overwritten = 0, extended = 0;
   for (const snap of PRE) {
     H.g.planet = snap.planet;
     H.g.dug = new Set();
@@ -133,9 +156,10 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
         const now = b ? b.id : '(empty)';
         const at = 'planet ' + snap.planet + ' (' + x + ',' + d + ')';
         if (now === was) { same++; continue; }
-        changed++;
         const ladder = LADDER_EXTENSION[was];
-        assert.ok(OVERWRITERS.has(now) || (ladder && ladder.has(now)),
+        if (ladder && ladder.has(now)) extended++;
+        else if (OVERWRITERS.has(now)) overwritten++;
+        else assert.fail(
           at + ': ' + was + ' became ' + now + ', which is neither a pocket, a cave, ' +
           'nor a legal extension of the ore ladder - something perturbed the ore rolls');
         assert.ok(was !== 'core' && was !== 'bedrock',
@@ -144,11 +168,16 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
     }
     assert.equal(i, snap.grid.length, 'planet ' + snap.planet + ' grid length drifted');
   }
+  const total = same + overwritten + extended;
   /* guard against the test passing because nothing generates any more */
-  assert.ok(changed > 200, 'pockets and caves generated almost nothing: ' + changed);
-  assert.ok(changed / (same + changed) < 0.12,
-    'pockets and caves now rewrite ' + Math.round(1000 * changed / (same + changed)) / 10 +
+  assert.ok(overwritten > 200, 'pockets and caves generated almost nothing: ' + overwritten);
+  assert.ok(overwritten / total < 0.12,
+    'pockets and caves now rewrite ' + Math.round(1000 * overwritten / total) / 10 +
     '% of the world - they are meant to be events, not terrain');
+  assert.ok(extended > 200, 'the ladder and seam extensions generated almost nothing');
+  assert.ok(extended / total < 0.45,
+    'category conversions now cover ' + Math.round(1000 * extended / total) / 10 +
+    '% of the world - at that point the thing being converted is the exception');
 });
 
 test('caves stay below CAVE_MIN_DEPTH and never eat the core', () => {

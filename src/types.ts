@@ -59,6 +59,9 @@ export interface Block {
   hazard?: boolean;
   /* Breaking this pays something other than ore, and never enters cargo. */
   cache?: boolean;
+  /* Rock with visible mineral in it: the thing the flecks were always
+     hinting at, and now actually worth stopping for. */
+  seam?: boolean;
 }
 
 export type UpgradeKey =

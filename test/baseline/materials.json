@@ -161,8 +161,8 @@
       "name": "Dirt",
       "color": 7031594,
       "hard": 1,
-      "wt": 0.4,
-      "value": 1,
+      "wt": 0.15,
+      "value": 0.6,
       "glow": 0.02
     },
     {
@@ -170,8 +170,8 @@
       "name": "Stone",
       "color": 8419954,
       "hard": 2.4,
-      "wt": 0.9,
-      "value": 3,
+      "wt": 0.2,
+      "value": 1,
       "glow": 0.02
     },
     {
@@ -179,8 +179,8 @@
       "name": "Granite",
       "color": 6183526,
       "hard": 5,
-      "wt": 1.8,
-      "value": 9,
+      "wt": 0.25,
+      "value": 1.6,
       "glow": 0.02
     },
     {
@@ -188,8 +188,8 @@
       "name": "Scoria",
       "color": 7023128,
       "hard": 7,
-      "wt": 2.3,
-      "value": 16,
+      "wt": 0.3,
+      "value": 2.2,
       "glow": 0.1
     },
     {
@@ -197,8 +197,8 @@
       "name": "Basalt",
       "color": 3814720,
       "hard": 9,
-      "wt": 2.8,
-      "value": 22,
+      "wt": 0.35,
+      "value": 3,
       "glow": 0.03
     }
   ]

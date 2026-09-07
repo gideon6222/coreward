@@ -127,6 +127,66 @@ test('every rock band is reachable, and they get harder with depth', () => {
   /* basalt used to start at 130 while planet 0's core sits at 110, so the
      deepest rock in the game could never be seen on the first planet */
   assert.ok(H.baseRock(H.coreDepth(1) - 5).id === 'basalt', 'basalt must be reachable by planet 1');
+
+  /* Plain rock is what you cut through, not what you carry. Its income has to
+     stay a rounding error next to a seam, or the hold fills with spoil and the
+     decision the cargo cap exists to force never happens. */
+  for (const b of bands) {
+    assert.ok(b.value * 3 < H.SEAM.value,
+      b.id + ' at ' + b.value + ' is close enough to a seam (' + H.SEAM.value +
+      ') that carrying spoil competes with carrying value');
+    assert.ok(b.wt <= 0.4,
+      b.id + ' weighs ' + b.wt + ' kg - heavy enough that spoil crowds the hold');
+    assert.ok(b.value / b.wt < (H.SEAM.value / H.SEAM.wt) * 0.75,
+      b.id + ' at ' + (b.value / b.wt).toFixed(1) + '/kg is close to a seam at ' +
+      (H.SEAM.value / H.SEAM.wt).toFixed(1) + '/kg, which inverts the whole idea');
+  }
+});
+
+test('a seam is worth stopping for early and outclassed by ore later', () => {
+  const perKg = (m) => m.value / m.wt;
+  const iron = H.ORES.find((o) => o.id === 'iron');
+  const copper = H.ORES.find((o) => o.id === 'copper');
+
+  /* Better than the first ore you meet, so the flecks are worth learning */
+  assert.ok(perKg(H.SEAM) > perKg(copper),
+    'a seam must beat copper or there is no reason to notice the texture');
+  /* and quietly outclassed from iron down, so it never replaces real mining */
+  assert.ok(perKg(H.SEAM) < perKg(iron) * 1.05,
+    'a seam at ' + perKg(H.SEAM).toFixed(1) + '/kg outclasses iron at ' +
+    perKg(iron).toFixed(1) + '/kg - rock should never be the best cargo');
+  for (const o of H.ORES)
+    if (o.min >= iron.min)
+      assert.ok(perKg(o) >= perKg(H.SEAM) * 0.9,
+        o.id + ' is worse cargo than plain rock with flecks in it');
+
+  /* and it is worth leaving behind when the hold is full, unlike spoil */
+  assert.ok(H.SEAM.value >= H.DROP_MIN_VALUE, 'a seam must be worth coming back for');
+  for (const b of H.ROCKS)
+    assert.ok(b.value < H.DROP_MIN_VALUE, b.id + ' would be left as a drop; it is spoil');
+});
+
+test('seams are common enough to shape a tunnel, rare enough to be a find', () => {
+  H.g.planet = 0;
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+  let rock = 0, seams = 0;
+  for (let d = 0; d < 108; d++)
+    for (let x = 0; x < H.W; x++) {
+      const b = H.blockAt(x, d);
+      if (!b || b.ore) continue;
+      if (b.seam) seams++;
+      rock++;
+    }
+  const share = seams / rock;
+  /* A third read as "the rock is made of mineral" rather than "some of it has
+     mineral in it", and every wall went sandy. A sixth reads as a find. */
+  assert.ok(share > 0.1 && share < 0.24,
+    'seams are ' + (share * 100).toFixed(1) + '% of rock; below a tenth nobody ' +
+    'learns the tell, above a quarter it stops being one');
+  assert.ok(Math.abs(share - H.SEAM_CHANCE) < 0.03,
+    'the measured share (' + share.toFixed(3) + ') has drifted from SEAM_CHANCE (' +
+    H.SEAM_CHANCE + '), so the flecks and the payout no longer agree');
 });
 
 test('cooling buys time but never immunity', () => {
