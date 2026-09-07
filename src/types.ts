@@ -62,6 +62,8 @@ export interface Block {
   /* Rock with visible mineral in it: the thing the flecks were always
      hinting at, and now actually worth stopping for. */
   seam?: boolean;
+  /* The one buried artefact on this planet. */
+  relic?: boolean;
 }
 
 export type UpgradeKey =
@@ -150,6 +152,23 @@ export type Cargo = Record<string, number>;
    units of a material; this names a material at a place, one per cell. */
 export type Drops = Record<string, string>;
 
+/* One buried artefact per planet, and the permanent thing it gives you.
+
+   This is the game's second objective. Credits buy the ladder and reset their
+   own relevance every time you can afford the next rung; a relic is kept
+   forever and never has to be bought again, so the question "what have I got"
+   finally has an answer that is not a number that will look small next week.
+
+   `apply` is a plain multiplier or offset read by the derived stats in
+   state.ts, rather than a callback, so a perk cannot do anything the tests
+   cannot see. */
+export interface Relic {
+  id: string;
+  name: string;
+  /* one line, shown when you break it and again in the log */
+  blurb: string;
+}
+
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
 /* g.mode gates input and the frame loop. */
@@ -204,6 +223,7 @@ export interface SaveV2 {
   best?: Partial<Best>;
   drops?: Drops;
   charge?: number;
+  relics?: string[];
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

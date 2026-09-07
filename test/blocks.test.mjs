@@ -113,7 +113,7 @@ const PRE = JSON.parse(
    a deliberate act and should come with a diff you have read: it says "this
    new feature overwrites cells", which is fine, as opposed to "this new
    feature moved the ore around", which is not. */
-const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id]);
+const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic']);
 
 /* Extending the ore ladder downward is the other legal change, and it is a
    NARROWER claim than the one above, so it is stated narrowly rather than by

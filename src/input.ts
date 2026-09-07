@@ -1,4 +1,5 @@
-import { coreDepth, planetName, traitOf, SUPPLIES } from './config';
+import { coreDepth, planetName, traitOf, SUPPLIES, RELIC_OF } from './config';
+import { relicDistance } from './relic';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
@@ -68,6 +69,15 @@ mustEl('btnPause').onclick = () => {
     '<div class="up"><div class="upinfo"><div class="upname">Credits</div>' +
     '<div class="upeff">Haul aboard worth ◈ ' + haulValue().toLocaleString() + '</div></div>' +
     '<div class="val">◈ ' + Math.floor(g.credits).toLocaleString() + '</div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">Relics</div>' +
+    '<div class="upeff">' + (g.relics.length
+      ? g.relics.map((r) => RELIC_OF[r] ? RELIC_OF[r].name : r).join(' · ')
+      : 'One is buried on every planet, below the halfway mark. Nothing marks it.') +
+    '</div>' +
+    (relicDistance() === null
+      ? '<div class="upeff">Recovered on ' + planetName(g.planet) + '.</div>'
+      : '<div class="upeff">Still in the ground here.</div>') + '</div>' +
+    '<div class="val">' + g.relics.length + '</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Records</div>' +
     '<div class="upeff">Deepest ' + g.best.depth + ' m' +
     (g.best.haul ? ' · best haul ◈ ' + g.best.haul.toLocaleString() : '') + '</div></div>' +

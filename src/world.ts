@@ -1,5 +1,6 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
+         RELIC_COLOR, RELIC_HOST, relicAt, relicFor,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
 import { key, mixHex } from './util';
 import { g } from './state';
@@ -18,6 +19,16 @@ export function blockAt(x: number, d: number): Block | null {
   if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(g.planet), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
   const hm = hardMult(g.planet);
+
+  /* The relic, before anything that could hide it. It is one cell on the whole
+     planet and it must not lose a coin flip to a cave. */
+  const rl = relicAt(g.planet);
+  if (x === rl.x && d === rl.d && !g.relics.includes(relicFor(g.planet).id)) {
+    return { id: 'relic', name: relicFor(g.planet).name, color: RELIC_COLOR, host: RELIC_HOST,
+             glow: 0.95, shards: 9, tone: 10, hard: 9 * hm, wt: 0, value: 0,
+             ore: true, relic: true };
+  }
+
 
   /* Checked before generation, and only after `dug`, so a cell you have
      re-cleared stays clear. Hardness rides on the band it sits in; weight and

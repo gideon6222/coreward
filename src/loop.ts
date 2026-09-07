@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, coreDepth, valueMult, skyHi, skyLo,
+import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
+         coreDepth, valueMult, skyHi, skyLo,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
@@ -27,9 +28,10 @@ import { stepBeam } from './beam';
 import { player, rig, bit, flames, headlight, drillTint, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
+import { aimRelic } from './relic';
 import { stepParallax, fadeParallax } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
-import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache } from './actions';
+import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 
 export function step(dir: Dir) {
@@ -161,7 +163,7 @@ export function frame(now: number) {
              one, and it gives dwelling deep a second thing to fear besides
              heat. The soak spike is what actually bites, because it multiplies
              every bit of heat damage for the rest of the trip. */
-          const dmg = Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1));
+          const dmg = Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1) * S.gasTake());
           g.hull -= dmg;
           R.hullCause = 'gas';
           g.soak = Math.min(1, g.soak + GAS_SOAK);
@@ -170,6 +172,22 @@ export function frame(now: number) {
           spray(worldX(R.digging.x), -R.digging.d, b.color, 90, 9, 1.5);
           sfx.gas();
           toast('Gas pocket! Hull -' + dmg);
+          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
+          R.digging = null;
+          save();
+        }
+        else if (b.relic) {
+          /* The only thing in the game you can miss permanently: break the
+             core with this still in the ground and it goes with the planet. */
+          const rel = relicFor(g.planet);
+          g.relics.push(rel.id);
+          spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 160, 11, 2.0);
+          spray(worldX(R.digging.x), -R.digging.d, RELIC_COLOR, 120, 8, 2.4);
+          flash('rgba(255,240,255,.55)', 700);
+          R.shake = Math.max(R.shake, 0.8);
+          sfx.relic();
+          showEvent('RELIC RECOVERED', rel.name + '. ' + rel.blurb +
+            '  Relics found: ' + g.relics.length + '.', 'STOW IT', () => {});
           R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
@@ -214,7 +232,7 @@ export function frame(now: number) {
       }
     } else if (R.moving) {
       R.moving.t += dt;
-      g.fuel -= FUEL_PER_MOVE * dt;
+      g.fuel -= FUEL_PER_MOVE * S.fuelUse() * dt;
       thrustLevel = 0.75;
       const a = clamp(R.moving.t / R.moving.total, 0, 1);
       g.px = R.moving.fx + (R.moving.x - R.moving.fx) * a;
@@ -233,13 +251,13 @@ export function frame(now: number) {
 
     /* Power cells trickle back underground and fill at the pad; see
        chargeAfter in feel.ts for why it is both. */
-    g.charge = chargeAfter(g.charge, dt, atSurface());
+    g.charge = chargeAfter(g.charge, dt, atSurface(), S.powerCap());
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
     g.soak = soakAfter(g.soak, g.pd, dt, traitOf(g.planet).soak || 1);
     if (g.pd > HEAT_DEPTH) {
       /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
-      g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * dt;
+      g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * S.heatTake() * dt;
       R.hullCause = 'heat';
       /* Say it once, at the metre it starts. The HUD carries it from here. */
       if (!R.wasHot) {
@@ -267,6 +285,7 @@ export function frame(now: number) {
       sfx.record();
     }
     fadeMark(g.pd);
+    aimRelic();
 
     /* ---------- tremors ----------
        The clock only runs inside the unstable band and is reset the moment

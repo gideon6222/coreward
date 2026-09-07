@@ -1,6 +1,6 @@
 /* Tuning constants and the pure functions over them. Imports only types. */
 
-import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost } from './types';
+import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost, Relic } from './types';
 import { zoomForScan } from './feel';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
@@ -119,6 +119,54 @@ export const CACHE: Ore = {
   id: 'cache', name: 'Supply Cache', color: 0xff7ad0, host: 0x3a3040,
   hard: 3.4, wt: 0, value: 0, min: 20, chance: 0.006, glow: 0.62, shards: 6, tone: 8
 };
+
+/* ---------- relics ----------
+
+   Exactly one per planet, buried below the halfway mark, in no particular
+   column and marked on no map. It is the only thing in the game you can miss
+   permanently: break the core with the relic still in the ground and it is
+   gone with the planet.
+
+   That is deliberate, and it is the answer to "what is the larger point".
+   Every other reward in Coreward is a rung - credits buy the next upgrade,
+   which makes the last one irrelevant. A relic is kept, and kept forever, so
+   the collection is the one number that only ever goes up. */
+export const RELIC_COLOR = 0xfff0ff;
+export const RELIC_HOST = 0x2a2438;
+
+/* Below the halfway point of the planet, and never in the outermost column -
+   a relic hard against the wall is one you find by accident or not at all. */
+export function relicAt(planet: number): { x: number; d: number } {
+  const cd = coreDepth(planet);
+  const lo = Math.floor(cd * 0.5);
+  const span = Math.max(1, cd - 6 - lo);
+  const hx = Math.imul(planet + 1, 2654435761) >>> 0;
+  const hd = Math.imul(planet + 7, 40503) ^ Math.imul(planet + 13, 2246822519);
+  return {
+    x: 1 + (hx % (W - 2)),
+    d: lo + ((hd >>> 3) % span)
+  };
+}
+
+/* One perk per planet for the first eight, then a stacking value bonus so the
+   ladder never runs out of a reason to look. */
+export const RELICS: Relic[] = [
+  { id: 'drum',    name: 'Kinetic Drum',      blurb: 'The drill hits 10% harder, forever.' },
+  { id: 'weave',   name: 'Ballast Weave',     blurb: 'The hold carries 15% more.' },
+  { id: 'recyc',   name: 'Fuel Recycler',     blurb: 'Flying costs 15% less fuel.' },
+  { id: 'lattice', name: 'Thermal Lattice',   blurb: 'Heat does 15% less damage.' },
+  { id: 'coupler', name: 'Charge Coupler',    blurb: 'One more power cell.' },
+  { id: 'eye',     name: "Prospector's Eye",  blurb: 'The lamp reaches 3 m further.' },
+  { id: 'damper',  name: 'Impact Damper',     blurb: 'Gas pockets take a third less hull.' },
+  { id: 'rights',  name: 'Salvage Rights',    blurb: 'A tow takes 10 points less of the haul.' },
+  { id: 'assay',   name: 'Assay Charter',     blurb: 'Everything you sell is worth 4% more.' }
+];
+export const RELIC_OF: Record<string, Relic> = {};
+for (const r of RELICS) RELIC_OF[r.id] = r;
+
+/* Past the named eight, every relic is another Assay Charter and they stack. */
+export const relicFor = (planet: number) =>
+  RELICS[Math.min(planet, RELICS.length - 1)];
 
 export const GAS_HULL_DAMAGE = 26;
 export const GAS_SOAK = 0.3;
