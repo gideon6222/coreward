@@ -20,6 +20,17 @@ interface Graph {
   droneGain: GainNode;
   leadGain: GainNode;
   delay: DelayNode;
+  /* ---------- vertical layers ----------
+     Three voices that are always playing and are mixed in and out by game
+     state rather than being started and stopped. That is the standard shape
+     for adaptive music: every layer shares one tempo, one key and one
+     harmony, so a layer can arrive mid-phrase without anything to line up.
+
+     The score already moved with depth. These move with the things depth now
+     MEANS - the heat zone, the unstable band, and being in trouble. */
+  heatGain: GainNode;      /* a tritone against the drone: this place is wrong */
+  unstableGain: GainNode;  /* scheduled thuds: the rock is not holding still */
+  dangerGain: GainNode;    /* a high tremolo that cuts the murk: get out */
 }
 
 type Drill = { src: AudioBufferSourceNode; osc: OscillatorNode; gain: GainNode };
@@ -32,6 +43,8 @@ const A = {
   drill: null as Drill | null,
   timer: null as ReturnType<typeof setInterval> | null,
   beat: 0, nextT: 0, depth: 0,
+  /* what the layers are mixed against, written every frame by the loop */
+  heat: 0, unstable: 0, danger: 0,
   on: { music: true, sfx: true }
 };
 
@@ -48,6 +61,15 @@ try {
 
 export const audioState = A.on;
 export function setDepth(d: number) { A.depth = d; }
+
+/* Called once a frame. Assignments only - the actual ramps happen in tick(),
+   sixteen times slower, because setTargetAtTime sixty times a second on the
+   same parameter is both pointless and audibly steppy. */
+export function setMood(heat: number, unstable: number, danger: number) {
+  A.heat = heat;
+  A.unstable = unstable;
+  A.danger = danger;
+}
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 const semi = (base: number, s: number) => base * Math.pow(2, s / 12);
@@ -158,9 +180,68 @@ export function audioInit() {
   leadGain.connect(musicLP);
   leadGain.connect(delay);
 
+  /* ---------- layer 1: heat ----------
+     A tritone against the drone's A, which is the most unsettled interval
+     available and still sits inside the key. Silent above the heat line and
+     mixed in by how far past it you are, so the hot zone has a sound of its
+     own rather than just a colour. */
+  const heatGain = ctx.createGain();
+  heatGain.gain.value = 0;
+  heatGain.connect(musicLP);
+  for (const f of [77.78, 155.56]) {
+    const o = ctx.createOscillator();
+    const gn = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = f;
+    o.detune.value = (Math.random() - 0.5) * 9;
+    gn.gain.value = f > 100 ? 0.24 : 0.5;
+    o.connect(gn); gn.connect(heatGain);
+    o.start();
+    /* slow beating between the two, so it never sits still */
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.07 + Math.random() * 0.05;
+    const amt = ctx.createGain();
+    amt.gain.value = 0.14;
+    lfo.connect(amt); amt.connect(gn.gain);
+    lfo.start();
+  }
+
+  /* ---------- layer 2: unstable ----------
+     Just a bus. Its content is scheduled on the beat grid in tick(), because
+     what the band needs to sound like is movement at a distance, and movement
+     needs a rhythm rather than a texture. */
+  const unstableGain = ctx.createGain();
+  unstableGain.gain.value = 0;
+  unstableGain.connect(musicLP);
+
+  /* ---------- layer 3: danger ----------
+     Routed past musicLP straight to the bus. Everything else gets darker as
+     you descend, which is exactly when this needs to be heard, so it must not
+     go through the filter that is doing the darkening. */
+  const dangerGain = ctx.createGain();
+  dangerGain.gain.value = 0;
+  dangerGain.connect(musicBus);
+  {
+    const o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = 880;
+    const trem = ctx.createGain();
+    trem.gain.value = 0.5;
+    o.connect(trem); trem.connect(dangerGain);
+    o.start();
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 5.2;
+    const amt = ctx.createGain();
+    amt.gain.value = 0.45;
+    lfo.connect(amt); amt.connect(trem.gain);
+    lfo.start();
+  }
+
   /* Publish only once every node exists, so `graph` is never observed
      half-built. */
-  graph = { ctx, master, musicBus, musicLP, sfxBus, noise, wind, windGain, droneGain, leadGain, delay };
+  graph = { ctx, master, musicBus, musicLP, sfxBus, noise, wind, windGain, droneGain,
+            leadGain, delay, heatGain, unstableGain, dangerGain };
 
   A.nextT = ctx.currentTime + 0.2;
   A.timer = setInterval(tick, 160);
@@ -239,6 +320,35 @@ function pulse(G: Graph, t: number) {
   o.start(t); o.stop(t + 0.9);
 }
 
+/* A shifting slab of low rock, for the unstable band. Two detuned sines an
+   octave apart sliding down a little, with grit on top - the sound of
+   something large moving where you cannot see it. Scheduled rather than held,
+   because a texture reads as ambience and only a rhythm reads as movement. */
+function shift(G: Graph, t: number) {
+  const ctx = G.ctx;
+  const src = ctx.createBufferSource();
+  src.buffer = G.noise;
+  src.playbackRate.value = 0.35 + Math.random() * 0.2;
+  const nf = ctx.createBiquadFilter();
+  nf.type = 'lowpass';
+  nf.frequency.value = 260;
+  const ng = ctx.createGain();
+  env(ng, t, 0.5, 0.35, 1.5);
+  src.connect(nf); nf.connect(ng); ng.connect(G.unstableGain);
+  src.start(t); src.stop(t + 2.0);
+
+  for (const f of [43.7, 87.4]) {
+    const o = ctx.createOscillator();
+    const gn = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f * (1 + Math.random() * 0.04), t);
+    o.frequency.exponentialRampToValueAtTime(f * 0.86, t + 1.6);
+    env(gn, t, f > 60 ? 0.28 : 0.6, 0.3, 1.4);
+    o.connect(gn); gn.connect(G.unstableGain);
+    o.start(t); o.stop(t + 1.9);
+  }
+}
+
 function tick() {
   const G = graph;
   if (!G) return;
@@ -249,6 +359,17 @@ function tick() {
   G.windGain.gain.setTargetAtTime(0.02 + deep * 0.1, now, 0.8);
   G.droneGain.gain.setTargetAtTime(0.05 + deep * 0.14, now, 0.8);
   G.leadGain.gain.setTargetAtTime(0.95 - deep * 0.45, now, 0.8);
+
+  /* ---------- the layers ----------
+     Time constants are deliberately uneven. Heat and the unstable band fade in
+     slowly, because they are places and a place should arrive rather than
+     switch on. Danger snaps in over a quarter of a second and leaves lazily,
+     because it is an alarm: late is useless, and a warning that vanishes the
+     instant you patch the hull teaches you nothing about how close it was. */
+  G.heatGain.gain.setTargetAtTime(A.heat * 0.075, now, 1.6);
+  G.unstableGain.gain.setTargetAtTime(A.unstable * 0.5, now, 1.4);
+  G.dangerGain.gain.setTargetAtTime(A.danger * 0.05, now, A.danger > 0.02 ? 0.25 : 1.1);
+
   if (!A.on.music) { A.nextT = Math.max(A.nextT, now); return; }
 
   while (A.nextT < now + 0.8) {
@@ -259,6 +380,9 @@ function tick() {
     if (b % 8 === 0) { pad(G, CHORDS[bar], t); bass(G, ROOTS[bar], t); }
     if (b % 8 === 4) bass(G, ROOTS[bar], t);
     if (deep > 0.45 && b % 8 === 0) pulse(G, t);
+    /* Off the downbeat on purpose. On it, this would read as part of the
+       score; between beats it reads as something else in the room. */
+    if (A.unstable > 0.02 && (b % 8 === 3 || b % 8 === 6)) shift(G, t);
     if (cycle % 2 === 0) {
       for (const n of THEME) if (n[0] === b) lead(G, n[1], t, n[2]);
     }

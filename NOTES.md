@@ -769,6 +769,56 @@ caps its delta at 50 ms precisely because frames are not always 60 fps.
 
 **When a mechanic is a clock, the clock is the part to extract.**
 
+## Adaptive music: the score learns what depth means (2026-09-07)
+
+The score already moved with depth - the lowpass closed, the wind and drone
+rose, the lead pulled back. But it only knew one number. Everything the game
+had grown since (a heat line, an unstable band, being in trouble) was silent.
+
+Three vertical layers now, mixed by state rather than started and stopped. The
+research constraint for vertical remixing is that every layer must share one
+tempo, key and harmony so a layer can arrive mid-phrase with nothing to line
+up; the score is generated in A minor over i-VI-III-VII on one scheduler, so
+that came for free.
+
+**Heat** - a tritone against the drone's A, the most unsettled interval that
+still sits inside the key. Silent above 70 m and mixed in by how far past it
+you are, so the hot zone has a sound and not only a colour.
+
+**Unstable** - scheduled thuds on beats 3 and 6 of each bar below 85 m: two
+detuned sines sliding down under filtered grit. Off the downbeat on purpose;
+on it, it would read as part of the score, and between beats it reads as
+something else in the room. Held content would have been ambience - only a
+rhythm reads as movement.
+
+**Danger** - a high tremolo triangle, mixed against whichever of a failing hull
+or a full heat soak is worse. Routed **past `musicLP` straight to the bus**,
+because everything else gets darker as you descend and that is exactly when
+this needs to be heard.
+
+The time constants are uneven on purpose. Heat and the unstable band fade over
+about a second and a half, because they are places and a place should arrive
+rather than switch on. Danger snaps in over a quarter second and leaves lazily:
+late is useless for an alarm, and one that vanishes the instant you patch the
+hull teaches you nothing about how close it was.
+
+`setMood()` is called once a frame and only assigns. The ramps happen in
+`tick()`, sixteen times slower, because `setTargetAtTime` sixty times a second
+on the same parameter is both pointless and audibly steppy.
+
+### Testing something you cannot listen to
+
+If `setMood()` stopped being called, or a layer were wired to the wrong bus,
+the game would sound flatter and every existing check would still pass. The
+smoke test wraps `AudioParam.setTargetAtTime`, seeds the ship at 96 m - past
+both bands - and asserts the exact target values the layers ask for.
+
+That couples the test to `setTargetAtTime` being the ramp used, which is a
+deliberate trade against exposing the audio graph on `window` purely so a test
+can read it. It also catches the failure that matters most: a throw inside the
+scheduler would take the whole `setInterval` down and silence the score, and
+the page-error listener turns that into a red test.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

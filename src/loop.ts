@@ -26,7 +26,7 @@ import { player, rig, bit, flames, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { sell, goSurface, tow, breakCore, tremor } from './actions';
-import { sfx, setDepth } from './audio';
+import { sfx, setDepth, setMood } from './audio';
 
 export function step(dir: Dir) {
   const v: number[] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
@@ -240,6 +240,14 @@ export function frame(now: number) {
 
   stepParticles(dt);
   setDepth(g.pd);
+  /* Hand the score what the depth actually MEANS. Danger is whichever of a
+     failing hull or a full heat soak is worse, so the alarm layer answers to
+     both without either drowning the other. */
+  setMood(
+    heatT(g.pd),
+    g.pd > TREMOR_DEPTH && g.mode === 'play' ? 1 : 0,
+    Math.max(clamp((45 - g.hull) / 45, 0, 1), clamp((g.soak - 0.6) / 0.4, 0, 1))
+  );
 
   /* ship transform */
   const px = worldX(g.px), py = -g.pd;
