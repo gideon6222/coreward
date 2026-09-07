@@ -460,3 +460,109 @@ test('every upgrade has a counter and a sensible unlock depth', () => {
     assert.equal(H.UPGRADES.find((u) => u.key === key).unlock, 0,
       key + ' must be available from the first visit');
 });
+
+/* ---------- relics ----------
+
+   The second objective. Credits buy the ladder and reset their own relevance
+   every time you can afford the next rung; a relic is kept forever, so the
+   collection is the one number that only ever goes up.
+
+   It is also the only thing in the game you can miss permanently: break the
+   core with the relic still in the ground and it goes with the planet. */
+
+test('every planet buries exactly one relic, and never out of reach', () => {
+  for (let p = 0; p < 16; p++) {
+    const r = H.relicAt(p);
+    const cd = H.coreDepth(p);
+    assert.ok(r.d >= Math.floor(cd * 0.5),
+      'planet ' + p + ' relic at ' + r.d + ' m is above the halfway mark, so it ' +
+      'would be found on the way past rather than looked for');
+    assert.ok(r.d < cd, 'planet ' + p + ' relic at ' + r.d + ' m is at or past the core');
+    assert.ok(r.x >= 1 && r.x <= H.W - 2,
+      'planet ' + p + ' relic is in column ' + r.x + ', hard against the wall');
+    /* deterministic, like everything else in the world */
+    assert.deepEqual(H.relicAt(p), r);
+  }
+});
+
+test('relics move around between planets', () => {
+  const cols = new Set(), depths = new Set();
+  for (let p = 0; p < 16; p++) {
+    const r = H.relicAt(p);
+    cols.add(r.x);
+    depths.add(Math.floor(r.d / 10));
+  }
+  assert.ok(cols.size > 4, 'relics only use ' + cols.size + ' columns; the search is the same every time');
+  assert.ok(depths.size > 4, 'relics cluster at the same depth on every planet');
+});
+
+test('a relic is generated until it is taken, then never again', () => {
+  H.g.planet = 0;
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+  H.g.relics = [];
+  const r = H.relicAt(0);
+  const there = H.blockAt(r.x, r.d);
+  assert.ok(there && there.relic, 'no relic at the place relicAt names');
+  assert.equal(there.wt, 0, 'a relic must never cost cargo weight');
+  assert.equal(there.value, 0, 'a relic pays in what it does, not in credits');
+
+  /* it must not lose a coin flip to a cave or a pocket */
+  let count = 0;
+  for (let d = 0; d < H.coreDepth(0); d++)
+    for (let x = 0; x < H.W; x++) {
+      const b = H.blockAt(x, d);
+      if (b && b.relic) count++;
+    }
+  assert.equal(count, 1, 'expected exactly one relic on the planet, found ' + count);
+
+  H.g.relics = [H.relicFor(0).id];
+  assert.ok(!(H.blockAt(r.x, r.d) || {}).relic, 'a taken relic must not come back');
+  H.g.relics = [];
+});
+
+test('every relic perk is named, described and actually does something', () => {
+  const ids = new Set();
+  for (const r of H.RELICS) {
+    assert.ok(!ids.has(r.id), 'duplicate relic id ' + r.id);
+    ids.add(r.id);
+    assert.equal(H.RELIC_OF[r.id], r);
+    assert.ok(r.name.length > 3 && r.name.length < 26, r.id + ' name will not fit the event card');
+    assert.ok(r.blurb.length > 15 && r.blurb.length < 60, r.id + ' blurb will not fit one line');
+  }
+
+  /* Each perk has to move a stat it claims to move. Checked against the real
+     derived stats rather than against the table, because a perk that is
+     described and never read is the exact failure this is here to catch. */
+  const base = {};
+  H.g.relics = [];
+  for (const k of ['drill', 'cargoCap', 'light', 'towCut', 'fuelUse', 'heatTake', 'gasTake', 'powerCap', 'saleBonus'])
+    base[k] = H.S[k]();
+
+  const moves = {
+    drum: 'drill', weave: 'cargoCap', eye: 'light', rights: 'towCut',
+    recyc: 'fuelUse', lattice: 'heatTake', damper: 'gasTake',
+    coupler: 'powerCap', assay: 'saleBonus'
+  };
+  for (const r of H.RELICS) {
+    const stat = moves[r.id];
+    assert.ok(stat, r.id + ' is not wired to any stat in this test - either it does ' +
+      'nothing or the test has fallen behind');
+    H.g.relics = [r.id];
+    assert.notEqual(H.S[stat](), base[stat],
+      r.id + ' claims "' + r.blurb + '" but ' + stat + ' did not move');
+  }
+  H.g.relics = [];
+});
+
+test('the assay charter stacks past the named relics', () => {
+  H.g.relics = [];
+  const one = (n) => { H.g.relics = Array(n).fill('assay'); return H.S.saleBonus(); };
+  assert.ok(one(1) > 1, 'one charter should pay something');
+  assert.ok(one(3) > one(1), 'charters must stack, or planet 12 onward has no reward');
+  assert.ok(one(10) < 1.6, 'ten charters at ' + one(10).toFixed(2) + 'x is runaway');
+  H.g.relics = [];
+  /* and past the named eight, every planet grants the stacking one */
+  assert.equal(H.relicFor(20).id, 'assay');
+  assert.equal(H.relicFor(0).id, H.RELICS[0].id);
+});

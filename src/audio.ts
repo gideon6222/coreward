@@ -626,6 +626,31 @@ export const sfx = {
     noiseBurst(G, t + 0.04, 0.3, 4200, 0.2, 'highpass');
   },
 
+  /* A relic. The longest and most deliberate sound in the game, because it is
+     the rarest event: a shimmer, then a slow major chord that arrives rather
+     than hits. Nothing else here takes two seconds. */
+  relic() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 0.9, 5200, 0.14, 'highpass');
+    [261.63, 329.63, 392.0, 523.25, 659.25].forEach((f, i) => {
+      for (const type of ['sine', 'triangle'] as OscillatorType[]) {
+        const o = G.ctx.createOscillator();
+        const gn = G.ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(f, t);
+        o.detune.value = (Math.random() - 0.5) * 6;
+        const at = t + i * 0.13;
+        gn.gain.setValueAtTime(0.0001, at);
+        gn.gain.linearRampToValueAtTime(type === 'sine' ? 0.11 : 0.045, at + 0.28);
+        gn.gain.linearRampToValueAtTime(0.0001, at + 1.9);
+        o.connect(gn); gn.connect(G.sfxBus);
+        o.start(at); o.stop(at + 2.0);
+      }
+    });
+  },
+
   cache() {
     const G = live();
     if (!G) return;

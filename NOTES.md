@@ -1242,6 +1242,54 @@ reach instead.
 every gated upgrade's mineral lives within 30 m of its unlock depth. Ruby, at
 105 m, fixes it and is the better fiction for a laser anyway.
 
+## Relics: the secret, and the larger point (2026-09-07)
+
+Playtest: *"can you also think about a larger point to the game, or secondary
+objective?"* and *"other abilities and secrets that can be found"*.
+
+Those are the same question. Coreward's only reward was credits, and credits
+are a rung: every one you earn makes the last one irrelevant, so the answer to
+"what have I got" is always a number that will look small next week. The core
+shards were closer, but they only ever did one thing.
+
+**One relic is buried on every planet**, below the halfway mark, in no
+particular column, marked on nothing. It grants a permanent perk - the drill
+hits 10% harder, the hold carries 15% more, heat does 15% less, one more power
+cell - and it is kept forever. Past the named eight, every relic is another
+stacking Assay Charter, so the ladder never runs out of a reason to look.
+
+**It is the only thing in the game you can miss permanently.** Break the core
+with the relic still in the ground and it goes with the planet. That is what
+makes it worth looking for rather than something you will pick up eventually.
+
+### Turning a lottery into a search
+
+One cell on a planet with nothing marking it is not a secret, it is a lottery.
+The Scanner's lamp radius is the search radius: within it, a small mote drifts
+off the ship in the relic's bearing and brightens as you close.
+
+That gives the Scanner its **third** job - light, framing, and now finding -
+and it is the one that makes maxing it worth it. Between 8 m and 30 m of search
+radius is the difference between finding a relic by luck and finding one on
+purpose. Three separate reasons to buy one upgrade, all of them felt.
+
+### Perks are data, not callbacks
+
+Each perk is read by a named derived stat in state.ts - `fuelUse()`,
+`heatTake()`, `gasTake()`, `powerCap()`, `saleBonus()` - rather than being a
+function the relic runs. A perk cannot then do anything a test cannot see, and
+there is a test that walks every relic, applies it alone, and asserts the stat
+it claims to move actually moves. A perk that is described and never read is
+exactly the failure that is easiest to ship and hardest to notice.
+
+### A float that nearly trained a bad habit
+
+Adding the Salvage Rights perk turned `towCut` into
+`0.5 - 8*0.05 - 0`, which in binary floating point is 0.09999999999999998. The
+golden baseline duly recorded a tow cut of 9.999999999999998%. True, useless,
+and precisely the kind of diff that teaches you to re-record without reading -
+which is the one habit these baselines cannot survive. Rounded before clamping.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

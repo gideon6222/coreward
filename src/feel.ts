@@ -197,9 +197,10 @@ export function tremorTick(
 export const CHARGE_MAX = 4;
 export const CHARGE_SECONDS = 42;   /* seconds underground per point */
 
-export function chargeAfter(charge: number, dt: number, atPad: boolean): number {
-  if (atPad) return CHARGE_MAX;
-  return Math.min(CHARGE_MAX, charge + dt / CHARGE_SECONDS);
+export function chargeAfter(charge: number, dt: number, atPad: boolean, bonus = 0): number {
+  const cap = CHARGE_MAX + bonus;
+  if (atPad) return cap;
+  return Math.min(cap, charge + dt / CHARGE_SECONDS);
 }
 
 /* ---------- costs and damage ---------- */

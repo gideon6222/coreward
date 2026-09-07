@@ -23,7 +23,7 @@ import type { Dir, SupplyKey } from './types';
 export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
-  g.credits += v;
+  g.credits += Math.round(v * S.saleBonus());
   /* A best haul is worth calling out because it is the only feedback that
      says a RUN went well, as opposed to a block being valuable. The first
      sale of a save is not a record, it is just the first sale. */
@@ -326,6 +326,7 @@ export function hardReset() {
   g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0 };
   g.stock = {};
+  g.relics = [];
   g.drops = {}; syncDrops();
   g.dug = new Set();
   g.rubble = new Set();
