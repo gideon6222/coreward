@@ -516,9 +516,42 @@ test('a relic is generated until it is taken, then never again', () => {
     }
   assert.equal(count, 1, 'expected exactly one relic on the planet, found ' + count);
 
-  H.g.relics = [H.relicFor(0).id];
+  H.g.relicsTaken = [0];
   assert.ok(!(H.blockAt(r.x, r.d) || {}).relic, 'a taken relic must not come back');
-  H.g.relics = [];
+  H.g.relics = []; H.g.relicsTaken = [];
+});
+
+/* The bug this exists to prevent, which shipped for about an hour.
+
+   Past the named eight, every planet grants the same stacking charter. The
+   first version asked "do I already own this perk" to decide whether a relic
+   was still in the ground - which answers yes for every planet from the ninth
+   onward, and quietly stops generating relics for the rest of the game.
+
+   The perk is what you own. `relicsTaken` is what you have done. They are not
+   the same list and must not be conflated. */
+test('relics keep appearing past the point where the perks repeat', () => {
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+  /* someone who has cleared the first twelve planets */
+  H.g.relics = H.RELICS.map((r) => r.id).concat(['assay', 'assay', 'assay']);
+  H.g.relicsTaken = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+  for (const p of [12, 13, 20]) {
+    H.g.planet = p;
+    const r = H.relicAt(p);
+    const b = H.blockAt(r.x, r.d);
+    assert.ok(b && b.relic,
+      'planet ' + p + ' has no relic, because its perk was already owned - the ' +
+      'collection stops the moment the perks start repeating');
+  }
+
+  /* and a planet already cleared still has none */
+  H.g.planet = 3;
+  const done = H.relicAt(3);
+  assert.ok(!(H.blockAt(done.x, done.d) || {}).relic, 'a cleared planet regrew its relic');
+
+  H.g.relics = []; H.g.relicsTaken = []; H.g.planet = 0;
 });
 
 test('every relic perk is named, described and actually does something', () => {

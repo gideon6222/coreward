@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { W, relicAt, relicFor, RELIC_COLOR } from './config';
+import { W, relicAt, RELIC_COLOR } from './config';
 import { g, S } from './state';
 import { scene } from './scene';
 import { worldX } from './materials';
@@ -41,7 +41,7 @@ scene.add(halo);
 let spin = 0;
 
 export function aimRelic() {
-  const found = g.relics.includes(relicFor(g.planet).id);
+  const found = g.relicsTaken.includes(g.planet);
   const r = relicAt(g.planet);
   const dx = r.x - g.px, dy = -r.d - -g.pd;
   const dist = Math.hypot(dx, dy);
@@ -74,7 +74,7 @@ export function aimRelic() {
 
 /* How far off the relic is, for the pause menu. Returns null once found. */
 export function relicDistance(): number | null {
-  if (g.relics.includes(relicFor(g.planet).id)) return null;
+  if (g.relicsTaken.includes(g.planet)) return null;
   const r = relicAt(g.planet);
   return Math.round(Math.hypot(r.x - g.px, r.d - g.pd));
 }

@@ -22,9 +22,17 @@ export const g: {
   /* Minerals banked at the pad, spent on upgrades alongside credits. Counts
      only - the credits for the same ore were already paid on the same sale. */
   stock: Cargo;
-  /* Relic ids collected, across every planet ever visited. The one list in the
-     save that only ever grows. */
+  /* Relic PERKS collected, across every planet ever visited. The one list in
+     the save that only ever grows. */
   relics: string[];
+  /* Which planets have had their relic taken.
+
+     Tracked separately from `relics`, and that separation is load-bearing:
+     past the named eight every planet grants the same stacking charter, so
+     asking "do I already have this perk" would have answered yes for every
+     planet from the ninth onward and quietly stopped generating relics for the
+     rest of the game. The perk is what you own; this is what you have done. */
+  relicsTaken: number[];
   /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
      so a cell can only ever hold one - which it can, because breaking a block
      empties the cell it was in. */
@@ -40,7 +48,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
-  cargo: {}, weight: 0, stock: {}, drops: {}, relics: [],
+  cargo: {}, weight: 0, stock: {}, drops: {}, relics: [], relicsTaken: [],
   best: { depth: 0, haul: 0 },
   mode: 'play'
 };
@@ -97,7 +105,7 @@ export function save() {
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
-      drops: g.drops, charge: g.charge, relics: g.relics
+      drops: g.drops, charge: g.charge, relics: g.relics, relicsTaken: g.relicsTaken
     }));
   } catch (e) { /* ignore */ }
 }
@@ -116,6 +124,7 @@ export function load() {
       g.drops = s.drops || {};
       if (typeof s.charge === 'number') g.charge = s.charge;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
+      g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;

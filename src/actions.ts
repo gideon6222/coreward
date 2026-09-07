@@ -326,7 +326,7 @@ export function hardReset() {
   g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0 };
   g.stock = {};
-  g.relics = [];
+  g.relics = []; g.relicsTaken = [];
   g.drops = {}; syncDrops();
   g.dug = new Set();
   g.rubble = new Set();
