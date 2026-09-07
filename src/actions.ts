@@ -10,6 +10,7 @@ import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { spray } from './particles';
 import { ui, toast, flash, atSurface } from './ui';
 import { sfx } from './audio';
+import { SHAKE_TOW, SHAKE_BOOM } from './feel';
 
 export function sell() {
   const v = haulValue();
@@ -57,7 +58,7 @@ export function tow(reason: string) {
   for (const k in g.cargo) g.weight += g.cargo[k] * DEF[k].wt;
   sfx.alarm();
   flash('rgba(255,140,60,.35)', 500);
-  R.shake = 0.5;
+  R.shake = SHAKE_TOW;
   goSurface();
   const kept = haulValue();
   sell();
@@ -84,7 +85,7 @@ export function breakCore() {
   spray(x, y, 0xff7a18, 200, 15, 3.0);
   flash('rgba(255,255,255,.95)', 700);
   sfx.boom();
-  R.shake = 1.4;
+  R.shake = SHAKE_BOOM;
   setTimeout(() => {
     g.shards++;
     const next = g.planet + 1;

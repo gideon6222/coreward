@@ -1,0 +1,46 @@
+{
+  "hitStop": {
+    "ore": 0.075,
+    "rock": 0.035
+  },
+  "shake": {
+    "crack": 0.045,
+    "rock": 0.09,
+    "ore": 0.22,
+    "landing": 0.25,
+    "tow": 0.5,
+    "boom": 1.4,
+    "decay": 1.4
+  },
+  "squash": {
+    "dig": 0.55,
+    "brk": 0.8,
+    "decay": 0.88,
+    "scale": 0.16
+  },
+  "camera": {
+    "play": 6,
+    "fly": 11,
+    "zoom": 4,
+    "yOffset": 0.8
+  },
+  "depth": {
+    "ramp": 72,
+    "ambientSurface": 1.75,
+    "ambientFalloff": 1.55,
+    "fogSurface": 0.02,
+    "fogGain": 0.028
+  },
+  "cost": {
+    "move": 0.8,
+    "digBase": 1,
+    "digPerHardness": 0.09,
+    "hullRegen": 30
+  },
+  "heat": {
+    "depth": 70,
+    "ramp": 50,
+    "exponent": 1.3,
+    "rate": 4.5
+  }
+}

@@ -297,6 +297,24 @@ the pause menu clears both.
 
 These are load-bearing, not decoration. Changing them changes how it plays.
 
+**The numbers live in `src/feel.ts`** and are pinned by `test/feel.test.mjs`,
+which asserts two different things. A snapshot fixes the exact values so a
+change has to be deliberate. Separate tests assert the *design intent* — ore
+lands heavier than rock, the core giving way is the biggest shake in the game,
+hit-stop stays inside the range that reads as weight rather than as a dropped
+frame or a hang. Those survive a retune; the snapshot does not.
+
+If you retune anything in there: re-record the baseline, and **check it on the
+phone**. A desktop cannot tell you whether hit-stop still lands.
+
+One known characteristic is pinned on purpose. `approach()` uses the common
+`min(1, dt * rate)` lerp, which is *not* frame-rate independent: a 100 ms step
+covers 60% of the distance where ten 10 ms steps cover 46%. Combined with the
+loop's 50 ms delta cap, a stuttering frame makes the camera snap harder rather
+than merely lag. The correct form is `1 - exp(-rate * dt)`. It was left as-is
+because changing it changes how the camera feels, and there is a test that fails
+if you switch it so that has to be a decision rather than a tidy-up.
+
 - **Hit-stop.** `freeze` pauses the *simulation* for 35 ms on rock and 75 ms on
   ore. Camera and UI keep running off a separate raw delta (`raw` vs `dt` in
   `frame()`). Do not collapse those two deltas.

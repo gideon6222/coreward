@@ -5,6 +5,15 @@ import { g, S, save } from './state';
 import { blockAt } from './world';
 import { R } from './runtime';
 import type { Dir } from './types';
+import {
+  FREEZE_ORE, FREEZE_ROCK,
+  SHAKE_CRACK, SHAKE_ROCK, SHAKE_ORE, SHAKE_LANDING, SHAKE_DECAY,
+  SQUASH_DIG, SQUASH_BREAK, SQUASH_DECAY, SQUASH_SCALE,
+  CAM_FOLLOW_PLAY, CAM_FOLLOW_FLY, CAM_ZOOM_RATE, CAM_Y_OFFSET,
+  AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
+  FUEL_PER_MOVE, HULL_REGEN,
+  depthT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond
+} from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, oreGlows } from './blocks';
@@ -31,7 +40,7 @@ export function startAction() {
     if (g.weight + b.wt > S.cargoCap()) { toast('Hold is full at ' + S.cargoCap() + ' kg'); return; }
     R.digging = { x: t.x, d: t.d, t: 0, total: (b.hard * DIG_BASE) / S.drill(), block: b, stage: 0, spark: 0 };
     sfx.digStart(b.hard);
-    R.squash = 0.55;
+    R.squash = SQUASH_DIG;
   } else {
     R.moving = { x: t.x, d: t.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
   }
@@ -53,7 +62,7 @@ export function frame(now: number) {
   if (g.mode === 'fly' && R.flight) {
     R.flight.t += dt;
     const raw01 = clamp(R.flight.t / R.flight.dur, 0, 1);
-    const u = raw01 < 0.5 ? 2 * raw01 * raw01 : 1 - Math.pow(-2 * raw01 + 2, 2) / 2;
+    const u = easeInOut(raw01);
     const p = R.flight.curve.getPointAt(clamp(u, 0, 1));
     const dx = p.x - R.flight.last.x, dy = p.y - R.flight.last.y;
     if (Math.abs(dx) + Math.abs(dy) > 0.0005) {
@@ -76,7 +85,7 @@ export function frame(now: number) {
       goSurface();
       g.mode = 'play';
       sell();
-      R.shake = 0.25;
+      R.shake = SHAKE_LANDING;
       flash('rgba(110,220,255,.22)', 240);
     }
   } else if (g.mode === 'play') {
@@ -86,7 +95,7 @@ export function frame(now: number) {
     if (R.digging) {
       const b = R.digging.block;
       R.digging.t += dt;
-      g.fuel -= (1.0 + b.hard * 0.09) * dt;
+      g.fuel -= digFuelPerSecond(b.hard) * dt;
       const k = key(R.digging.x, R.digging.d);
       const o = meshes.get(k);
       const prog = clamp(R.digging.t / R.digging.total, 0, 1);
@@ -106,7 +115,7 @@ export function frame(now: number) {
           o.add(cr);
           spray(o.position.x, o.position.y, b.color, 7, 2.8, 0.5);
           sfx.crack(b.hard);
-          R.shake = Math.max(R.shake, 0.045);
+          R.shake = Math.max(R.shake, SHAKE_CRACK);
         }
       }
       R.digging.spark -= dt;
@@ -121,9 +130,9 @@ export function frame(now: number) {
         dropBlock(k);
         spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 30 : 13, b.ore ? 6.5 : 4, 0.85);
         sfx.digStop();
-        freeze = b.ore ? 0.075 : 0.035;
-        R.shake = Math.max(R.shake, b.ore ? 0.22 : 0.09);
-        R.squash = 0.8;
+        freeze = b.ore ? FREEZE_ORE : FREEZE_ROCK;
+        R.shake = Math.max(R.shake, b.ore ? SHAKE_ORE : SHAKE_ROCK);
+        R.squash = SQUASH_BREAK;
         if (b.core) { R.digging = null; breakCore(); }
         else {
           g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
@@ -137,7 +146,7 @@ export function frame(now: number) {
       }
     } else if (R.moving) {
       R.moving.t += dt;
-      g.fuel -= 0.8 * dt;
+      g.fuel -= FUEL_PER_MOVE * dt;
       thrustLevel = 0.75;
       const a = clamp(R.moving.t / R.moving.total, 0, 1);
       g.px = R.moving.fx + (R.moving.x - R.moving.fx) * a;
@@ -154,10 +163,10 @@ export function frame(now: number) {
     }
 
     if (g.pd > 70) {
-      const ex = (g.pd - 70) / 50;
-      g.hull -= Math.pow(ex, 1.3) * 4.5 * (1 - S.shield()) * dt;
+      /* heat ramps in below HEAT_DEPTH; see feel.ts */
+      g.hull -= heatDamagePerSecond(g.pd, S.shield()) * dt;
     } else if (atSurface()) {
-      g.hull = Math.min(HULL_MAX, g.hull + 30 * dt);
+      g.hull = Math.min(HULL_MAX, g.hull + HULL_REGEN * dt);
       g.fuel = S.fuelCap();
     }
 
@@ -171,8 +180,8 @@ export function frame(now: number) {
   /* ship transform */
   const px = worldX(g.px), py = -g.pd;
   player.position.set(px, py, 0.62);
-  R.squash *= 0.88;
-  const sq = 1 + R.squash * 0.16;
+  R.squash *= SQUASH_DECAY;
+  const sq = 1 + R.squash * SQUASH_SCALE;
   player.scale.set(1 / sq, sq, 1);
   rig.rotation.y = bank;
   lamp.position.set(px, py, 1.7);
@@ -194,11 +203,11 @@ export function frame(now: number) {
   }
 
   /* world ambience */
-  const tDeep = clamp((g.pd + 2) / 72, 0, 1);
-  amb.intensity = 1.75 - 1.55 * tDeep;
+  const tDeep = depthT(g.pd);
+  amb.intensity = AMBIENT_SURFACE - AMBIENT_FALLOFF * tDeep;
   sun.intensity = 1.5 * (1 - tDeep);
   rim.intensity = 0.5 - 0.32 * tDeep;
-  fog.density = 0.02 + tDeep * 0.028;
+  fog.density = FOG_SURFACE + tDeep * FOG_GAIN;
   const hi = lerpHex(skyHi(g.planet), 0x02030a, tDeep);
   const lo = lerpHex(skyLo(g.planet), 0x0a0c14, tDeep);
   fog.color.copy(lo);
@@ -229,14 +238,14 @@ export function frame(now: number) {
   const zNow = R.camZ + camZBoost;
   const halfW = Math.tan((camera.fov * Math.PI) / 360) * zNow * camera.aspect;
   const lim = Math.max(0, W / 2 - halfW);
-  const k = g.mode === 'fly' ? 11 : 6;
-  camera.position.x += (clamp(px, -lim, lim) - camera.position.x) * Math.min(1, raw * k);
-  camera.position.y += (py - 0.8 - camera.position.y) * Math.min(1, raw * (k + 1));
-  camera.position.z += (zNow - camera.position.z) * Math.min(1, raw * 4);
+  const k = g.mode === 'fly' ? CAM_FOLLOW_FLY : CAM_FOLLOW_PLAY;
+  camera.position.x = approach(camera.position.x, clamp(px, -lim, lim), k, raw);
+  camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET, k + 1, raw);
+  camera.position.z = approach(camera.position.z, zNow, CAM_ZOOM_RATE, raw);
   if (R.shake > 0) {
     camera.position.x += (Math.random() - 0.5) * R.shake;
     camera.position.y += (Math.random() - 0.5) * R.shake;
-    R.shake = Math.max(0, R.shake - raw * 1.4);
+    R.shake = Math.max(0, R.shake - raw * SHAKE_DECAY);
   }
 
   tickToast(raw);
