@@ -57,6 +57,8 @@ export interface Block {
   core?: boolean;
   /* Breaking this hurts instead of paying. Hazards never enter cargo. */
   hazard?: boolean;
+  /* Breaking this pays something other than ore, and never enters cargo. */
+  cache?: boolean;
 }
 
 export type UpgradeKey =

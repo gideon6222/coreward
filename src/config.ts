@@ -95,6 +95,24 @@ export const GAS: Ore = {
   hard: 1.8, wt: 0, value: 0, min: 34, chance: 0.014, glow: 0.45, shards: 5, tone: 2
 };
 
+/* A supply cache left by whoever was here before.
+
+   The research finding this answers: routine mining goes stale without
+   discovery, and "a touch of surprise" during a descent is what a resource
+   loop is missing when every cell is worth a predictable number. Gas and
+   geodes made a descent differ from the last one in what it COSTS. This makes
+   one differ in what it hands you.
+
+   Rarer than either - about one every couple of runs - because a surprise you
+   can plan around is a resource, and this is not meant to be a resource.
+
+   Deliberately pink. Nothing else in the ground is, and a thing left behind by
+   people should not look like something the planet grew. */
+export const CACHE: Ore = {
+  id: 'cache', name: 'Supply Cache', color: 0xff7ad0, host: 0x3a3040,
+  hard: 3.4, wt: 0, value: 0, min: 20, chance: 0.006, glow: 0.62, shards: 6, tone: 8
+};
+
 export const GAS_HULL_DAMAGE = 26;
 export const GAS_SOAK = 0.3;
 
@@ -198,6 +216,7 @@ export const DEF: Record<string, Material> = {};
 for (const o of ORES) DEF[o.id] = o;
 DEF[GEODE.id] = GEODE;
 DEF[RUBBLE.id] = RUBBLE;
+DEF[CACHE.id] = CACHE;
 DEF[GAS.id] = GAS;
 for (const r of ROCKS) DEF[r.id] = r;
 

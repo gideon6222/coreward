@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { W, HULL_MAX, DIG_BASE, coreDepth, valueMult, skyHi, skyLo,
+import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, coreDepth, valueMult, skyHi, skyLo,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
-import { blockAt } from './world';
+import { blockAt, cachePrize } from './world';
 import { R } from './runtime';
 import type { Dir } from './types';
 import {
@@ -157,6 +157,29 @@ export function frame(now: number) {
           spray(worldX(R.digging.x), -R.digging.d, b.color, 90, 9, 1.5);
           sfx.gas();
           toast('Gas pocket! Hull -' + dmg);
+          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
+          R.digging = null;
+          save();
+        }
+        else if (b.cache) {
+          /* A cache pays in something other than ore, so it never enters the
+             hold - which also means it never costs you cargo weight, and a
+             full hold is no reason to leave one in the ground. */
+          const p = cachePrize(R.digging.x, R.digging.d);
+          if (p.kind === 'supply') {
+            const sup = SUPPLY_OF[p.id];
+            g.kit[p.id] = Math.min(sup.max, g.kit[p.id] + 1);
+            toast('Supply cache · ' + sup.name);
+          } else if (p.kind === 'mineral') {
+            g.stock[p.id] = (g.stock[p.id] || 0) + p.n;
+            toast('Supply cache · ' + p.n + ' ' + DEF[p.id].name);
+          } else {
+            g.credits += p.n;
+            toast('Supply cache · ◈ ' + p.n.toLocaleString());
+          }
+          spray(worldX(R.digging.x), -R.digging.d, b.color, 70, 7, 1.2);
+          flash('rgba(255,150,215,.22)', 340);
+          sfx.cache();
           R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();

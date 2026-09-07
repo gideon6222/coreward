@@ -4,7 +4,7 @@ import { key } from './util';
 import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
-import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, chunkFor, glowTex,
+import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, ROCK_BUMP } from './materials';
 import type { Block } from './types';
 
@@ -94,7 +94,8 @@ function poolFor(b: Block): Pool {
     vertexColors: !b.ore
   });
   const detail = new THREE.InstancedMesh(
-    b.ore ? shardGeo : pebbleGeo, detailMat, b.ore ? MAX_DETAILS : MAX_CELLS
+    b.cache ? crateGeo : b.ore ? shardGeo : pebbleGeo, detailMat,
+    b.ore ? MAX_DETAILS : MAX_CELLS
   );
   detail.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   detail.frustumCulled = false;
