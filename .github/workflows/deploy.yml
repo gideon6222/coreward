@@ -1,0 +1,72 @@
+name: Test and deploy
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# GITHUB_TOKEN permissions needed by actions/deploy-pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it half way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Golden tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The Phase 0 safety net. Pure functions only: world generation, upgrade
+      # costs, derived stats, planet scaling, haul values and pathfinding.
+      # It cannot catch a feel regression, so it gates the deploy but does not
+      # replace playing the game.
+      - run: npm test
+
+  build:
+    name: Build
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Fail loudly if the service worker did not pick up the hashed bundle,
+      # rather than shipping a PWA that silently precaches nothing.
+      - name: Verify the precache manifest
+        run: |
+          test -f dist/sw.js || { echo "dist/sw.js missing"; exit 1; }
+          grep -q 'assets/index-.*\.js' dist/sw.js || { echo "hashed bundle missing from precache"; exit 1; }
+          echo "precache manifest looks right:"
+          grep -o '{url:"[^"]*"' dist/sw.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
