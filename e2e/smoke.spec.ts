@@ -169,6 +169,61 @@ test('the audio graph builds on a user gesture', async ({ page }) => {
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* The adaptive music layers.
+
+   Three voices are always running and are mixed in and out by game state. That
+   is invisible to every other check: if setMood() stopped being called, or the
+   layers were wired to the wrong bus, the game would sound flatter and nothing
+   would fail.
+
+   Checked by recording what the code asks of each gain rather than by
+   listening. It is coupled to setTargetAtTime being the ramp used, which is a
+   deliberate trade: the alternative is exposing the audio graph on window just
+   so a test can read it. */
+test('the score layers respond to depth and to danger', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).__gains = [];
+    const orig = AudioParam.prototype.setTargetAtTime;
+    AudioParam.prototype.setTargetAtTime = function (v: number, t: number, c: number) {
+      (window as any).__gains.push(v);
+      return orig.call(this, v, t, c);
+    };
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 6, cargo: 3, thrust: 4, tank: 6, cool: 8, scan: 5, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {},
+      dug: Array.from({ length: 97 }, (_, d) => '6,' + d),
+      rubble: [], cargo: {}, weight: 0, px: 6, pd: 96
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  /* a real click, because Chrome will not build an AudioContext without one */
+  await page.locator('#dpad .k[data-dir=left]').click();
+
+  const seen = () => page.evaluate(() => (window as any).__gains as number[]);
+  const near = (xs: number[], v: number) => xs.some((x) => Math.abs(x - v) < 1e-6);
+
+  /* 96 m is past both the heat line and the unstable band, so the heat layer
+     and the shifting-rock layer should both be asked for. */
+  await expect
+    .poll(async () => near(await seen(), 0.075), { timeout: 20_000 })
+    .toBe(true);
+  await expect
+    .poll(async () => near(await seen(), 0.5), { timeout: 20_000 })
+    .toBe(true);
+
+  /* Nothing here should have thrown - a broken layer would take the whole
+     scheduler down with it and silence the score. */
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* Draw-call budget.
 
    Terrain is drawn with InstancedMesh. Before that, every block was its own
