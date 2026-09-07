@@ -566,12 +566,20 @@ Nothing here is committed to; they are the live threads.
   without becoming routine?
 - **Content past the mid-game.** Nine ores and six planet names cycle; nobody
   has played deep enough to know whether the late game holds up.
-- **Stage 4: variety.** Events, consumables, run modifiers - the recorded reason
-  players quit this genre, and what would give the heat zone more than one reason
-  to exist.
-- **Stage 4: variety.** Events, consumables, run modifiers - the recorded reason
-  players quit this genre is predictability, and it is also what gives the heat
-  zone more than one reason to exist.
+- **Play Stage 4 and find out which half of it lands.** Pockets, caves,
+  supplies and traits all shipped on modelling, not on play. The specific
+  unknowns: does a gas pocket read as a surprise or as an ambush, is a geode
+  worth the detour it is priced to justify, does a Hollow planet feel fast or
+  feel empty, and does anyone actually buy a Coolant Flush rather than banking
+  the 1,500 toward the rig.
+- **The heat zone still has one tooth below 70 m.** Gas and geodes gave the
+  0-70 m stretch something to think about, but past the heat line soak is again
+  the only pressure. A hazard that only exists deep - something that punishes
+  standing still rather than dwelling - is the obvious next addition.
+- **Traits do not yet change how you *equip*, only how the ground behaves.** A
+  trait that changed what is worth buying at the pad, rather than what the rock
+  does, would be a different kind of variety and would make the supply shelf
+  matter more.
 
 ## How changes get shipped
 
