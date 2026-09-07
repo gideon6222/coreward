@@ -1,0 +1,133 @@
+{
+  "traits": [
+    {
+      "id": "stable",
+      "name": "Stable",
+      "blurb": "Nothing unusual in the crust. A good place to learn the ground."
+    },
+    {
+      "id": "volatile",
+      "name": "Volatile",
+      "blurb": "Gas pockets riddle the rock, and they hit harder here.",
+      "gas": 2.2,
+      "gasDamage": 1.35
+    },
+    {
+      "id": "hollow",
+      "name": "Hollow",
+      "blurb": "Cave systems run through it. Quick to cross, little to mine.",
+      "cave": 2.4
+    },
+    {
+      "id": "crystalline",
+      "name": "Crystalline",
+      "blurb": "Geode seams everywhere, for anyone willing to dig sideways.",
+      "geode": 3
+    },
+    {
+      "id": "searing",
+      "name": "Searing",
+      "blurb": "The rock holds its heat. Soak builds far faster than it should.",
+      "soak": 1.6
+    }
+  ],
+  "assignment": [
+    {
+      "planet": 0,
+      "trait": "stable"
+    },
+    {
+      "planet": 1,
+      "trait": "hollow"
+    },
+    {
+      "planet": 2,
+      "trait": "searing"
+    },
+    {
+      "planet": 3,
+      "trait": "hollow"
+    },
+    {
+      "planet": 4,
+      "trait": "crystalline"
+    },
+    {
+      "planet": 5,
+      "trait": "volatile"
+    },
+    {
+      "planet": 6,
+      "trait": "crystalline"
+    },
+    {
+      "planet": 7,
+      "trait": "searing"
+    },
+    {
+      "planet": 8,
+      "trait": "hollow"
+    },
+    {
+      "planet": 9,
+      "trait": "searing"
+    },
+    {
+      "planet": 10,
+      "trait": "volatile"
+    },
+    {
+      "planet": 11,
+      "trait": "crystalline"
+    },
+    {
+      "planet": 12,
+      "trait": "volatile"
+    },
+    {
+      "planet": 13,
+      "trait": "hollow"
+    },
+    {
+      "planet": 14,
+      "trait": "searing"
+    },
+    {
+      "planet": 15,
+      "trait": "hollow"
+    },
+    {
+      "planet": 16,
+      "trait": "searing"
+    },
+    {
+      "planet": 17,
+      "trait": "volatile"
+    },
+    {
+      "planet": 18,
+      "trait": "crystalline"
+    },
+    {
+      "planet": 19,
+      "trait": "volatile"
+    },
+    {
+      "planet": 20,
+      "trait": "hollow"
+    },
+    {
+      "planet": 21,
+      "trait": "searing"
+    },
+    {
+      "planet": 22,
+      "trait": "hollow"
+    },
+    {
+      "planet": 23,
+      "trait": "crystalline"
+    }
+  ],
+  "caveCap": 0.17
+}

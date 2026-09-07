@@ -168,3 +168,13 @@ test('every supply key resolves through SUPPLY_OF and has display text', () => {
   }
   assert.equal(new Set(H.SUPPLIES.map((s) => s.key)).size, H.SUPPLIES.length, 'duplicate supply key');
 });
+
+/* Which trait lands on which planet is a hash, so it is silent to change. The
+   snapshot is the only thing that would notice. */
+test('the trait table and its assignment are unchanged', () => {
+  assertGolden('traits', {
+    traits: H.TRAITS,
+    assignment: Array.from({ length: 24 }, (_, p) => ({ planet: p, trait: H.traitOf(p).id })),
+    caveCap: H.CAVE_CHANCE_CAP
+  });
+});

@@ -1,6 +1,6 @@
 /* Tuning constants and the pure functions over them. Imports only types. */
 
-import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply } from './types';
+import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait } from './types';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
    framing, so the rest is lateral room to explore: which way to dig at a given
@@ -27,6 +27,45 @@ export const planetName = (i: number) => {
 export const skyHi = (i: number) => SKY_HI[i % SKY_HI.length];
 export const skyLo = (i: number) => SKY_LO[i % SKY_LO.length];
 export const coreDepth = (p: number) => 110 + p * 35;
+
+/* ---------- planet traits ----------
+
+   Planets used to differ by three numbers that all climbed together: deeper
+   core, harder rock, better prices. That is a difficulty slider, not variety -
+   every planet was the last one with the dial turned up, so the ladder gave
+   you nothing new to learn.
+
+   A trait gives each one a different question. Every trait is a multiplier on
+   something layered over generation, never on the ore stream itself; see the
+   note on Trait in types.ts for why that line matters.
+
+   Verdax is always Stable. The first planet is where you learn what normal
+   feels like, and a trait there would just read as "the game is like this". */
+export const TRAITS: Trait[] = [
+  { id: 'stable', name: 'Stable',
+    blurb: 'Nothing unusual in the crust. A good place to learn the ground.' },
+  { id: 'volatile', name: 'Volatile',
+    blurb: 'Gas pockets riddle the rock, and they hit harder here.',
+    gas: 2.2, gasDamage: 1.35 },
+  { id: 'hollow', name: 'Hollow',
+    blurb: 'Cave systems run through it. Quick to cross, little to mine.',
+    cave: 2.4 },
+  { id: 'crystalline', name: 'Crystalline',
+    blurb: 'Geode seams everywhere, for anyone willing to dig sideways.',
+    geode: 3.0 },
+  { id: 'searing', name: 'Searing',
+    blurb: 'The rock holds its heat. Soak builds far faster than it should.',
+    soak: 1.6 }
+];
+
+/* Deterministic, so a planet is the same every time you reach it and the
+   golden tests stay reproducible. Skips index 0 for p > 0 so the four real
+   traits cycle and Stable stays unique to Verdax. */
+export const traitOf = (p: number): Trait =>
+  p <= 0 ? TRAITS[0] : TRAITS[1 + (Math.imul(p, 2654435761) >>> 8) % (TRAITS.length - 1)];
+
+export const TRAIT_OF: Record<string, Trait> = {};
+for (const t of TRAITS) TRAIT_OF[t.id] = t;
 export const hardMult = (p: number) => 1 + p * 0.28;
 export const valueMult = (p: number) => 1 + p * 0.6;
 
@@ -65,6 +104,14 @@ export const GAS_SOAK = 0.3;
    building while you cross one, and there is nothing to mine in it. */
 export const CAVE_MIN_DEPTH = 26;
 export const caveChance = (d: number) => Math.min(0.09, 0.03 + (d - CAVE_MIN_DEPTH) * 0.0006);
+
+/* Trait-adjusted rates. Capped after the multiply, because a 2.4x on a rate
+   that already climbs with depth dissolves the deep ground into open air. */
+export const CAVE_CHANCE_CAP = 0.17;
+export const caveChanceOn = (d: number, p: number) =>
+  Math.min(CAVE_CHANCE_CAP, caveChance(d) * (traitOf(p).cave || 1));
+export const gasChanceOn = (p: number) => Math.min(0.06, GAS.chance * (traitOf(p).gas || 1));
+export const geodeChanceOn = (p: number) => Math.min(0.06, GEODE.chance * (traitOf(p).geode || 1));
 
 export const ORES: Ore[] = [
   { id: 'coreite',  name: 'Coreite',  color: 0x66fff0, host: 0x2a2f3a, hard: 16,  wt: 16,  value: 22000, min: 185, chance: 0.030, glow: 0.60, shards: 7, tone: 9 },

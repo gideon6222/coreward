@@ -254,3 +254,22 @@ test('digging costs more fuel in harder rock', () => {
   assert.ok(basalt > dirt && core > basalt, 'fuel cost must rise with hardness');
   assert.ok(dirt > 0);
 });
+
+/* The Searing trait scales how fast soak builds and nothing else. Recovery
+   stays the same everywhere on purpose: a trait that also slowed the bleed-off
+   would punish twice for one idea, and the surface would stop being a reset. */
+test('the soak rise multiplier speeds building without slowing recovery', () => {
+  const deep = H.HEAT_DEPTH + 30;
+  const normal = H.soakAfter(0, deep, 1);
+  const hot = H.soakAfter(0, deep, 1, 1.6);
+  assert.ok(hot > normal, 'a higher rise must soak faster: ' + hot + ' vs ' + normal);
+  assert.ok(Math.abs(hot - normal * 1.6) < 1e-9, 'rise should scale linearly');
+
+  const shallow = H.HEAT_DEPTH - 10;
+  assert.equal(H.soakAfter(0.5, shallow, 1, 1.6), H.soakAfter(0.5, shallow, 1),
+    'the rise multiplier must not touch how fast soak bleeds off');
+
+  assert.equal(H.soakAfter(0, deep, 1), H.soakAfter(0, deep, 1, 1),
+    'omitting the multiplier must behave exactly as before it existed');
+  assert.ok(H.soakAfter(0.9, deep, 10, 3) <= 1, 'soak must stay clamped at 1');
+});
