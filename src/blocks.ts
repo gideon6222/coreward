@@ -4,7 +4,8 @@ import { key } from './util';
 import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
-import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, chunkFor, glowTex } from './materials';
+import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, chunkFor, glowTex,
+         displaceLikeRock, ROCK_BUMP } from './materials';
 import type { Block } from './types';
 
 /* Terrain rendering.
@@ -65,6 +66,7 @@ function poolFor(b: Block): Pool {
     color: 0xffffff, emissive: bodyEmissive, flatShading: true,
     map: mat(0xffffff, 0).map, vertexColors: true
   });
+  displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
   const body = new THREE.InstancedMesh(chunkFor(b.id), bodyMat, MAX_CELLS);
   body.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   body.frustumCulled = false;
@@ -147,12 +149,9 @@ function makeBlock(x: number, d: number, b: Block) {
   const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
   if (!b.ore) {
     const grp = new THREE.Group();
-    const m = new THREE.Mesh(chunkFor(b.id), mat(shade(b.color, jit), b.glow, true, true));
-    /* same orientation and oversize as the instanced version, or the block
-       being drilled visibly pops the moment drilling starts */
-    orientChunk(x, d);
-    m.rotation.copy(scratch.rotation);
-    m.scale.copy(scratch.scale);
+    const bodyMat = mat(shade(b.color, jit), b.glow, true, true).clone();
+    displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
+    const m = new THREE.Mesh(chunkFor(b.id), bodyMat);
     grp.add(m);
     if (rnd(x + 61, d + 17, g.planet) > 0.66) {
       const p = new THREE.Mesh(pebbleGeo, mat(shade(b.color, jit * 1.22), b.glow, true, true));
@@ -164,10 +163,9 @@ function makeBlock(x: number, d: number, b: Block) {
     return grp;
   }
   const grp = new THREE.Group();
-  const host = new THREE.Mesh(chunkFor(b.id), mat(shade(b.host || 0x333038, jit), 0.02, true, true));
-  orientChunk(x, d);
-  host.rotation.copy(scratch.rotation);
-  host.scale.copy(scratch.scale);
+  const hostMat = mat(shade(b.host || 0x333038, jit), 0.02, true, true).clone();
+  displaceLikeRock(hostMat, ROCK_BUMP[b.id] ?? 0.2);
+  const host = new THREE.Mesh(chunkFor(b.id), hostMat);
   grp.add(host);
   const n = b.shards || 5;
   const sm = mat(b.color, b.glow, false);
@@ -289,24 +287,17 @@ function bleedInto(target: THREE.Color) {
   target.lerp(bleedColor.setRGB(nGlowR / nGlowCount, nGlowG / nGlowCount, nGlowB / nGlowCount), k);
 }
 
-/* Orient one rock chunk.
+/* Cells are placed on the grid with no rotation and no scale, on purpose.
 
-   Quarter-turns on all three axes give 64 distinct orientations of the single
-   shared chunk geometry, which is what stops every cell looking like the same
-   rock. They are quarter-turns rather than free rotation so a roughly cubic
-   chunk still packs against its neighbours instead of leaving wedges of gap.
-
-   A small extra jitter softens the remaining regularity, and the slight
-   oversize makes neighbours interlock so no seam shows where the grid is. */
-function orientChunk(x: number, d: number) {
-  const Q = Math.PI / 2;
-  scratch.rotation.set(
-    Math.floor(rnd(x + 2, d + 8, g.planet) * 4) * Q + (rnd(x + 21, d + 5, g.planet) - 0.5) * 0.22,
-    Math.floor(rnd(x + 4, d + 3, g.planet) * 4) * Q + (rnd(x + 33, d + 9, g.planet) - 0.5) * 0.22,
-    Math.floor(rnd(x + 5, d + 9, g.planet) * 4) * Q + (rnd(x + 47, d + 2, g.planet) - 0.5) * 0.22
-  );
-  const sc = 1.03 + rnd(x + 88, d + 12, g.planet) * 0.09;
-  scratch.scale.set(sc, sc, sc);
+   The displacement is a function of world position, so two neighbours only
+   agree about their shared boundary if their vertices land on exactly the same
+   world coordinates. Any per-instance rotation or scale breaks that agreement
+   and the seams come straight back. Variety now comes from the noise field
+   itself, which does not repeat, rather than from 64 rotations of one shape. */
+function placeCell(px: number, py: number) {
+  scratch.position.set(px, py, 0);
+  scratch.rotation.set(0, 0, 0);
+  scratch.scale.set(1, 1, 1);
 }
 
 function rebuild() {
@@ -331,7 +322,7 @@ function rebuild() {
 
       if (!b.ore) {
         scratch.position.set(px, py, 0);
-        orientChunk(x, d);
+        placeCell(px, py);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
         scratchColor.setHex(shade(b.color, jit * ao));
@@ -341,7 +332,7 @@ function rebuild() {
 
         if (rnd(x + 61, d + 17, g.planet) > 0.66) {
           const r1 = rnd(x + 12, d + 44, g.planet), r2 = rnd(x + 31, d + 6, g.planet);
-          scratch.position.set(px + (r1 - 0.5) * 0.6, py + (r2 - 0.5) * 0.6, 0.44);
+          scratch.position.set(px + (r1 - 0.5) * 0.6, py + (r2 - 0.5) * 0.6, 0.5);
           scratch.rotation.set(r1 * 3, r2 * 3, r1 * 2);
           scratch.scale.set(1, 1, 1);
           scratch.updateMatrix();
@@ -356,7 +347,7 @@ function rebuild() {
 
       /* ore: a host block plus crystal shards, two of them mirrored behind */
       scratch.position.set(px, py, 0);
-      orientChunk(x, d);
+      placeCell(px, py);
       scratch.updateMatrix();
       pool.body.setMatrixAt(pool.bodies, scratch.matrix);
       pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.host || 0x333038, jit * ao)));

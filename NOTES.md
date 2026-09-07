@@ -291,6 +291,48 @@ What was done instead:
 Draw-call budget test still passes, so the whole of Stage 3 came in at no
 rendering cost.
 
+## Rock as one surface, not stacked boxes (2026-09-07)
+
+Playtest: "some of the sides on the cubes dont match up so you can still see
+gaps and makes them look hollow... make cubes that touch look more like a solid
+piece instead of clipping into each other."
+
+**The root cause was per-cell independence.** Each cell had its own baked
+displacement, its own quarter-turn rotation and its own 1.03-1.12 scale, so two
+neighbours disagreed about where their shared boundary was. Their front faces
+landed at different depths, the nearer one's side wall became visible, and every
+cell read as a separate hollow box. Overlap hid the sky but could never make
+them one surface - that was the wrong tool for the job.
+
+**The fix is world-position displacement in the vertex shader**, which is the
+custom-shader technique CRAFT listed as untried. Cells are plain unit cubes at
+integer positions with no rotation and no scale, and each vertex is displaced by
+a hash of its WORLD position. Two cells sharing a boundary vertex evaluate the
+same world coordinate, so they compute the same displacement and the surface is
+continuous **by construction** - there is no gap to hide and no overlap needed.
+
+Three things fall out of it:
+
+- **Never rotate or scale a cell instance again.** The agreement between
+  neighbours depends on vertices landing on exactly the same world coordinates.
+  Any per-instance rotation or scale breaks it and the seams come straight back.
+- The vertex key is `floor(world * 2 + 0.5)`; vertices sit on a 0.5 grid, so that
+  is a stable integer both neighbours agree on.
+- `flatShading` derives normals from screen-space derivatives of the final
+  position, so lighting follows the displaced surface for free. No normal
+  recalculation.
+
+Variety improved as a side effect: it used to be 64 rotations of one shape, and
+it is now a noise field that never repeats.
+
+**Dust was rendering in front of the rock.** Motes sat at z = 0..2 while the rock
+face is at about +0.5, so they read as specks on the lens floating over solid
+stone. They now sit at z = -0.7..-1.3, between the rock and the backdrop, so they
+only show through tunnels the player has actually dug.
+
+Still free: the draw-call budget test passes unchanged. Same shared cube, same
+instancing, the displacement is per-vertex on the GPU.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

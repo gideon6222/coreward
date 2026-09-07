@@ -34,100 +34,121 @@ export function makeGlow(color: number, size: number, opacity?: number) {
   return s;
 }
 
-/* Rock chunks, not cubes.
+/* Rock as one continuous mass.
 
-   A 0.97 cube gives every cell an identical silhouette and leaves 0.03 of gap
-   showing the grid, which is what makes the world read as blocks. This is a
-   subdivided cube with every vertex pushed around by a deterministic hash, so
-   the faces are uneven and the corners are chipped.
+   The previous approach baked a different displacement into each chunk and gave
+   every instance its own rotation and scale. Neighbours therefore disagreed
+   about where their shared boundary was: their front faces landed at different
+   depths, the nearer one's side wall became visible, and every cell read as a
+   separate hollow box wedged against the next.
 
-   It is ONE shared geometry, so instancing is untouched and this costs no extra
-   draw calls. The variety comes from per-instance quarter-turns: the same chunk
-   rotated into one of 64 orientations does not look like the same chunk.
+   Now the cells are plain unit cubes at integer positions and the displacement
+   happens in the vertex shader as a function of WORLD position. Two cells that
+   share a boundary vertex are evaluating the same world coordinate, so they
+   compute the same displacement and the surface is continuous by construction -
+   one solid rock face, with no gaps to hide and no overlap needed to hide them.
 
-   Base size is 1.0 rather than 0.97, and instances scale slightly above that, so
-   neighbours interlock instead of leaving seams. Overlapping solids do not
-   z-fight - coplanar faces are what z-fight, and this removes those. */
-export function chunkGeometry(size: number, bump: number, seg = 2) {
-  const g = new THREE.BoxGeometry(size, size, size, seg, seg, seg);
+   It also removes the repetition: the old variety came from 64 rotations of one
+   shape, this varies with position and never repeats.
+
+   Free at runtime. No extra draw calls, no extra geometry - the same shared
+   cube, displaced per vertex on the GPU. */
+export function chunkGeometry(seg = 2) {
+  const g = new THREE.BoxGeometry(1, 1, 1, seg, seg, seg);
   const pos = g.attributes.position;
-  /* cheap deterministic hash so every build produces the same rock */
+
+  /* Vertical light gradient baked as vertex colours: brighter on top, darker
+     underneath, so each lump reads as a form rather than a set of flat facets.
+     Multiplies with the per-instance colour rather than replacing it. */
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const t = pos.getY(i) + 0.5;
+    const v = 0.84 + Math.max(0, Math.min(1, t)) * 0.3;
+    col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return g;
+}
+
+export const boxGeo = chunkGeometry(2);
+
+/* Pebbles are decorative scatter, not part of the rock surface, so they keep a
+   small independent lump and do not take the displacement shader. */
+export const pebbleGeo = (() => {
+  const g = new THREE.BoxGeometry(0.3, 0.3, 0.3, 1, 1, 1);
+  const pos = g.attributes.position;
   const h = (i: number, k: number) => {
     let n = Math.imul(i + 1, 374761393) ^ Math.imul(k + 7, 668265263);
     n = Math.imul(n ^ (n >>> 13), 1274126177);
     return (((n ^ (n >>> 16)) >>> 0) / 4294967296) - 0.5;
   };
-  /* Displace OUTWARD only on whichever axes the vertex is already extreme on.
-
-     Free displacement pulled faces inside the 1.0 cell - up to 0.125 for
-     basalt - while neighbours only overlap by 0.03, so slits opened between
-     chunks and the sky showed straight through a single-layer terrain.
-
-     Pushing extreme coordinates outward guarantees every chunk still contains
-     the full unit cell, so chunks tile with no gap at any bump size, and any
-     instance scale above 1.0 is genuine overlap. Coordinates that are not
-     extreme sit in the middle of a face, so displacing those freely reshapes
-     the face without shrinking the chunk. */
-  const half = size / 2;
   for (let i = 0; i < pos.count; i++) {
-    const c = [pos.getX(i), pos.getY(i), pos.getZ(i)];
-    for (let a = 0; a < 3; a++) {
-      const n = h(i, a) * bump;
-      if (Math.abs(c[a]) > half * 0.5) {
-        c[a] = Math.sign(c[a]) * (half + Math.abs(n));
-      } else {
-        c[a] += n;
-      }
-    }
-    pos.setXYZ(i, c[0], c[1], c[2]);
+    pos.setXYZ(i, pos.getX(i) + h(i, 0) * 0.1, pos.getY(i) + h(i, 1) * 0.1, pos.getZ(i) + h(i, 2) * 0.1);
   }
   pos.needsUpdate = true;
-
-  /* Bake a vertical light gradient into the geometry as vertex colours.
-
-     Flat shading alone gives each facet one tone, so a chunk reads as a cluster
-     of flat planes. Brightening upward-facing vertices and darkening the
-     undersides makes every chunk read as a lump with a lit top and a shaded
-     belly, which is most of what sells them as rocks rather than facets.
-
-     Free: it lives in the one shared geometry, and multiplies with the
-     per-instance colour rather than replacing it. */
-  const col = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i++) {
-    const t = (pos.getY(i) / size) + 0.5;          /* 0 at the bottom, 1 at the top */
-    const v = 0.84 + Math.max(0, Math.min(1, t)) * 0.3;
-    col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
-  }
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-
   g.computeVertexNormals();
+  const col = new Float32Array(pos.count * 3).fill(1);
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   return g;
+})();
+
+const chunkCache = new Map<number, THREE.BufferGeometry>();
+export function chunkFor(_id: string): THREE.BufferGeometry {
+  /* One shared cube for every rock type now - the character comes from the
+     displacement amount, which is a per-material uniform. */
+  const hit = chunkCache.get(2);
+  if (hit) return hit;
+  const geo = chunkGeometry(2);
+  chunkCache.set(2, geo);
+  return geo;
 }
 
-export const boxGeo = chunkGeometry(1.0, 0.16);
-export const pebbleGeo = chunkGeometry(0.3, 0.1);
-
-/* Each block type gets its own chunk shape, which costs nothing because every
-   type already has its own instanced pool. Soft material is lumpy and rounded,
-   hard material is angular and chipped - that difference is most of what makes
-   digging through dirt feel unlike digging through basalt. */
-const chunkCache = new Map<string, THREE.BufferGeometry>();
-const CHUNK_SHAPE: Record<string, [number, number]> = {
-  /* id: [bump, segments] */
-  dirt:    [0.13, 3],   /* lumpy soil, no sharp edges */
-  stone:   [0.16, 2],
-  granite: [0.20, 2],   /* blockier and more chipped */
-  scoria:  [0.23, 2],   /* brittle volcanic rock */
-  basalt:  [0.25, 2]    /* the hardest thing you dig */
+/* How far each rock type's surface breaks up. Soft material stays lumpy and
+   shallow, hard material is chipped and angular. */
+export const ROCK_BUMP: Record<string, number> = {
+  dirt: 0.16, stone: 0.20, granite: 0.26, scoria: 0.30, basalt: 0.32
 };
 
-export function chunkFor(id: string): THREE.BufferGeometry {
-  const hit = chunkCache.get(id);
-  if (hit) return hit;
-  const [bump, seg] = CHUNK_SHAPE[id] || [0.16, 2];
-  const geo = chunkGeometry(1.0, bump, seg);
-  chunkCache.set(id, geo);
-  return geo;
+/* Inject the displacement into a standard material.
+
+   Vertices sit on a 0.5 grid in world space, so `floor(w * 2 + 0.5)` is a stable
+   integer key that neighbouring cells agree on for any shared vertex. That
+   agreement is the whole trick.
+
+   flatShading derives normals from screen-space derivatives of the final
+   position, so lighting follows the displaced surface for free - no normal
+   recalculation needed. */
+export function displaceLikeRock(m: THREE.Material, bump: number) {
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uBump = { value: bump };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform float uBump;
+        float rockHash(vec3 k) {
+          return fract(sin(dot(k, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        }
+        vec3 rockOffset(vec3 w) {
+          vec3 k = floor(w * 2.0 + 0.5);
+          return (vec3(rockHash(k), rockHash(k + 19.7), rockHash(k + 51.3)) - 0.5) * uBump;
+        }`
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        {
+          #ifdef USE_INSTANCING
+            vec3 cell = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
+          #else
+            vec3 cell = vec3(modelMatrix[3][0], modelMatrix[3][1], modelMatrix[3][2]);
+          #endif
+          transformed += rockOffset(transformed + cell);
+        }`
+      );
+  };
+  /* materials are cached by three on their program key; this forces a rebuild */
+  m.customProgramCacheKey = () => 'rock' + bump.toFixed(3);
 }
 export const shardGeo = new THREE.OctahedronGeometry(1, 0);
 export const crackGeo = new THREE.BoxGeometry(1, 0.045, 0.045);

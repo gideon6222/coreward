@@ -59,7 +59,10 @@ const dPos = new Float32Array(DMAX * 3);
 for (let i = 0; i < DMAX; i++) {
   dPos[i * 3] = (Math.random() - 0.5) * 14;
   dPos[i * 3 + 1] = (Math.random() - 0.5) * 16;
-  dPos[i * 3 + 2] = Math.random() * 2;
+  /* BEHIND the terrain, between the rock face and the backdrop, so motes
+     only show through tunnels the player has actually dug. In front they
+     read as specks on the lens, floating over solid rock. */
+  dPos[i * 3 + 2] = -0.7 - Math.random() * 0.6;
 }
 dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
 export const dustMat = new THREE.PointsMaterial({ size: 0.07, color: 0xc8b89a, transparent: true, opacity: 0, depthWrite: false });
