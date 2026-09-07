@@ -2,6 +2,7 @@ import { HULL_MAX, DEF, UPGRADES, SUPPLIES, coreDepth, planetName, traitOf,
          valueMult, costOf } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
+import { heatDamagePerSecond } from './feel';
 import { haulValue } from './world';
 import { lamp } from './scene';
 import { sfx, audioState } from './audio';
@@ -23,6 +24,7 @@ export const ui = {
   manifest: mustEl('manifest'), manifestRows: mustEl('manifestRows'), manifestTotal: mustEl('manifestTotal'),
   pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
   btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
+  alarm: mustEl('alarm'), soakBar: mustEl('soakBar'), hullTxt: mustEl('hullTxt'),
   vignette: mustEl('vignette'),
   flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto'),
   kit: mustEl('kit'), supplies: mustEl('supplies')
@@ -73,14 +75,34 @@ export function updateHUD() {
   } else {
     ui.btnAuto.style.display = 'none';
   }
-  /* Two different warnings share the one vignette. Soak reddens the edges
-     steadily, so you can watch the pressure build and decide whether to push
-     one more block. A failing hull pulses on top of it, because that is an
-     alarm rather than a gauge. */
+  /* ---------- heat, as its own channel ----------
+
+     Three signals, all saying the same thing at different volumes, none of
+     them shared with any other kind of damage:
+
+       the ember fill    how much soak you are carrying
+       the -x.x/s label  that heat is draining the hull, and how fast
+       the ember edges   that you are inside the zone right now
+
+     The rate is the load-bearing one. It appears on the hull bar only while
+     heat is actually flowing, so the connection between the two is not
+     something the player has to be told. */
+  const drain = heatDamagePerSecond(g.pd, S.shield(), g.soak);
+  const cooking = drain > 0;
+  ui.soakBar.style.width = clamp(g.soak, 0, 1) * 100 + '%';
+  ui.soakBar.classList.toggle('hot', cooking);
+  ui.hullTxt.classList.toggle('hot', cooking);
+  ui.hullTxt.textContent = cooking ? 'HULL  -' + drain.toFixed(1) + '/s' : 'HULL';
+
+  /* Ember edges are heat. They hold a floor the moment you cross the line,
+     because damage starts there whether or not you have soaked yet, and fade
+     to a residue above it - you are still hot, just not being cooked. */
+  ui.heat.style.opacity = String(cooking ? 0.14 + g.soak * 0.36 : g.soak * 0.10);
+
+  /* Red is the hull itself, whatever emptied it: heat, a gas pocket, or the
+     next thing. A pulse rather than a gauge, because it is an alarm. */
   const danger = clamp((45 - g.hull) / 45, 0, 1);
-  const alarm = danger * (0.35 + 0.25 * Math.sin(performance.now() / 180));
-  const building = g.soak * 0.34;
-  ui.heat.style.opacity = String(Math.max(alarm, building));
+  ui.alarm.style.opacity = String(danger * (0.35 + 0.25 * Math.sin(performance.now() / 180)));
   updateKit();
 }
 

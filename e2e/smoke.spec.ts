@@ -290,9 +290,86 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   await page.locator('#supCell').dispatchEvent('pointerdown');
   await expect(page.locator('#toast')).toContainText('Fuel cell burned');
   await expect(page.locator('#supCell')).toHaveClass(/none/);
-  expect(await fuelPct(), 'spending a fuel cell must actually add fuel').toBeGreaterThan(before);
+  /* Polled, not sampled. useSupply changes game state synchronously but the
+     bar is only written by the next updateHUD, so a single read can land in
+     the gap - which it did, but only under the load of the full suite. */
+  await expect
+    .poll(fuelPct, { timeout: 10_000, message: 'spending a fuel cell must actually add fuel' })
+    .toBeGreaterThan(before);
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
+
+/* Heat has to be legible as the thing draining the hull, separately from every
+   other thing that drains it. That readout is assembled from three modules -
+   feel.ts computes the rate, ui.ts renders it, and actions.ts clears the soak -
+   so nothing else covers the whole chain.
+
+   Seeded straight to depth rather than dug there: reaching 96 m under
+   SwiftShader would dominate the suite, and none of what is asserted here
+   depends on how the ship arrived. */
+test('heat reads as its own channel on the hull bar, and a flush visibly drops it',
+  async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('coreward.v2', JSON.stringify({
+        planet: 0, credits: 0, shards: 0,
+        up: { drill: 6, cargo: 3, thrust: 4, tank: 4, cool: 7, scan: 4, tow: 0, auto: 0 },
+        kit: { coolant: 1, patch: 0, cell: 0 },
+        dug: Array.from({ length: 97 }, (_, d) => '6,' + d),
+        cargo: {}, weight: 0, px: 6, pd: 96
+      }));
+      const set = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) {
+        if (k === 'coreward.v2') return;
+        return set.call(this, k, v);
+      };
+    });
+    await page.reload();
+    await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+    const widthOf = (sel: string) => page.evaluate((s) =>
+      parseFloat((document.querySelector(s) as HTMLElement).style.width) || 0, sel);
+    const opacityOf = (sel: string) => page.evaluate((s) =>
+      parseFloat((document.querySelector(s) as HTMLElement).style.opacity) || 0, sel);
+
+    /* Below the heat depth the hull label names heat as the cause and carries
+       the rate. Above it, it must say nothing of the kind. */
+    await expect(page.locator('#hullTxt')).toHaveText(/^HULL\s+-\d+\.\d\/s$/, { timeout: 10_000 });
+    await expect(page.locator('#hullTxt')).toHaveClass(/hot/);
+
+    /* soak builds while you sit there - polled, never slept on, because the
+       frame loop advances in slow motion on a machine without a GPU */
+    await expect.poll(() => widthOf('#soakBar'), { timeout: DEEP_ENOUGH })
+      .toBeGreaterThan(25);
+
+    const soakBefore = await widthOf('#soakBar');
+    const emberBefore = await opacityOf('#heat');
+    const rateBefore = Number(
+      (await page.locator('#hullTxt').innerText()).replace(/[^0-9.]/g, ''));
+    expect(rateBefore, 'heat should be doing measurable damage at 96 m').toBeGreaterThan(0);
+
+    await page.locator('#supCoolant').dispatchEvent('pointerdown');
+    await expect(page.locator('#toast')).toContainText('heat soak cleared');
+
+    /* Same polling discipline as above: the soak is zeroed synchronously, the
+       gauge that shows it is not repainted until the next frame. */
+    await expect
+      .poll(() => widthOf('#soakBar'), { timeout: 10_000, message: 'the flush must empty the soak gauge' })
+      .toBeLessThan(soakBefore / 4);
+    await expect
+      .poll(() => opacityOf('#heat'), { timeout: 10_000, message: 'the ember edges must fall back with it' })
+      .toBeLessThan(emberBefore);
+    await expect
+      .poll(async () => Number((await page.locator('#hullTxt').innerText()).replace(/[^0-9.]/g, '')),
+        { timeout: 10_000, message: 'the drain rate is what the player actually bought' })
+      .toBeLessThan(rateBefore);
+
+    /* Still in the zone, so the label keeps naming heat - a flush buys time,
+       it does not cool the rock. */
+    await expect(page.locator('#hullTxt')).toHaveClass(/hot/);
+    expect(await opacityOf('#heat'), 'the zone itself must still register')
+      .toBeGreaterThan(0);
+    await expect(page.locator('#err')).toHaveClass(/hidden/);
+  });
 
 /* The stamp is how a deploy is verified on a phone. If the define pipeline
    breaks the stamp silently reads "dev", and the check becomes worthless. */
