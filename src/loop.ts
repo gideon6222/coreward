@@ -15,7 +15,7 @@ import {
   FACE_TURN_RATE,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH,
-  depthT, heatT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter,
+  depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
@@ -404,7 +404,10 @@ export function frame(now: number) {
   stepDrops(glowT);
 
   /* camera */
-  const zNow = R.camZ + camZBoost;
+  /* The Scanner decides how much world is framed; see zoomForScan in feel.ts.
+     Applied here rather than in resize() because the level changes in the shop
+     and the camera's own lerp then turns the purchase into a visible zoom. */
+  const zNow = R.camZ * zoomForScan(g.up.scan) + camZBoost;
   const halfW = Math.tan((camera.fov * Math.PI) / 360) * zNow * camera.aspect;
   const lim = Math.max(0, W / 2 - halfW);
   const flying = g.mode === 'fly';

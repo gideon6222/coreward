@@ -65,6 +65,31 @@ export const BANK_SETTLE = asExpRate(6);
 export const FACE_TURN_RATE = asExpRate(14);
 export const CAM_Y_OFFSET = 0.8;    /* look slightly below the ship */
 
+/* ---------- how far you can see ----------
+
+   Playtest: *"can you also make the light upgrade more important? I can see
+   all of the blocks on screen, so it doesnt seem very beneficial."*
+
+   He was right, and the reason is that the Scanner only ever changed the
+   LAMP's radius while the camera framed a fixed eighteen rows. Everything on
+   screen was already inside the lit circle at every level, so the upgrade
+   bought a slightly warmer wall and nothing else.
+
+   The framing now belongs to the Scanner. At level 0 the camera sits close and
+   you are working in a pocket of light; every level widens it, and the last
+   one shows appreciably more world than the game ever did before. Because the
+   camera lerps toward its target, buying a level is a slow zoom out - the
+   upgrade is a thing that visibly happens to you rather than a number.
+
+   Curved rather than linear: the first two levels are worth the most, which is
+   when the player is deciding whether the Scanner is worth buying at all. */
+export const ZOOM_MIN = 0.74;   /* level 0, tight */
+export const ZOOM_MAX = 1.10;   /* level 9, wider than the old fixed framing */
+export function zoomForScan(level: number): number {
+  const t = clamp01(level / 9);
+  return ZOOM_MIN + (ZOOM_MAX - ZOOM_MIN) * (1 - Math.pow(1 - t, 1.7));
+}
+
 /* ---------- depth ----------
    One ramp drives ambient light, sun, rim, fog and the CSS sky. Tying
    atmosphere to a game variable is the cheapest mood in the game. */

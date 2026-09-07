@@ -1,6 +1,7 @@
 /* Tuning constants and the pure functions over them. Imports only types. */
 
 import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost } from './types';
+import { zoomForScan } from './feel';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
    framing, so the rest is lateral room to explore: which way to dig at a given
@@ -344,8 +345,11 @@ export const UPGRADES: Upgrade[] = [
      one gold block. The shallower multiplier keeps later levels reachable. */
   { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9, mat: 'emerald',
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
+  /* The effect line names the framing as well as the lamp, because the
+     framing is now the part the player actually feels. */
   { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9, mat: 'amethyst',
-    effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light' },
+    effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light · ' +
+      Math.round(zoomForScan(l) * 100) + '% view' },
   { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8, mat: 'iron',
     effect: (l: number) => 'Tow takes ' + Math.round(Math.max(0.1, 0.5 - l * 0.05) * 100) + '% of haul' },
   { key: 'auto',   name: 'Autopilot',     base: 900, mul: 2.20, max: 6, mat: 'ruby',
