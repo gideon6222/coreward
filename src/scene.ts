@@ -31,7 +31,12 @@ export function resize() {
   const w = window.innerWidth, h = window.innerHeight;
   renderer.setSize(w, h);
   camera.aspect = w / h;
-  const rows = 13, halfV = Math.tan((camera.fov * Math.PI) / 360);
+  /* Rows framed vertically. Portrait aspect is about 0.46, so this also decides
+     how many columns are visible - 18 rows shows roughly 8 columns. Raising it
+     is what makes the world feel large: the ship shrinks against the terrain and
+     more of the shaft is legible at once. Affordable because terrain is
+     instanced; before Stage 2 this would have been ~300 draw calls. */
+  const rows = 18, halfV = Math.tan((camera.fov * Math.PI) / 360);
   let z = rows / (2 * halfV);
   const needW = (W + 2) / camera.aspect;
   if (needW < rows) z = Math.max(9, needW / (2 * halfV));

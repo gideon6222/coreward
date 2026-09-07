@@ -25,8 +25,9 @@ import type { Block } from './types';
    time. That keeps every line of the feel code untouched and still gets
    essentially all of the win. */
 
-/* the streaming window is rows (row-9 .. row+11) across the full width */
-const WINDOW_ROWS = 21;
+/* the streaming window, which must comfortably exceed the framed rows or
+   terrain pops in at the edges as the camera moves */
+const WINDOW_ROWS = 29;
 const MAX_CELLS = WINDOW_ROWS * W;
 /* up to `shards` front crystals plus two mirrored to the back face */
 const MAX_DETAILS = MAX_CELLS * 10;
@@ -198,7 +199,7 @@ function rebuild() {
   oreGlows.length = 0;
 
   const row = lastRow === null ? Math.floor(g.pd) : lastRow;
-  const d0 = Math.max(0, row - 9), d1 = row + 11;
+  const d0 = Math.max(0, row - 13), d1 = row + 15;
 
   for (let d = d0; d <= d1; d++) {
     for (let x = 0; x < W; x++) {

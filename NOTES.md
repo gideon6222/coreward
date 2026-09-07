@@ -149,6 +149,40 @@ The smoke test now enforces a draw-call budget of 70, counted by wrapping the GL
 context. Mutation-tested: reverting to per-block meshes fails it and nothing
 else.
 
+## A bigger-feeling world (2026-09-06)
+
+Playtest asked for the world to feel bigger: smaller ship, smaller blocks, more
+on screen. Both levers pull the same way and Stage 2 is what made them
+affordable.
+
+- **World width 9 -> 13 columns.** Only about 8 fit on a portrait screen, so the
+  rest is lateral room: which way to dig at a given depth is now a choice.
+- **Framed rows 13 -> 18.** This is what actually shrinks everything on screen.
+- **Streaming window 21 -> 29 rows**, so terrain does not pop in at the edges.
+  377 cells streamed, up from 189.
+- **Ship rebuilt smaller** (`rig.scale` 0.82) with a silhouette that survives it:
+  tapered nose, swept fins instead of round pods, a dark ring separating the
+  canopy from the hull. At thirty-odd pixels, shape reads and surface detail
+  does not.
+
+**Widening is purely additive.** `rnd()` is seeded on (x, d, planet), so columns
+0-8 generate exactly as before - verified by re-checking all 10,827 cells of the
+old baseline against the new code, zero mismatches. Existing saves keep their
+world and their tunnels.
+
+Draw calls went 35 -> 56 against the budget of 70, for twice the cells. The
+likely driver is ore haloes, which are still one sprite each and there are now
+more of them visible. **That is the next optimisation lever if Stage 3 needs
+headroom**: consolidating them into a single instanced or Points draw. Not done
+yet because the pulse animates each halo's scale, which a shared draw would need
+a small custom shader to preserve.
+
+A test fixture lesson: the pathfinding fixtures hardcoded x=4, the old
+`START_X`, so widening the world broke a *contract* test rather than just the
+canary. They are now written relative to `START_X`, and there is an assertion
+that the pad stays centred. Fixtures that hardcode a derived constant will break
+on the day it changes.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

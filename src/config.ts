@@ -2,7 +2,14 @@
 
 import type { Ore, Rock, Material, Upgrade, UpgradeKey } from './types';
 
-export const W = 9;
+/* World width in columns. Only about 8 fit on a portrait screen at the current
+   framing, so the rest is lateral room to explore: which way to dig at a given
+   depth is a real choice rather than a formality.
+
+   Widening this does not change the blocks in columns 0-8 - rnd() is seeded on
+   (x, d, planet), so existing columns generate exactly as before and the new
+   ones are simply additional world. */
+export const W = 13;
 export const SAVE_KEY = 'coreward.v2';
 export const OLD_KEY = 'coreward.v1';
 export const HULL_MAX = 100;

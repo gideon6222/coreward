@@ -89,8 +89,9 @@ test('ore and rock definition tables are unchanged', () => {
 });
 
 test('constants that gate progression are unchanged', () => {
-  assert.equal(H.W, 9);
-  assert.equal(H.START_X, 4);
+  assert.equal(H.W, 13);
+  assert.equal(H.START_X, 6);
+  assert.equal(H.START_X, Math.floor(H.W / 2), 'the pad must stay centred');
   assert.equal(H.HULL_MAX, 100);
   assert.equal(H.DIG_BASE, 0.5);
   assert.equal(H.SAVE_KEY, 'coreward.v2');

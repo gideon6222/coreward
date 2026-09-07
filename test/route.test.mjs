@@ -17,8 +17,9 @@ const H = await loadPure();
 function room() {
   H.g.planet = 0;
   H.g.dug = new Set();
-  for (let d = 0; d <= 10; d++) for (let x = 3; x <= 5; x++) H.g.dug.add(H.key(x, d));
-  H.g.px = 3;
+  for (let d = 0; d <= 10; d++)
+    for (let x = H.START_X - 1; x <= H.START_X + 1; x++) H.g.dug.add(H.key(x, d));
+  H.g.px = H.START_X - 1;
   H.g.pd = 10;
 }
 
@@ -26,9 +27,9 @@ function room() {
 function elbow() {
   H.g.planet = 0;
   H.g.dug = new Set();
-  for (let d = 0; d <= 8; d++) H.g.dug.add(H.key(4, d));
-  for (let x = 4; x <= 7; x++) H.g.dug.add(H.key(x, 8));
-  H.g.px = 7;
+  for (let d = 0; d <= 8; d++) H.g.dug.add(H.key(H.START_X, d));
+  for (let x = H.START_X; x <= H.START_X + 3; x++) H.g.dug.add(H.key(x, 8));
+  H.g.px = H.START_X + 3;
   H.g.pd = 8;
 }
 
@@ -39,9 +40,10 @@ function elbow() {
 function fork() {
   H.g.planet = 0;
   H.g.dug = new Set();
-  for (let d = 0; d <= 10; d++) if (d !== 5) H.g.dug.add(H.key(4, d));
-  for (const x of [3, 5]) for (const d of [4, 5, 6]) H.g.dug.add(H.key(x, d));
-  H.g.px = 4;
+  for (let d = 0; d <= 10; d++) if (d !== 5) H.g.dug.add(H.key(H.START_X, d));
+  for (const x of [H.START_X - 1, H.START_X + 1])
+    for (const d of [4, 5, 6]) H.g.dug.add(H.key(x, d));
+  H.g.px = H.START_X;
   H.g.pd = 10;
 }
 
@@ -95,22 +97,22 @@ function assertValidRoute(route, sx, sd) {
 test('route through an open room is valid and optimal', () => {
   room();
   const route = H.findRoute();
-  assertValidRoute(route, 3, 10);
-  assert.equal(route.length - 1, shortestDist(3, 10), 'route is not a shortest path');
-  assert.equal(route.length - 1, 12, 'expected 12 steps from (3,10) to the pad');
+  assertValidRoute(route, H.START_X - 1, 10);
+  assert.equal(route.length - 1, shortestDist(H.START_X - 1, 10), 'route is not a shortest path');
+  assert.equal(route.length - 1, 12, 'expected 12 steps to the pad');
 });
 
 test('route through a one-way elbow tunnel is valid and optimal', () => {
   elbow();
   const route = H.findRoute();
-  assertValidRoute(route, 7, 8);
-  assert.equal(route.length - 1, shortestDist(7, 8), 'route is not a shortest path');
+  assertValidRoute(route, H.START_X + 3, 8);
+  assert.equal(route.length - 1, shortestDist(H.START_X + 3, 8), 'route is not a shortest path');
 });
 
 test('no route when the ship is sealed in', () => {
   H.g.planet = 0;
-  H.g.dug = new Set([H.key(4, 50)]);
-  H.g.px = 4;
+  H.g.dug = new Set([H.key(H.START_X, 50)]);
+  H.g.px = H.START_X;
   H.g.pd = 50;
   assert.equal(H.findRoute(), null, 'a sealed pocket must not produce a route');
 });
@@ -125,19 +127,19 @@ test('no route when already at the pad', () => {
 
 test('fractional ship position is rounded to a cell', () => {
   room();
-  H.g.px = 3.4;
+  H.g.px = H.START_X - 1 + 0.4;
   H.g.pd = 9.6;
   const route = H.findRoute();
-  assertValidRoute(route, 3, 10);
+  assertValidRoute(route, H.START_X - 1, 10);
 });
 
 
 test('route around a symmetric fork is valid and optimal', () => {
   fork();
   const route = H.findRoute();
-  assertValidRoute(route, 4, 10);
-  assert.equal(route.length - 1, shortestDist(4, 10), 'route is not a shortest path');
-  const detour = route.some((c) => c[0] === 3) ? 'left' : 'right';
+  assertValidRoute(route, H.START_X, 10);
+  assert.equal(route.length - 1, shortestDist(H.START_X, 10), 'route is not a shortest path');
+  const detour = route.some((c) => c[0] === H.START_X - 1) ? 'left' : 'right';
   assert.ok(['left', 'right'].includes(detour), 'route must take one of the two detours');
 });
 
