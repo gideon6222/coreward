@@ -7,6 +7,10 @@ export const g: {
   up: Record<UpgradeKey, number>;
   kit: Kit;
   dug: Set<string>;
+  /* Cells a tremor filled back in. They read as rubble rather than as what was
+     originally generated there, which is what stops a collapse from being an
+     ore respawn. `dug` takes precedence, so clearing one needs no cleanup. */
+  rubble: Set<string>;
   px: number; pd: number;
   face: Dir;
   fuel: number; hull: number; soak: number;
@@ -20,6 +24,7 @@ export const g: {
   up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
   kit: { coolant: 0, patch: 0, cell: 0 },
   dug: new Set<string>(),
+  rubble: new Set<string>(),
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0,
@@ -60,7 +65,7 @@ export function save() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
-      kit: g.kit, stock: g.stock
+      kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble)
     }));
   } catch (e) { /* ignore */ }
 }
@@ -74,6 +79,7 @@ export function load() {
       Object.assign(g.up, s.up || {});
       Object.assign(g.kit, s.kit || {});
       g.dug = new Set(s.dug || []);
+      g.rubble = new Set(s.rubble || []);
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;

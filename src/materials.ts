@@ -110,7 +110,9 @@ export const ROCK_BUMP: Record<string, number> = {
   /* A gas pocket is a bubble, so its shell is the smoothest thing in the
      ground; a geode is a cracked-open shell, so it is the roughest. Both read
      as "not rock" at a glance, which is the entire point of a pocket. */
-  gas: 0.10, geode: 0.34
+  gas: 0.10, geode: 0.34,
+  /* loose fill, so the roughest surface in the game */
+  rubble: 0.40
 };
 
 /* Inject the displacement into a standard material.

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { W, HULL_MAX, DIG_BASE, coreDepth, valueMult, skyHi, skyLo,
-         GAS_HULL_DAMAGE, GAS_SOAK, traitOf } from './config';
+         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
 import { blockAt } from './world';
@@ -15,7 +15,8 @@ import {
   FACE_TURN_RATE,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH,
-  depthT, heatT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter
+  depthT, heatT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter,
+  tremorTick, TREMOR_EVERY, TREMOR_JITTER
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
@@ -24,7 +25,7 @@ import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './parti
 import { player, rig, bit, flames, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
-import { sell, goSurface, tow, breakCore } from './actions';
+import { sell, goSurface, tow, breakCore, tremor } from './actions';
 import { sfx, setDepth } from './audio';
 
 export function step(dir: Dir) {
@@ -208,6 +209,25 @@ export function frame(now: number) {
     /* Two metres of hysteresis, so hovering on the line cannot spam the
        warning every time the camera lerp nudges you across it. */
     if (R.wasHot && g.pd < HEAT_DEPTH - 2) R.wasHot = false;
+
+    /* ---------- tremors ----------
+       The clock only runs inside the unstable band and is reset the moment
+       you leave it, so climbing out of the band is a real reprieve rather
+       than a pause. */
+    const tk = tremorTick({ t: R.tremorT, warn: R.tremorWarn }, dt,
+      g.pd > TREMOR_DEPTH && !R.flight,
+      () => TREMOR_EVERY + Math.random() * TREMOR_JITTER);
+    R.tremorT = tk.t;
+    R.tremorWarn = tk.warn;
+    if (tk.warned) { toast('The rock is shifting'); sfx.rumble(); }
+    if (tk.shake > 0) R.shake = Math.max(R.shake, 0.10 + 0.34 * tk.shake);
+    if (tk.fired) {
+      const n = tremor();
+      R.shake = Math.max(R.shake, 1.15);
+      flash('rgba(180,150,110,.24)', 460);
+      sfx.collapse();
+      toast(n ? 'Tremor - ' + n + ' m of tunnel caved in' : 'Tremor - the rock held');
+    }
 
     if (g.fuel <= 0) { g.fuel = 0; tow('Your tank ran dry at ' + Math.round(g.pd) + ' m.'); }
     else if (g.hull <= 0) {

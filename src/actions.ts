@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
-         PATCH_HULL, CELL_FUEL, coreDepth, planetName, traitOf, valueMult } from './config';
+         PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells,
+         coreDepth, planetName, traitOf, valueMult } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
-import { haulValue, findRoute } from './world';
+import { haulValue, findRoute, planCollapse } from './world';
 import { R } from './runtime';
 import { lamp } from './scene';
 import { worldX } from './materials';
@@ -38,6 +39,7 @@ export function goSurface() {
   g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0;
   R.hullCause = 'heat';
   R.wasHot = false;
+  R.tremorT = 0; R.tremorWarn = 0;
   syncBlocks(true);
   save();
 }
@@ -79,6 +81,23 @@ export function useSupply(k: SupplyKey) {
   sfx.supply();
   updateKit();
   save();
+}
+
+/* A tremor: choose and apply the collapse in world.ts, then show it.
+
+   Everything load-bearing - which cells, and the guarantee that the ship can
+   still reach the pad afterwards - is in planCollapse() so it can be tested
+   without a renderer. What is left here is dust and bookkeeping. */
+export function tremor(): number {
+  const taken = planCollapse(tremorCells(g.pd));
+  if (!taken.length) return 0;
+  syncBlocks(true);
+  for (const k of taken) {
+    const c = k.split(',');
+    spray(worldX(+c[0]), -(+c[1]), RUBBLE.color, 16, 4.5, 1.1);
+  }
+  save();
+  return taken.length;
 }
 
 export function autopilot() {
@@ -147,6 +166,7 @@ export function breakCore() {
       () => {
         g.planet = next;
         g.dug = new Set();
+        g.rubble = new Set();
         for (const k of Array.from(meshes.keys())) dropBlock(k);
         goSurface();
         save();
@@ -161,6 +181,7 @@ export function hardReset() {
   g.kit = { coolant: 0, patch: 0, cell: 0 };
   g.stock = {};
   g.dug = new Set();
+  g.rubble = new Set();
   g.cargo = {}; g.weight = 0;
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();

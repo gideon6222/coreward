@@ -158,3 +158,149 @@ test('CANARY: exact tie-break path (safe to re-record on its own)', () => {
   const forkRoute = H.findRoute();
   assertGolden('route-canary', { room: roomRoute, elbow: elbowRoute, fork: forkRoute });
 });
+
+/* ---------- tremor collapses ----------
+
+   planCollapse() is the whole tremor mechanic minus the dust. The property
+   that matters is the last one: a tremor may cost you time, fuel and patience,
+   but it must never seal you in. */
+
+/* A single shaft from the pad down to `depth`, ship at the bottom. Every cell
+   in it is load-bearing, which makes it the worst case for the seal-in
+   guarantee and useless for testing anything else. */
+function shaft(depth, x = H.START_X) {
+  H.g.planet = 0;
+  H.g.rubble = new Set();
+  H.g.dug = new Set();
+  for (let d = -1; d <= depth; d++) H.g.dug.add(H.key(x, d));
+  H.g.px = x; H.g.pd = depth;
+}
+
+/* A hollowed-out column of the whole world down to `depth`. Redundant enough
+   that a collapse always goes ahead, so tests about WHICH cells get taken are
+   not silently testing the revert path instead.
+
+   Asserts the depth is above the core, because findRoute() refuses to path
+   below coreDepth and a fixture that ignores that reverts every collapse -
+   which makes every test using it pass while checking nothing. That is exactly
+   what happened here first time round. */
+function cavern(depth) {
+  assert.ok(depth < H.coreDepth(0),
+    'cavern(' + depth + ') is at or below the core, where no route can exist');
+  H.g.planet = 0;
+  H.g.rubble = new Set();
+  H.g.dug = new Set();
+  for (let d = -1; d <= depth; d++)
+    for (let x = 0; x < H.W; x++) H.g.dug.add(H.key(x, d));
+  H.g.px = H.START_X; H.g.pd = depth;
+}
+
+function clearWorld() {
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+  H.g.px = H.START_X; H.g.pd = -1;
+}
+
+/* deterministic shuffle source, so a failure is reproducible */
+function seeded(n) {
+  let s = n;
+  return () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+}
+
+test('a collapse takes tunnel from above the ship, never from beside it', () => {
+  cavern(100);
+  const taken = H.planCollapse(4, seeded(7));
+  assert.equal(taken.length, 4);
+  for (const k of taken) {
+    const [x, d] = k.split(',').map(Number);
+    assert.ok(d < 100, 'collapsed a cell at or below the ship: ' + k);
+    assert.ok(Math.abs(x - H.START_X) + Math.abs(d - 100) >= H.TREMOR_SAFE_RADIUS,
+      'collapsed inside the safe radius: ' + k);
+    assert.ok(H.g.rubble.has(k) && !H.g.dug.has(k), k + ' was not actually filled in');
+  }
+  clearWorld();
+});
+
+test('collapsed cells become solid again and cost fuel to re-clear', () => {
+  cavern(100);
+  const taken = H.planCollapse(3, seeded(11));
+  for (const k of taken) {
+    const [x, d] = k.split(',').map(Number);
+    const b = H.blockAt(x, d);
+    assert.ok(b, 'a collapsed cell must be solid: ' + k);
+    assert.equal(b.id, 'rubble');
+  }
+  clearWorld();
+});
+
+/* THE guarantee. */
+test('a tremor never seals the ship in', () => {
+  /* A single-width shaft is the worst case: every cell in it is load-bearing,
+     so any collapse at all disconnects the ship from the pad. */
+  shaft(100);
+  const before = new Set(H.g.dug);
+  const taken = H.planCollapse(4, seeded(3));
+  assert.equal(taken.length, 0,
+    'a collapse that would seal the ship in must be abandoned entirely');
+  assert.equal(H.g.rubble.size, 0, 'the abandoned collapse left rubble behind');
+  assert.deepEqual(new Set(H.g.dug), before, 'the abandoned collapse did not fully revert');
+  assert.ok(H.findRoute(), 'the ship must still be able to get home');
+
+  /* and it holds for every seed, not just a lucky one */
+  for (let seed = 1; seed <= 60; seed++) {
+    shaft(100);
+    assert.equal(H.planCollapse(4, seeded(seed)).length, 0, 'seed ' + seed + ' sealed the ship in');
+    assert.ok(H.findRoute(), 'seed ' + seed + ' left the ship without a route');
+  }
+  clearWorld();
+});
+
+test('with a second route open, the same collapse goes ahead', () => {
+  /* two parallel shafts joined at the bottom: now cells are expendable */
+  shaft(100);
+  for (let d = -1; d <= 100; d++) H.g.dug.add(H.key(H.START_X + 1, d));
+  const taken = H.planCollapse(4, seeded(3));
+  assert.ok(taken.length > 0, 'a redundant tunnel should be able to absorb a collapse');
+  assert.ok(H.findRoute(), 'and the ship still gets home');
+  clearWorld();
+});
+
+/* Whatever it takes, and however often, the ship can always get home. This is
+   the assertion the whole mechanic rests on. */
+test('across many shapes and seeds, a collapse never strands the ship', () => {
+  let applied = 0;
+  for (let seed = 1; seed <= 40; seed++) {
+    cavern(60 + (seed % 40));
+    for (let round = 0; round < 6; round++) {
+      applied += H.planCollapse(3 + (seed % 5), seeded(seed * 31 + round)).length;
+      assert.ok(H.findRoute(),
+        'seed ' + seed + ' round ' + round + ': no route home after a collapse');
+    }
+  }
+  /* Without this the test passes trivially when every collapse reverts, which
+     is the failure mode that hid a broken fixture once already. */
+  assert.ok(applied > 500, 'only ' + applied + ' cells ever collapsed - this is testing nothing');
+  clearWorld();
+});
+
+test('a collapse is bounded by how much tunnel there is', () => {
+  shaft(90);
+  for (let d = -1; d <= 90; d++) H.g.dug.add(H.key(H.START_X + 1, d));
+  const taken = H.planCollapse(500, seeded(5));
+  assert.ok(taken.length === 0 || taken.length < 500,
+    'asking for more cells than exist must not invent them');
+  clearWorld();
+});
+
+test('the shuffle actually shuffles', () => {
+  /* sort(() => rand() - 0.5) is the classic non-shuffle: it leaves the array
+     close to where it started. Two different seeds should disagree. */
+  cavern(100);
+  const a = H.planCollapse(6, seeded(1));
+  cavern(100);
+  const b = H.planCollapse(6, seeded(999));
+  assert.ok(a.length === 6 && b.length === 6, 'both collapses should have gone ahead');
+  assert.notDeepEqual(a.slice().sort(), b.slice().sort(),
+    'two seeds picked the same cells - the shuffle is not shuffling');
+  clearWorld();
+});

@@ -113,6 +113,39 @@ export const caveChanceOn = (d: number, p: number) =>
 export const gasChanceOn = (p: number) => Math.min(0.06, GAS.chance * (traitOf(p).gas || 1));
 export const geodeChanceOn = (p: number) => Math.min(0.06, GEODE.chance * (traitOf(p).geode || 1));
 
+/* ---------- tremors ----------
+
+   Below 70 m the only pressure was heat, which is attrition: it charges you
+   for time and nothing else, so the deep game had exactly one question and the
+   answer was always "leave a bit sooner". Dome Keeper's tension comes from a
+   recurring event on a rhythm rather than a drain, and that is what this is.
+
+   Past TREMOR_DEPTH the ground periodically shifts and fills in some of the
+   tunnel you dug. It never touches where you are standing - it takes the way
+   OUT. So depth stops being a number you push and becomes a commitment: the
+   further down you are when one lands, the worse your route home gets, and the
+   more of your remaining fuel goes on re-digging it.
+
+   Deliberately deeper than the heat line, so the world reads in three bands
+   rather than two: quiet, hot, and unstable. 85 m leaves a 25 m window on
+   planet 0, whose core sits at 110, so the band is reachable on the planet
+   everyone starts on. */
+export const TREMOR_DEPTH = 85;
+/* The rhythm - first delay, gap, jitter, warning - lives in feel.ts. */
+/* how far from the ship a cell has to be before it may collapse */
+export const TREMOR_SAFE_RADIUS = 3;
+export const tremorCells = (d: number) => Math.min(9, 3 + Math.floor((d - TREMOR_DEPTH) / 22));
+
+/* What a collapsed cell becomes. It regenerates as loose rubble rather than as
+   whatever was there before, because otherwise a tremor would refill the ore
+   you just mined and you could farm the same vein forever. Cheap to clear and
+   nearly worthless, so re-digging your way out costs time and fuel and pays
+   almost nothing - which is the point. */
+export const RUBBLE_HARD = 0.55;   /* against the band it sits in */
+export const RUBBLE: Rock = {
+  id: 'rubble', name: 'Rubble', color: 0x6d6459, hard: 1.4, wt: 1.2, value: 5, glow: 0.02
+};
+
 export const ORES: Ore[] = [
   { id: 'coreite',  name: 'Coreite',  color: 0x66fff0, host: 0x2a2f3a, hard: 16,  wt: 16,  value: 22000, min: 185, chance: 0.030, glow: 0.60, shards: 7, tone: 9 },
   { id: 'magmite',  name: 'Magmite',  color: 0xff7a18, host: 0x2e2228, hard: 13,  wt: 13,  value: 9000,  min: 145, chance: 0.038, glow: 0.50, shards: 6, tone: 8 },
@@ -164,6 +197,7 @@ export const isOre = (m: Material): m is Ore => 'min' in m;
 export const DEF: Record<string, Material> = {};
 for (const o of ORES) DEF[o.id] = o;
 DEF[GEODE.id] = GEODE;
+DEF[RUBBLE.id] = RUBBLE;
 DEF[GAS.id] = GAS;
 for (const r of ROCKS) DEF[r.id] = r;
 
