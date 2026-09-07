@@ -24,6 +24,27 @@ scene.add(sun);
 export const rim = new THREE.DirectionalLight(0x4a7ad0, 0.5);
 rim.position.set(-6, -3, -6);
 scene.add(rim);
+/* Backdrop.
+
+   The terrain is a single layer of chunks, so anywhere one is missing - a dug
+   side tunnel, the edge of the streamed window - the sky gradient shows
+   straight through and underground reads as cut-out shapes floating in
+   daylight. This sits behind the terrain so those gaps read as rock continuing
+   into the dark instead.
+
+   Completely static: the world is 13 columns wide and this is 60, so it never
+   needs to follow the camera, and its top edge sits at the surface so it never
+   covers the sky or the stars. One draw call, set up once, never touched again.
+
+   Deliberately dark and unlit - fog tints it toward whatever the depth colour
+   is, so it goes ember below the heat line along with everything else. */
+const backdrop = new THREE.Mesh(
+  new THREE.PlaneGeometry(60, 400),
+  new THREE.MeshBasicMaterial({ color: 0x14161c })
+);
+backdrop.position.set(0, 0.5 - 200, -1.4);
+scene.add(backdrop);
+
 export const lamp = new THREE.PointLight(0xffd9a0, 30, S.light(), 1.25);
 scene.add(lamp);
 

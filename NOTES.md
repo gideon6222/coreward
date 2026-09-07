@@ -215,6 +215,33 @@ Draw calls through the whole sequence: **207 before instancing, 35 after, 56
 after widening the world, 66 with per-type chunks, 37 once the haloes were
 consolidated.** Budget is 70, so there is real headroom for Stage 3 again.
 
+## Sealing the seams (2026-09-07)
+
+Playtest: "I can see light from the background in between them." Two causes, one
+of them mine from the day before.
+
+**The chunk displacement was pulling faces inward.** It displaced vertices in
+both directions, so a face could sit *inside* the 1.0 cell by up to 0.125 for
+basalt, while neighbours only overlapped by 0.03. Two neighbours both pulled in
+opened a slit, and terrain is a single layer of chunks, so the sky gradient
+showed straight through. It was worse in harder rock because those have a larger
+bump.
+
+Fixed by displacing **outward only** on whichever axes a vertex is already
+extreme on. Every chunk now provably contains the full unit cell - verified by
+checking that no vertex's largest coordinate falls below 0.5, across all five
+rock types - so chunks tile with no gap at any bump size and any instance scale
+above 1.0 is genuine overlap.
+
+**A backdrop behind the terrain**, because chunks alone cannot help where a
+block is genuinely missing: a dug side tunnel or the edge of the streamed window
+still exposed sky, which made underground read as cut-outs floating in daylight.
+It is one static plane, 60 wide against a 13-column world so it never needs to
+follow the camera, with its top edge at y=0.5 - exactly the top of the terrain
+layer, so it hides behind the first row and never covers sky, stars or the pad.
+Unlit and dark, so fog tints it to whatever the depth colour is and it goes
+ember below the heat line with everything else. One draw call, set once.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

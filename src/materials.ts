@@ -57,13 +57,29 @@ export function chunkGeometry(size: number, bump: number, seg = 2) {
     n = Math.imul(n ^ (n >>> 13), 1274126177);
     return (((n ^ (n >>> 16)) >>> 0) / 4294967296) - 0.5;
   };
+  /* Displace OUTWARD only on whichever axes the vertex is already extreme on.
+
+     Free displacement pulled faces inside the 1.0 cell - up to 0.125 for
+     basalt - while neighbours only overlap by 0.03, so slits opened between
+     chunks and the sky showed straight through a single-layer terrain.
+
+     Pushing extreme coordinates outward guarantees every chunk still contains
+     the full unit cell, so chunks tile with no gap at any bump size, and any
+     instance scale above 1.0 is genuine overlap. Coordinates that are not
+     extreme sit in the middle of a face, so displacing those freely reshapes
+     the face without shrinking the chunk. */
+  const half = size / 2;
   for (let i = 0; i < pos.count; i++) {
-    pos.setXYZ(
-      i,
-      pos.getX(i) + h(i, 0) * bump,
-      pos.getY(i) + h(i, 1) * bump,
-      pos.getZ(i) + h(i, 2) * bump
-    );
+    const c = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+    for (let a = 0; a < 3; a++) {
+      const n = h(i, a) * bump;
+      if (Math.abs(c[a]) > half * 0.5) {
+        c[a] = Math.sign(c[a]) * (half + Math.abs(n));
+      } else {
+        c[a] += n;
+      }
+    }
+    pos.setXYZ(i, c[0], c[1], c[2]);
   }
   pos.needsUpdate = true;
   g.computeVertexNormals();
