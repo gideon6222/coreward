@@ -1147,6 +1147,36 @@ wholesale and is *supposed* to be common. Counted together, seams tripped the
 change that had nothing to do with them. They are counted apart now, with a
 ceiling each.
 
+## The Scanner finally has a job (2026-09-07)
+
+Playtest: *"can you also make the light upgrade more important? I can see all
+of the blocks on screen, so it doesnt seem very beneficial."*
+
+Exactly right, and the reason is structural rather than a matter of degree: the
+Scanner only ever changed the **lamp's radius**, while the camera framed a
+fixed eighteen rows. Everything on screen was already inside the lit circle at
+every level, so the upgrade bought a slightly warmer wall.
+
+The framing belongs to the Scanner now. Level 0 frames 74% of the old view -
+you work in a pocket - and level 9 frames 110%, more world than the game has
+ever shown. The curve is front-loaded, because the first two levels are when
+the player is deciding whether the Scanner is worth buying at all and a linear
+ramp would make that first purchase feel like nothing.
+
+Applied in the frame loop rather than in `resize()`, so the camera's existing
+lerp turns a purchase into a zoom rather than a jump cut.
+
+**His other suggestion came for free.** He also proposed making distant blocks
+hard to identify without the upgrade. With a tight camera at low Scanner the
+lamp no longer covers the frame, so the edges genuinely fall into darkness -
+and because ore haloes are additive and unlit, you can still see that something
+is *there* without being able to tell what. That is a better version of the
+idea than either of us specified, and it is what the existing lighting does
+once the framing stops covering for it.
+
+There is a test asserting the lit radius grows faster than the framing at every
+level. If the view ever outran the light, an upgrade would be buying darkness.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

@@ -489,3 +489,47 @@ test('a single enormous frame cannot skip a warning', () => {
   assert.ok(fired > 0, 'nothing fired at all');
   assert.equal(warned, fired, 'huge frames desynced the warning from the landing');
 });
+
+/* ---------- what the Scanner is actually for ----------
+
+   Playtest: "I can see all of the blocks on screen, so it doesnt seem very
+   beneficial." The Scanner only changed the lamp's radius while the camera
+   framed a fixed number of rows, so everything on screen was already inside
+   the lit circle at every level. The framing belongs to it now. */
+
+test('the Scanner widens the view, and the early levels are worth the most', () => {
+  const at = (l) => H.zoomForScan(l);
+  assert.ok(at(0) < 0.8, 'level 0 has to be tight enough that the upgrade has a job');
+  assert.ok(at(9) > 1.0, 'a maxed Scanner should show more world than the old fixed framing');
+
+  for (let l = 1; l <= 9; l++)
+    assert.ok(at(l) > at(l - 1), 'level ' + l + ' did not widen the view');
+
+  /* Front-loaded: the first two levels are when the player is deciding whether
+     the Scanner is worth buying at all, so they have to be the ones that show. */
+  const first = at(2) - at(0), last = at(9) - at(7);
+  assert.ok(first > last * 1.5,
+    'the first two levels gain ' + first.toFixed(3) + ' and the last two ' +
+    last.toFixed(3) + ' - a linear ramp makes the first purchase feel like nothing');
+
+  /* and it stays inside sane bounds however it is called */
+  for (const l of [-3, 0, 4, 9, 40]) {
+    const v = at(l);
+    assert.ok(v >= H.ZOOM_MIN - 1e-9 && v <= H.ZOOM_MAX + 1e-9, 'zoom escaped its range at ' + l);
+  }
+});
+
+test('the lamp and the framing grow together', () => {
+  /* If the view outran the light, the extra world would be dark and the
+     upgrade would have made things worse. Both are driven by the same level,
+     so this asserts the ratio never gets worse as you buy levels. */
+  const lit = (l) => 8 + l * 2.4;
+  let prev = lit(0) / H.zoomForScan(0);
+  for (let l = 1; l <= 9; l++) {
+    const now = lit(l) / H.zoomForScan(l);
+    assert.ok(now > prev,
+      'at level ' + l + ' the view widened faster than the light reached, so the ' +
+      'upgrade buys more darkness');
+    prev = now;
+  }
+});
