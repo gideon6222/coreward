@@ -242,6 +242,31 @@ These cover pure functions only. Hit-stop, camera lerps and the autopilot spline
 live in the frame loop and **cannot** be covered here. The side-by-side check on
 the phone is the real test for those.
 
+### Bundle size guard
+
+```
+npm run size          # check
+npm run size:update   # re-record deliberately, then commit bundle-budget.json
+```
+
+Fails in **both** directions, per chunk, and CI runs it. A shrink means code
+went missing; growth usually means something got pulled into the pure layer that
+should only be an `import type`.
+
+three.js is deliberately split into its own chunk, and the second reason matters
+more than the first:
+
+1. It is ~470 kB and only changes when the pinned version does, while game code
+   changes constantly. A gameplay tweak now invalidates ~35 kB instead of
+   ~506 kB — a real difference for a PWA that updates over mobile data.
+2. **It is what makes the size guard work.** In one combined bundle, the frame
+   loop going missing was a 1.57% drop, inside any sane tolerance. Against the
+   35 kB game chunk the same regression is 22%. Verified by re-running the
+   mutation: the guard misses it before the split and catches it after.
+
+Tolerances reflect that: 12% on the volatile game chunk, 1% on the pinned
+vendor chunk.
+
 ## Hard constraints
 
 - **No binary files, ever.** The GitHub connector used to push here cannot commit

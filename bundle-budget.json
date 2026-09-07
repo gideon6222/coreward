@@ -1,0 +1,15 @@
+{
+  "note": "Regenerate with `npm run size:update` and commit. Both directions are checked; a shrink means code went missing.",
+  "chunks": [
+    {
+      "name": "three",
+      "bytes": 481609,
+      "tolerancePercent": 1
+    },
+    {
+      "name": "index",
+      "bytes": 35816,
+      "tolerancePercent": 12
+    }
+  ]
+}

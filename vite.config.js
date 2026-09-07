@@ -39,7 +39,27 @@ export default defineConfig({
     target: 'es2020',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        /* Split three.js out of the game code. Two reasons, and the second
+           matters more than the first.
+
+           1. three.js is ~490 kB and changes only when the pinned version
+              changes, while game code changes constantly. Keeping them apart
+              means a gameplay tweak invalidates ~20 kB instead of ~506 kB,
+              which is the difference between a fast PWA update on mobile data
+              and a slow one.
+
+           2. It makes the bundle size guard actually work. In one combined
+              chunk, the frame loop going missing showed up as a 1.57% drop -
+              inside any sane tolerance. As its own chunk the game code is
+              small enough that losing the loop is an unmissable percentage. */
+        manualChunks(id) {
+          if (id.includes('node_modules/three')) return 'three';
+        }
+      }
+    }
   },
 
   plugins: [
