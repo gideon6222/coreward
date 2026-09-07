@@ -1,31 +1,54 @@
 /* Coreward audio. Everything is synthesised at runtime, no files are loaded.
    Split out of app.js so the score can be retuned on its own. */
 
+/* Built lazily by audioInit() on the first user gesture, because Chrome blocks
+   an AudioContext created any other way. Everything below runs only after that,
+   behind `if (!ready())` or `if (!A.ctx) return` guards, so these are typed as
+   non-null rather than threading a narrowed context through 34 call sites.
+
+   The trade is explicit: strict null checking does not protect this module. The
+   runtime guards do. Do not remove one assuming the other covers it.
+
+   drill and timer are genuinely nullable - they are set and cleared as sounds
+   start and stop. */
+type Drill = { src: AudioBufferSourceNode; osc: OscillatorNode; gain: GainNode };
+
 const A = {
-  ctx: null, master: null, musicBus: null, musicLP: null, sfxBus: null,
-  noise: null, drill: null, timer: null,
+  ctx: null as unknown as AudioContext,
+  master: null as unknown as GainNode,
+  musicBus: null as unknown as GainNode,
+  musicLP: null as unknown as BiquadFilterNode,
+  sfxBus: null as unknown as GainNode,
+  noise: null as unknown as AudioBuffer,
+  drill: null as Drill | null,
+  timer: null as ReturnType<typeof setInterval> | null,
   beat: 0, nextT: 0, depth: 0,
-  wind: null, windGain: null, droneGain: null, leadGain: null, delay: null,
+  wind: null as unknown as AudioBufferSourceNode,
+  windGain: null as unknown as GainNode,
+  droneGain: null as unknown as GainNode,
+  leadGain: null as unknown as GainNode,
+  delay: null as unknown as DelayNode,
   on: { music: true, sfx: true }
 };
 
 const AUD_KEY = 'coreward.audio';
 try {
-  const saved = JSON.parse(localStorage.getItem(AUD_KEY) || 'null');
+  const saved: { music?: boolean; sfx?: boolean } | null =
+    JSON.parse(localStorage.getItem(AUD_KEY) || 'null');
   if (saved) { A.on.music = saved.music !== false; A.on.sfx = saved.sfx !== false; }
 } catch (e) { /* defaults */ }
 
 export const audioState = A.on;
-export function setDepth(d) { A.depth = d; }
+export function setDepth(d: number) { A.depth = d; }
 
-const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const semi = (base, s) => base * Math.pow(2, s / 12);
+const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
+const semi = (base: number, s: number) => base * Math.pow(2, s / 12);
 
 function save() {
   try { localStorage.setItem(AUD_KEY, JSON.stringify(A.on)); } catch (e) { /* ignore */ }
 }
 
-function env(node, t, peak, attack, decay) {
+function env(node: GainNode, t: number, peak: number, attack: number, decay: number) {
   node.gain.setValueAtTime(0.0001, t);
   node.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t + attack);
   node.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
@@ -145,7 +168,7 @@ const THEME = [
   [26, 12, 2], [28, 7, 4]
 ];
 
-function pad(chord, t) {
+function pad(chord: number[], t: number) {
   const ctx = A.ctx;
   const hold = BEAT * 8;
   for (let i = 0; i < chord.length; i++) {
@@ -166,7 +189,7 @@ function pad(chord, t) {
   }
 }
 
-function bass(root, t) {
+function bass(root: number, t: number) {
   const o = A.ctx.createOscillator();
   const gn = A.ctx.createGain();
   o.type = 'sine';
@@ -176,9 +199,9 @@ function bass(root, t) {
   o.start(t); o.stop(t + 2.6);
 }
 
-function lead(s, t, beats) {
+function lead(s: number, t: number, beats: number) {
   const dur = beats * BEAT;
-  for (const shape of ['sine', 'triangle']) {
+  for (const shape of ['sine', 'triangle'] as OscillatorType[]) {
     const o = A.ctx.createOscillator();
     const gn = A.ctx.createGain();
     o.type = shape;
@@ -194,7 +217,7 @@ function lead(s, t, beats) {
   }
 }
 
-function pulse(t) {
+function pulse(t: number) {
   const o = A.ctx.createOscillator();
   const gn = A.ctx.createGain();
   o.type = 'sine';
@@ -232,7 +255,7 @@ function tick() {
   }
 }
 
-export function setAudio(kind, on) {
+export function setAudio(kind: 'music' | 'sfx', on: boolean) {
   A.on[kind] = on;
   save();
   if (!A.ctx) return;
@@ -242,7 +265,7 @@ export function setAudio(kind, on) {
 }
 
 /* ============ effects ============ */
-function blip(freq, t, dur, type, peak) {
+function blip(freq: number, t: number, dur: number, type: OscillatorType | undefined, peak: number) {
   const o = A.ctx.createOscillator();
   const gn = A.ctx.createGain();
   o.type = type || 'triangle';
@@ -252,7 +275,7 @@ function blip(freq, t, dur, type, peak) {
   o.start(t); o.stop(t + dur + 0.05);
 }
 
-function noiseBurst(t, dur, cutoff, peak, type?) {
+function noiseBurst(t: number, dur: number, cutoff: number, peak: number, type?: BiquadFilterType) {
   const src = A.ctx.createBufferSource();
   src.buffer = A.noise;
   src.playbackRate.value = 0.7 + Math.random() * 0.6;
@@ -270,17 +293,20 @@ function noiseBurst(t, dur, cutoff, peak, type?) {
 const ready = () => A.ctx && A.on.sfx;
 
 export const sfx = {
-  chip(hard) {
+  chip(hard: number) {
     if (!ready()) return;
     noiseBurst(A.ctx.currentTime, 0.09, 900 - Math.min(600, hard * 40) + Math.random() * 200, 0.35);
   },
-  crack(hard) {
+  crack(hard: number) {
     if (!ready()) return;
     const t = A.ctx.currentTime;
     noiseBurst(t, 0.16, 500 + Math.random() * 300, 0.5, 'lowpass');
     blip(90 + Math.random() * 30 - hard, t, 0.12, 'square', 0.12);
   },
-  collect(tone) {
+  /* tone is optional because Block.tone is: rock has none. The body already
+     defends with (tone || 1) and (tone || 0), so the signature was the thing
+     that was lying. */
+  collect(tone?: number) {
     if (!ready()) return;
     const t = A.ctx.currentTime;
     const base = 320 * Math.pow(1.09, tone || 1);
@@ -328,7 +354,7 @@ export const sfx = {
     noiseBurst(t, 0.7, 1400, 0.3, 'lowpass');
     blip(140, t, 0.5, 'sawtooth', 0.1);
   },
-  digStart(hard) {
+  digStart(hard: number) {
     if (!ready() || A.drill) return;
     const ctx = A.ctx;
     const t = ctx.currentTime;

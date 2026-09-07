@@ -5,27 +5,35 @@ import { haulValue } from './world';
 import { lamp } from './scene';
 import { sfx, audioState } from './audio';
 
-export const el = (id) => document.getElementById(id);
+export /* el() is for lookups that may legitimately be absent. mustEl() is for the
+   ones the game cannot run without: throwing here reaches the on-screen
+   error overlay, which on a phone is the only way to see it at all. */
+const el = (id: string) => document.getElementById(id);
+export const mustEl = (id: string): HTMLElement => {
+  const node = document.getElementById(id);
+  if (!node) throw new Error('missing required element #' + id);
+  return node;
+};
 export const ui = {
-  planet: el('planet'), credits: el('credits'), haul: el('haul'), depth: el('depth'),
-  fuel: el('fuelBar'), hull: el('hullBar'), cargoBar: el('cargoBar'), cargoTxt: el('cargoTxt'),
-  toast: el('toast'), shop: el('shop'), shopCredits: el('shopCredits'), upgrades: el('upgrades'),
-  event: el('event'), evTitle: el('evTitle'), evBody: el('evBody'), evBtn: el('evBtn'),
-  manifest: el('manifest'), manifestRows: el('manifestRows'), manifestTotal: el('manifestTotal'),
-  pause: el('pause'), pauseStats: el('pauseStats'), btnReset: el('btnReset'),
-  btnMusic: el('btnMusic'), btnSfx: el('btnSfx'), heat: el('heat'),
-  flash: el('flash'), btnShop: el('btnShop'), btnAuto: el('btnAuto')
+  planet: mustEl('planet'), credits: mustEl('credits'), haul: mustEl('haul'), depth: mustEl('depth'),
+  fuel: mustEl('fuelBar'), hull: mustEl('hullBar'), cargoBar: mustEl('cargoBar'), cargoTxt: mustEl('cargoTxt'),
+  toast: mustEl('toast'), shop: mustEl('shop'), shopCredits: mustEl('shopCredits'), upgrades: mustEl('upgrades'),
+  event: mustEl('event'), evTitle: mustEl('evTitle'), evBody: mustEl('evBody'), evBtn: mustEl('evBtn'),
+  manifest: mustEl('manifest'), manifestRows: mustEl('manifestRows'), manifestTotal: mustEl('manifestTotal'),
+  pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
+  btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
+  flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto')
 };
 
 let toastT = 0;
-export function toast(msg) { ui.toast.textContent = msg; ui.toast.style.opacity = '1'; toastT = 2.0; }
+export function toast(msg: string) { ui.toast.textContent = msg; ui.toast.style.opacity = '1'; toastT = 2.0; }
 /* the frame loop used to decrement toastT directly; it stays owned here now */
-export function tickToast(dt) {
+export function tickToast(dt: number) {
   if (toastT <= 0) return;
   toastT -= dt;
   if (toastT <= 0) ui.toast.style.opacity = '0';
 }
-export function flash(color, ms) {
+export function flash(color: string, ms?: number) {
   ui.flash.style.background = color;
   ui.flash.style.opacity = '1';
   setTimeout(() => { ui.flash.style.opacity = '0'; }, ms || 220);

@@ -10,14 +10,16 @@
    skyTick) stay local to loop.ts, and per-module caches (lastRow, pHead,
    resetArmed) stay with their module. */
 
+import type { Dir, Move, Dig, Flight } from './types';
+
 export const R = {
   /* input -> loop */
-  held: null as string | null,
+  held: null as Dir | null,
 
   /* actions <-> loop */
-  moving: null as any,
-  digging: null as any,
-  flight: null as any,
+  moving: null as Move | null,
+  digging: null as Dig | null,
+  flight: null as Flight | null,
 
   /* actions -> loop, decayed by the loop */
   shake: 0,

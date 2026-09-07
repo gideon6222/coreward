@@ -49,7 +49,7 @@ export function autopilot() {
   toast('Autopilot engaged · ' + route.length + ' m of tunnel');
 }
 
-export function tow(reason) {
+export function tow(reason: string) {
   const cut = S.towCut();
   const taken = Math.round(haulValue() * cut);
   for (const k in g.cargo) g.cargo[k] = Math.floor(g.cargo[k] * (1 - cut));
@@ -68,7 +68,7 @@ export function tow(reason) {
     'CONTINUE', () => {});
 }
 
-export function showEvent(title, bodyTxt, btnTxt, cb) {
+export function showEvent(title: string, bodyTxt: string, btnTxt: string, cb: () => void) {
   g.mode = 'event';
   ui.evTitle.textContent = title;
   ui.evBody.textContent = bodyTxt;

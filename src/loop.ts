@@ -4,7 +4,8 @@ import { clamp, key } from './util';
 import { g, S, save } from './state';
 import { blockAt } from './world';
 import { R } from './runtime';
-import { scene, camera, renderer, gameEl, amb, sun, rim, lamp } from './scene';
+import type { Dir } from './types';
+import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, oreGlows } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
@@ -14,8 +15,8 @@ import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { sell, goSurface, tow, breakCore } from './actions';
 import { sfx, setDepth } from './audio';
 
-export function step(dir) {
-  const v = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
+export function step(dir: Dir) {
+  const v: number[] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
   return { x: g.px + v[0], d: Math.round(g.pd) + v[1] };
 }
 
@@ -39,7 +40,7 @@ export function startAction() {
 let camZBoost = 0, freeze = 0, thrustLevel = 0, bank = 0;
 let last = performance.now(), skyTick = 0;
 
-export function frame(now) {
+export function frame(now: number) {
   requestAnimationFrame(frame);
   const raw = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -197,10 +198,10 @@ export function frame(now) {
   amb.intensity = 1.75 - 1.55 * tDeep;
   sun.intensity = 1.5 * (1 - tDeep);
   rim.intensity = 0.5 - 0.32 * tDeep;
-  scene.fog.density = 0.02 + tDeep * 0.028;
+  fog.density = 0.02 + tDeep * 0.028;
   const hi = lerpHex(skyHi(g.planet), 0x02030a, tDeep);
   const lo = lerpHex(skyLo(g.planet), 0x0a0c14, tDeep);
-  scene.fog.color.copy(lo);
+  fog.color.copy(lo);
   starMat.opacity = clamp(1 - tDeep * 2.4, 0, 0.9);
   sunSprite.material.opacity = clamp(0.5 - tDeep, 0, 0.5);
   dustMat.opacity = clamp(tDeep * 0.55, 0, 0.5);

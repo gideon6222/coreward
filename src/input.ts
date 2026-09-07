@@ -2,7 +2,8 @@ import { coreDepth, planetName } from './config';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
-import { el, ui, atSurface, buildShop, buildManifest, audioLabels } from './ui';
+import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels } from './ui';
+import type { Dir } from './types';
 import { autopilot, hardReset } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
 
@@ -11,23 +12,23 @@ window.addEventListener('pointerdown', firstTouch, { once: true });
 window.addEventListener('keydown', firstTouch, { once: true });
 
 document.querySelectorAll<HTMLElement>('#dpad .k').forEach((b) => {
-  const dir = b.dataset.dir;
+  const dir = b.dataset.dir as Dir;
   b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.classList.add('on'); R.held = dir; });
-  const up = (e) => { if (e) e.preventDefault(); b.classList.remove('on'); if (R.held === dir) R.held = null; };
+  const up = (e?: Event) => { if (e) e.preventDefault(); b.classList.remove('on'); if (R.held === dir) R.held = null; };
   b.addEventListener('pointerup', up);
   b.addEventListener('pointercancel', up);
   b.addEventListener('pointerleave', up);
 });
 
-const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
+const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
 window.addEventListener('keydown', (e) => { if (KEYS[e.key]) { R.held = KEYS[e.key]; e.preventDefault(); } });
 window.addEventListener('keyup', (e) => { if (KEYS[e.key] && R.held === KEYS[e.key]) R.held = null; });
 
 ui.btnAuto.onclick = autopilot;
 ui.btnShop.onclick = () => { if (!atSurface() || g.mode !== 'play') return; sfx.ui(); g.mode = 'shop'; buildShop(); ui.shop.classList.remove('hidden'); };
-el('shopClose').onclick = () => { sfx.ui(); ui.shop.classList.add('hidden'); g.mode = 'play'; };
-el('btnManifest').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); g.mode = 'manifest'; buildManifest(); ui.manifest.classList.remove('hidden'); };
-el('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('hidden'); g.mode = 'play'; };
+mustEl('shopClose').onclick = () => { sfx.ui(); ui.shop.classList.add('hidden'); g.mode = 'play'; };
+mustEl('btnManifest').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); g.mode = 'manifest'; buildManifest(); ui.manifest.classList.remove('hidden'); };
+mustEl('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('hidden'); g.mode = 'play'; };
 
 ui.btnMusic.onclick = () => { audioInit(); setAudio('music', !audioState.music); audioLabels(); };
 ui.btnSfx.onclick = () => { audioInit(); setAudio('sfx', !audioState.sfx); audioLabels(); sfx.ui(); };
@@ -38,7 +39,7 @@ function disarmReset() {
   ui.btnReset.textContent = 'RESTART PROGRESS';
   ui.btnReset.classList.remove('armed');
 }
-el('btnPause').onclick = () => {
+mustEl('btnPause').onclick = () => {
   if (g.mode !== 'play') return;
   sfx.ui();
   g.mode = 'pause';
@@ -57,7 +58,7 @@ el('btnPause').onclick = () => {
     '<div class="val">' + g.shards + '</div></div>';
   ui.pause.classList.remove('hidden');
 };
-el('btnResume').onclick = () => { sfx.ui(); ui.pause.classList.add('hidden'); g.mode = 'play'; };
+mustEl('btnResume').onclick = () => { sfx.ui(); ui.pause.classList.add('hidden'); g.mode = 'play'; };
 ui.btnReset.onclick = () => {
   if (resetArmed === 0) {
     resetArmed = 1;

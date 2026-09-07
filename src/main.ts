@@ -38,7 +38,7 @@ syncBlocks(true);
 audioLabels();
 updateHUD();
 stampBuild();
-document.getElementById('boot').classList.add('hidden');
+document.getElementById('boot')!.classList.add('hidden');
 window.addEventListener('visibilitychange', () => { save(); if (document.hidden) sfx.digStop(); });
 setInterval(save, 5000);
 requestAnimationFrame(frame);

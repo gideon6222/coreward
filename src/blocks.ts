@@ -5,10 +5,11 @@ import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
 import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo } from './materials';
+import type { Block } from './types';
 
-export const oreGlows = [];
+export const oreGlows: THREE.Group[] = [];
 
-export function makeBlock(x, d, b) {
+export function makeBlock(x: number, d: number, b: Block) {
   const jit = 0.84 + rnd(x + 77, d + 31, g.planet) * 0.3;
   if (!b.ore) {
     const grp = new THREE.Group();
@@ -58,11 +59,11 @@ export function makeBlock(x, d, b) {
   return grp;
 }
 
-export const meshes = new Map();
-let lastRow = null;
+export const meshes = new Map<string, THREE.Group>();
+let lastRow: number | null = null;
 /* hardReset() used to assign lastRow directly when it lived in the same file */
 export function resetBlockCache() { lastRow = null; }
-export function dropBlock(k) {
+export function dropBlock(k: string) {
   const o = meshes.get(k);
   if (!o) return;
   const i = oreGlows.indexOf(o);
@@ -70,7 +71,7 @@ export function dropBlock(k) {
   scene.remove(o);
   meshes.delete(k);
 }
-export function syncBlocks(force?) {
+export function syncBlocks(force?: boolean) {
   const row = Math.floor(g.pd);
   if (!force && row === lastRow) return;
   lastRow = row;

@@ -6,7 +6,7 @@ const PMAX = 700;
 const pGeo = new THREE.BufferGeometry();
 const pPos = new Float32Array(PMAX * 3);
 const pCol = new Float32Array(PMAX * 3);
-const pVel = [];
+const pVel: THREE.Vector3[] = [];
 const pLife = new Float32Array(PMAX);
 for (let i = 0; i < PMAX; i++) { pPos[i * 3 + 1] = 9999; pVel.push(new THREE.Vector3()); }
 pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
@@ -19,7 +19,7 @@ pts.frustumCulled = false;
 scene.add(pts);
 let pHead = 0;
 
-export function spray(x, y, color, count, power, life) {
+export function spray(x: number, y: number, color: number, count: number, power: number, life: number) {
   const c = new THREE.Color(color);
   for (let i = 0; i < count; i++) {
     const k = pHead = (pHead + 1) % PMAX;
@@ -35,7 +35,7 @@ export function spray(x, y, color, count, power, life) {
   }
 }
 
-export function stepParticles(dt) {
+export function stepParticles(dt: number) {
   let live = false;
   for (let i = 0; i < PMAX; i++) {
     if (pLife[i] <= 0) continue;

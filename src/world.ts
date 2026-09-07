@@ -1,14 +1,15 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult } from './config';
 import { key } from './util';
 import { g } from './state';
+import type { Block } from './types';
 
-export function rnd(x, y, p) {
+export function rnd(x: number, y: number, p: number) {
   let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(p | 0, 1442695041);
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-export function blockAt(x, d) {
+export function blockAt(x: number, d: number): Block | null {
   if (d < 0 || x < 0 || x >= W) return null;
   if (g.dug.has(key(x, d))) return null;
   const cd = coreDepth(g.planet);

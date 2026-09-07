@@ -1,9 +1,20 @@
 import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X } from './config';
+import type { Cargo, Dir, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 
-export const g = {
+/* The whole game state. One mutable singleton, read by nearly every module. */
+export const g: {
+  planet: number; credits: number; shards: number;
+  up: Record<UpgradeKey, number>;
+  dug: Set<string>;
+  px: number; pd: number;
+  face: Dir;
+  fuel: number; hull: number;
+  cargo: Cargo; weight: number;
+  mode: Mode;
+} = {
   planet: 0, credits: 0, shards: 0,
   up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
-  dug: new Set(),
+  dug: new Set<string>(),
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX,

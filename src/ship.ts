@@ -31,7 +31,7 @@ const cabGlow = makeGlow(0xffe9a0, 1.1, 0.7);
 cabGlow.position.set(0, 0.1, 0.42);
 rig.add(cabGlow);
 
-export const flames = [];
+export const flames: { cone: THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>; glow: THREE.Sprite }[] = [];
 for (const sx of [-0.36, 0.36]) {
   const fl = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.34, 6), new THREE.MeshBasicMaterial({ color: 0x8fdcff, transparent: true, opacity: 0.9 }));
   fl.position.set(sx, 0.42, 0);

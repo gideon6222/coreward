@@ -7,10 +7,14 @@ export const scene = new THREE.Scene();
 export const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
 export const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-export const gameEl = document.getElementById('game');
+export const gameEl = document.getElementById('game')!;
 gameEl.appendChild(renderer.domElement);
 
-scene.fog = new THREE.FogExp2(0x05070d, 0.028);
+/* Scene.fog is typed FogBase | null and only FogExp2 has `density`, which
+   the frame loop writes every frame. Keep a typed handle so that is checked
+   rather than assumed. */
+export const fog = new THREE.FogExp2(0x05070d, 0.028);
+scene.fog = fog;
 
 export const amb = new THREE.AmbientLight(0xffffff, 1.6);
 scene.add(amb);

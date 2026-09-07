@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { W } from './config';
 
-export const lerpHex = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
+export const lerpHex = (a: number, b: number, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
 
 /* soft additive halo sprite, the cheap stand-in for bloom */
 const glowTex = (() => {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
-  const x = c.getContext('2d');
+  const x = c.getContext('2d')!;
   const grad = x.createRadialGradient(32, 32, 0, 32, 32, 32);
   grad.addColorStop(0, 'rgba(255,255,255,1)');
   grad.addColorStop(0.35, 'rgba(255,255,255,0.42)');
@@ -17,8 +17,8 @@ const glowTex = (() => {
   return new THREE.CanvasTexture(c);
 })();
 
-const glowMats = new Map();
-function glowMat(color, opacity) {
+const glowMats = new Map<string, THREE.SpriteMaterial>();
+function glowMat(color: number, opacity: number) {
   const k = color + '|' + opacity;
   if (!glowMats.has(k)) {
     glowMats.set(k, new THREE.SpriteMaterial({
@@ -26,9 +26,9 @@ function glowMat(color, opacity) {
       blending: THREE.AdditiveBlending, depthWrite: false
     }));
   }
-  return glowMats.get(k);
+  return glowMats.get(k)!;
 }
-export function makeGlow(color, size, opacity) {
+export function makeGlow(color: number, size: number, opacity?: number) {
   const s = new THREE.Sprite(glowMat(color, opacity === undefined ? 0.85 : opacity));
   s.scale.set(size, size, 1);
   return s;
@@ -40,15 +40,15 @@ export const shardGeo = new THREE.OctahedronGeometry(1, 0);
 export const crackGeo = new THREE.BoxGeometry(1, 0.045, 0.045);
 export const crackMat = new THREE.MeshBasicMaterial({ color: 0x08080c });
 
-const matCache = new Map();
-export function mat(color, glow) {
+const matCache = new Map<string, THREE.MeshLambertMaterial>();
+export function mat(color: number, glow?: number) {
   const k = color + '|' + (glow || 0);
   if (!matCache.has(k)) {
     matCache.set(k, new THREE.MeshLambertMaterial({
       color: color, emissive: new THREE.Color(color).multiplyScalar(glow || 0.02), flatShading: true
     }));
   }
-  return matCache.get(k);
+  return matCache.get(k)!;
 }
-export const shade = (hex, f) => new THREE.Color(hex).multiplyScalar(f).getHex();
-export const worldX = (x) => x - (W - 1) / 2;
+export const shade = (hex: number, f: number) => new THREE.Color(hex).multiplyScalar(f).getHex();
+export const worldX = (x: number) => x - (W - 1) / 2;

@@ -9,8 +9,8 @@
        conversion stays behaviour-preserving; Phase 5 turns it on and adds the
        real domain types. Do not tighten these piecemeal - the point of one
        loud switch-on later is that every resulting error gets looked at. */
-    "strict": false,
-    "noImplicitAny": false,
+    "strict": true,
+    "noImplicitAny": true,
 
     "noEmit": true,
     "skipLibCheck": true,

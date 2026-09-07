@@ -23,7 +23,7 @@ const arch = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.14, 0.3), new THREE.Mes
 arch.position.y = 2.28;
 pad.add(arch);
 
-export const padLights = [];
+export const padLights: THREE.Sprite[] = [];
 for (let i = 0; i < 6; i++) {
   const sx = -1.5 + i * 0.6;
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), new THREE.MeshBasicMaterial({ color: 0x66ffcc }));
