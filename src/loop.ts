@@ -10,7 +10,9 @@ import {
   FREEZE_ORE, FREEZE_ROCK,
   SHAKE_CRACK, SHAKE_ROCK, SHAKE_ORE, SHAKE_LANDING, SHAKE_DECAY,
   SQUASH_DIG, SQUASH_BREAK, SQUASH_DECAY, SQUASH_SCALE,
-  CAM_FOLLOW_PLAY, CAM_FOLLOW_FLY, CAM_ZOOM_RATE, CAM_Y_OFFSET,
+  CAM_FOLLOW_PLAY, CAM_FOLLOW_PLAY_Y, CAM_FOLLOW_FLY, CAM_FOLLOW_FLY_Y,
+  CAM_ZOOM_RATE, CAM_Y_OFFSET, CAM_BOOST_DECAY, BANK_INTO_MOVE, BANK_SETTLE,
+  FACE_TURN_RATE,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH,
   depthT, heatT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter
@@ -93,7 +95,7 @@ export function frame(now: number) {
       flash('rgba(110,220,255,.22)', 240);
     }
   } else if (g.mode === 'play') {
-    camZBoost += (0 - camZBoost) * Math.min(1, raw * 4);
+    camZBoost = approach(camZBoost, 0, CAM_BOOST_DECAY, raw);
     startAction();
 
     if (R.digging) {
@@ -175,7 +177,7 @@ export function frame(now: number) {
       const a = clamp(R.moving.t / R.moving.total, 0, 1);
       g.px = R.moving.fx + (R.moving.x - R.moving.fx) * a;
       g.pd = R.moving.fd + (R.moving.d - R.moving.fd) * a;
-      bank += ((R.moving.x - R.moving.fx) * 0.45 - bank) * Math.min(1, raw * 8);
+      bank = approach(bank, (R.moving.x - R.moving.fx) * 0.45, BANK_INTO_MOVE, raw);
       bit.rotation.y += raw * 9;
       if (a >= 1) {
         g.px = R.moving.x; g.pd = R.moving.d; R.moving = null;
@@ -183,7 +185,7 @@ export function frame(now: number) {
         if (atSurface()) { sell(); g.fuel = S.fuelCap(); g.hull = HULL_MAX; }
       }
     } else {
-      bank += (0 - bank) * Math.min(1, raw * 6);
+      bank = approach(bank, 0, BANK_SETTLE, raw);
     }
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
@@ -234,7 +236,9 @@ export function frame(now: number) {
     let diff = target - rig.rotation.z;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    rig.rotation.z += diff * Math.min(1, raw * 14);
+    /* approach() on the wrapped delta rather than on the angle itself, so the
+       ship still turns the short way round. */
+    rig.rotation.z += diff * (1 - Math.exp(-FACE_TURN_RATE * raw));
   }
 
   const fscale = 0.25 + thrustLevel * 1.15;
@@ -294,9 +298,11 @@ export function frame(now: number) {
   const zNow = R.camZ + camZBoost;
   const halfW = Math.tan((camera.fov * Math.PI) / 360) * zNow * camera.aspect;
   const lim = Math.max(0, W / 2 - halfW);
-  const k = g.mode === 'fly' ? CAM_FOLLOW_FLY : CAM_FOLLOW_PLAY;
-  camera.position.x = approach(camera.position.x, clamp(px, -lim, lim), k, raw);
-  camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET, k + 1, raw);
+  const flying = g.mode === 'fly';
+  const kx = flying ? CAM_FOLLOW_FLY : CAM_FOLLOW_PLAY;
+  const ky = flying ? CAM_FOLLOW_FLY_Y : CAM_FOLLOW_PLAY_Y;
+  camera.position.x = approach(camera.position.x, clamp(px, -lim, lim), kx, raw);
+  camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET, ky, raw);
   camera.position.z = approach(camera.position.z, zNow, CAM_ZOOM_RATE, raw);
   if (R.shake > 0) {
     camera.position.x += (Math.random() - 0.5) * R.shake;

@@ -37,11 +37,32 @@ export const SQUASH_BREAK = 0.8;    /* the block giving way */
 export const SQUASH_DECAY = 0.88;
 export const SQUASH_SCALE = 0.16;   /* how much squash distorts the ship */
 
+/* Every smoothing rate in the game was hand-tuned against the old lerp while
+   running at 60 fps. This converts one of those numbers to the exponential
+   rate that covers the same fraction of the distance in one 60 fps frame, so
+   the fix is invisible at 60 fps and only changes what happens away from it.
+
+   Written as a conversion rather than as recomputed literals on purpose: the
+   number the reader sees is still the one that was tuned by eye. */
+export const asExpRate = (tunedAt60: number) => -60 * Math.log(1 - tunedAt60 / 60);
+
 /* ---------- camera ----------
-   Exponential smoothing, framed per second so it is frame-rate independent. */
-export const CAM_FOLLOW_PLAY = 6;
-export const CAM_FOLLOW_FLY = 11;   /* tighter while the autopilot flies */
-export const CAM_ZOOM_RATE = 4;
+   Exponential smoothing. The numbers inside asExpRate() are the originals,
+   tuned by eye at 60 fps; see the note on asExpRate above. Vertical follow is
+   slightly tighter than horizontal, which used to be written as `k + 1` at the
+   call site and is a deliberate choice worth naming: the ship moves down far
+   more than it moves sideways, so the axis it travels on should lag less. */
+export const CAM_FOLLOW_PLAY = asExpRate(6);
+export const CAM_FOLLOW_PLAY_Y = asExpRate(7);
+export const CAM_FOLLOW_FLY = asExpRate(11);   /* tighter while the autopilot flies */
+export const CAM_FOLLOW_FLY_Y = asExpRate(12);
+export const CAM_ZOOM_RATE = asExpRate(4);
+
+/* the same conversion for the smaller smoothings inside the frame loop */
+export const CAM_BOOST_DECAY = asExpRate(4);
+export const BANK_INTO_MOVE = asExpRate(8);
+export const BANK_SETTLE = asExpRate(6);
+export const FACE_TURN_RATE = asExpRate(14);
 export const CAM_Y_OFFSET = 0.8;    /* look slightly below the ship */
 
 /* ---------- depth ----------
@@ -68,10 +89,18 @@ export function easeInOut(t: number): number {
   return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
-/* Frame-rate independent approach toward a target. `rate` is per second. */
+/* Exponential smoothing toward a target. `rate` is per second, and the result
+   genuinely does not depend on frame rate: two 8 ms steps land exactly where
+   one 16 ms step lands.
+
+   It used to be `min(1, dt * rate)`, which does not have that property - one
+   100 ms step covered 60% of the distance where ten 10 ms steps covered 46%.
+   Combined with the frame loop's 50 ms delta cap, a stuttering frame made the
+   camera snap rather than merely lag. */
 export function approach(current: number, target: number, rate: number, dt: number): number {
-  return current + (target - current) * Math.min(1, dt * rate);
+  return current + (target - current) * (1 - Math.exp(-rate * dt));
 }
+
 
 /* ---------- costs and damage ---------- */
 

@@ -600,6 +600,31 @@ The rule at the top of `e2e/smoke.spec.ts` about waiting on state rather than
 wall-clock time extends to this: wait for the state you asserted to be
 *rendered*, not just set.
 
+## Smoothing is frame-rate independent now (2026-09-07)
+
+`approach()` used `min(1, dt * rate)`, the lerp everyone writes. One 100 ms
+step covered 60% of the distance where ten 10 ms steps covered 46%, so camera
+lag genuinely differed with frame rate - and because the frame loop caps its
+delta at 50 ms, a stuttering frame made the camera **snap** rather than merely
+lag behind. Four more smoothings in the loop had the same bug written inline:
+the zoom-boost decay, both banking lerps and the ship's turn.
+
+All of them now go through `approach()`, which is `1 - exp(-rate * dt)`.
+
+The reason this could be changed without a phone check, which the old note said
+it needed: every tuned rate goes through `asExpRate(n)`, which returns the
+exponential rate covering exactly the fraction `n` covered in one 60 fps frame.
+At 60 fps the output is bit-identical to before; only the off-60 behaviour
+moves, and it moves toward correct. The baseline records those fractions -
+0.1, 0.116667, 0.183333, 0.2, 0.066667 - rather than the raw constants, so the
+equivalence is legible in the file rather than argued in a comment.
+
+Two side benefits. `asExpRate(6)` keeps the number that was actually tuned by
+eye visible in the source instead of replacing it with 6.3216. And the `k + 1`
+idiom at the camera call site became `CAM_FOLLOW_PLAY_Y`, which names a real
+choice: the ship travels down far more than sideways, so the axis it moves
+along should lag less.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

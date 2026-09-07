@@ -19,10 +19,18 @@
     "scale": 0.16
   },
   "camera": {
-    "play": 6,
-    "fly": 11,
-    "zoom": 4,
+    "play": 0.1,
+    "playY": 0.116667,
+    "fly": 0.183333,
+    "flyY": 0.2,
+    "zoom": 0.066667,
     "yOffset": 0.8
+  },
+  "smoothing": {
+    "camBoost": 0.066667,
+    "bankIn": 0.133333,
+    "bankSettle": 0.1,
+    "faceTurn": 0.233333
   },
   "depth": {
     "ramp": 72,
