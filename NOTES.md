@@ -1290,43 +1290,65 @@ golden baseline duly recorded a tow cut of 9.999999999999998%. True, useless,
 and precisely the kind of diff that teaches you to re-record without reading -
 which is the one habit these baselines cannot survive. Rounded before clamping.
 
+## Budgets: which limits are real and which are mine
+
+Asked directly, so recorded here.
+
+**Nothing in this game is near a platform limit.** Every budget in the repo is
+one I set, and they are drift detectors rather than ceilings:
+
+- `bundle-budget.json` (~546 KB total, 71 KB of it game code) is a per-chunk
+  size guard with 1% and 12% tolerances. It exists because a module split once
+  silently dropped a line and the only evidence was a 7 KB shrink. Re-record it
+  deliberately with `npm run size:update` whenever a commit adds a system.
+- The **draw-call budget of 70** comes from a mobile rule of thumb of roughly
+  fifty to a hundred, not from anything enforced. Measured at the worst case it
+  currently sits at 50.
+- `MAX_DROPS`, `MAX_CELLS`, `MAX_HALOS` and friends size instanced buffers,
+  which have to be allocated up front. They bound memory, not a quota.
+
+**The only real platform limit in play is `localStorage`, about 5 MB per origin
+in Chrome.** A fully dug planet 5 save - every cell of a 13 x 110 world in
+`dug`, 300 rubble cells, everything maxed - serialises to 12.5 KB. A normal
+save is under 1 KB. That is roughly 0.25% of the quota at its absolute worst,
+so the save can grow by two orders of magnitude before it is worth a thought.
+
+Device memory is not a factor either: three.js plus this game is a few tens of
+megabytes against the several hundred a Chrome tab gets on a modern phone.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
 
-**The whole of this overhaul is unplayed.** Ten changes landed in one session
-against golden tests, smoke tests and screenshots - which prove nothing broke,
-and prove nothing about whether any of it is fun. Everything below is
-downstream of that.
+**Everything from the second overhaul is unplayed**, same as the first. The
+tests prove nothing broke.
 
-- **The mineral gate is the one to watch.** Cooling wanting emerald from 78 m
-  is the strongest idea in the batch and the easiest to get wrong: if the wall
-  arrives before the player can survive a heat run, it reads as a lock rather
-  than a goal. Watch for "I have the money and I can't buy anything" - that
-  sentence means the gate is too early, not too expensive.
-- **Tremor pacing is modelled, not played.** 34 s to the first, then 27 s plus
-  jitter, three to nine cells. The open question is whether a collapse reads as
-  drama or as a chore on the way home. If it is a chore, the fix is fewer cells
-  and a longer gap, not a gentler warning.
-- **Are supplies bought, or hoarded?** A consumable people save for a rainy day
-  and never spend is a failed consumable. If Coolant Flushes pile up, it is
-  priced wrong or the moment to use one is not legible.
-- **Caches may be too rare.** About one every couple of runs is a guess. If a
-  whole session goes by without one, they are not doing their job.
-- **Geodes could act as a wildcard**, substituting for any required mineral at
-  some rate. Deliberately left out: the gate needs to be felt before it is
-  softened. This is the first thing to reach for if the gate frustrates.
-- **Traits change how the ground behaves, never how you equip.** A trait that
-  changed what is worth buying at the pad would be a different kind of variety
-  and would make the supply shelf matter more.
-- **The autopilot has not been looked at since the migration**, and PLAYTESTS
-  records it as one of two things he has already complained about once. It now
-  has to route around rubble, which it does correctly - but whether the flight
-  still *reads as flying* through a collapsed tunnel is unknown.
-- **Re-tune Stage 1 against actual play.** Still open. Soak rates, the 0.72
-  shield cap and the prices were derived from modelling. With minerals, gas and
-  tremors layered on top, the deep game is now much busier than when those
-  numbers were set.
+- **Is the shop tight enough?** Sealed rows are meant to read as a promise. If
+  the first visit reads as a wall of locked content instead, fewer of them
+  should be sealed rather than the locks being softer.
+- **Does the tighter early camera feel cramped or focused?** Level 0 frames 74%
+  of what it used to. That is the single change most likely to be wrong, and
+  the fix if so is to raise `ZOOM_MIN` rather than to flatten the curve.
+- **Are seams noticeable without being told?** The whole design rests on the
+  flecks being a tell someone learns by themselves. If he has to be told, the
+  flecks need to be brighter, not more common.
+- **Is ordnance used, or saved?** Power that piles up unspent is power priced
+  wrong. Watch for a full meter at the surface.
+- **Do relics get found?** The Scanner mote is the whole search mechanic. If
+  relics are still being missed at high Scanner, the range needs to grow faster
+  or the mote needs to be louder.
+- **Is a full hold still a decision?** Ore now waits where it falls, so the
+  cargo cap no longer forces anything. That was the point, but it does mean the
+  pressure is now entirely fuel, heat and tremors.
+
+### The larger arc, unbuilt
+
+Relics answer "what is the point" for now: a collection that only grows,
+attached to permanent perks, on a timer that can be missed. The obvious next
+step is an **ending** - something that happens when the collection is complete,
+which currently it never is because relics keep repeating past the eighth.
+That wants his say-so before it gets built, because an ending is a promise
+about how long the game is.
 
 ## How changes get shipped
 
