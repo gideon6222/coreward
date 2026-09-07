@@ -357,3 +357,14 @@ test('planet names and skies do not run out before anyone stops playing', () => 
   }
   assert.equal(names.size, 12, 'duplicate planet names inside one cycle');
 });
+
+test('every drill tier has a name, and the ladder never repeats a look', () => {
+  /* The tier names are the promise; the auger's appearance is the payoff. A
+     tier with no distinct look is an upgrade the player buys on trust, which
+     is exactly what the Scanner Array was before the headlight. */
+  const drill = H.UPGRADES.find((u) => u.key === 'drill');
+  assert.ok(drill.tiers, 'the drill lost its tier names');
+  assert.equal(drill.tiers.length, drill.max + 1,
+    'there must be a tier name for level 0 through ' + drill.max);
+  assert.equal(new Set(drill.tiers).size, drill.tiers.length, 'duplicate tier name');
+});

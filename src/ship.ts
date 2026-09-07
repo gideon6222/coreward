@@ -72,6 +72,49 @@ const augerGeo = (() => {
 /* steel, not the white trim: a near-white auger blows out under the cockpit
    glow and the spiral disappears */
 const augerMat = new THREE.MeshLambertMaterial({ color: 0x9fb0c4, emissive: 0x121a24, flatShading: true });
+
+/* One look per drill tier.
+
+   The Drill Bit is the most-bought upgrade in the game and it has ten named
+   tiers - Steel, Tungsten, Carbide, up to Godcore - and until now every one of
+   them looked like the same grey auger. The Scanner Array had the same problem
+   and the headlight fixed it; this is the same argument. An upgrade the player
+   cannot see is an upgrade they buy on trust.
+
+   The ramp is deliberate: the first few are metals and stay dull, because
+   early progress should look like better tools rather than like magic. The
+   emissive only really arrives from Plasma on, so the drill starts glowing at
+   about the point the player starts going somewhere that glows back. */
+const DRILL_TIERS = [
+  { color: 0x9fb0c4, emissive: 0x121a24 },  /* Steel */
+  { color: 0xb9c2cc, emissive: 0x161c26 },  /* Tungsten */
+  { color: 0xd7d2c4, emissive: 0x1c1e1c },  /* Carbide */
+  { color: 0xdff2f6, emissive: 0x1d3038 },  /* Diamond */
+  { color: 0x9fe4ff, emissive: 0x1b4d68 },  /* Ionized */
+  { color: 0x86d0ff, emissive: 0x2a5f9c },  /* Plasma */
+  { color: 0xc79cff, emissive: 0x4a2a86 },  /* Graviton */
+  { color: 0xff9ae0, emissive: 0x7a1f66 },  /* Singularity */
+  { color: 0xffd88a, emissive: 0x8a5a10 },  /* Starbreaker */
+  { color: 0xfff4c8, emissive: 0xb08820 }   /* Godcore */
+];
+
+/* The colour the drill throws while it is cutting. Exported because the auger
+   itself is about eight pixels tall at play scale - repainting it is honest
+   but it does not READ, which is the same trap the ship model note warns
+   about: at this size detail means silhouette, not surface.
+
+   The sparks do read. There are a dozen of them a second, they sit right at
+   the contact point, and they are the only part of the drill big enough to
+   carry a colour. Break sprays keep the BLOCK's colour, because that is ore
+   identity and it matters more. */
+export let drillTint = DRILL_TIERS[0].color;
+
+export function setDrillTier(level: number) {
+  const t = DRILL_TIERS[Math.max(0, Math.min(DRILL_TIERS.length - 1, level))];
+  augerMat.color.setHex(t.color);
+  augerMat.emissive.setHex(t.emissive);
+  drillTint = t.color;
+}
 const auger = new THREE.Mesh(augerGeo, augerMat);
 auger.position.y = -0.05;
 bit.add(auger);

@@ -256,11 +256,36 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
 
-  /* get underground, where the window is full of terrain */
-  await holdUntil(page, 'down', async () => {
-    await expect(page.locator('#depth')).not.toContainText('DEPTH 0 m', { timeout: DEEP_ENOUGH });
-    await expect(page.locator('#cargoTxt')).not.toHaveText(/^0\.0 /, { timeout: DEEP_ENOUGH });
+  /* Seeded to the worst case rather than dug to a shallow one.
+
+     The original version dug down for a few seconds, which by now measures a
+     window containing three or four block types. Everything added since -
+     rubble, caches, the parallax layers, the headlight, the record marker -
+     shows up deep and in an opened-out chamber, and each distinct block id is
+     its own pool and its own pair of draw calls. Measuring the easy case is
+     how a budget silently stops being a budget. */
+  await page.evaluate(() => {
+    const dug: string[] = [];
+    for (let d = 0; d <= 96; d++) dug.push('6,' + d);
+    for (let x = 1; x <= 11; x++) for (let d = 88; d <= 99; d++) dug.push(x + ',' + d);
+    const rubble = ['5,90', '7,90', '4,92', '8,92', '6,86', '9,94', '3,95', '2,91'];
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 3, credits: 0, shards: 0,
+      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 9, scan: 9, tow: 0, auto: 0 },
+      kit: { coolant: 2, patch: 3, cell: 3 }, stock: {},
+      best: { depth: 40, haul: 0 },
+      dug: dug.filter((k) => !rubble.includes(k)), rubble,
+      cargo: {}, weight: 0, px: 6, pd: 96
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
   });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await expect(page.locator('#depth')).toContainText('DEPTH 96 m');
 
   const perFrame = await page.evaluate(async () => {
     const w = window as any;
@@ -278,6 +303,10 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
   });
 
   expect(perFrame, 'draw calls per frame underground').toBeGreaterThan(0);
+  /* Reported so the headroom is visible in CI output rather than only the
+     pass/fail - a budget you never see the margin on is one you find out
+     about on the day it breaks. */
+  console.log('    draw calls per frame at 96 m: ' + perFrame + ' of ' + DRAW_CALL_BUDGET);
   expect(
     perFrame,
     'draw calls regressed past the budget - most likely something gave blocks ' +
