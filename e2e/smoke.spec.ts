@@ -114,6 +114,59 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* Nothing else covers the audio graph. Chrome refuses to create an
+   AudioContext outside a user gesture, so this reloads with a counting wrapper
+   installed, then makes a real click - dispatchEvent does not grant user
+   activation, so it would prove nothing. */
+test('the audio graph builds on a user gesture', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).__audioContexts = 0;
+    (window as any).__sources = 0;
+    const Orig = window.AudioContext;
+    (window as any).AudioContext = class extends Orig {
+      constructor(...args: any[]) {
+        super(...args);
+        (window as any).__audioContexts++;
+      }
+      /* Counting contexts alone would still pass if the graph were built and
+         then never published, because every sound would silently no-op. Count
+         the buffer sources instead: the wind loop makes one at init, and every
+         drill chip and crack makes another. */
+      createBufferSource() {
+        (window as any).__sources++;
+        return super.createBufferSource();
+      }
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  expect(await page.evaluate(() => (window as any).__audioContexts),
+    'audio must not start before a gesture - Chrome blocks it').toBe(0);
+
+  await page.locator('#dpad .k[data-dir=down]').click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__audioContexts), { timeout: 5000 })
+    .toBeGreaterThan(0);
+
+  /* now drill for a while and confirm sounds actually reach the graph */
+  await holdUntil(page, 'down', async () => {
+    await expect
+      .poll(() => page.evaluate(() => (window as any).__sources), { timeout: DEEP_ENOUGH })
+      .toBeGreaterThan(2);
+  });
+
+  /* toggling exercises setAudio against the live graph */
+  await page.locator('#btnPause').dispatchEvent('click');
+  const music = page.locator('#btnMusic');
+  await expect(music).toHaveText(/MUSIC\s+ON/);
+  await music.click();
+  await expect(music).toHaveText(/MUSIC\s+OFF/);
+  await music.click();
+  await expect(music).toHaveText(/MUSIC\s+ON/);
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* The stamp is how a deploy is verified on a phone. If the define pipeline
    breaks the stamp silently reads "dev", and the check becomes worthless. */
 test('the build stamp is populated', async ({ page }) => {
