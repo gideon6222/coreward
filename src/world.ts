@@ -1,5 +1,5 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
-         GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, TREMOR_SAFE_RADIUS,
+         GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
 import { key, mixHex } from './util';
 import { g } from './state';
@@ -75,6 +75,24 @@ export function blockAt(x: number, d: number): Block | null {
     }
   }
   const b = baseRock(d);
+
+  /* A seam: the same cells that already had mineral flecks scattered on their
+     face. Its own seed offset, checked only after every ore roll has failed,
+     so it can only ever replace plain rock.
+
+     Coloured as the band lifted toward the seam's own sandy tone, the same
+     trick rubble uses - it has to belong to the wall it is in while still
+     being the thing your eye goes to. Hardness stays the band's: finding one
+     should not also be a chore. */
+  if (rnd(x + 61, d + 17, g.planet) < SEAM_CHANCE) {
+    return { id: SEAM.id, name: SEAM.name, glow: SEAM.glow,
+             /* Only a fifth of the way toward the seam tone. The body has to
+                stay recognisably its own band; the flecks are what the eye is
+                meant to catch. A stronger blend turned every wall sandy. */
+             color: mixHex(b.color, SEAM.color, 0.2),
+             hard: b.hard * hm, wt: SEAM.wt, value: SEAM.value, ore: false, seam: true };
+  }
+
   return { id: b.id, name: b.name, color: b.color, glow: b.glow, hard: b.hard * hm, wt: b.wt, value: b.value, ore: false };
 }
 

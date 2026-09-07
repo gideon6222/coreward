@@ -111,6 +111,8 @@ export const ROCK_BUMP: Record<string, number> = {
      ground; a geode is a cracked-open shell, so it is the roughest. Both read
      as "not rock" at a glance, which is the entire point of a pocket. */
   gas: 0.10, geode: 0.34,
+  /* a seam is broken-up rock, rougher than the band it sits in */
+  seam: 0.30,
   /* loose fill, so the roughest surface in the game */
   rubble: 0.40
 };

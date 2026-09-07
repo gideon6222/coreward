@@ -95,7 +95,7 @@ function poolFor(b: Block): Pool {
   });
   const detail = new THREE.InstancedMesh(
     b.cache ? crateGeo : b.ore ? shardGeo : pebbleGeo, detailMat,
-    b.ore ? MAX_DETAILS : MAX_CELLS
+    b.ore || b.seam ? MAX_DETAILS : MAX_CELLS
   );
   detail.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   detail.frustumCulled = false;
@@ -315,15 +315,27 @@ function rebuild() {
         pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit * ao)));
         pool.bodies++;
 
-        if (rnd(x + 61, d + 17, g.planet) > 0.66) {
-          const r1 = rnd(x + 12, d + 44, g.planet), r2 = rnd(x + 31, d + 6, g.planet);
-          scratch.position.set(px + (r1 - 0.5) * 0.6, py + (r2 - 0.5) * 0.6, 0.5);
-          scratch.rotation.set(r1 * 3, r2 * 3, r1 * 2);
-          scratch.scale.set(1, 1, 1);
-          scratch.updateMatrix();
-          pool.detail.setMatrixAt(pool.details, scratch.matrix);
-          pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(b.color, jit * 1.22 * ao)));
-          pool.details++;
+        /* Flecks belong to seams and only to seams now.
+
+           They were scattered over a third of all rock as decoration, using
+           this exact roll. blockAt() now uses the same roll to decide which
+           cells ARE seams, so the two agree by construction and the texture
+           the player was already looking at became the tell. Three flecks
+           rather than one, so a seam is findable rather than merely
+           distinguishable once you know. */
+        if (b.seam) {
+          for (let f = 0; f < 3; f++) {
+            const r1 = rnd(x + 12 + f * 5, d + 44, g.planet);
+            const r2 = rnd(x + 31, d + 6 + f * 9, g.planet);
+            const sc = 0.6 + rnd(x + f, d + f * 3, g.planet + 5) * 0.45;
+            scratch.position.set(px + (r1 - 0.5) * 0.66, py + (r2 - 0.5) * 0.66, 0.5);
+            scratch.rotation.set(r1 * 3, r2 * 3, r1 * 2);
+            scratch.scale.set(sc, sc, sc);
+            scratch.updateMatrix();
+            pool.detail.setMatrixAt(pool.details, scratch.matrix);
+            pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(0xd9c898, jit * 1.15 * ao)));
+            pool.details++;
+          }
         }
         continue;
       }

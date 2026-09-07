@@ -1098,6 +1098,55 @@ into a full hold would otherwise have been unusable.
 material; this names a material at a place, one per cell. They are both
 `Record<string, ...>` and confusing them typechecks silently.
 
+## Seams: the texture stops being decoration (2026-09-07)
+
+Playtest: *"I like the sections of texture you added to the regular blocks. can
+you make it so most regular dirt and rock give you a very small amount of
+resource, and those textured areas give you more?"*
+
+Rock used to be a uniform trickle - every cell paid a little and weighed a lot,
+so the hold filled with granite and the decision the cargo cap exists to force
+never happened. Now plain rock is nearly weightless and nearly worthless: it is
+what you cut through, not what you carry. The value is concentrated into
+**seams**, worth about as much per kilo as iron at nearly twice the weight per
+unit, so a seam is both good cargo and expensive in hold space - passing one up
+is a decision rather than an oversight.
+
+**The tell was already on screen.** Decorative flecks were scattered by
+`rnd(x + 61, d + 17, planet)`. `blockAt` now uses that same roll to decide
+which cells *are* seams, so the texture and the payout agree by construction
+rather than by being kept in step. A test asserts the measured share has not
+drifted from `SEAM_CHANCE`, because the day those two disagree the game is
+lying to the player about where the money is.
+
+**A third was far too many.** At the original 30% the screen did not say "some
+of this rock has mineral in it", it said "the rock is made of mineral" - every
+wall went sandy and the bands lost their identity. A sixth reads as a find. The
+body blend also came down from 45% toward the seam tone to 20%: the cell has to
+stay recognisably its own band, and the flecks are what the eye is meant to
+catch.
+
+Rock values are fractional now (0.6 / 1.0 / 1.6 / 2.2 / 3.0). Five bands have
+to stay strictly ordered *and* stay well under a seam in value per kilo, and
+with weights that small there is no room to do both in whole numbers.
+
+### Two things this broke in the tests, both worth keeping
+
+**The snapshot assumed one payload per block id.** It had been true - every
+field was constant per id or scaled by `hardMult`. Seams take the colour of the
+band they sit in, so one id legitimately has five payloads. The key widened to
+id+colour rather than the assertion being dropped: the point of it is to catch
+a field that starts varying by something nobody expected, which is exactly what
+just happened.
+
+**The additive-only test counted two different claims as one.** A pocket or a
+cave dropping onto the world has to stay rare - that is what "an event, not
+terrain" means. A ladder extension or a seam converts a whole category
+wholesale and is *supposed* to be common. Counted together, seams tripped the
+12% pocket ceiling, which would have read as "pockets have gone wrong" for a
+change that had nothing to do with them. They are counted apart now, with a
+ceiling each.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

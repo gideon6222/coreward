@@ -167,7 +167,7 @@ export const tremorCells = (d: number) => Math.min(9, 3 + Math.floor((d - TREMOR
    almost nothing - which is the point. */
 export const RUBBLE_HARD = 0.55;   /* against the band it sits in */
 export const RUBBLE: Rock = {
-  id: 'rubble', name: 'Rubble', color: 0x6d6459, hard: 1.4, wt: 1.2, value: 5, glow: 0.02
+  id: 'rubble', name: 'Rubble', color: 0x6d6459, hard: 1.4, wt: 0.4, value: 3, glow: 0.02
 };
 
 /* Ordered deepest first, and that order is load-bearing twice over.
@@ -199,17 +199,66 @@ export const ORES: Ore[] = [
   { id: 'copper',   name: 'Copper',   color: 0xc87137, host: 0x3c342c, hard: 2.6, wt: 3.5, value: 25,    min: 4,   chance: 0.100, glow: 0.10, shards: 4, tone: 1 }
 ];
 
+/* ---------- rock, and the seams in it ----------
+
+   Rock used to be a uniform trickle: every cell paid a little and weighed a
+   lot, so the hold filled with granite and the actual decision - which ORE to
+   carry - was crowded out by spoil.
+
+   Now plain rock is nearly weightless and nearly worthless. It is what you cut
+   through, not what you carry, and its income is a rounding error you never
+   have to think about. The value that used to be spread evenly across every
+   rock cell is concentrated into SEAMS: the roughly one cell in three that
+   already had visible mineral flecks scattered on its face.
+
+   Values are fractional on purpose. Five bands have to stay strictly ordered
+   AND stay well under a seam in value per kilo, and with weights this small
+   there is no room to do both in whole numbers.
+
+   That is the whole idea. The texture was decoration; now it is information.
+   Everything the player needs in order to act on it was already on screen. */
 export const ROCKS: Rock[] = [
-  { id: 'dirt',    name: 'Dirt',    color: 0x6b4b2a, hard: 1,   wt: 0.4, value: 1,  glow: 0.02 },
-  { id: 'stone',   name: 'Stone',   color: 0x807a72, hard: 2.4, wt: 0.9, value: 3,  glow: 0.02 },
-  { id: 'granite', name: 'Granite', color: 0x5e5a66, hard: 5,   wt: 1.8, value: 9,  glow: 0.02 },
+  { id: 'dirt',    name: 'Dirt',    color: 0x6b4b2a, hard: 1,   wt: 0.15, value: 0.6, glow: 0.02 },
+  { id: 'stone',   name: 'Stone',   color: 0x807a72, hard: 2.4, wt: 0.20, value: 1.0, glow: 0.02 },
+  { id: 'granite', name: 'Granite', color: 0x5e5a66, hard: 5,   wt: 0.25, value: 1.6, glow: 0.02 },
   /* The hot-zone rock. Its whole job is to be unmistakable: it starts at
      exactly HEAT_DEPTH, so the moment the rock turns to smouldering ember you
      are in the zone where dwell time starts killing you. Emissive is high for a
      rock, on purpose - it should look like it is holding heat. */
-  { id: 'scoria',  name: 'Scoria',  color: 0x6b2a18, hard: 7,   wt: 2.3, value: 16, glow: 0.10 },
-  { id: 'basalt',  name: 'Basalt',  color: 0x3a3540, hard: 9,   wt: 2.8, value: 22, glow: 0.03 }
+  { id: 'scoria',  name: 'Scoria',  color: 0x6b2a18, hard: 7,   wt: 0.30, value: 2.2, glow: 0.10 },
+  { id: 'basalt',  name: 'Basalt',  color: 0x3a3540, hard: 9,   wt: 0.35, value: 3.0, glow: 0.03 }
 ];
+
+/* A seam of loose mineral in the rock face - the cells that already carried
+   scattered flecks. Rolled on its own seed, checked only for rock, so it
+   overwrites nothing but rock and leaves the ore stream alone.
+
+   About one rock cell in three. Value density sits just under iron, so a seam
+   is worth stopping for in the first ten metres and is quietly outclassed by
+   real ore from there down. Flat rather than depth-scaled: cargo is keyed by
+   material id, so a depth-varying value would need a separate id per band, and
+   by the depth where that would matter you are surrounded by ore worth a
+   hundred times as much. */
+/* One rock cell in six.
+
+   The first pass used the roll that already drew decorative flecks, which
+   covered about a third of all rock - and on screen a third is not "some of
+   the rock has mineral in it", it is "the rock is made of mineral". Every wall
+   read as sandy speckle and the bands lost their identity. A sixth reads as a
+   find.
+
+   Worth about as much per kilo as iron, at nearly twice the weight of ore per
+   unit. That is deliberate: a seam is genuinely good cargo AND genuinely
+   expensive in hold space, so passing one up is a real decision rather than an
+   oversight. */
+export const SEAM_CHANCE = 0.16;
+export const SEAM: Rock = {
+  id: 'seam', name: 'Mineral Seam', color: 0xc9b98a, hard: 1, wt: 2.0, value: 26, glow: 0.07
+};
+
+/* What a block has to be worth before a full hold bothers leaving it behind
+   rather than treating it as spoil. Above plain rock, below everything else. */
+export const DROP_MIN_VALUE = 10;
 
 /* Band boundaries are deliberately tied to the mechanics rather than round
    numbers. Granite arriving at 45 telegraphs "this is getting harder" before
@@ -240,6 +289,7 @@ for (const o of ORES) DEF[o.id] = o;
 DEF[GEODE.id] = GEODE;
 DEF[RUBBLE.id] = RUBBLE;
 DEF[CACHE.id] = CACHE;
+DEF[SEAM.id] = SEAM;
 DEF[GAS.id] = GAS;
 for (const r of ROCKS) DEF[r.id] = r;
 
