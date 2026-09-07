@@ -153,6 +153,9 @@
   }
   .danger.armed{background:rgba(255,92,107,.18); border-color:var(--red);}
   .fine{color:#5a6780; font-size:11px; text-align:center; margin-top:10px; line-height:1.5;}
+  /* build stamp: dim, monospace, easy to read off a phone screen at a glance */
+  .fine.build{margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
+    font:10.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#48546b; letter-spacing:.02em;}
 
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity .3s; z-index:30;}
   #boot{
@@ -236,6 +239,7 @@
     <button id="btnResume" class="wide">RESUME</button>
     <button id="btnReset" class="danger">RESTART PROGRESS</button>
     <div class="fine">Restarting wipes credits, upgrades, core shards and every tunnel you have dug. It cannot be undone.</div>
+    <div class="fine build" id="build"></div>
   </div>
 </div>
 

@@ -90,6 +90,27 @@ clean origin, then serving the new build at that same origin:
 | `coreward-v5` | present | **deleted** | gone |
 | loaded script | `app.js` | `app.js` (old, from cache) | `./assets/index-<hash>.js` |
 
+### Telling which build is running
+
+The pause menu shows a build stamp at the bottom:
+
+```
+build 67863f5  ·  Sep 6, 2026, 6:08 PM
+```
+
+Open the menu on the phone and read it. This is the only direct way to know
+which build is live on a device: an installed PWA can be one load behind after
+a deploy, and the game is deliberately identical between builds, so there is
+nothing else to look at.
+
+Vite bakes it in via `define`. In CI the commit comes from `GITHUB_SHA`; locally
+it comes from `git rev-parse`, with a trailing **`+`** if the working tree is
+dirty — so a stamp like `67863f5+` means a local build with uncommitted changes
+and is *not* a commit that exists on the remote.
+
+If the stamp is older than the commit you just pushed, the phone is still on the
+previous build: close the app fully and open it again.
+
 `public/sw-legacy-cleanup.js` is what deletes the old cache. Workbox's
 `cleanupOutdatedCaches` only removes precaches it created itself, so without
 that script `coreward-v5` sat on the device permanently - measured at 1.31 MB

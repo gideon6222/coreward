@@ -1058,6 +1058,23 @@ function frame(now) {
   renderer.render(scene, camera);
 }
 
+/* ============ build stamp ============
+   Vite replaces __BUILD_SHA__ and __BUILD_TIME__ at build time. This is the
+   only way to tell on the phone which build is actually running: an installed
+   PWA can be a load behind after a deploy, and the game itself is meant to
+   look identical between builds. Open the pause menu and read the line.
+   The typeof guards keep this harmless if the file is ever loaded unbuilt. */
+function stampBuild() {
+  const sha = typeof __BUILD_SHA__ === 'string' ? __BUILD_SHA__ : 'dev';
+  let when = 'unbuilt';
+  if (typeof __BUILD_TIME__ === 'string') {
+    const d = new Date(__BUILD_TIME__);
+    when = isNaN(d) ? __BUILD_TIME__ : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  const node = el('build');
+  if (node) node.textContent = 'build ' + sha + '  ·  ' + when;
+}
+
 /* ============ boot ============ */
 load();
 lamp.distance = S.light();
@@ -1068,6 +1085,7 @@ resize();
 syncBlocks(true);
 audioLabels();
 updateHUD();
+stampBuild();
 document.getElementById('boot').classList.add('hidden');
 window.addEventListener('visibilitychange', () => { save(); if (document.hidden) sfx.digStop(); });
 setInterval(save, 5000);

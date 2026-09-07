@@ -1,11 +1,39 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/* Build stamp, shown at the bottom of the pause menu.
+
+   The point is on-device verification: after a deploy the phone can be one
+   load behind, and the game is deliberately identical between builds, so
+   there is otherwise nothing to look at to tell whether an update landed.
+   Open the pause menu and read the line. */
+function buildSha() {
+  /* CI checks out a detached head; GITHUB_SHA is the authoritative commit */
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  try {
+    const sha = execSync('git rev-parse --short=7 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim();
+    /* mark local builds with uncommitted changes, so a stamp on the phone is
+       never mistaken for a commit that actually exists */
+    const dirty = execSync('git status --porcelain', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString().trim().length > 0;
+    return dirty ? sha + '+' : sha;
+  } catch (e) {
+    return 'unknown';
+  }
+}
 
 export default defineConfig({
   /* GitHub Pages serves this from /coreward/, not from the domain root, so
      every emitted URL must be relative. The manifest and icon already use
      './' for the same reason. */
   base: './',
+
+  define: {
+    __BUILD_SHA__: JSON.stringify(buildSha()),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString())
+  },
 
   build: {
     target: 'es2020',
