@@ -625,6 +625,75 @@ idiom at the camera call site became `CAM_FOLLOW_PLAY_Y`, which names a real
 choice: the ship travels down far more than sideways, so the axis it moves
 along should lag less.
 
+## Minerals: the depth ladder and the upgrade ladder now need each other (2026-09-07)
+
+The single biggest structural weakness, and the one the research pass named:
+**Coreward had one resource.** Nine ores, five rocks, geodes - and every one of
+them converted to the same number. Where you dug never mattered, only how long.
+Compare SteamWorld Dig, whose whole spine is "find a wall you cannot break,
+upgrade, get past it", or Dome Keeper, where the author's verdict is that three
+resources are what create decisions and one creates none.
+
+Past level three, an upgrade now also costs the mineral it is built out of:
+
+    Cargo Hold    copper     4 m
+    Drill Bit     iron      11 m
+    Tow Insurance iron      11 m
+    Thrusters     silver    22 m
+    Fuel Tank     gold      36 m
+    Scanner Array amethyst  56 m
+    Cooling Rig   emerald   78 m
+    Autopilot     ruby     105 m
+
+**The Cooling Rig is the one that carries the design.** Emerald starts at 78 m,
+which is eight metres INSIDE the heat zone. You have to survive a heat run
+without the protection in order to buy the protection. That is the wall this
+game did not have: everything below 70 m was previously reachable on day one
+given enough patience, because patience was the only currency. There is a test
+asserting that emerald stays below `HEAT_DEPTH` and that no upgrade except
+cooling and autopilot forces that trip.
+
+### Why this creates a choice rather than a chore
+
+Because cargo is weight-limited. Six emerald is 51 kg of a 60 kg starting hold,
+and every kilo of it is a kilo not spent on something worth more per kilo. The
+question at depth stops being "is this worth more than what I am carrying" and
+becomes "am I here for money or for the rig". Weight went from a soft cap to
+the thing the whole economy turns on.
+
+Selling banks the minerals **and** pays the credits. That is not a double
+payment - the upgrade wants minerals *on top of* a credit price - and it avoids
+a keep/sell UI, which on a phone would be four extra taps per run.
+
+### Numbers
+
+Requirement is `2 + (level - 4) * 2`, so 2/4/6/8/10/12 across levels 4-9: 42 to
+max a nine-level tree. Against spawn chances that is roughly four to nine
+hundred-cell runs of the relevant band per tree, which is a project rather than
+a grind. Levels 1-3 stay pure credits, so the opening hour is untouched and a
+new player never meets this system before they understand the old one.
+
+### Two things that had to be right
+
+**Old saves.** A save from before this existed has no stock and has already
+bought levels that would now have cost materials. `grandfatherStock()` grants
+exactly what those levels would have needed and not one unit more, so a
+mid-game save is not stranded behind a wall it already walked through, and the
+next level is still earned. Tested both ways.
+
+**Telling the player where to go.** "6 Emerald" is useless without "from 78 m".
+The shop row turns amber and appends the depth the moment you cannot afford it,
+and the manifest grew a vault listing everything banked in depth order. That
+turns the manifest from a receipt into a plan, which is the point.
+
+### Deliberately not done
+
+Geodes could act as a wildcard, substituting for any required mineral at some
+rate - it would give the windfall a second identity and soften the worst case
+of the gate. Left out because the gate needs to be *felt* before it is
+softened, and because it wants a second button on every shop row. Revisit after
+a playtest.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

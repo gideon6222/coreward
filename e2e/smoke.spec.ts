@@ -299,6 +299,81 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* The mineral gate. Money alone must not buy a level past the free tier, and
+   the row has to say what is missing and where to find it - that line is the
+   entire navigation system for this mechanic.
+
+   Walked against the real build because it spans four modules: the table in
+   config, the bank in state, the deduction in ui, and the markup in
+   index.html. */
+test('an upgrade past the free tier needs minerals, not just credits', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 500_000, shards: 0,
+      /* cool at 3 means the next purchase is level 4, the first gated one */
+      up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 3, scan: 0, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 },
+      stock: {},
+      dug: [], cargo: {}, weight: 0, px: 6, pd: -1
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  await page.locator('#btnShop').dispatchEvent('click');
+  const cool = page.locator('#upgrades .up').filter({ hasText: 'Cooling Rig' });
+  const buy = cool.locator('button');
+
+  /* half a million credits and it is still refused */
+  await expect(buy).toBeDisabled();
+  await expect(cool.locator('.upmat')).toHaveClass(/short/);
+  await expect(cool.locator('.upmat')).toContainText('2 Emerald');
+  await expect(cool.locator('.upmat'), 'a requirement you cannot meet must say where to go')
+    .toContainText('from 78 m');
+
+  /* levels inside the free tier are still pure credits */
+  const drill = page.locator('#upgrades .up').filter({ hasText: 'Drill Bit' });
+  await expect(drill.locator('.upmat')).toHaveCount(0);
+  await expect(drill.locator('button')).toBeEnabled();
+
+  /* bank the emerald and the same row unlocks */
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('coreward.v2') as string);
+    s.stock = { emerald: 3 };
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = set;
+    localStorage.setItem('coreward.v2', JSON.stringify(s));
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await page.locator('#btnShop').dispatchEvent('click');
+
+  const cool2 = page.locator('#upgrades .up').filter({ hasText: 'Cooling Rig' });
+  await expect(cool2.locator('.upmat')).not.toHaveClass(/short/);
+  await expect(cool2.locator('button')).toBeEnabled();
+  await cool2.locator('button').click();
+
+  /* bought: the level went up and the minerals were actually spent */
+  await expect(cool2).toContainText('Lv 4/9');
+  await expect(cool2.locator('.upmat')).toContainText('you have 1');
+
+  /* and the vault reflects it */
+  await page.locator('#shopClose').dispatchEvent('click');
+  await page.locator('#btnManifest').dispatchEvent('click');
+  await expect(page.locator('#vault')).toContainText('Emerald');
+  await expect(page.locator('#vault')).toContainText('from 78 m');
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* Heat has to be legible as the thing draining the hull, separately from every
    other thing that drains it. That readout is assembled from three modules -
    feel.ts computes the rate, ui.ts renders it, and actions.ts clears the soak -

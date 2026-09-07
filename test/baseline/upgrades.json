@@ -39,7 +39,38 @@
       "Power 7.65x",
       "Power 8.60x",
       "Power 9.55x"
-    ]
+    ],
+    "mat": "iron",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "iron",
+        "need": 2
+      },
+      {
+        "id": "iron",
+        "need": 4
+      },
+      {
+        "id": "iron",
+        "need": 6
+      },
+      {
+        "id": "iron",
+        "need": 8
+      },
+      {
+        "id": "iron",
+        "need": 10
+      },
+      {
+        "id": "iron",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
   },
   "cargo": {
     "name": "Cargo Hold",
@@ -70,7 +101,38 @@
       "375 kg",
       "420 kg",
       "465 kg"
-    ]
+    ],
+    "mat": "copper",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "copper",
+        "need": 2
+      },
+      {
+        "id": "copper",
+        "need": 4
+      },
+      {
+        "id": "copper",
+        "need": 6
+      },
+      {
+        "id": "copper",
+        "need": 8
+      },
+      {
+        "id": "copper",
+        "need": 10
+      },
+      {
+        "id": "copper",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
   },
   "thrust": {
     "name": "Thrusters",
@@ -101,7 +163,38 @@
       "7.9 cells/s",
       "8.6 cells/s",
       "9.3 cells/s"
-    ]
+    ],
+    "mat": "silver",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "silver",
+        "need": 2
+      },
+      {
+        "id": "silver",
+        "need": 4
+      },
+      {
+        "id": "silver",
+        "need": 6
+      },
+      {
+        "id": "silver",
+        "need": 8
+      },
+      {
+        "id": "silver",
+        "need": 10
+      },
+      {
+        "id": "silver",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
   },
   "tank": {
     "name": "Fuel Tank",
@@ -132,7 +225,38 @@
       "370 fuel",
       "410 fuel",
       "450 fuel"
-    ]
+    ],
+    "mat": "gold",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "gold",
+        "need": 2
+      },
+      {
+        "id": "gold",
+        "need": 4
+      },
+      {
+        "id": "gold",
+        "need": 6
+      },
+      {
+        "id": "gold",
+        "need": 8
+      },
+      {
+        "id": "gold",
+        "need": 10
+      },
+      {
+        "id": "gold",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
   },
   "cool": {
     "name": "Cooling Rig",
@@ -163,7 +287,38 @@
       "63% heat shield",
       "72% heat shield",
       "72% heat shield"
-    ]
+    ],
+    "mat": "emerald",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "emerald",
+        "need": 2
+      },
+      {
+        "id": "emerald",
+        "need": 4
+      },
+      {
+        "id": "emerald",
+        "need": 6
+      },
+      {
+        "id": "emerald",
+        "need": 8
+      },
+      {
+        "id": "emerald",
+        "need": 10
+      },
+      {
+        "id": "emerald",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
   },
   "scan": {
     "name": "Scanner Array",
@@ -194,7 +349,38 @@
       "25m light",
       "27m light",
       "30m light"
-    ]
+    ],
+    "mat": "amethyst",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "amethyst",
+        "need": 2
+      },
+      {
+        "id": "amethyst",
+        "need": 4
+      },
+      {
+        "id": "amethyst",
+        "need": 6
+      },
+      {
+        "id": "amethyst",
+        "need": 8
+      },
+      {
+        "id": "amethyst",
+        "need": 10
+      },
+      {
+        "id": "amethyst",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
   },
   "tow": {
     "name": "Tow Insurance",
@@ -223,7 +409,34 @@
       "Tow takes 20% of haul",
       "Tow takes 15% of haul",
       "Tow takes 10% of haul"
-    ]
+    ],
+    "mat": "iron",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "iron",
+        "need": 2
+      },
+      {
+        "id": "iron",
+        "need": 4
+      },
+      {
+        "id": "iron",
+        "need": 6
+      },
+      {
+        "id": "iron",
+        "need": 8
+      },
+      {
+        "id": "iron",
+        "need": 10
+      }
+    ],
+    "matTotal": 30
   },
   "auto": {
     "name": "Autopilot",
@@ -248,6 +461,25 @@
       "0.33 fuel per metre",
       "0.25 fuel per metre",
       "0.18 fuel per metre"
-    ]
+    ],
+    "mat": "ruby",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "ruby",
+        "need": 2
+      },
+      {
+        "id": "ruby",
+        "need": 4
+      },
+      {
+        "id": "ruby",
+        "need": 6
+      }
+    ],
+    "matTotal": 12
   }
 }

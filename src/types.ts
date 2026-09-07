@@ -113,7 +113,14 @@ export interface Upgrade {
   /* only the drill has named tiers */
   tiers?: string[];
   effect: (l: number) => string;
+  /* The mineral this upgrade is built out of, required from MAT_FROM_LEVEL up.
+     Its depth is the real gate: you cannot buy the thing until you have been
+     where it lives. */
+  mat: string;
 }
+
+/* What a purchase costs beyond credits: mineral id -> count. */
+export type MatCost = { id: string; need: number } | null;
 
 /* Cargo counts keyed by block id. Every read is guarded with `|| 0`, which is
    why this is a partial record rather than a total one. */
@@ -168,6 +175,7 @@ export interface SaveV2 {
   px?: number;
   pd?: number;
   kit?: Partial<Kit>;
+  stock?: Cargo;
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

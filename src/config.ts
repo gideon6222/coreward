@@ -1,6 +1,6 @@
 /* Tuning constants and the pure functions over them. Imports only types. */
 
-import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait } from './types';
+import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost } from './types';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
    framing, so the rest is lateral room to explore: which way to dig at a given
@@ -156,6 +156,11 @@ export const baseRock = (d: number) =>
   : d < SCORIA_TO_BASALT ? ROCKS[3]
   : ROCKS[4];
 
+/* Ore carries a depth gate and a spawn chance; rock does not. That is the only
+   structural difference between the two, so it is also the type guard - and it
+   is what lets the vault and the shop ask a material where it lives. */
+export const isOre = (m: Material): m is Ore => 'min' in m;
+
 export const DEF: Record<string, Material> = {};
 for (const o of ORES) DEF[o.id] = o;
 DEF[GEODE.id] = GEODE;
@@ -197,29 +202,66 @@ export const SUPPLY_OF: Record<string, Supply> = {};
 for (const sup of SUPPLIES) SUPPLY_OF[sup.key] = sup;
 
 export const UPGRADES: Upgrade[] = [
-  { key: 'drill',  name: 'Drill Bit',     base: 130, mul: 2.00, max: 9,
+  { key: 'drill',  name: 'Drill Bit',     base: 130, mul: 2.00, max: 9, mat: 'iron',
     tiers: ['Steel', 'Tungsten', 'Carbide', 'Diamond', 'Ionized', 'Plasma', 'Graviton', 'Singularity', 'Starbreaker', 'Godcore'],
     effect: (l: number) => 'Power ' + (1 + l * 0.95).toFixed(2) + 'x' },
-  { key: 'cargo',  name: 'Cargo Hold',    base: 110, mul: 2.00, max: 9,
+  { key: 'cargo',  name: 'Cargo Hold',    base: 110, mul: 2.00, max: 9, mat: 'copper',
     effect: (l: number) => (60 + l * 45) + ' kg' },
-  { key: 'thrust', name: 'Thrusters',     base: 100, mul: 1.95, max: 9,
+  { key: 'thrust', name: 'Thrusters',     base: 100, mul: 1.95, max: 9, mat: 'silver',
     effect: (l: number) => (3.0 + l * 0.7).toFixed(1) + ' cells/s' },
   /* Priced against the depth where running dry actually strands you, not
      against the first haul. The old 200 was pocket change by 36 m. */
-  { key: 'tank',   name: 'Fuel Tank',     base: 480, mul: 2.00, max: 9,
+  { key: 'tank',   name: 'Fuel Tank',     base: 480, mul: 2.00, max: 9, mat: 'gold',
     effect: (l: number) => (90 + l * 40) + ' fuel' },
   /* The expensive one, and the ladder you save for. Heat starts at 70 m, so
      the first level costs about half a good run from that depth rather than
      one gold block. The shallower multiplier keeps later levels reachable. */
-  { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9,
+  { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9, mat: 'emerald',
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
-  { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9,
+  { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9, mat: 'amethyst',
     effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light' },
-  { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8,
+  { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8, mat: 'iron',
     effect: (l: number) => 'Tow takes ' + Math.round(Math.max(0.1, 0.5 - l * 0.05) * 100) + '% of haul' },
-  { key: 'auto',   name: 'Autopilot',     base: 900, mul: 2.20, max: 6,
+  { key: 'auto',   name: 'Autopilot',     base: 900, mul: 2.20, max: 6, mat: 'ruby',
     effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') }
 ];
 export const costOf = (u: Upgrade, lvl: number) => Math.round(u.base * Math.pow(u.mul, lvl));
+
+/* ---------- material costs ----------
+
+   Credits alone made the upgrade ladder a pure grind against one number: any
+   ore at any depth converted to any upgrade, so nothing about WHERE you dug
+   ever mattered. Past level three each upgrade also wants the mineral it is
+   built out of, and the mineral's depth is the actual gate.
+
+   The one that carries the design is the Cooling Rig, which wants emerald from
+   78 m - eight metres INSIDE the heat zone. You have to survive a heat run
+   without the protection in order to buy the protection. That is the "hit a
+   wall, upgrade, get past it" shape the game did not have; everything below
+   70 m was previously reachable on day one with enough patience.
+
+   The choice this creates is real because cargo is weight-limited. Six emerald
+   is 51 kg of a 60 kg starting hold, and every kilo of it is a kilo not spent
+   on something worth more per kilo. You are choosing what to come back with,
+   not just how deep to go.
+
+   Levels 1-3 stay pure credits so the opening hour is untouched. */
+export const MAT_FROM_LEVEL = 4;
+export const matCost = (u: Upgrade, lvl: number): MatCost => {
+  const buying = lvl + 1;
+  if (buying < MAT_FROM_LEVEL) return null;
+  return { id: u.mat, need: 2 + (buying - MAT_FROM_LEVEL) * 2 };
+};
+
+/* Everything a tree will ever ask for, used to grandfather old saves and to
+   sanity-check the totals in tests. */
+export const matTotalFor = (u: Upgrade, throughLevel: number) => {
+  let n = 0;
+  for (let l = 0; l < throughLevel; l++) {
+    const m = matCost(u, l);
+    if (m) n += m.need;
+  }
+  return n;
+};
 
 export const START_X = Math.floor(W / 2);

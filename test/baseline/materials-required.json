@@ -1,0 +1,269 @@
+{
+  "fromLevel": 4,
+  "perUpgrade": [
+    {
+      "key": "drill",
+      "mat": "iron",
+      "mineralDepth": 11,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "iron",
+          "need": 2
+        },
+        {
+          "id": "iron",
+          "need": 4
+        },
+        {
+          "id": "iron",
+          "need": 6
+        },
+        {
+          "id": "iron",
+          "need": 8
+        },
+        {
+          "id": "iron",
+          "need": 10
+        },
+        {
+          "id": "iron",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "cargo",
+      "mat": "copper",
+      "mineralDepth": 4,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "copper",
+          "need": 2
+        },
+        {
+          "id": "copper",
+          "need": 4
+        },
+        {
+          "id": "copper",
+          "need": 6
+        },
+        {
+          "id": "copper",
+          "need": 8
+        },
+        {
+          "id": "copper",
+          "need": 10
+        },
+        {
+          "id": "copper",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "thrust",
+      "mat": "silver",
+      "mineralDepth": 22,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "silver",
+          "need": 2
+        },
+        {
+          "id": "silver",
+          "need": 4
+        },
+        {
+          "id": "silver",
+          "need": 6
+        },
+        {
+          "id": "silver",
+          "need": 8
+        },
+        {
+          "id": "silver",
+          "need": 10
+        },
+        {
+          "id": "silver",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "tank",
+      "mat": "gold",
+      "mineralDepth": 36,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "gold",
+          "need": 2
+        },
+        {
+          "id": "gold",
+          "need": 4
+        },
+        {
+          "id": "gold",
+          "need": 6
+        },
+        {
+          "id": "gold",
+          "need": 8
+        },
+        {
+          "id": "gold",
+          "need": 10
+        },
+        {
+          "id": "gold",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "cool",
+      "mat": "emerald",
+      "mineralDepth": 78,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "emerald",
+          "need": 2
+        },
+        {
+          "id": "emerald",
+          "need": 4
+        },
+        {
+          "id": "emerald",
+          "need": 6
+        },
+        {
+          "id": "emerald",
+          "need": 8
+        },
+        {
+          "id": "emerald",
+          "need": 10
+        },
+        {
+          "id": "emerald",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "scan",
+      "mat": "amethyst",
+      "mineralDepth": 56,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "amethyst",
+          "need": 2
+        },
+        {
+          "id": "amethyst",
+          "need": 4
+        },
+        {
+          "id": "amethyst",
+          "need": 6
+        },
+        {
+          "id": "amethyst",
+          "need": 8
+        },
+        {
+          "id": "amethyst",
+          "need": 10
+        },
+        {
+          "id": "amethyst",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "tow",
+      "mat": "iron",
+      "mineralDepth": 11,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "iron",
+          "need": 2
+        },
+        {
+          "id": "iron",
+          "need": 4
+        },
+        {
+          "id": "iron",
+          "need": 6
+        },
+        {
+          "id": "iron",
+          "need": 8
+        },
+        {
+          "id": "iron",
+          "need": 10
+        }
+      ],
+      "total": 30
+    },
+    {
+      "key": "auto",
+      "mat": "ruby",
+      "mineralDepth": 105,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "ruby",
+          "need": 2
+        },
+        {
+          "id": "ruby",
+          "need": 4
+        },
+        {
+          "id": "ruby",
+          "need": 6
+        }
+      ],
+      "total": 12
+    }
+  ]
+}

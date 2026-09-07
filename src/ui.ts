@@ -1,5 +1,5 @@
-import { HULL_MAX, DEF, UPGRADES, SUPPLIES, coreDepth, planetName, traitOf,
-         valueMult, costOf } from './config';
+import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, coreDepth, planetName,
+         traitOf, valueMult, costOf, matCost } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
@@ -22,6 +22,7 @@ export const ui = {
   toast: mustEl('toast'), shop: mustEl('shop'), shopCredits: mustEl('shopCredits'), upgrades: mustEl('upgrades'),
   event: mustEl('event'), evTitle: mustEl('evTitle'), evBody: mustEl('evBody'), evBtn: mustEl('evBtn'),
   manifest: mustEl('manifest'), manifestRows: mustEl('manifestRows'), manifestTotal: mustEl('manifestTotal'),
+  vault: mustEl('vault'),
   pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
   btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
   alarm: mustEl('alarm'), soakBar: mustEl('soakBar'), hullTxt: mustEl('hullTxt'),
@@ -146,6 +147,35 @@ export function buildManifest() {
     ui.manifestRows.appendChild(row);
   }
   ui.manifestTotal.textContent = '◈ ' + haulValue().toLocaleString();
+  buildVault();
+}
+
+/* What is banked at the pad, in depth order. This is the half of the manifest
+   that turns it from a receipt into a plan: the hold says what you are
+   carrying, the vault says what the Outfitter is still waiting on. */
+export function buildVault() {
+  /* Geodes sort in with the ores rather than trailing them: the list is in
+     depth order, and depth order is how the player reads "where do I go". */
+  const rows = [...ORES, GEODE]
+    .sort((a, b) => a.min - b.min)
+    .filter((o) => (g.stock[o.id] || 0) > 0);
+  ui.vault.innerHTML = '';
+  if (!rows.length) {
+    ui.vault.innerHTML =
+      '<div class="upeff" style="padding:10px 0">Nothing banked yet. Minerals are kept when you sell, ' +
+      'and the Outfitter wants them for anything past level three.</div>';
+    return;
+  }
+  for (const o of rows) {
+    const row = document.createElement('div');
+    row.className = 'up';
+    row.innerHTML =
+      '<span class="dot" style="background:#' + o.color.toString(16).padStart(6, '0') + '"></span>' +
+      '<div class="upinfo"><div class="upname">' + o.name + '</div>' +
+      '<div class="upeff">from ' + o.min + ' m</div></div>' +
+      '<div class="val">' + (g.stock[o.id] || 0) + '</div>';
+    ui.vault.appendChild(row);
+  }
 }
 
 export function buildShop() {
@@ -155,19 +185,34 @@ export function buildShop() {
     const lvl = g.up[u.key];
     const maxed = lvl >= u.max;
     const c = costOf(u, lvl);
+    const mat = maxed ? null : matCost(u, lvl);
+    const have = mat ? (g.stock[mat.id] || 0) : 0;
+    const short = !!mat && have < mat.need;
+
     const row = document.createElement('div');
     row.className = 'up';
     const label = u.tiers ? u.name + ' — ' + u.tiers[lvl] : u.name;
+    /* The requirement line names the depth as well as the mineral, because
+       "6 Emerald" is only actionable if you know emerald starts at 78 m. */
+    const def = mat ? DEF[mat.id] : null;
+    const matLine = mat && def
+      ? '<div class="upmat' + (short ? ' short' : '') + '">' +
+        '<span class="dot" style="background:#' + def.color.toString(16).padStart(6, '0') + '"></span>' +
+        mat.need + ' ' + def.name + ' · you have ' + have +
+        (short && isOre(def) ? ' · from ' + def.min + ' m' : '') + '</div>'
+      : '';
     row.innerHTML =
       '<div class="upinfo"><div class="upname">' + label + '</div>' +
-      '<div class="upeff">Lv ' + lvl + '/' + u.max + ' · ' + u.effect(lvl) + (maxed ? '' : ' → ' + u.effect(lvl + 1)) + '</div></div>';
+      '<div class="upeff">Lv ' + lvl + '/' + u.max + ' · ' + u.effect(lvl) + (maxed ? '' : ' → ' + u.effect(lvl + 1)) + '</div>' +
+      matLine + '</div>';
     const btn = document.createElement('button');
     btn.className = 'buy';
     btn.textContent = maxed ? 'MAX' : '◈ ' + c.toLocaleString();
-    btn.disabled = maxed || g.credits < c;
+    btn.disabled = maxed || g.credits < c || short;
     btn.onclick = () => {
-      if (g.credits < c || maxed) return;
+      if (g.credits < c || maxed || short) return;
       g.credits -= c;
+      if (mat) g.stock[mat.id] = have - mat.need;
       g.up[u.key]++;
       if (u.key === 'tank') g.fuel = S.fuelCap();
       if (u.key === 'scan') lamp.distance = S.light();

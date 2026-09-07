@@ -1,4 +1,4 @@
-import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X } from './config';
+import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor } from './config';
 import type { Cargo, Dir, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
@@ -11,6 +11,9 @@ export const g: {
   face: Dir;
   fuel: number; hull: number; soak: number;
   cargo: Cargo; weight: number;
+  /* Minerals banked at the pad, spent on upgrades alongside credits. Counts
+     only - the credits for the same ore were already paid on the same sale. */
+  stock: Cargo;
   mode: Mode;
 } = {
   planet: 0, credits: 0, shards: 0,
@@ -20,7 +23,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0,
-  cargo: {}, weight: 0,
+  cargo: {}, weight: 0, stock: {},
   mode: 'play'
 };
 
@@ -37,13 +40,27 @@ export const S = {
   autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075)
 };
 
+/* A save written before minerals existed has no stock, and its owner has
+   already bought levels that would now have cost materials. Charging them
+   retroactively would strand a mid-game save behind a wall it already passed,
+   so grant exactly what those levels would have needed - nothing more, so the
+   next level is still earned. */
+export function grandfatherStock(): Cargo {
+  const out: Cargo = {};
+  for (const u of UPGRADES) {
+    const owed = matTotalFor(u, g.up[u.key]);
+    if (owed) out[u.mat] = (out[u.mat] || 0) + owed;
+  }
+  return out;
+}
+
 /* ============ save ============ */
 export function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
-      kit: g.kit
+      kit: g.kit, stock: g.stock
     }));
   } catch (e) { /* ignore */ }
 }
@@ -58,6 +75,7 @@ export function load() {
       Object.assign(g.kit, s.kit || {});
       g.dug = new Set(s.dug || []);
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
+      g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;
       if (typeof s.pd === 'number') g.pd = s.pd;
       return;
@@ -73,6 +91,7 @@ export function load() {
     g.up.drill = o.drill || 0; g.up.cargo = o.cargo || 0; g.up.thrust = o.thrust || 0;
     g.up.tank = o.tank || 0; g.up.cool = o.cool || 0; g.up.scan = o.scan || 0;
     g.up.auto = Math.min(6, o.beacon || 0);
+    g.stock = grandfatherStock();
     save();
   } catch (e) { /* corrupt save, start fresh */ }
 }
