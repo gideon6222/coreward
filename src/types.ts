@@ -62,6 +62,29 @@ export interface Block {
 export type UpgradeKey =
   | 'drill' | 'cargo' | 'thrust' | 'tank' | 'cool' | 'scan' | 'tow' | 'auto';
 
+export type SupplyKey = 'coolant' | 'patch' | 'cell';
+
+/* A consumable bought at the pad and spent underground.
+
+   Upgrades and supplies answer the same threats on different axes: an upgrade
+   raises the ceiling on every future run, a supply buys one more minute on
+   THIS run. That is the whole decision - bank toward the permanent thing, or
+   spend now because the core is forty metres away and you are nearly out. */
+export interface Supply {
+  key: SupplyKey;
+  name: string;
+  /* the four-letter label on the kit button, which is 60 px wide */
+  icon: string;
+  cost: number;
+  /* carrying more than a handful turns a decision into a stockpile */
+  max: number;
+  blurb: string;
+  /* shown on the button when the supply would currently do nothing */
+  idle: string;
+}
+
+export type Kit = Record<SupplyKey, number>;
+
 export interface Upgrade {
   key: UpgradeKey;
   name: string;
@@ -125,6 +148,7 @@ export interface SaveV2 {
   weight?: number;
   px?: number;
   pd?: number;
+  kit?: Partial<Kit>;
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

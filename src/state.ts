@@ -1,10 +1,11 @@
 import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X } from './config';
-import type { Cargo, Dir, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
+import type { Cargo, Dir, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
 export const g: {
   planet: number; credits: number; shards: number;
   up: Record<UpgradeKey, number>;
+  kit: Kit;
   dug: Set<string>;
   px: number; pd: number;
   face: Dir;
@@ -14,6 +15,7 @@ export const g: {
 } = {
   planet: 0, credits: 0, shards: 0,
   up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
+  kit: { coolant: 0, patch: 0, cell: 0 },
   dug: new Set<string>(),
   px: START_X, pd: -1,
   face: 'down',
@@ -40,7 +42,8 @@ export function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
-      dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd
+      dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
+      kit: g.kit
     }));
   } catch (e) { /* ignore */ }
 }
@@ -52,6 +55,7 @@ export function load() {
       const s = JSON.parse(raw);
       g.planet = s.planet || 0; g.credits = s.credits || 0; g.shards = s.shards || 0;
       Object.assign(g.up, s.up || {});
+      Object.assign(g.kit, s.kit || {});
       g.dug = new Set(s.dug || []);
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       if (typeof s.px === 'number') g.px = s.px;

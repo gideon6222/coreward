@@ -1,10 +1,10 @@
-import { coreDepth, planetName } from './config';
+import { coreDepth, planetName, SUPPLIES } from './config';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
 import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels } from './ui';
 import type { Dir } from './types';
-import { autopilot, hardReset } from './actions';
+import { autopilot, hardReset, useSupply } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
 
 function firstTouch() { audioInit(); }
@@ -23,6 +23,13 @@ document.querySelectorAll<HTMLElement>('#dpad .k').forEach((b) => {
 const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
 window.addEventListener('keydown', (e) => { if (KEYS[e.key]) { R.held = KEYS[e.key]; e.preventDefault(); } });
 window.addEventListener('keyup', (e) => { if (KEYS[e.key] && R.held === KEYS[e.key]) R.held = null; });
+
+/* Supplies. pointerdown rather than click so a spend feels as immediate as a
+   dig does, and preventDefault so the press cannot also scroll or select. */
+for (const sup of SUPPLIES) {
+  const btn = mustEl('sup' + sup.key[0].toUpperCase() + sup.key.slice(1));
+  btn.addEventListener('pointerdown', (e) => { e.preventDefault(); useSupply(sup.key); });
+}
 
 ui.btnAuto.onclick = autopilot;
 ui.btnShop.onclick = () => { if (!atSurface() || g.mode !== 'play') return; sfx.ui(); g.mode = 'shop'; buildShop(); ui.shop.classList.remove('hidden'); };

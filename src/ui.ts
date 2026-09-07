@@ -1,4 +1,4 @@
-import { HULL_MAX, DEF, UPGRADES, coreDepth, planetName, valueMult, costOf } from './config';
+import { HULL_MAX, DEF, UPGRADES, SUPPLIES, coreDepth, planetName, valueMult, costOf } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { haulValue } from './world';
@@ -23,8 +23,15 @@ export const ui = {
   pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
   btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
   vignette: mustEl('vignette'),
-  flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto')
+  flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto'),
+  kit: mustEl('kit'), supplies: mustEl('supplies')
 };
+
+/* The three kit buttons, looked up once. Ids are derived from the supply key
+   so index.html and SUPPLIES cannot drift apart without mustEl throwing. */
+const supBtns = SUPPLIES.map((sup) => ({
+  sup, el: mustEl('sup' + sup.key[0].toUpperCase() + sup.key.slice(1))
+}));
 
 let toastT = 0;
 export function toast(msg: string) { ui.toast.textContent = msg; ui.toast.style.opacity = '1'; toastT = 2.0; }
@@ -65,6 +72,27 @@ export function updateHUD() {
   const alarm = danger * (0.35 + 0.25 * Math.sin(performance.now() / 180));
   const building = g.soak * 0.34;
   ui.heat.style.opacity = String(Math.max(alarm, building));
+  updateKit();
+}
+
+/* Whether spending this supply right now would do anything at all. Used to dim
+   the button rather than disable it: a supply you cannot usefully spend is
+   still worth seeing, because the count is the information. */
+function supplyIdle(key: string) {
+  if (key === 'coolant') return g.soak < 0.02;
+  if (key === 'patch') return g.hull >= HULL_MAX - 0.5;
+  return g.fuel >= S.fuelCap() - 0.5;
+}
+
+export function updateKit() {
+  const hidden = g.mode !== 'play' || atSurface();
+  for (const b of supBtns) {
+    const n = g.kit[b.sup.key];
+    b.el.classList.toggle('none', n <= 0 || hidden);
+    b.el.classList.toggle('idle', supplyIdle(b.sup.key));
+    const count = b.el.querySelector('.n');
+    if (count) count.textContent = String(n);
+  }
 }
 
 export function buildManifest() {
@@ -118,6 +146,35 @@ export function buildShop() {
     };
     row.appendChild(btn);
     ui.upgrades.appendChild(row);
+  }
+  buildSupplies();
+}
+
+export function buildSupplies() {
+  ui.supplies.innerHTML = '';
+  for (const sup of SUPPLIES) {
+    const held = g.kit[sup.key];
+    const full = held >= sup.max;
+    const row = document.createElement('div');
+    row.className = 'up';
+    row.innerHTML =
+      '<div class="upinfo"><div class="upname">' + sup.name +
+      ' <span class="mult">' + held + '/' + sup.max + '</span></div>' +
+      '<div class="upeff">' + sup.blurb + '</div></div>';
+    const btn = document.createElement('button');
+    btn.className = 'buy';
+    btn.textContent = full ? 'FULL' : '◈ ' + sup.cost.toLocaleString();
+    btn.disabled = full || g.credits < sup.cost;
+    btn.onclick = () => {
+      if (full || g.credits < sup.cost) return;
+      g.credits -= sup.cost;
+      g.kit[sup.key]++;
+      sfx.buy();
+      save(); buildShop(); updateHUD();
+      flash('rgba(120,255,200,.25)', 160);
+    };
+    row.appendChild(btn);
+    ui.supplies.appendChild(row);
   }
 }
 

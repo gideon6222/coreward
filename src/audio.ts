@@ -369,6 +369,25 @@ export const sfx = {
   },
   /* A pressurised hiss with a dull thud under it. Deliberately unlike any
      other sound in the game - it has to read as "that was bad" instantly. */
+  /* Spending a supply. A short pressurised hiss into a rising two-note chime:
+     the hiss says something was released, the rising interval says it helped.
+     Deliberately the inverse shape of gas(), which hisses then falls. */
+  supply() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 0.34, 3400, 0.22, 'highpass');
+    for (const [i, f] of [523.25, 783.99].entries()) {
+      const o = G.ctx.createOscillator();
+      const gn = G.ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(f, t + i * 0.09);
+      env(gn, t + i * 0.09, 0.16, 0.01, 0.3);
+      o.connect(gn); gn.connect(G.sfxBus);
+      o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.4);
+    }
+  },
+
   gas() {
     const G = live();
     if (!G) return;

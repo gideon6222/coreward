@@ -113,3 +113,58 @@ test('ore value, weight and depth gates stay monotonic', () => {
     assert.ok(deep.hard >= shallow.hard, deep.id + ' must be no softer than ' + shallow.id);
   }
 });
+
+/* ---------- supplies ----------
+
+   Consumables and upgrades answer the same three threats. The tests below are
+   about keeping them on different axes: a supply must never be the cheap way
+   to buy what an upgrade sells, and it must never fully solve anything, or the
+   run stops having a shape. */
+
+test('the supply table is unchanged', () => {
+  assertGolden('supplies', {
+    supplies: H.SUPPLIES, patchHull: H.PATCH_HULL, cellFuel: H.CELL_FUEL
+  });
+});
+
+test('a supply never fully solves the thing it patches', () => {
+  assert.ok(H.PATCH_HULL < H.HULL_MAX * 0.6,
+    'a hull patch that nearly full-heals removes the reason to surface: ' +
+    H.PATCH_HULL + ' of ' + H.HULL_MAX);
+  const baseTank = 90;
+  assert.ok(H.CELL_FUEL < baseTank,
+    'a fuel cell must be a top-up, not a spare tank: ' + H.CELL_FUEL + ' of ' + baseTank);
+  for (const s of H.SUPPLIES)
+    assert.ok(s.max >= 1 && s.max <= 3,
+      s.key + ' stacks to ' + s.max + ' - past three this is a stockpile, not a decision');
+});
+
+test('supplies stay priced as a choice against the upgrade ladder', () => {
+  const cool = H.UPGRADES.find((u) => u.key === 'cool');
+  const coolant = H.SUPPLY_OF.coolant;
+
+  /* Soak is the one pressure with no permanent answer - the shield caps below
+     1 on purpose - so the flush that resets it has to be the dearest thing on
+     the shelf, and dearer than the first level of the rig it complements. */
+  for (const s of H.SUPPLIES)
+    if (s.key !== 'coolant')
+      assert.ok(coolant.cost > s.cost, 'coolant must be the most expensive supply');
+  assert.ok(coolant.cost > H.costOf(cool, 0),
+    'a single flush undercutting the first Cooling Rig level makes the rig pointless');
+
+  /* And a full kit has to be a real spend rather than pocket change, or
+     stocking up stops competing with saving for the ladder. */
+  const fullKit = H.SUPPLIES.reduce((a, s) => a + s.cost * s.max, 0);
+  assert.ok(fullKit > H.costOf(cool, 2),
+    'a full kit (' + fullKit + ') should cost more than three levels of cooling');
+});
+
+test('every supply key resolves through SUPPLY_OF and has display text', () => {
+  for (const s of H.SUPPLIES) {
+    assert.equal(H.SUPPLY_OF[s.key], s);
+    assert.ok(/^[A-Z]{3,5}$/.test(s.icon), s.key + ' label must fit a 60 px button in caps');
+    assert.ok(s.blurb.length > 10 && s.blurb.length < 90, s.key + ' blurb should fit one shop line');
+    assert.ok(s.idle.length > 0, s.key + ' needs text for when spending it would do nothing');
+  }
+  assert.equal(new Set(H.SUPPLIES.map((s) => s.key)).size, H.SUPPLIES.length, 'duplicate supply key');
+});

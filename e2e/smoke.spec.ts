@@ -100,6 +100,8 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
   await page.locator('#btnShop').dispatchEvent('click');
   await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
   await expect(page.locator('#upgrades .up')).toHaveCount(8);
+  /* supplies are a separate section, and each one renders a buy row */
+  await expect(page.locator('#supplies .up')).toHaveCount(3);
   await page.locator('#shopClose').dispatchEvent('click');
 
   await page.locator('#btnManifest').dispatchEvent('click');
@@ -226,6 +228,70 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
     'draw calls regressed past the budget - most likely something gave blocks ' +
     'per-instance materials or added a per-object mesh to the streaming window'
   ).toBeLessThanOrEqual(DRAW_CALL_BUDGET);
+});
+
+/* Supplies are the only thing in the game that spends inventory, and every
+   step of it lives in a different module: the shop buys, state saves, the kit
+   buttons spend and the frame loop shows the result. This walks the whole
+   chain against the real build.
+
+   It buys a fuel cell with credits granted directly rather than mined, because
+   mining eight thousand credits under SwiftShader would dominate the suite. */
+test('a supply can be bought at the pad and spent underground', async ({ page }) => {
+  await page.evaluate(() => {
+    const raw = localStorage.getItem('coreward.v2');
+    const s = raw ? JSON.parse(raw) : {};
+    s.credits = 20000;
+    localStorage.setItem('coreward.v2', JSON.stringify(s));
+    /* The game saves on visibilitychange, which fires during the reload below
+       and would write the live zero-credit state straight back over this.
+       Freeze the key on the outgoing page instead. */
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  await page.locator('#btnShop').dispatchEvent('click');
+  const rows = page.locator('#supplies .up');
+  await expect(rows.nth(0)).toContainText('Coolant Flush');
+  await expect(rows.nth(2)).toContainText('Fuel Cell');
+  await rows.nth(0).locator('button').click();
+  await rows.nth(2).locator('button').click();
+  await expect(rows.nth(0)).toContainText('1/2');
+  await expect(rows.nth(2)).toContainText('1/3');
+  await page.locator('#shopClose').dispatchEvent('click');
+
+  /* hidden at the pad, because the pad already refuels and cools for free */
+  await expect(page.locator('#supCell')).toHaveClass(/none/);
+  await expect(page.locator('#supCoolant')).toHaveClass(/none/);
+
+  const fuelPct = () => page.evaluate(() =>
+    parseFloat((document.querySelector('#fuelBar') as HTMLElement).style.width));
+
+  await holdUntil(page, 'down', async () => {
+    await expect(page.locator('#depth')).not.toContainText('DEPTH 0 m', { timeout: DEEP_ENOUGH });
+  });
+  await expect(page.locator('#supCell')).not.toHaveClass(/none/);
+
+  /* Soak is zero until well below the heat depth, so a flush here has nothing
+     to do. It must refuse and keep the item rather than silently eat it -
+     these buttons sit under a thumb that is mostly steering. */
+  await page.locator('#supCoolant').dispatchEvent('pointerdown');
+  await expect(page.locator('#toast')).toContainText('Nothing to flush');
+  await expect(page.locator('#supCoolant .n')).toHaveText('1');
+
+  /* the fuel cell, by contrast, has real work to do by now */
+  const before = await fuelPct();
+  expect(before, 'digging should have burned some fuel').toBeLessThan(100);
+  await page.locator('#supCell').dispatchEvent('pointerdown');
+  await expect(page.locator('#toast')).toContainText('Fuel cell burned');
+  await expect(page.locator('#supCell')).toHaveClass(/none/);
+  expect(await fuelPct(), 'spending a fuel cell must actually add fuel').toBeGreaterThan(before);
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
 /* The stamp is how a deploy is verified on a phone. If the define pipeline
