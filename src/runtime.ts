@@ -21,6 +21,11 @@ export const R = {
   digging: null as Dig | null,
   flight: null as Flight | null,
 
+  /* actions -> loop: what is currently eating the hull, so the tow screen
+     names the right cause. Heat is the default because it is the only
+     continuous drain; a gas pocket overwrites it on the frame it fires. */
+  hullCause: 'heat' as 'heat' | 'gas',
+
   /* actions -> loop, decayed by the loop */
   shake: 0,
   squash: 0,

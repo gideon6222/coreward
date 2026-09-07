@@ -367,6 +367,23 @@ export const sfx = {
     o.connect(gn); gn.connect(G.sfxBus);
     o.start(t); o.stop(t + 2.2);
   },
+  /* A pressurised hiss with a dull thud under it. Deliberately unlike any
+     other sound in the game - it has to read as "that was bad" instantly. */
+  gas() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 0.9, 2600, 0.5, 'highpass');
+    noiseBurst(G, t + 0.05, 0.7, 700, 0.35, 'bandpass');
+    const o = G.ctx.createOscillator();
+    const gn = G.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(110, t);
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.7);
+    env(gn, t, 0.42, 0.02, 0.8);
+    o.connect(gn); gn.connect(G.sfxBus);
+    o.start(t); o.stop(t + 1.0);
+  },
   thrust() {
     const G = live();
     if (!G) return;

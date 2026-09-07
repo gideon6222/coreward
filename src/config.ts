@@ -30,6 +30,42 @@ export const coreDepth = (p: number) => 110 + p * 35;
 export const hardMult = (p: number) => 1 + p * 0.28;
 export const valueMult = (p: number) => 1 + p * 0.6;
 
+/* ---------- pockets ----------
+
+   Rare cells that are not ore. They exist because the loop was predictable: dig
+   down, sell, upgrade, repeat, with the only variable being how deep you dared.
+   These make a given descent differ from the last one, and they push in both
+   directions - a reason to want to stay down, and a second reason staying down
+   is dangerous, which the heat soak badly needed since it was carrying that
+   entirely on its own.
+
+   Both are generated from the same seeded hash as everything else, so a planet
+   is reproducible; it is only the player who is surprised. */
+
+/* Worth roughly a full hold of amethyst, in one block that breaks easily. The
+   payoff for exploring sideways rather than straight down. */
+export const GEODE: Ore = {
+  id: 'geode', name: 'Geode', color: 0x7fffe0, host: 0x2b3340,
+  hard: 6, wt: 4, value: 6200, min: 52, chance: 0.011, glow: 0.75, shards: 9, tone: 10
+};
+
+/* Breaks faster than the rock around it, so you tend to hit one by accident
+   rather than by choosing to. Pays nothing and costs hull and soak. */
+export const GAS: Ore = {
+  id: 'gas', name: 'Gas Pocket', color: 0xd4ee2a, host: 0x2a3320,
+  hard: 1.8, wt: 0, value: 0, min: 34, chance: 0.014, glow: 0.45, shards: 5, tone: 2
+};
+
+export const GAS_HULL_DAMAGE = 26;
+export const GAS_SOAK = 0.3;
+
+/* ---------- caves ----------
+   Open pockets in the rock, in 2x2 blobs so they read as caves rather than
+   confetti. Free travel and a clear view, but they also expose you: soak keeps
+   building while you cross one, and there is nothing to mine in it. */
+export const CAVE_MIN_DEPTH = 26;
+export const caveChance = (d: number) => Math.min(0.09, 0.03 + (d - CAVE_MIN_DEPTH) * 0.0006);
+
 export const ORES: Ore[] = [
   { id: 'coreite',  name: 'Coreite',  color: 0x66fff0, host: 0x2a2f3a, hard: 16,  wt: 16,  value: 22000, min: 185, chance: 0.030, glow: 0.60, shards: 7, tone: 9 },
   { id: 'magmite',  name: 'Magmite',  color: 0xff7a18, host: 0x2e2228, hard: 13,  wt: 13,  value: 9000,  min: 145, chance: 0.038, glow: 0.50, shards: 6, tone: 8 },
@@ -75,6 +111,8 @@ export const baseRock = (d: number) =>
 
 export const DEF: Record<string, Material> = {};
 for (const o of ORES) DEF[o.id] = o;
+DEF[GEODE.id] = GEODE;
+DEF[GAS.id] = GAS;
 for (const r of ROCKS) DEF[r.id] = r;
 
 export const UPGRADES: Upgrade[] = [

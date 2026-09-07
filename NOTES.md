@@ -358,6 +358,83 @@ is dimmed by scaling its instance **colour** to 0.30 instead.
 Still one draw call: they are extra instances in the same InstancedMesh, and the
 draw-call budget test confirms it.
 
+## Stage 4: pockets and caves (2026-09-07)
+
+The complaint this answers is the one from the heat-soak playtest: "heat is
+currently the only thing that punishes dwell time, so lingering-is-the-gamble
+has exactly one tooth." Between 0 m and 70 m the ground had no opinion about
+you at all. Three additions, all of them terrain rather than systems, because
+terrain is the cheapest variety per byte in a game whose world is a hash.
+
+**Gas pockets** (from 34 m, ~1% of cells). No cargo, no credits: 26 hull and a
++0.3 soak spike. The soak is the part that actually bites, because soak
+multiplies every point of heat damage for the rest of the trip, so a gas hit at
+40 m is a bill you pay at 90 m. Deliberately *softer* than every rock band it
+can appear in (1.8 against stone's 2.4, granite's 5, scoria's 7, basalt's 9) -
+it has to give way early, or you would feel it coming and it would just be a
+tax rather than a surprise. There is a test asserting that ordering, because
+the first draft shipped at 2.5, which is harder than stone, and the tell was
+backwards without anyone noticing.
+
+**Geodes** (from 52 m, ~0.7%). 6,200 credits at 4 kg, which is the best value
+density in the game and roughly half a hold in one block. This is the reason
+the world was widened to 13 columns: it is the first thing that pays for going
+sideways rather than straight down. It works without a scanner upgrade because
+ore haloes are additive sprites and are not lamp-lit, so a geode advertises
+itself across a dark screen; Scanner Array extends how much of the surroundings
+you can read, which is now a real upgrade rather than a nicety.
+
+**Caves** (from 26 m, 3% rising to a 9% cap). 2x2 blobs on a coarse grid, so
+they read as open ground rather than confetti. Free travel, nothing to mine,
+and soak keeps building while you cross one. `findRoute` treats them as
+passable because it tests `blockAt`, so a cave that happens to line up with
+your tunnel becomes an autopilot shortcut - unplanned, and the best thing about
+them.
+
+### The seed discipline, and the test that enforces it
+
+Caves roll on `planet + 77` against a coarse `(x/2, d/2)` grid; pockets roll on
+`planet + 41` against `(x + 313, d + 977)`. Neither touches `rnd(x, d, planet)`,
+which is the ore stream. That is not a stylistic choice: if a new feature
+consumed the same roll, every ore at every depth on every planet would shift,
+which silently rebalances the whole game and looks in a diff like nothing at
+all.
+
+`test/baseline/blocks-preadditive.json` is the world frozen at the moment
+before pockets existed, with its own id legend so it survives future alphabet
+changes. The test asserts the only legal difference: a cell either kept its id,
+or a cave/gas/geode overwrote it. It also asserts the change covers more than
+200 cells and less than 12% of the world, so it cannot pass by generating
+nothing. **Do not re-record that file.** Re-recording it is exactly the mistake
+it exists to catch.
+
+### Reading the hazard on a phone screen
+
+Gas started at 0x9bd94a with the standard ore treatment: dark host, bright
+crystal shards. On screen that is an emerald - same hue family, and emerald
+starts at 78 m so the two share depths. Confusing the punishment with the
+payout is the worst mistake this game's palette could make.
+
+Fixed by changing the *form*, not just the hue. A gas pocket is the only cell
+in the game whose **body** is emissive rather than its crystals, so it reads as
+a lit slab where every ore reads as dark rock with sparks in it. Free: emissive
+is a per-pool material property, and pools are already keyed by block id.
+
+First pass set that emissive to 0.26 and the pockets out-shone the geodes,
+which tells the player to look at the thing they must not touch. Dropped to
+0.15. The payout has to be the brightest object in the frame; the hazard only
+has to be unmistakable.
+
+Surface bump was also split: gas 0.10 (a bubble, so the smoothest thing in the
+ground) against geode 0.34 (a cracked shell, the roughest).
+
+### Tow messages now name their cause
+
+`tow()` hardcoded "your hull buckled in the heat", which became a lie the
+moment something other than heat could empty the hull. `R.hullCause` records
+which one it was. The same pass replaced a literal `70` in the frame loop with
+`HEAT_DEPTH`; it had already drifted apart from the rock band once.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

@@ -57,7 +57,18 @@ function poolFor(b: Block): Pool {
      whole cube like a lamp and the crystals stop reading as crystals - the
      amethyst blocks came out as flat purple squares. Host rock glows 0.02,
      matching what mat() gave it before. */
-  const bodyEmissive = b.ore
+  /* A gas pocket is the one cell whose BODY glows rather than its crystals.
+     Every ore in the game is a dark host with bright specks in it, so making
+     the whole cube luminous gives the hazard a silhouette no ore can imitate -
+     which matters most against emerald, the one it sits next to in hue and in
+     depth. Costs nothing: emissive is a per-pool material property.
+
+     Kept dimmer than it wants to be: at 0.26 the pockets out-shone the geodes
+     and the screen told you to look at the thing you must not touch. The
+     payout has to be the brightest object in the frame. */
+  const bodyEmissive = b.hazard
+    ? new THREE.Color(b.color).multiplyScalar(0.15)
+    : b.ore
     ? new THREE.Color(b.host || 0x333038).multiplyScalar(0.02)
     : new THREE.Color(b.color).multiplyScalar(b.glow || 0.02);
   const detailEmissive = new THREE.Color(b.color).multiplyScalar(b.glow || 0.02);
