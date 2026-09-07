@@ -1,6 +1,34 @@
 {
   "ores": [
     {
+      "id": "solmarrow",
+      "name": "Solmarrow",
+      "color": 16773296,
+      "host": 3813926,
+      "hard": 23,
+      "wt": 21,
+      "value": 132000,
+      "min": 245,
+      "chance": 0.021,
+      "glow": 0.72,
+      "shards": 8,
+      "tone": 10
+    },
+    {
+      "id": "umbrite",
+      "name": "Umbrite",
+      "color": 10320895,
+      "host": 2367283,
+      "hard": 19.5,
+      "wt": 18,
+      "value": 54000,
+      "min": 210,
+      "chance": 0.026,
+      "glow": 0.58,
+      "shards": 7,
+      "tone": 10
+    },
+    {
       "id": "coreite",
       "name": "Coreite",
       "color": 6750192,

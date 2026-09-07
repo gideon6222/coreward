@@ -55,61 +55,61 @@
   },
   {
     "p": 6,
-    "name": "Verdax 2",
+    "name": "Obrinth",
     "coreDepth": 320,
     "hardMult": 2.68,
     "valueMult": 4.6,
-    "skyHi": 863058,
-    "skyLo": 5941469
+    "skyHi": 3805232,
+    "skyLo": 15232944
   },
   {
     "p": 7,
-    "name": "Rustmoor 2",
+    "name": "Palewell",
     "coreDepth": 355,
     "hardMult": 2.96,
     "valueMult": 5.2,
-    "skyHi": 4857104,
-    "skyLo": 14715461
+    "skyHi": 1846316,
+    "skyLo": 8378564
   },
   {
     "p": 8,
-    "name": "Cryon 2",
+    "name": "Serrik",
     "coreDepth": 390,
     "hardMult": 3.24,
     "valueMult": 5.8,
-    "skyHi": 801348,
-    "skyLo": 5559512
+    "skyHi": 4203276,
+    "skyLo": 16753494
   },
   {
     "p": 9,
-    "name": "Ashvault 2",
+    "name": "Vantomir",
     "coreDepth": 425,
     "hardMult": 3.5200000000000005,
     "valueMult": 6.3999999999999995,
-    "skyHi": 2756406,
-    "skyLo": 10507704
+    "skyHi": 662846,
+    "skyLo": 7314152
   },
   {
     "p": 10,
-    "name": "Kryllon 2",
+    "name": "Halcyne",
     "coreDepth": 460,
     "hardMult": 3.8000000000000003,
     "valueMult": 7,
-    "skyHi": 1053760,
-    "skyLo": 5595336
+    "skyHi": 3025416,
+    "skyLo": 14207306
   },
   {
     "p": 11,
-    "name": "Tessivar 2",
+    "name": "Dross",
     "coreDepth": 495,
     "hardMult": 4.08,
     "valueMult": 7.6,
-    "skyHi": 799519,
-    "skyLo": 5226360
+    "skyHi": 1707550,
+    "skyLo": 11040968
   },
   {
     "p": 12,
-    "name": "Verdax 3",
+    "name": "Verdax 2",
     "coreDepth": 530,
     "hardMult": 4.36,
     "valueMult": 8.2,
