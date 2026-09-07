@@ -3,12 +3,12 @@
   "chunks": [
     {
       "name": "three",
-      "bytes": 484966,
+      "bytes": 485971,
       "tolerancePercent": 1
     },
     {
       "name": "index",
-      "bytes": 40050,
+      "bytes": 41408,
       "tolerancePercent": 12
     }
   ]

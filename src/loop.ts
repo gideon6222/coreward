@@ -16,7 +16,7 @@ import {
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
-import { meshes, syncBlocks, dropBlock, oreGlows, beginDig } from './blocks';
+import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
 import { player, rig, bit, flames, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
@@ -236,10 +236,7 @@ export function frame(now: number) {
   }
 
   const glowT = now / 1000;
-  for (const o of oreGlows) {
-    const s = o.baseScale * (1 + 0.14 * Math.sin(glowT * 2.1 + o.phase));
-    o.sprite.scale.set(s, s, 1);
-  }
+  pulseHaloes(glowT);
   for (let i = 0; i < padLights.length; i++) {
     const ph = (glowT * 1.6 - i * 0.22) % 2;
     padLights[i].scale.setScalar(0.55 + 0.5 * Math.max(0, 1 - Math.abs(ph - 0.5) * 3));

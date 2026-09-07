@@ -4,7 +4,7 @@ import { key } from './util';
 import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
-import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo } from './materials';
+import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, chunkFor, glowTex } from './materials';
 import type { Block } from './types';
 
 /* Terrain rendering.
@@ -64,7 +64,7 @@ function poolFor(b: Block): Pool {
   const bodyMat = new THREE.MeshLambertMaterial({
     color: 0xffffff, emissive: bodyEmissive, flatShading: true, map: mat(0xffffff, 0).map
   });
-  const body = new THREE.InstancedMesh(boxGeo, bodyMat, MAX_CELLS);
+  const body = new THREE.InstancedMesh(chunkFor(b.id), bodyMat, MAX_CELLS);
   body.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   body.frustumCulled = false;
   body.count = 0;
@@ -89,26 +89,46 @@ function poolFor(b: Block): Pool {
   return pool;
 }
 
-/* Ore haloes stay as sprites: additive blending on a shared material, only a
-   handful visible at once, and the loop pulses them individually. Pooled so
-   the count does not grow with time. */
-export const oreGlows: { sprite: THREE.Sprite; phase: number; baseScale: number }[] = [];
-const haloPool: THREE.Sprite[] = [];
-let halosUsed = 0;
+/* Ore haloes, all in one draw call.
 
-function takeHalo(color: number, size: number): THREE.Sprite {
-  let s = haloPool[halosUsed];
-  if (!s) {
-    s = makeGlow(color, size, 0.5);
-    haloPool.push(s);
-    scene.add(s);
+   They were one Sprite each, which was fine at 189 streamed cells and became
+   the single largest draw-call cost once the world widened to 377 - roughly
+   twenty to forty sprites, one draw apiece.
+
+   They are now instanced quads. The trick that makes that work: this camera
+   never rotates, it only pans, so a quad in the XY plane always faces it and
+   the billboarding a Sprite provides is not needed. Per-instance matrices carry
+   position and the pulse scale, per-instance colours carry the ore colour. */
+const MAX_HALOS = 160;
+const haloGeo = new THREE.PlaneGeometry(1, 1);
+const haloMat = new THREE.MeshBasicMaterial({
+  map: glowTex, transparent: true, opacity: 0.5,
+  blending: THREE.AdditiveBlending, depthWrite: false
+});
+const haloMesh = new THREE.InstancedMesh(haloGeo, haloMat, MAX_HALOS);
+haloMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+haloMesh.frustumCulled = false;
+haloMesh.count = 0;
+haloMesh.renderOrder = 2;
+scene.add(haloMesh);
+
+/* Position, phase and base size for each visible halo. The loop pulses them
+   through pulseHaloes() rather than touching three.js objects directly. */
+export const oreGlows: { x: number; y: number; phase: number; baseScale: number }[] = [];
+
+/* Animate the pulse. Scale is animated rather than opacity because the material
+   is shared across every instance. */
+export function pulseHaloes(t: number) {
+  for (let i = 0; i < oreGlows.length; i++) {
+    const o = oreGlows[i];
+    const s = o.baseScale * (1 + 0.14 * Math.sin(t * 2.1 + o.phase));
+    scratch.position.set(o.x, o.y, 0.55);
+    scratch.rotation.set(0, 0, 0);
+    scratch.scale.set(s, s, 1);
+    scratch.updateMatrix();
+    haloMesh.setMatrixAt(i, scratch.matrix);
   }
-  halosUsed++;
-  s.visible = true;
-  /* makeGlow caches materials by colour+opacity, so swapping is just a lookup */
-  s.material = makeGlow(color, size, 0.5).material;
-  s.scale.set(size, size, 1);
-  return s;
+  haloMesh.instanceMatrix.needsUpdate = true;
 }
 
 /* ---------- the one real block, the one being drilled ---------- */
@@ -117,15 +137,18 @@ export const meshes = new Map<string, THREE.Group>();
 let digCell: string | null = null;
 
 function makeBlock(x: number, d: number, b: Block) {
-  const jit = 0.84 + rnd(x + 77, d + 31, g.planet) * 0.3;
+  /* Tonal spread between neighbouring chunks. Narrow variation makes a rock
+     face read as one flat surface at any distance; widening it is what turns it
+     into mottled stone. Free - it is a per-instance colour. */
+  const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
   if (!b.ore) {
     const grp = new THREE.Group();
-    const m = new THREE.Mesh(boxGeo, mat(shade(b.color, jit), b.glow));
-    m.rotation.set(
-      (rnd(x + 2, d + 8, g.planet) - 0.5) * 0.09,
-      (rnd(x + 4, d + 3, g.planet) - 0.5) * 0.09,
-      (rnd(x + 5, d + 9, g.planet) - 0.5) * 0.09
-    );
+    const m = new THREE.Mesh(chunkFor(b.id), mat(shade(b.color, jit), b.glow));
+    /* same orientation and oversize as the instanced version, or the block
+       being drilled visibly pops the moment drilling starts */
+    orientChunk(x, d);
+    m.rotation.copy(scratch.rotation);
+    m.scale.copy(scratch.scale);
     grp.add(m);
     if (rnd(x + 61, d + 17, g.planet) > 0.66) {
       const p = new THREE.Mesh(pebbleGeo, mat(shade(b.color, jit * 1.22), b.glow));
@@ -137,7 +160,11 @@ function makeBlock(x: number, d: number, b: Block) {
     return grp;
   }
   const grp = new THREE.Group();
-  grp.add(new THREE.Mesh(boxGeo, mat(shade(b.host || 0x333038, jit), 0.02)));
+  const host = new THREE.Mesh(chunkFor(b.id), mat(shade(b.host || 0x333038, jit), 0.02));
+  orientChunk(x, d);
+  host.rotation.copy(scratch.rotation);
+  host.scale.copy(scratch.scale);
+  grp.add(host);
   const n = b.shards || 5;
   const sm = mat(b.color, b.glow, false);
   for (let i = 0; i < n; i++) {
@@ -193,9 +220,28 @@ let lastRow: number | null = null;
 /* hardReset() used to assign lastRow directly when it lived in the same file */
 export function resetBlockCache() { lastRow = null; }
 
+/* Orient one rock chunk.
+
+   Quarter-turns on all three axes give 64 distinct orientations of the single
+   shared chunk geometry, which is what stops every cell looking like the same
+   rock. They are quarter-turns rather than free rotation so a roughly cubic
+   chunk still packs against its neighbours instead of leaving wedges of gap.
+
+   A small extra jitter softens the remaining regularity, and the slight
+   oversize makes neighbours interlock so no seam shows where the grid is. */
+function orientChunk(x: number, d: number) {
+  const Q = Math.PI / 2;
+  scratch.rotation.set(
+    Math.floor(rnd(x + 2, d + 8, g.planet) * 4) * Q + (rnd(x + 21, d + 5, g.planet) - 0.5) * 0.22,
+    Math.floor(rnd(x + 4, d + 3, g.planet) * 4) * Q + (rnd(x + 33, d + 9, g.planet) - 0.5) * 0.22,
+    Math.floor(rnd(x + 5, d + 9, g.planet) * 4) * Q + (rnd(x + 47, d + 2, g.planet) - 0.5) * 0.22
+  );
+  const sc = 1.03 + rnd(x + 88, d + 12, g.planet) * 0.09;
+  scratch.scale.set(sc, sc, sc);
+}
+
 function rebuild() {
   for (const p of pools.values()) { p.bodies = 0; p.details = 0; }
-  halosUsed = 0;
   oreGlows.length = 0;
 
   const row = lastRow === null ? Math.floor(g.pd) : lastRow;
@@ -209,17 +255,12 @@ function rebuild() {
       if (digCell === key(x, d)) continue;
 
       const pool = poolFor(b);
-      const jit = 0.84 + rnd(x + 77, d + 31, g.planet) * 0.3;
+      const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
       const px = worldX(x), py = -d;
 
       if (!b.ore) {
         scratch.position.set(px, py, 0);
-        scratch.rotation.set(
-          (rnd(x + 2, d + 8, g.planet) - 0.5) * 0.09,
-          (rnd(x + 4, d + 3, g.planet) - 0.5) * 0.09,
-          (rnd(x + 5, d + 9, g.planet) - 0.5) * 0.09
-        );
-        scratch.scale.set(1, 1, 1);
+        orientChunk(x, d);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
         pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit)));
@@ -240,8 +281,7 @@ function rebuild() {
 
       /* ore: a host block plus crystal shards, two of them mirrored behind */
       scratch.position.set(px, py, 0);
-      scratch.rotation.set(0, 0, 0);
-      scratch.scale.set(1, 1, 1);
+      orientChunk(x, d);
       scratch.updateMatrix();
       pool.body.setMatrixAt(pool.bodies, scratch.matrix);
       pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.host || 0x333038, jit)));
@@ -270,9 +310,10 @@ function rebuild() {
       }
 
       const size = 1.5 + (b.tone || 1) * 0.11;
-      const sprite = takeHalo(b.color, size);
-      sprite.position.set(px, py, 0.55);
-      oreGlows.push({ sprite, phase: rnd(x + 3, d + 91, g.planet) * 6.28, baseScale: size });
+      if (oreGlows.length < MAX_HALOS) {
+        haloMesh.setColorAt(oreGlows.length, scratchColor.setHex(b.color));
+        oreGlows.push({ x: px, y: py, phase: rnd(x + 3, d + 91, g.planet) * 6.28, baseScale: size });
+      }
     }
   }
 
@@ -284,8 +325,8 @@ function rebuild() {
     if (p.body.instanceColor) p.body.instanceColor.needsUpdate = true;
     if (p.detail.instanceColor) p.detail.instanceColor.needsUpdate = true;
   }
-  /* park unused haloes rather than destroying them */
-  for (let i = halosUsed; i < haloPool.length; i++) haloPool[i].visible = false;
+  haloMesh.count = oreGlows.length;
+  if (haloMesh.instanceColor) haloMesh.instanceColor.needsUpdate = true;
 }
 
 export function syncBlocks(force?: boolean) {

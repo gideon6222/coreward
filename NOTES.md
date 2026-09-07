@@ -172,16 +172,48 @@ world and their tunnels.
 
 Draw calls went 35 -> 56 against the budget of 70, for twice the cells. The
 likely driver is ore haloes, which are still one sprite each and there are now
-more of them visible. **That is the next optimisation lever if Stage 3 needs
-headroom**: consolidating them into a single instanced or Points draw. Not done
-yet because the pulse animates each halo's scale, which a shared draw would need
-a small custom shader to preserve.
+more of them visible. That lever has since been pulled - see the terrain entry below.
 
 A test fixture lesson: the pathfinding fixtures hardcoded x=4, the old
 `START_X`, so widening the world broke a *contract* test rather than just the
 canary. They are now written relative to `START_X`, and there is an assertion
 that the pad stays centred. Fixtures that hardcode a derived constant will break
 on the day it changes.
+
+## Making it read as rock, not blocks (2026-09-06)
+
+Playtest: "make it feel like we are digging through dirt and rock more
+realistically rather than blocks". Three things were causing the blocky read,
+and fixing all three cost nothing in draw calls because they are per-instance
+data and shared geometry.
+
+- **The cube.** Every cell was an identical 0.97 box. Now it is a subdivided box
+  with every vertex displaced by a deterministic hash, so faces are uneven and
+  corners are chipped. One shared geometry, so instancing is untouched.
+- **The grid alignment.** Jitter was +/-0.045 rad, far too small to break the
+  read. Chunks now take **quarter-turns on all three axes** - 64 orientations of
+  the same shape, which stops every cell looking identical - plus a small extra
+  jitter. Quarter-turns rather than free rotation so a roughly cubic chunk still
+  packs against its neighbours.
+- **The seams.** 0.97 left 0.03 of gap showing exactly where the grid was.
+  Chunks are now 1.0 and scale to 1.03-1.12, so neighbours interlock. Overlapping
+  solids do not z-fight; coplanar faces do, and this removes them.
+
+Two more free wins. **Each block type gets its own chunk shape** - dirt is lumpy
+and rounded at 3 subdivisions, basalt is angular and chipped - which costs
+nothing because every type already had its own instanced pool. And the tonal
+spread between neighbouring chunks widened from 0.84-1.14 to 0.76-1.22, which is
+what turns a flat grey surface into mottled stone.
+
+**Ore haloes are now one draw call instead of one each.** They were Sprites,
+which was fine at 189 streamed cells and became the largest single cost at 377.
+The trick: this camera never rotates, it only pans, so a quad in the XY plane
+always faces it and Sprite billboarding is unnecessary. Instanced quads with
+per-instance matrix (position and pulse scale) and colour.
+
+Draw calls through the whole sequence: **207 before instancing, 35 after, 56
+after widening the world, 66 with per-type chunks, 37 once the haloes were
+consolidated.** Budget is 70, so there is real headroom for Stage 3 again.
 
 ## What to do next
 
