@@ -22,12 +22,13 @@ import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './sce
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
+import { leaveDrop, stepDrops } from './drops';
 import { player, rig, bit, flames, headlight, drillTint, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { stepParallax, fadeParallax } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
-import { sell, goSurface, tow, breakCore, tremor } from './actions';
+import { sell, goSurface, tow, breakCore, tremor, collectHere } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 
 export function step(dir: Dir) {
@@ -43,7 +44,6 @@ export function startAction() {
   const b = blockAt(t.x, t.d);
   if (b) {
     if (b.hard === Infinity) return;
-    if (g.weight + b.wt > S.cargoCap()) { toast('Hold is full at ' + S.cargoCap() + ' kg'); return; }
     /* lift this cell out of the instanced terrain into a real mesh, so the
        dig animation has something to scale, jitter and hang cracks on */
     beginDig(t.x, t.d, b);
@@ -196,6 +196,21 @@ export function frame(now: number) {
           R.digging = null;
           save();
         }
+        else if (g.weight + b.wt > S.cargoCap()) {
+          /* The drill never refuses any more. What will not fit is left at the
+             cell it came from - ore waits to be flown through, plain rock is
+             spoil and is thrown away, because a tunnel full of glowing dirt
+             would be noise rather than a decision. */
+          const kept = b.ore && leaveDrop(R.digging.x, R.digging.d, b.id);
+          if (kept) sfx.drop();
+          if (!R.warnedFull) {
+            R.warnedFull = true;
+            toast(kept ? 'Hold full · ore left where it falls' : 'Hold full at ' + S.cargoCap() + ' kg');
+          }
+          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
+          R.digging = null;
+          save();
+        }
         else {
           g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
           g.weight += b.wt;
@@ -218,6 +233,7 @@ export function frame(now: number) {
       if (a >= 1) {
         g.px = R.moving.x; g.pd = R.moving.d; R.moving = null;
         syncBlocks();
+        collectHere();
         if (atSurface()) { sell(); g.fuel = S.fuelCap(); g.hull = HULL_MAX; }
       }
     } else {
@@ -383,6 +399,7 @@ export function frame(now: number) {
     padLights[i].scale.setScalar(0.55 + 0.5 * Math.max(0, 1 - Math.abs(ph - 0.5) * 3));
   }
   beam.material.opacity = 0.05 + 0.035 * Math.sin(glowT * 1.3);
+  stepDrops(glowT);
 
   /* camera */
   const zNow = R.camZ + camZBoost;

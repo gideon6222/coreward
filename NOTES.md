@@ -1060,6 +1060,44 @@ not the shade.**
 The auger repaint stayed. It costs nothing and it is correct; it is simply not
 the part doing the work.
 
+## The drill never refuses any more (2026-09-07)
+
+Playtest: *"can you also make it so I can always dig but if the hull is full,
+just leave the resources floating in place for me to pick up later."*
+
+He is describing the worst kind of wall. A full hold stopped the drill dead and
+showed a number. It did not ask the player to decide anything; it just stopped
+them doing the thing the game is about, and the only response available was a
+round trip.
+
+Now the drill always cuts. Ore that will not fit is left at the cell it came
+from and bobs there until you fly back through with room. Plain rock is spoil
+and is thrown away - a tunnel full of glowing dirt would be noise rather than a
+decision, and the value of rock is not what anyone is protecting.
+
+One `InstancedMesh` with per-instance colour, one draw call, positions derived
+from `g.drops` (cell key -> block id) so the whole field persists in the save
+for free. Capped at ninety so a save cannot grow without bound.
+
+Pickup happens on **arrival at a cell**, not continuously: a drop lives at a
+cell and the ship moves cell to cell, so there is no in-between state where a
+partial overlap would mean anything.
+
+The "hold full" toast fires once a trip rather than once a block, which is the
+difference between information and nagging.
+
+### What this quietly changes
+
+Cargo capacity used to be a hard stop. It is now a **rate limit on value per
+trip** with the surplus banked in place, which is a much better shape: the
+decision moves from "do I have to go back now" to "is it worth coming back for
+that". It also makes the coming ordnance work - a bomb clearing thirteen cells
+into a full hold would otherwise have been unusable.
+
+`Drops` got its own type rather than reusing `Cargo`. Cargo counts units of a
+material; this names a material at a place, one per cell. They are both
+`Record<string, ...>` and confusing them typechecks silently.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

@@ -383,6 +383,89 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* Digging with a full hold.
+
+   The drill used to simply refuse, which is the worst kind of wall: it does
+   not ask you to decide anything, it just stops you doing the thing the game
+   is about. Now it always cuts, ore that will not fit waits at the cell it
+   came from, and flying back through picks it up.
+
+   Three separate claims, and all three are observable without reaching into
+   the game: depth keeps increasing while the hold is full, the hold does not
+   grow past its cap, and coming back with room does grow it. */
+test('a full hold no longer stops the drill, and the ore waits', async ({ page }) => {
+  await page.evaluate(() => {
+    const dug: string[] = [];
+    for (let d = 0; d <= 70; d++) dug.push('6,' + d);
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
+      best: { depth: 300, haul: 0 },
+      /* 56 of 60 kg: room for nothing worth having */
+      dug, cargo: { amethyst: 8 }, weight: 56, px: 6, pd: 70
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await expect(page.locator('#cargoTxt')).toHaveText('56.0 / 60 KG');
+
+  /* the drill must keep working */
+  await holdUntil(page, 'down', async () => {
+    await expect(page.locator('#depth'))
+      .toContainText(/DEPTH (7[5-9]|[89][0-9]) m/, { timeout: DEEP_ENOUGH });
+  });
+  const kg = () => page.evaluate(() =>
+    parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText));
+  expect(await kg(), 'the hold must never exceed its cap').toBeLessThanOrEqual(60);
+
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
+test('ore left behind is picked up by flying back through it', async ({ page }) => {
+  await page.evaluate(() => {
+    const dug: string[] = [];
+    for (let d = 0; d <= 70; d++) dug.push('6,' + d);
+    dug.push('5,70', '4,70');
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [],
+      drops: { '5,70': 'amethyst', '4,70': 'gold' },
+      best: { depth: 300, haul: 0 },
+      dug, cargo: {}, weight: 0, px: 6, pd: 70
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await expect(page.locator('#cargoTxt')).toHaveText('0.0 / 60 KG');
+
+  await holdUntil(page, 'left', async () => {
+    await expect
+      .poll(() => page.evaluate(() => Number(
+        (document.querySelector('#haul') as HTMLElement).innerText.replace(/[^0-9]/g, ''))),
+        { timeout: DEEP_ENOUGH })
+      .toBeGreaterThan(1200);
+  });
+
+  /* amethyst is 900 and gold 420 on planet 0, so anything over 1200 means
+     both drops were collected rather than one of them plus rock */
+  expect(await page.evaluate(() =>
+    parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText)),
+    'both drops should be aboard').toBeGreaterThan(15);
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* Personal bests, and the marker line that makes one visible.
 
    The record only means something if crossing it is a moment, and a moment

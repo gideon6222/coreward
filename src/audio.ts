@@ -571,6 +571,16 @@ export const sfx = {
     });
   },
 
+  /* Something left behind. A short dull knock - deliberately unrewarding,
+     because this is the sound of not being able to carry it. */
+  drop() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    blip(G, 180, t, 0.1, 'sine', 0.11);
+    noiseBurst(G, t, 0.1, 420, 0.14, 'lowpass');
+  },
+
   cache() {
     const G = live();
     if (!G) return;

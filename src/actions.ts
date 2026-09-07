@@ -10,6 +10,7 @@ import { lamp } from './scene';
 import { worldX } from './materials';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { spray } from './particles';
+import { takeDrop, syncDrops } from './drops';
 import { setMark } from './mark';
 import { setDrillTier } from './ship';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
@@ -47,6 +48,7 @@ export function goSurface() {
      starts pushing it deeper. */
   setMark(g.best.depth);
   g.px = START_X; g.pd = -1; g.face = 'down';
+  R.warnedFull = false;
   R.moving = null; R.digging = null; R.flight = null;
   sfx.digStop();
   g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0;
@@ -111,6 +113,25 @@ export function tremor(): number {
   }
   save();
   return taken.length;
+}
+
+/* Fly through your own leavings to pick them up.
+
+   Called on arrival at a cell rather than continuously, because a drop lives
+   at a cell and the ship moves cell to cell - there is no in-between state
+   where a partial overlap would mean anything. */
+export function collectHere() {
+  const id = g.drops[key(Math.round(g.px), Math.round(g.pd))];
+  if (!id) return;
+  const def = DEF[id];
+  if (!def) { takeDrop(g.px, g.pd); return; }
+  if (g.weight + def.wt > S.cargoCap()) return;
+  takeDrop(g.px, g.pd);
+  g.cargo[id] = (g.cargo[id] || 0) + 1;
+  g.weight += def.wt;
+  sfx.collect(isOre(def) ? def.tone : 1);
+  spray(worldX(Math.round(g.px)), -Math.round(g.pd), def.color, 14, 3, 0.5);
+  save();
 }
 
 export function autopilot() {
@@ -180,6 +201,7 @@ export function breakCore() {
         g.planet = next;
         g.dug = new Set();
         g.rubble = new Set();
+        g.drops = {}; syncDrops();
         for (const k of Array.from(meshes.keys())) dropBlock(k);
         goSurface();
         save();
@@ -193,6 +215,7 @@ export function hardReset() {
   g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0 };
   g.stock = {};
+  g.drops = {}; syncDrops();
   g.dug = new Set();
   g.rubble = new Set();
   g.cargo = {}; g.weight = 0;

@@ -36,6 +36,9 @@ export const R = {
   tremorT: 0,
   tremorWarn: 0,
 
+  /* Say "hold full" once per trip, not once per block. */
+  warnedFull: false,
+
   /* actions -> loop, decayed by the loop */
   shake: 0,
   squash: 0,
