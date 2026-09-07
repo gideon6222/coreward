@@ -1027,6 +1027,39 @@ Faded in over the first six metres rather than switched on at a depth
 threshold, because a hard toggle pops in the corner of your eye every time you
 leave the pad.
 
+## Making the drill tier visible, and where that failed (2026-09-07)
+
+Same argument as the headlight: the Drill Bit is the most-bought upgrade in the
+game, it has ten named tiers from Steel to Godcore, and every one of them
+looked identical. An upgrade you cannot see is one you buy on trust.
+
+The auger is now repainted per tier - dull metals first, so early progress
+looks like better tools rather than like magic, with the emissive only really
+arriving from Plasma on.
+
+**And it does not read.** At play scale the ship is about thirty pixels and the
+auger is about eight of them, mostly behind the hull. Screenshots at level 0
+and level 9 are indistinguishable. That is exactly the trap the ship model's
+own comment warns about - *"detail here means silhouette rather than surface"* -
+and I walked into it anyway, having read that comment while writing the
+headlight two hours earlier.
+
+What does read is the **spark**. There are a dozen a second, they sit at the
+contact point, and they are the only part of the drill big enough to carry
+anything. So the continuous drilling spray now uses the drill's colour rather
+than the rock's - break sprays keep the block colour, because that is ore
+identity and it matters more - and both the count and the speed climb with the
+tier.
+
+Colour alone was not enough there either: Steel and Godcore are both pale, so
+the hue is legible side by side and forgettable on its own. A drill throwing
+three times the sparks twice as hard is legible on its own. **When a change has
+to be noticeable from memory rather than from comparison, change the amount,
+not the shade.**
+
+The auger repaint stayed. It costs nothing and it is correct; it is simply not
+the part doing the work.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

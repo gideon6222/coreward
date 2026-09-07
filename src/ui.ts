@@ -5,6 +5,7 @@ import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
 import { haulValue } from './world';
 import { lamp } from './scene';
+import { setDrillTier } from './ship';
 import { sfx, audioState } from './audio';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
@@ -216,6 +217,7 @@ export function buildShop() {
       g.up[u.key]++;
       if (u.key === 'tank') g.fuel = S.fuelCap();
       if (u.key === 'scan') lamp.distance = S.light();
+      if (u.key === 'drill') setDrillTier(g.up.drill);
       sfx.buy();
       save(); buildShop(); updateHUD();
       flash('rgba(120,255,200,.25)', 160);

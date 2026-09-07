@@ -22,7 +22,7 @@ import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './sce
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
-import { player, rig, bit, flames, headlight, FACE_ANGLE } from './ship';
+import { player, rig, bit, flames, headlight, drillTint, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { stepParallax, fadeParallax } from './parallax';
@@ -130,7 +130,17 @@ export function frame(now: number) {
       R.digging.spark -= dt;
       if (R.digging.spark <= 0) {
         R.digging.spark = 0.1;
-        spray(worldX(R.digging.x), -R.digging.d, b.color, 2, 1.9, 0.4);
+        /* The drill's colour, not the rock's - break sprays keep the block
+           colour because that is ore identity, but the continuous spark
+           belongs to the tool.
+
+           Count and speed climb with the tier as well as hue. Steel and
+           Godcore are both pale, so colour alone is legible side by side and
+           forgettable on its own; a drill throwing three times the sparks
+           twice as hard is legible on its own. */
+        const tier = g.up.drill;
+        spray(worldX(R.digging.x), -R.digging.d, drillTint,
+          2 + Math.floor(tier / 2.5), 1.9 + tier * 0.16, 0.4 + tier * 0.02);
         sfx.chip(b.hard);
       }
 

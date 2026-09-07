@@ -11,6 +11,7 @@ import { worldX } from './materials';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { spray } from './particles';
 import { setMark } from './mark';
+import { setDrillTier } from './ship';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM } from './feel';
@@ -198,6 +199,7 @@ export function hardReset() {
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();
   lamp.distance = S.light();
+  setDrillTier(0);
   goSurface();
   g.mode = 'play';
   ui.pause.classList.add('hidden');
