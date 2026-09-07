@@ -167,6 +167,67 @@ test('the audio graph builds on a user gesture', async ({ page }) => {
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* Draw-call budget.
+
+   Terrain is drawn with InstancedMesh. Before that, every block was its own
+   mesh with its own material, which measured 207 draw calls underground against
+   a mobile guideline of about 50. Instancing took it to 35.
+
+   That is easy to lose silently: anything that gives blocks per-instance
+   materials, or adds a per-object mesh to the streaming window, puts it
+   straight back. It costs nothing on a desktop and shows up on the phone.
+
+   Counted by wrapping the GL context rather than reading renderer.info, which
+   is module-scoped and not reachable from here. */
+const DRAW_CALL_BUDGET = 70;
+
+test('stays inside the draw-call budget while underground', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).__glCalls = 0;
+    for (const P of [(window as any).WebGL2RenderingContext, (window as any).WebGLRenderingContext]) {
+      if (!P) continue;
+      for (const fn of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) {
+        const orig = P.prototype[fn];
+        if (!orig) continue;
+        P.prototype[fn] = function (...a: any[]) {
+          (window as any).__glCalls++;
+          return orig.apply(this, a);
+        };
+      }
+    }
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  /* get underground, where the window is full of terrain */
+  await holdUntil(page, 'down', async () => {
+    await expect(page.locator('#depth')).not.toContainText('DEPTH 0 m', { timeout: DEEP_ENOUGH });
+    await expect(page.locator('#cargoTxt')).not.toHaveText(/^0\.0 /, { timeout: DEEP_ENOUGH });
+  });
+
+  const perFrame = await page.evaluate(async () => {
+    const w = window as any;
+    const before = w.__glCalls;
+    let frames = 0;
+    const t0 = performance.now();
+    await new Promise<void>((res) => {
+      const tick = () => {
+        frames++;
+        performance.now() - t0 < 1000 ? requestAnimationFrame(tick) : res();
+      };
+      requestAnimationFrame(tick);
+    });
+    return Math.round((w.__glCalls - before) / Math.max(1, frames));
+  });
+
+  expect(perFrame, 'draw calls per frame underground').toBeGreaterThan(0);
+  expect(
+    perFrame,
+    'draw calls regressed past the budget - most likely something gave blocks ' +
+    'per-instance materials or added a per-object mesh to the streaming window'
+  ).toBeLessThanOrEqual(DRAW_CALL_BUDGET);
+});
+
 /* The stamp is how a deploy is verified on a phone. If the define pipeline
    breaks the stamp silently reads "dev", and the check becomes worthless. */
 test('the build stamp is populated', async ({ page }) => {

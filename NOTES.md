@@ -118,6 +118,37 @@ are now dirt 10 / stone 45 / granite 70 / scoria 120 / basalt.
 **This balance is a first pass and wants playtest feedback**, not more theory.
 The intended shape is: fuel first to reach depth, then cooling to survive it.
 
+## Stage 2: instanced terrain (2026-09-06)
+
+Every block used to be its own Group of Meshes, and because the per-block shade
+jitter is continuous almost every one got its own material and therefore its own
+draw call. Measured on the live game: **80 at the surface, 207 underground**,
+against a mobile guideline of about 50.
+
+Terrain is now drawn with `InstancedMesh`, pooled **by block id**. Per-instance
+matrices carry position and rotation jitter, per-instance colours carry the
+shade. Pools are keyed by id rather than by glow because emissive cannot vary
+per instance and each id has exactly one correct emissive - that is what keeps
+scoria smouldering.
+
+**Result: 207 -> 35 underground, 80 -> 46 at the surface.** Both inside the
+guideline, and underground is now cheaper than the surface.
+
+The block being drilled is the one exception: it stays a real Group built by
+`makeBlock()`, because the dig animation scales it, jitters it and parents crack
+decals to it. There is only ever one at a time, so the entire feel code is
+untouched and essentially all of the win is kept. `beginDig()` promotes a cell
+out of the instanced pools when drilling starts.
+
+A trap worth remembering: an ore cell is a dull host block with bright crystals
+in it, so the body and the shards need **different** emissive. Giving the host
+the ore's glow lit the whole cube like a lamp and the amethyst came out as flat
+purple squares. Caught by looking at a screenshot, not by a test.
+
+The smoke test now enforces a draw-call budget of 70, counted by wrapping the GL
+context. Mutation-tested: reverting to per-block meshes fails it and nothing
+else.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
@@ -134,9 +165,11 @@ Nothing here is committed to; they are the live threads.
   without becoming routine?
 - **Content past the mid-game.** Nine ores and six planet names cycle; nobody
   has played deep enough to know whether the late game holds up.
-- **A draw-call budget in the smoke test.** `renderer.info` exposes draw calls
-  and triangle counts. A change that quietly doubles them is invisible on a
-  desktop and matters on a phone.
+- **Stage 3: atmosphere.** Stage 2 freed the draw-call budget; spend it. Real
+  shadows, a wider view, denser debris, better ore reads.
+- **Stage 4: variety.** Events, consumables, run modifiers - the recorded reason
+  players quit this genre is predictability, and it is also what gives the heat
+  zone more than one reason to exist.
 
 ## How changes get shipped
 

@@ -16,7 +16,7 @@ import {
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
-import { meshes, syncBlocks, dropBlock, oreGlows } from './blocks';
+import { meshes, syncBlocks, dropBlock, oreGlows, beginDig } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
 import { player, rig, bit, flames, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
@@ -38,6 +38,9 @@ export function startAction() {
   if (b) {
     if (b.hard === Infinity) return;
     if (g.weight + b.wt > S.cargoCap()) { toast('Hold is full at ' + S.cargoCap() + ' kg'); return; }
+    /* lift this cell out of the instanced terrain into a real mesh, so the
+       dig animation has something to scale, jitter and hang cracks on */
+    beginDig(t.x, t.d, b);
     R.digging = { x: t.x, d: t.d, t: 0, total: (b.hard * DIG_BASE) / S.drill(), block: b, stage: 0, spark: 0 };
     sfx.digStart(b.hard);
     R.squash = SQUASH_DIG;
@@ -234,8 +237,8 @@ export function frame(now: number) {
 
   const glowT = now / 1000;
   for (const o of oreGlows) {
-    const s = o.userData.baseScale * (1 + 0.14 * Math.sin(glowT * 2.1 + o.userData.phase));
-    o.userData.halo.scale.set(s, s, 1);
+    const s = o.baseScale * (1 + 0.14 * Math.sin(glowT * 2.1 + o.phase));
+    o.sprite.scale.set(s, s, 1);
   }
   for (let i = 0; i < padLights.length; i++) {
     const ph = (glowT * 1.6 - i * 0.22) % 2;
