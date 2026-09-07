@@ -1064,32 +1064,39 @@ the part doing the work.
 
 Nothing here is committed to; they are the live threads.
 
-- **Fix `approach()` to be frame-rate independent.** It uses
-  `min(1, dt * rate)`, so camera lag differs with frame rate and a stuttering
-  frame makes the camera snap rather than lag. Correct form is
-  `1 - exp(-rate * dt)`. There is a test pinning current behaviour, so changing
-  it is a deliberate act. **Changes how the camera feels — phone check.**
-- **Re-tune Stage 1 against actual play.** The soak rates, the 0.72 shield cap
-  and the new prices are a first pass derived from modelling, not from playing.
-  The open questions: does the descent past 70 m feel like a decision, is
-  cooling worth saving for, and does the tow fire often enough to create tension
-  without becoming routine?
-- **Content past the mid-game.** Nine ores and six planet names cycle; nobody
-  has played deep enough to know whether the late game holds up.
-- **Play Stage 4 and find out which half of it lands.** Pockets, caves,
-  supplies and traits all shipped on modelling, not on play. The specific
-  unknowns: does a gas pocket read as a surprise or as an ambush, is a geode
-  worth the detour it is priced to justify, does a Hollow planet feel fast or
-  feel empty, and does anyone actually buy a Coolant Flush rather than banking
-  the 1,500 toward the rig.
-- **The heat zone still has one tooth below 70 m.** Gas and geodes gave the
-  0-70 m stretch something to think about, but past the heat line soak is again
-  the only pressure. A hazard that only exists deep - something that punishes
-  standing still rather than dwelling - is the obvious next addition.
-- **Traits do not yet change how you *equip*, only how the ground behaves.** A
-  trait that changed what is worth buying at the pad, rather than what the rock
-  does, would be a different kind of variety and would make the supply shelf
-  matter more.
+**The whole of this overhaul is unplayed.** Ten changes landed in one session
+against golden tests, smoke tests and screenshots - which prove nothing broke,
+and prove nothing about whether any of it is fun. Everything below is
+downstream of that.
+
+- **The mineral gate is the one to watch.** Cooling wanting emerald from 78 m
+  is the strongest idea in the batch and the easiest to get wrong: if the wall
+  arrives before the player can survive a heat run, it reads as a lock rather
+  than a goal. Watch for "I have the money and I can't buy anything" - that
+  sentence means the gate is too early, not too expensive.
+- **Tremor pacing is modelled, not played.** 34 s to the first, then 27 s plus
+  jitter, three to nine cells. The open question is whether a collapse reads as
+  drama or as a chore on the way home. If it is a chore, the fix is fewer cells
+  and a longer gap, not a gentler warning.
+- **Are supplies bought, or hoarded?** A consumable people save for a rainy day
+  and never spend is a failed consumable. If Coolant Flushes pile up, it is
+  priced wrong or the moment to use one is not legible.
+- **Caches may be too rare.** About one every couple of runs is a guess. If a
+  whole session goes by without one, they are not doing their job.
+- **Geodes could act as a wildcard**, substituting for any required mineral at
+  some rate. Deliberately left out: the gate needs to be felt before it is
+  softened. This is the first thing to reach for if the gate frustrates.
+- **Traits change how the ground behaves, never how you equip.** A trait that
+  changed what is worth buying at the pad would be a different kind of variety
+  and would make the supply shelf matter more.
+- **The autopilot has not been looked at since the migration**, and PLAYTESTS
+  records it as one of two things he has already complained about once. It now
+  has to route around rubble, which it does correctly - but whether the flight
+  still *reads as flying* through a collapsed tunnel is unknown.
+- **Re-tune Stage 1 against actual play.** Still open. Soak rates, the 0.72
+  shield cap and the prices were derived from modelling. With minerals, gas and
+  tremors layered on top, the deep game is now much busier than when those
+  numbers were set.
 
 ## How changes get shipped
 
