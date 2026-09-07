@@ -264,6 +264,28 @@
         }
       ],
       "total": 12
+    },
+    {
+      "key": "bomb",
+      "mat": "iron",
+      "mineralDepth": 11,
+      "steps": [
+        null,
+        null,
+        null
+      ],
+      "total": 0
+    },
+    {
+      "key": "laser",
+      "mat": "ruby",
+      "mineralDepth": 105,
+      "steps": [
+        null,
+        null,
+        null
+      ],
+      "total": 0
     }
   ]
 }

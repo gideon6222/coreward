@@ -329,31 +329,50 @@ export const SUPPLY_OF: Record<string, Supply> = {};
 for (const sup of SUPPLIES) SUPPLY_OF[sup.key] = sup;
 
 export const UPGRADES: Upgrade[] = [
-  { key: 'drill',  name: 'Drill Bit',     base: 130, mul: 2.00, max: 9, mat: 'iron',
+  { key: 'drill',  name: 'Drill Bit',     base: 130, mul: 2.00, max: 9, mat: 'iron', group: 'rig', unlock: 0,
     tiers: ['Steel', 'Tungsten', 'Carbide', 'Diamond', 'Ionized', 'Plasma', 'Graviton', 'Singularity', 'Starbreaker', 'Godcore'],
     effect: (l: number) => 'Power ' + (1 + l * 0.95).toFixed(2) + 'x' },
-  { key: 'cargo',  name: 'Cargo Hold',    base: 110, mul: 2.00, max: 9, mat: 'copper',
+  { key: 'cargo',  name: 'Cargo Hold',    base: 110, mul: 2.00, max: 9, mat: 'copper', group: 'rig', unlock: 0,
     effect: (l: number) => (60 + l * 45) + ' kg' },
-  { key: 'thrust', name: 'Thrusters',     base: 100, mul: 1.95, max: 9, mat: 'silver',
+  { key: 'thrust', name: 'Thrusters',     base: 100, mul: 1.95, max: 9, mat: 'silver', group: 'rig', unlock: 0,
     effect: (l: number) => (3.0 + l * 0.7).toFixed(1) + ' cells/s' },
   /* Priced against the depth where running dry actually strands you, not
      against the first haul. The old 200 was pocket change by 36 m. */
-  { key: 'tank',   name: 'Fuel Tank',     base: 480, mul: 2.00, max: 9, mat: 'gold',
+  { key: 'tank',   name: 'Fuel Tank',     base: 480, mul: 2.00, max: 9, mat: 'gold', group: 'survival', unlock: 0,
     effect: (l: number) => (90 + l * 40) + ' fuel' },
   /* The expensive one, and the ladder you save for. Heat starts at 70 m, so
      the first level costs about half a good run from that depth rather than
      one gold block. The shallower multiplier keeps later levels reachable. */
-  { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9, mat: 'emerald',
+  { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9, mat: 'emerald', group: 'survival', unlock: 55,
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
   /* The effect line names the framing as well as the lamp, because the
      framing is now the part the player actually feels. */
-  { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9, mat: 'amethyst',
+  { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9, mat: 'amethyst', group: 'instruments', unlock: 0,
     effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light · ' +
       Math.round(zoomForScan(l) * 100) + '% view' },
-  { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8, mat: 'iron',
+  { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8, mat: 'iron', group: 'survival', unlock: 25,
     effect: (l: number) => 'Tow takes ' + Math.round(Math.max(0.1, 0.5 - l * 0.05) * 100) + '% of haul' },
-  { key: 'auto',   name: 'Autopilot',     base: 900, mul: 2.20, max: 6, mat: 'ruby',
-    effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') }
+  { key: 'auto',   name: 'Autopilot',     base: 900, mul: 2.20, max: 6, mat: 'ruby', group: 'instruments', unlock: 65,
+    effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') },
+
+  /* ---------- ordnance ----------
+
+     Both run off one Power Cell meter that trickles back underground and fills
+     at the pad. That combination is what stops them being either a gimmick or
+     a replacement for drilling: you always have some, you never have many, and
+     the question is always "is this the moment".
+
+     Gated so neither arrives before the player has felt the problem it solves.
+     The charge at 40 m, about where hard rock starts costing real time; the
+     laser at 90 m, where a shaft is long enough that cutting one is a job. */
+  { key: 'bomb',   name: 'Seismic Charge', base: 1400, mul: 2.30, max: 3, mat: 'iron', group: 'ordnance', unlock: 40,
+    effect: (l) => (l === 0 ? 'Not installed' : bombCells(l) + ' cells around the target') },
+  /* Ruby, not silver. Silver starts at 22 m and the laser unseals at 90, so
+     the mineral gate was doing nothing at all behind the depth gate - one of
+     the two was decoration. Ruby lives at 105 m, which puts both gates in the
+     same neighbourhood, and a ruby laser is the better fiction anyway. */
+  { key: 'laser',  name: 'Cutting Laser',  base: 2800, mul: 2.30, max: 3, mat: 'ruby', group: 'ordnance', unlock: 90,
+    effect: (l) => (l === 0 ? 'Not installed' : laserRange(l) + ' cells straight ahead') }
 ];
 export const costOf = (u: Upgrade, lvl: number) => Math.round(u.base * Math.pow(u.mul, lvl));
 
@@ -376,6 +395,22 @@ export const costOf = (u: Upgrade, lvl: number) => Math.round(u.base * Math.pow(
    not just how deep to go.
 
    Levels 1-3 stay pure credits so the opening hour is untouched. */
+/* ---------- ordnance shapes ----------
+
+   The charge clears a diamond around the cell you are facing; the laser cuts a
+   line from where you stand. A diamond rather than a box, because the corners
+   of a box are the cells you were least likely to want and a 5x5 at level 3
+   would clear a quarter of the visible world in one tap. */
+export const BOMB_CHARGE = 2;
+export const LASER_CHARGE = 1;
+/* Radius l+1, not l. At radius 1 the charge cleared five cells for two power
+   while the laser cleared five for one - strictly worse, for twice the unlock
+   price. The charge has to beat the laser per point of power at every level or
+   there is no reason it exists; what the laser keeps is reach and precision. */
+export const bombRadius = (l: number) => l + 1;              /* 2, 3, 4 */
+export const bombCells = (l: number) => { const r = bombRadius(l); return 2 * r * r + 2 * r + 1; };
+export const laserRange = (l: number) => 3 + l * 2;          /* 5, 7, 9 */
+
 export const MAT_FROM_LEVEL = 4;
 export const matCost = (u: Upgrade, lvl: number): MatCost => {
   const buying = lvl + 1;

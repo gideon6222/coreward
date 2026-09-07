@@ -1177,6 +1177,71 @@ once the framing stops covering for it.
 There is a test asserting the lit radius grows faster than the framing at every
 level. If the view ever outran the light, an upgrade would be buying darkness.
 
+## The Outfitter becomes a place, and ordnance (2026-09-07)
+
+Three requests in one tranche, because they only make sense together: a shop
+that reads as somewhere you dock, stock that unlocks with depth, and two
+abilities to put on the new shelf.
+
+### The station
+
+A sticky header band - OUTFITTER / Surface Station / the planet's name, credits
+on the right - over four named counters: Drilling Rig, Life Support,
+Instruments, Ordnance. It was a list with a heading; it is meant to feel like
+arriving somewhere.
+
+The first attempt gave `#upgrades` its own `overflow-y`, which quietly cut the
+shelves off at the fold: Life Support appeared to contain one item and the
+Ordnance counter appeared not to exist. One scroll region for the whole sheet
+with the header `position: sticky` inside it is both simpler and right.
+
+### Sealed stock
+
+Each upgrade has an `unlock` depth checked against `g.best.depth`. Below it the
+row is **still there** - named, dimmed, with the depth where the price would
+be. Hiding it would hide the fact that there is an Ordnance counter at all, and
+that is most of the reason to keep going down. Tow at 25 m, Cooling at 55,
+Autopilot at 65, the Seismic Charge at 40 and the Cutting Laser at 90.
+
+### Two abilities, one meter
+
+**Seismic Charge** clears a diamond around the cell you are facing (13/25/41
+cells) for 2 power. **Cutting Laser** cuts a line ahead (5/7/9 cells) for 1.
+Both run off one Power Cell meter that trickles back underground - one point
+every 42 seconds - and fills at the pad. That combination is the whole balance:
+the trickle means a long descent is never completely without an answer, the
+refill gives the pad a reason to exist beyond selling, and a cap of four means
+a meter you can spend twice is a decision rather than a second drill.
+
+They matter more the deeper you are, which is the right shape and came free:
+they ignore hardness, so their value scales with exactly the thing that makes
+drilling slow.
+
+The ordnance buttons sit on the **right**, above the d-pad, while supplies stay
+bottom-left. Ordnance is aimed - what it does depends on which way you face -
+so it belongs under the thumb that decides that.
+
+`breakCells()` is one routine both abilities hand a list to. Everything that
+makes breaking a block complicated - hazards, caches, a full hold, spoil -
+already had a home in the frame loop for the one cell being drilled, so this is
+the same rules applied to many at once rather than a second set of them. Two
+cells it refuses outright: bedrock, and the planet core, which is a planet's
+climax and has to be drilled by hand rather than deleted from four metres away.
+
+### Two design bugs the tests caught before I did
+
+**The charge was strictly worse than the laser.** At radius 1 it cleared five
+cells for two power while the laser cleared five for one - and it unlocks
+earlier and costs half as much, so the moment you owned both the charge was
+pointless. Radius is `l + 1` now, and there is a test asserting the charge
+beats the laser per point of power at *every* level, with the laser keeping
+reach instead.
+
+**The laser's mineral gate did nothing.** It wanted silver, from 22 m, behind a
+90 m depth gate - so one of the two walls was decoration. A test now asserts
+every gated upgrade's mineral lives within 30 m of its unlock depth. Ruby, at
+105 m, fixes it and is the better fiction for a laser anyway.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

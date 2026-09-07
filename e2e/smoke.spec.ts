@@ -99,8 +99,14 @@ test('digging fills the hold and selling at the pad pays out', async ({ page }) 
 test('the shop, manifest and pause menu all open', async ({ page }) => {
   await page.locator('#btnShop').dispatchEvent('click');
   await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#upgrades .up')).toHaveCount(8);
-  /* supplies are a separate section, and each one renders a buy row */
+  await expect(page.locator('#upgrades .up')).toHaveCount(10);
+  /* Four named counters, and on a fresh save some stock is visibly sealed -
+     seeing that there IS an Ordnance counter is most of the reason to keep
+     going down, so its absence would be a real regression rather than a
+     cosmetic one. */
+  await expect(page.locator('#upgrades .counter')).toHaveCount(4);
+  await expect(page.locator('#upgrades .up.sealed').first()).toContainText('Sealed until');
+  /* supplies are a separate section under their own counter */
   await expect(page.locator('#supplies .up')).toHaveCount(3);
   await page.locator('#shopClose').dispatchEvent('click');
 
@@ -466,6 +472,63 @@ test('ore left behind is picked up by flying back through it', async ({ page }) 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* Ordnance: the shared power meter, and what each ability actually does.
+
+   Four modules meet here - the meter in feel.ts, the shapes in config.ts, the
+   break routine in actions.ts, the buttons in ui.ts - and none of them can see
+   whether the others agree. */
+test('the charge and the laser spend power and clear the ground', async ({ page }) => {
+  await page.evaluate(() => {
+    const dug: string[] = [];
+    for (let d = 0; d <= 48; d++) dug.push('6,' + d);
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 2, cargo: 5, thrust: 1, tank: 6, cool: 0, scan: 3, tow: 0, auto: 0, bomb: 2, laser: 2 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
+      best: { depth: 120, haul: 0 }, charge: 4,
+      dug, cargo: {}, weight: 0, px: 6, pd: 47
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  /* the meter is only shown to someone who can spend it */
+  await expect(page.locator('#powerChip')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#ordBomb')).not.toHaveClass(/none/);
+  await expect(page.locator('#ordLaser')).not.toHaveClass(/none/);
+
+  const power = () => page.evaluate(() =>
+    Number((document.querySelector('#power') as HTMLElement).innerText));
+  const kg = () => page.evaluate(() =>
+    parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText));
+  await expect.poll(power, { timeout: 10_000 }).toBe(4);
+
+  await page.locator('#ordBomb').dispatchEvent('pointerdown');
+  await expect(page.locator('#toast')).toContainText('Charge fired');
+  await expect.poll(power, { timeout: 10_000 }).toBe(2);
+  await expect.poll(kg, { timeout: 10_000 }).toBeGreaterThan(0);
+
+  /* two power left, and the charge costs two - so it is still armed, and one
+     laser shot must take it below what the charge needs */
+  await expect(page.locator('#ordBomb')).not.toHaveClass(/cold/);
+  await page.locator('#ordLaser').dispatchEvent('pointerdown');
+  await expect(page.locator('#toast')).toContainText('Laser fired');
+  await expect.poll(power, { timeout: 10_000 }).toBe(1);
+  await expect(page.locator('#ordBomb')).toHaveClass(/cold/);
+
+  /* and firing it anyway must refuse rather than go into debt */
+  await page.locator('#ordBomb').dispatchEvent('pointerdown');
+  await expect(page.locator('#toast')).toContainText('Not enough power');
+  await expect.poll(power, { timeout: 10_000 }).toBe(1);
+
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* Personal bests, and the marker line that makes one visible.
 
    The record only means something if crossing it is a moment, and a moment
@@ -533,6 +596,10 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
       up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 3, scan: 0, tow: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 },
       stock: {},
+      /* deep enough that the Cooling Rig is on the shelf at all - the depth
+         gate and the mineral gate are separate walls and this test is about
+         the second one */
+      best: { depth: 80, haul: 0 },
       dug: [], cargo: {}, weight: 0, px: 6, pd: -1
     }));
     const set = Storage.prototype.setItem;
@@ -564,6 +631,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem('coreward.v2') as string);
     s.stock = { emerald: 3 };
+    s.best = { depth: 80, haul: 0 };
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = set;
     localStorage.setItem('coreward.v2', JSON.stringify(s));

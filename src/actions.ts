@@ -1,22 +1,24 @@
 import * as THREE from 'three';
 import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
-         PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells,
+         PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE,
+         GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE,
          coreDepth, planetName, traitOf, valueMult } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
-import { haulValue, findRoute, planCollapse } from './world';
+import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './world';
 import { R } from './runtime';
 import { lamp } from './scene';
 import { worldX } from './materials';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { spray } from './particles';
-import { takeDrop, syncDrops } from './drops';
+import { takeDrop, syncDrops, leaveDrop } from './drops';
+import { fireBeam } from './beam';
 import { setMark } from './mark';
 import { setDrillTier } from './ship';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
-import { SHAKE_TOW, SHAKE_BOOM } from './feel';
-import type { SupplyKey } from './types';
+import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX } from './feel';
+import type { Dir, SupplyKey } from './types';
 
 export function sell() {
   const v = haulValue();
@@ -51,7 +53,7 @@ export function goSurface() {
   R.warnedFull = false;
   R.moving = null; R.digging = null; R.flight = null;
   sfx.digStop();
-  g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0;
+  g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0; g.charge = CHARGE_MAX;
   R.hullCause = 'heat';
   R.wasHot = false;
   R.tremorT = 0; R.tremorWarn = 0;
@@ -134,6 +136,115 @@ export function collectHere() {
   save();
 }
 
+/* ---------- ordnance ----------
+
+   One routine breaks a list of cells; the two abilities differ only in which
+   list they hand it. Everything that makes breaking a block complicated -
+   hazards, caches, a full hold, spoil - already had a home in the frame loop
+   for the ONE cell being drilled, and this is the same rules applied to many
+   at once rather than a second set of them.
+
+   Two cells it refuses outright: bedrock, which is unbreakable everywhere, and
+   the planet core, which is the climax of a planet and has to be drilled by
+   hand rather than deleted from four metres away. */
+function breakCells(cells: number[][]) {
+  let taken = 0, dropped = 0, gassed = 0;
+  for (const c of cells) {
+    const x = c[0], d = c[1];
+    if (x < 0 || x >= W || d < 0 || d > coreDepth(g.planet)) continue;
+    const b = blockAt(x, d);
+    if (!b || b.hard === Infinity || b.core) continue;
+
+    g.dug.add(key(x, d));
+    dropBlock(key(x, d));
+    spray(worldX(x), -d, b.color, b.ore ? 26 : 12, 5, 0.7);
+
+    if (b.hazard) {
+      gassed++;
+      g.hull -= Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1));
+      g.soak = Math.min(1, g.soak + GAS_SOAK);
+      R.hullCause = 'gas';
+    } else if (b.cache) {
+      grantCache(x, d);
+    } else if (g.weight + b.wt <= S.cargoCap()) {
+      g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
+      g.weight += b.wt;
+      taken++;
+    } else if (b.value >= DROP_MIN_VALUE && leaveDrop(x, d, b.id)) {
+      dropped++;
+    }
+  }
+  syncBlocks(true);
+  save();
+  return { taken, dropped, gassed };
+}
+
+/* Pulled out of the frame loop so ordnance can open a cache too - a bomb that
+   silently destroyed one would be the worst possible surprise. */
+export function grantCache(x: number, d: number) {
+  const p = cachePrize(x, d);
+  if (p.kind === 'supply') {
+    const sup = SUPPLY_OF[p.id];
+    g.kit[p.id] = Math.min(sup.max, g.kit[p.id] + 1);
+    toast('Supply cache \u00b7 ' + sup.name);
+  } else if (p.kind === 'mineral') {
+    g.stock[p.id] = (g.stock[p.id] || 0) + p.n;
+    toast('Supply cache \u00b7 ' + p.n + ' ' + DEF[p.id].name);
+  } else {
+    g.credits += p.n;
+    toast('Supply cache \u00b7 \u25c8 ' + p.n.toLocaleString());
+  }
+  sfx.cache();
+}
+
+/* The unit vector for a facing. Duplicated from loop.ts rather than imported,
+   because loop.ts already imports this module and a cycle that only works
+   because of when each binding happens to be read is a trap waiting for the
+   next person who moves a call. Four pairs of numbers is a cheaper price. */
+const FACE_VEC: Record<Dir, number[]> =
+  { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+function spend(cost: number, need: string) {
+  if (g.mode !== 'play' || atSurface()) return false;
+  if (g.charge < cost) { toast('Not enough power \u00b7 ' + need); return false; }
+  g.charge -= cost;
+  return true;
+}
+
+export function fireBomb() {
+  if (g.up.bomb === 0) return;
+  if (!spend(BOMB_CHARGE, BOMB_CHARGE + ' cells needed')) return;
+  const v = FACE_VEC[g.face];
+  const t = { x: Math.round(g.px) + v[0], d: Math.round(g.pd) + v[1] };
+  const r = S.bombR();
+  const cells: number[][] = [];
+  for (let dx = -r; dx <= r; dx++)
+    for (let dy = -r; dy <= r; dy++)
+      if (Math.abs(dx) + Math.abs(dy) <= r) cells.push([t.x + dx, t.d + dy]);
+
+  const out = breakCells(cells);
+  R.shake = Math.max(R.shake, 1.0);
+  flash('rgba(255,190,90,.30)', 420);
+  sfx.bomb();
+  toast(out.gassed ? 'Charge fired \u00b7 gas! Hull hit' : 'Charge fired');
+}
+
+export function fireLaser() {
+  if (g.up.laser === 0) return;
+  if (!spend(LASER_CHARGE, LASER_CHARGE + ' cell needed')) return;
+  const v = FACE_VEC[g.face];
+  const sx = Math.round(g.px), sd = Math.round(g.pd);
+  const cells: number[][] = [];
+  for (let i = 1; i <= S.laserLen(); i++) cells.push([sx + v[0] * i, sd + v[1] * i]);
+
+  const out = breakCells(cells);
+  R.shake = Math.max(R.shake, 0.45);
+  flash('rgba(120,230,255,.22)', 300);
+  sfx.laser();
+  fireBeam(sx, sd, v[0], v[1], S.laserLen());
+  toast(out.gassed ? 'Laser \u00b7 gas! Hull hit' : 'Laser fired');
+}
+
 export function autopilot() {
   if (g.up.auto === 0 || atSurface() || g.mode !== 'play') return;
   const cost = Math.ceil(g.pd * S.autoRate());
@@ -212,7 +323,7 @@ export function breakCore() {
 export function hardReset() {
   try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) { /* ignore */ }
   g.planet = 0; g.credits = 0; g.shards = 0;
-  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 };
+  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0 };
   g.stock = {};
   g.drops = {}; syncDrops();

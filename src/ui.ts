@@ -1,8 +1,9 @@
-import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, coreDepth, planetName,
-         traitOf, valueMult, costOf, matCost } from './config';
+import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
+         coreDepth, planetName, traitOf, valueMult, costOf, matCost } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
+import type { Upgrade } from './types';
 import { haulValue } from './world';
 import { lamp } from './scene';
 import { setDrillTier } from './ship';
@@ -29,7 +30,10 @@ export const ui = {
   alarm: mustEl('alarm'), soakBar: mustEl('soakBar'), hullTxt: mustEl('hullTxt'),
   vignette: mustEl('vignette'),
   flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto'),
-  kit: mustEl('kit'), supplies: mustEl('supplies')
+  kit: mustEl('kit'), supplies: mustEl('supplies'),
+  ordBomb: mustEl('ordBomb'), ordLaser: mustEl('ordLaser'),
+  power: mustEl('power'), powerChip: mustEl('powerChip'),
+  shopPlanet: mustEl('shopPlanet')
 };
 
 /* The three kit buttons, looked up once. Ids are derived from the supply key
@@ -100,6 +104,7 @@ export function updateHUD() {
      because damage starts there whether or not you have soaked yet, and fade
      to a residue above it - you are still hot, just not being cooked. */
   ui.heat.style.opacity = String(cooking ? 0.14 + g.soak * 0.36 : g.soak * 0.10);
+  updateOrd();
 
   /* Red is the hull itself, whatever emptied it: heat, a gas pocket, or the
      next thing. A pulse rather than a gauge, because it is an alarm. */
@@ -115,6 +120,27 @@ function supplyIdle(key: string) {
   if (key === 'coolant') return g.soak < 0.02;
   if (key === 'patch') return g.hull >= HULL_MAX - 0.5;
   return g.fuel >= S.fuelCap() - 0.5;
+}
+
+/* The power meter and the two ordnance buttons.
+
+   The chip is hidden entirely until something can spend it, because a meter
+   for a thing you do not own is a question with no answer. */
+export function updateOrd() {
+  const owns = g.up.bomb > 0 || g.up.laser > 0;
+  ui.powerChip.classList.toggle('hidden', !owns);
+  ui.power.textContent = String(Math.floor(g.charge));
+
+  const hidden = g.mode !== 'play' || atSurface();
+  for (const [el, lvl, cost] of [
+    [ui.ordBomb, g.up.bomb, BOMB_CHARGE] as const,
+    [ui.ordLaser, g.up.laser, LASER_CHARGE] as const
+  ]) {
+    el.classList.toggle('none', lvl <= 0 || hidden);
+    el.classList.toggle('cold', g.charge < cost);
+    const n = el.querySelector('.n');
+    if (n) n.textContent = String(cost);
+  }
 }
 
 export function updateKit() {
@@ -179,57 +205,96 @@ export function buildVault() {
   }
 }
 
+const GROUPS: { id: Upgrade['group']; label: string }[] = [
+  { id: 'rig', label: 'DRILLING RIG' },
+  { id: 'survival', label: 'LIFE SUPPORT' },
+  { id: 'instruments', label: 'INSTRUMENTS' },
+  { id: 'ordnance', label: 'ORDNANCE' }
+];
+
 export function buildShop() {
   ui.shopCredits.textContent = Math.floor(g.credits).toLocaleString();
+  ui.shopPlanet.textContent = planetName(g.planet);
   ui.upgrades.innerHTML = '';
-  for (const u of UPGRADES) {
-    const lvl = g.up[u.key];
-    const maxed = lvl >= u.max;
-    const c = costOf(u, lvl);
-    const mat = maxed ? null : matCost(u, lvl);
-    const have = mat ? (g.stock[mat.id] || 0) : 0;
-    const short = !!mat && have < mat.need;
 
-    const row = document.createElement('div');
-    row.className = 'up';
-    const label = u.tiers ? u.name + ' — ' + u.tiers[lvl] : u.name;
-    /* The requirement line names the depth as well as the mineral, because
-       "6 Emerald" is only actionable if you know emerald starts at 78 m. */
-    const def = mat ? DEF[mat.id] : null;
-    const matLine = mat && def
-      ? '<div class="upmat' + (short ? ' short' : '') + '">' +
-        '<span class="dot" style="background:#' + def.color.toString(16).padStart(6, '0') + '"></span>' +
-        mat.need + ' ' + def.name + ' · you have ' + have +
-        (short && isOre(def) ? ' · from ' + def.min + ' m' : '') + '</div>'
-      : '';
-    row.innerHTML =
-      '<div class="upinfo"><div class="upname">' + label + '</div>' +
-      '<div class="upeff">Lv ' + lvl + '/' + u.max + ' · ' + u.effect(lvl) + (maxed ? '' : ' → ' + u.effect(lvl + 1)) + '</div>' +
-      matLine + '</div>';
-    const btn = document.createElement('button');
-    btn.className = 'buy';
-    btn.textContent = maxed ? 'MAX' : '◈ ' + c.toLocaleString();
-    btn.disabled = maxed || g.credits < c || short;
-    btn.onclick = () => {
-      if (g.credits < c || maxed || short) return;
-      g.credits -= c;
-      if (mat) g.stock[mat.id] = have - mat.need;
-      g.up[u.key]++;
-      if (u.key === 'tank') g.fuel = S.fuelCap();
-      if (u.key === 'scan') lamp.distance = S.light();
-      if (u.key === 'drill') setDrillTier(g.up.drill);
-      sfx.buy();
-      save(); buildShop(); updateHUD();
-      flash('rgba(120,255,200,.25)', 160);
-    };
-    row.appendChild(btn);
-    ui.upgrades.appendChild(row);
+  for (const grp of GROUPS) {
+    const items = UPGRADES.filter((u) => u.group === grp.id);
+    if (!items.length) continue;
+    /* Every counter shows from the first visit, sealed stock and all. Hiding
+       a whole counter until it unlocks would hide the fact that there IS an
+       ordnance counter, which is most of the reason to keep going down. */
+    const head = document.createElement('div');
+    head.className = 'counter';
+    head.textContent = grp.label;
+    ui.upgrades.appendChild(head);
+    for (const u of items) buildUpgradeRow(u);
   }
   buildSupplies();
 }
 
+function buildUpgradeRow(u: Upgrade) {
+  const lvl = g.up[u.key];
+
+  /* Sealed: shown, named, and not purchasable. The depth is the price. */
+  if (g.best.depth < u.unlock) {
+    const row = document.createElement('div');
+    row.className = 'up sealed';
+    row.innerHTML =
+      '<div class="upinfo"><div class="upname">' + u.name + '</div>' +
+      '<div class="upeff">Sealed until you have reached ' + u.unlock + ' m</div></div>' +
+      '<div class="seal">' + u.unlock + ' m</div>';
+    ui.upgrades.appendChild(row);
+    return;
+  }
+
+  const maxed = lvl >= u.max;
+  const c = costOf(u, lvl);
+  const mat = maxed ? null : matCost(u, lvl);
+  const have = mat ? (g.stock[mat.id] || 0) : 0;
+  const short = !!mat && have < mat.need;
+
+  const row = document.createElement('div');
+  row.className = 'up';
+  const label = u.tiers ? u.name + ' — ' + u.tiers[lvl] : u.name;
+  /* The requirement line names the depth as well as the mineral, because
+     "6 Emerald" is only actionable if you know emerald starts at 78 m. */
+  const def = mat ? DEF[mat.id] : null;
+  const matLine = mat && def
+    ? '<div class="upmat' + (short ? ' short' : '') + '">' +
+      '<span class="dot" style="background:#' + def.color.toString(16).padStart(6, '0') + '"></span>' +
+      mat.need + ' ' + def.name + ' · you have ' + have +
+      (short && isOre(def) ? ' · from ' + def.min + ' m' : '') + '</div>'
+    : '';
+  row.innerHTML =
+    '<div class="upinfo"><div class="upname">' + label + '</div>' +
+    '<div class="upeff">Lv ' + lvl + '/' + u.max + ' · ' + u.effect(lvl) + (maxed ? '' : ' → ' + u.effect(lvl + 1)) + '</div>' +
+    matLine + '</div>';
+  const btn = document.createElement('button');
+  btn.className = 'buy';
+  btn.textContent = maxed ? 'MAX' : '◈ ' + c.toLocaleString();
+  btn.disabled = maxed || g.credits < c || short;
+  btn.onclick = () => {
+    if (g.credits < c || maxed || short) return;
+    g.credits -= c;
+    if (mat) g.stock[mat.id] = have - mat.need;
+    g.up[u.key]++;
+    if (u.key === 'tank') g.fuel = S.fuelCap();
+    if (u.key === 'scan') lamp.distance = S.light();
+    if (u.key === 'drill') setDrillTier(g.up.drill);
+    sfx.buy();
+    save(); buildShop(); updateHUD();
+    flash('rgba(120,255,200,.25)', 160);
+  };
+  row.appendChild(btn);
+  ui.upgrades.appendChild(row);
+}
+
 export function buildSupplies() {
   ui.supplies.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'counter';
+  head.textContent = 'SUPPLIES \u00b7 SPENT UNDERGROUND';
+  ui.supplies.appendChild(head);
   for (const sup of SUPPLIES) {
     const held = g.kit[sup.key];
     const full = held >= sup.max;

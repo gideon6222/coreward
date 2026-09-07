@@ -72,6 +72,8 @@
   }
   .chip.gold{color:var(--amber);}
   .chip.haul{color:var(--cyan);}
+  .chip.power{color:#ffc861; border-color:#5a4520;}
+  .chip.hidden{display:none;}
   .bars{margin-top:8px; gap:6px;}
   .bar{
     position:relative; flex:1; height:19px; border-radius:6px; overflow:hidden;
@@ -160,6 +162,22 @@
     position:fixed; left:18px; bottom:calc(var(--safe-b) + 14px); z-index:9;
     display:flex; flex-direction:column-reverse; gap:5px;
   }
+  /* Ordnance sits on the RIGHT, directly above the d-pad, because unlike a
+     supply it is aimed: what it does depends on which way you are facing, so
+     it belongs under the thumb that decides that. Supplies stay on the left
+     with the rest of the things that only happen to you. */
+  #ord{
+    position:fixed; right:18px; z-index:9;
+    bottom:calc(var(--safe-b) + 14px + 190px + 8px);
+    display:flex; gap:5px;
+  }
+  .sup.ord{width:87px; height:44px;}
+  .sup.ord .g{top:9px; font-size:11px;}
+  #ordBomb{border-color:#7a4a1e;}
+  #ordLaser{border-color:#1e5f7a;}
+  /* Not enough power: dim like an idle supply, but keep the count readable so
+     you can see how close you are rather than only that you cannot. */
+  .sup.ord.cold{opacity:.34;}
   /* Worded, not pictured. The three glyphs that read best for these - a
      snowflake, a cross and a fuel pump - do not share a presentation: the pump
      is emoji by default and rendered in colour next to two monochrome symbols,
@@ -190,6 +208,41 @@
   #supCoolant{border-color:#2a5570;}
   #supPatch{border-color:#5a2530;}
   #supCell{border-color:#2f6f52;}
+  /* ---------- the Outfitter ----------
+
+     It was a list with a heading. It is meant to read as somewhere you dock:
+     a header band that stays put while the shelves scroll under it, counters
+     with names, and stock that is visibly not on the shelf yet. */
+  /* One scroll region for the whole sheet with the header stuck to the top of
+     it. The first attempt gave #upgrades its own overflow, which quietly cut
+     the shelves off at the fold - Life Support looked like it contained one
+     item and the Ordnance counter did not appear to exist. */
+  .shopsheet{padding:0;}
+  .shopbar{
+    position:sticky; top:0; z-index:2;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 16px; background:linear-gradient(180deg,#16202f,#0e1622);
+    border-bottom:1px solid var(--line);
+  }
+  .shopname{font-size:17px; font-weight:800; letter-spacing:.16em;}
+  .shopsub{font-size:10.5px; letter-spacing:.1em; color:var(--dim); margin-top:3px;}
+  .shopcred{font-size:15px; font-weight:800; color:var(--amber); white-space:nowrap;}
+  .shopsheet #upgrades, .shopsheet #supplies{padding:0 16px;}
+  .shopsheet .wide{margin:12px 16px 16px; width:calc(100% - 32px);}
+  .counter{
+    display:flex; align-items:center; gap:8px;
+    margin:16px 0 2px; font-size:10.5px; font-weight:800; letter-spacing:.16em; color:var(--dim);
+  }
+  .counter::after{content:""; flex:1; height:1px; background:var(--line);}
+  /* A sealed row is deliberately still a row: seeing that there IS something
+     at 90 m is the whole reason to keep going down. */
+  .up.sealed{opacity:.45;}
+  .up.sealed .upname{color:var(--dim);}
+  .seal{
+    border:1px solid var(--line); background:transparent; color:#5a6780;
+    border-radius:9px; padding:10px 12px; font-size:11px; font-weight:700;
+    white-space:nowrap; letter-spacing:.06em;
+  }
   .kithead{
     margin-top:16px; padding-top:12px; border-top:1px solid var(--line);
     font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--dim);
@@ -277,6 +330,7 @@
   <div class="row top">
     <div class="chip" id="planet">—</div>
     <div class="row">
+      <div class="chip power hidden" id="powerChip">⚡ <span id="power">4</span></div>
       <div class="chip haul">HAUL ◈ <span id="haul">0</span></div>
       <div class="chip gold">◈ <span id="credits">0</span></div>
     </div>
@@ -303,6 +357,11 @@
   <button class="sup none" id="supCell"><span class="g">FUEL</span><span class="n">0</span></button>
 </div>
 
+<div id="ord">
+  <button class="sup ord none" id="ordBomb"><span class="g">CHARGE</span><span class="n">2</span></button>
+  <button class="sup ord none" id="ordLaser"><span class="g">LASER</span><span class="n">1</span></button>
+</div>
+
 <div id="ctrl">
   <div id="dpad">
     <button class="k" data-dir="up">▲</button>
@@ -313,13 +372,17 @@
 </div>
 
 <div id="shop" class="modal hidden">
-  <div class="sheet">
-    <h2>Outfitter</h2>
-    <div class="sub">Credits ◈ <span id="shopCredits">0</span></div>
+  <div class="sheet shopsheet">
+    <div class="shopbar">
+      <div class="shoptitle">
+        <div class="shopname">OUTFITTER</div>
+        <div class="shopsub">Surface Station · <span id="shopPlanet">—</span></div>
+      </div>
+      <div class="shopcred">◈ <span id="shopCredits">0</span></div>
+    </div>
     <div id="upgrades"></div>
-    <div class="kithead">SUPPLIES · SPENT UNDERGROUND</div>
     <div id="supplies"></div>
-    <button id="shopClose" class="wide">CLOSE</button>
+    <button id="shopClose" class="wide">LEAVE THE STATION</button>
   </div>
 </div>
 

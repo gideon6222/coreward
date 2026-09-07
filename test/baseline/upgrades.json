@@ -481,5 +481,57 @@
       }
     ],
     "matTotal": 12
+  },
+  "bomb": {
+    "name": "Seismic Charge",
+    "base": 1400,
+    "mul": 2.3,
+    "max": 3,
+    "tiers": null,
+    "costs": [
+      1400,
+      3220,
+      7406,
+      17034
+    ],
+    "effects": [
+      "Not installed",
+      "13 cells around the target",
+      "25 cells around the target",
+      "41 cells around the target"
+    ],
+    "mat": "iron",
+    "mats": [
+      null,
+      null,
+      null
+    ],
+    "matTotal": 0
+  },
+  "laser": {
+    "name": "Cutting Laser",
+    "base": 2800,
+    "mul": 2.3,
+    "max": 3,
+    "tiers": null,
+    "costs": [
+      2800,
+      6440,
+      14812,
+      34068
+    ],
+    "effects": [
+      "Not installed",
+      "5 cells straight ahead",
+      "7 cells straight ahead",
+      "9 cells straight ahead"
+    ],
+    "mat": "ruby",
+    "mats": [
+      null,
+      null,
+      null
+    ],
+    "matTotal": 0
   }
 }

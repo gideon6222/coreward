@@ -581,6 +581,51 @@ export const sfx = {
     noiseBurst(G, t, 0.1, 420, 0.14, 'lowpass');
   },
 
+  /* A seismic charge. A hard crack, a body that drops through two octaves,
+     and a long tail of settling grit - the same family as collapse(), because
+     they are the same event with different intent. */
+  bomb() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 0.35, 2600, 0.6, 'lowpass');
+    noiseBurst(G, t + 0.1, 1.3, 500, 0.4, 'lowpass');
+    noiseBurst(G, t + 0.45, 1.2, 3000, 0.13, 'highpass');
+    const o = G.ctx.createOscillator();
+    const gn = G.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(140, t);
+    o.frequency.exponentialRampToValueAtTime(32, t + 0.8);
+    env(gn, t, 0.6, 0.006, 1.0);
+    o.connect(gn); gn.connect(G.sfxBus);
+    o.start(t); o.stop(t + 1.2);
+  },
+
+  /* A cutting laser. A rising sawtooth sweep through a resonant filter, which
+     is about as close to "a beam" as a synthesiser gets, plus a short bright
+     hiss for the rock giving way. Deliberately nothing like the bomb: the two
+     are used in the same moment for different reasons and have to be
+     distinguishable without looking. */
+  laser() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    const o = G.ctx.createOscillator();
+    const f = G.ctx.createBiquadFilter();
+    const gn = G.ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(1400, t + 0.18);
+    f.type = 'bandpass';
+    f.Q.value = 9;
+    f.frequency.setValueAtTime(700, t);
+    f.frequency.exponentialRampToValueAtTime(3200, t + 0.2);
+    env(gn, t, 0.3, 0.006, 0.3);
+    o.connect(f); f.connect(gn); gn.connect(G.sfxBus);
+    o.start(t); o.stop(t + 0.42);
+    noiseBurst(G, t + 0.04, 0.3, 4200, 0.2, 'highpass');
+  },
+
   cache() {
     const G = live();
     if (!G) return;

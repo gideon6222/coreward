@@ -185,6 +185,23 @@ export function tremorTick(
   };
 }
 
+/* ---------- power cells ----------
+
+   One shared meter for every piece of ordnance. It trickles back underground
+   and fills at the pad, which is deliberately both: the trickle means a long
+   descent is never completely without an answer, and the refill gives the pad
+   a reason to exist beyond selling.
+
+   Four is small on purpose. A meter you can spend twice is a decision; a meter
+   you can spend eight times is a second drill. */
+export const CHARGE_MAX = 4;
+export const CHARGE_SECONDS = 42;   /* seconds underground per point */
+
+export function chargeAfter(charge: number, dt: number, atPad: boolean): number {
+  if (atPad) return CHARGE_MAX;
+  return Math.min(CHARGE_MAX, charge + dt / CHARGE_SECONDS);
+}
+
 /* ---------- costs and damage ---------- */
 
 export const FUEL_PER_MOVE = 0.8;           /* per second while flying */

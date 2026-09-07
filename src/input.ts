@@ -4,7 +4,7 @@ import { haulValue } from './world';
 import { R } from './runtime';
 import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels } from './ui';
 import type { Dir } from './types';
-import { autopilot, hardReset, useSupply } from './actions';
+import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
 
 function firstTouch() { audioInit(); }
@@ -30,6 +30,12 @@ for (const sup of SUPPLIES) {
   const btn = mustEl('sup' + sup.key[0].toUpperCase() + sup.key.slice(1));
   btn.addEventListener('pointerdown', (e) => { e.preventDefault(); useSupply(sup.key); });
 }
+
+/* Ordnance. Same pointerdown treatment as the supplies - a spend should feel
+   as immediate as a dig - and both refuse loudly rather than silently when
+   there is not enough power. */
+mustEl('ordBomb').addEventListener('pointerdown', (e) => { e.preventDefault(); fireBomb(); });
+mustEl('ordLaser').addEventListener('pointerdown', (e) => { e.preventDefault(); fireLaser(); });
 
 ui.btnAuto.onclick = autopilot;
 ui.btnShop.onclick = () => { if (!atSurface() || g.mode !== 'play') return; sfx.ui(); g.mode = 'shop'; buildShop(); ui.shop.classList.remove('hidden'); };

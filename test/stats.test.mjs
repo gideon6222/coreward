@@ -228,11 +228,20 @@ test('the Cooling Rig is gated behind a mineral inside the heat zone', () => {
   assert.ok(mat.min < H.HEAT_DEPTH + 20,
     cool.mat + ' at ' + mat.min + ' m is so far into the zone that the gate is a wall');
 
-  /* and nothing else forces that trip except the luxury unlock */
+  /* Nothing that a player needs before the heat zone may demand a mineral
+     from inside it. The exemptions are the things you buy BECAUSE you go
+     deep - the rig itself, the autopilot, and the laser, which does not even
+     appear on the shelf until 90 m. */
+  const deepOnly = new Set(['cool', 'auto', 'laser']);
   for (const u of H.UPGRADES) {
-    if (u.key === 'cool' || u.key === 'auto') continue;
+    if (deepOnly.has(u.key)) continue;
     assert.ok(H.DEF[u.mat].min < H.HEAT_DEPTH,
-      u.key + ' also demands a heat run for ' + u.mat + '; only cooling and autopilot should');
+      u.key + ' demands a heat run for ' + u.mat + ', but it is not a deep-game upgrade');
+  }
+  for (const key of deepOnly) {
+    const u = H.UPGRADES.find((x) => x.key === key);
+    assert.ok(u.unlock >= 55 || key === 'cool',
+      key + ' is exempt from the heat-run rule but is available shallow');
   }
 });
 
@@ -367,4 +376,87 @@ test('every drill tier has a name, and the ladder never repeats a look', () => {
   assert.equal(drill.tiers.length, drill.max + 1,
     'there must be a tier name for level 0 through ' + drill.max);
   assert.equal(new Set(drill.tiers).size, drill.tiers.length, 'duplicate tier name');
+});
+
+/* ---------- ordnance ----------
+
+   Two abilities off one shared meter. The tests are about them staying
+   situational: a piece of ordnance that out-digs the drill is a second drill,
+   and one that never beats it is a souvenir. */
+
+test('the charge always beats the laser per point of power', () => {
+  /* They cost different amounts and unlock at different depths, so the more
+     expensive-to-fire one has to clear more per point at EVERY level. The
+     first version had them equal at level 1, which made the charge - cheaper
+     to unlock, earlier, and twice the firing cost - strictly pointless the
+     moment you owned both. */
+  for (let l = 1; l <= 3; l++) {
+    const perPower = H.bombCells(l) / H.BOMB_CHARGE;
+    const laserPer = H.laserRange(l) / H.LASER_CHARGE;
+    assert.ok(perPower > laserPer,
+      'at level ' + l + ' the charge clears ' + perPower.toFixed(1) + ' cells per power ' +
+      'and the laser ' + laserPer.toFixed(1) + ' - the charge has nothing to offer');
+  }
+  /* and the laser keeps reach: it touches cells the charge cannot */
+  for (let l = 1; l <= 3; l++)
+    assert.ok(H.laserRange(l) > H.bombRadius(l) + 1,
+      'at level ' + l + ' the laser does not reach past the charge, so it has ' +
+      'neither range nor volume to offer');
+});
+
+test('ordnance grows with its level and stays inside sane bounds', () => {
+  for (let l = 1; l < 3; l++) {
+    assert.ok(H.bombCells(l + 1) > H.bombCells(l), 'charge level ' + (l + 1) + ' adds nothing');
+    assert.ok(H.laserRange(l + 1) > H.laserRange(l), 'laser level ' + (l + 1) + ' adds nothing');
+  }
+  assert.ok(H.bombCells(3) < H.W * 4,
+    'a maxed charge clears ' + H.bombCells(3) + ' cells, which is most of the screen');
+  assert.ok(H.laserRange(3) <= 12, 'a laser reaching further than the frame is aiming blind');
+  assert.ok(H.BOMB_CHARGE <= H.CHARGE_MAX && H.LASER_CHARGE <= H.CHARGE_MAX,
+    'an ability that costs more than a full meter can never be fired');
+});
+
+test('power fills at the pad and trickles underground', () => {
+  assert.equal(H.chargeAfter(0, 0.016, true), H.CHARGE_MAX, 'the pad must refill completely');
+  assert.equal(H.chargeAfter(H.CHARGE_MAX, 10, false), H.CHARGE_MAX, 'power must clamp at the cap');
+
+  /* a full meter from empty takes the whole recharge time, and no less */
+  const secs = H.CHARGE_SECONDS * H.CHARGE_MAX;
+  let c = 0;
+  for (let i = 0; i < secs * 60; i++) c = H.chargeAfter(c, 1 / 60, false);
+  assert.ok(Math.abs(c - H.CHARGE_MAX) < 0.01, 'recharge drifted: ' + c);
+
+  /* and it does not depend on frame rate */
+  let fast = 0, slow = 0;
+  for (let i = 0; i < 120 * 60; i++) fast = H.chargeAfter(fast, 1 / 120, false);
+  for (let i = 0; i < 30 * 60; i++) slow = H.chargeAfter(slow, 1 / 30, false);
+  assert.ok(Math.abs(fast - slow) < 1e-9, 'recharge differs with frame rate');
+
+  /* the trickle must be slow enough that returning to the pad still matters */
+  const perFire = H.CHARGE_SECONDS * H.BOMB_CHARGE;
+  assert.ok(perFire > 60,
+    'a charge comes back every ' + perFire + 's underground, which is often enough ' +
+    'that the pad refill is not worth walking to');
+});
+
+test('every upgrade has a counter and a sensible unlock depth', () => {
+  const groups = new Set(['rig', 'survival', 'instruments', 'ordnance']);
+  for (const u of H.UPGRADES) {
+    assert.ok(groups.has(u.group), u.key + ' is on no counter: ' + u.group);
+    assert.ok(u.unlock >= 0 && u.unlock < H.coreDepth(0),
+      u.key + ' unlocks at ' + u.unlock + ' m, which is past the first core');
+    /* Anything gated has to be gated ABOVE the depth where its own mineral
+       lives, or the shelf unseals at the exact moment you could already
+       afford it and the gate has done nothing. */
+    if (u.unlock > 0)
+      assert.ok(u.unlock <= H.DEF[u.mat].min + 30,
+        u.key + ' unseals at ' + u.unlock + ' m but wants ' + u.mat + ' from ' +
+        H.DEF[u.mat].min + ' m, so one of the two gates is doing nothing');
+  }
+  /* the opening kit has to be big enough to make a first run possible */
+  const open = H.UPGRADES.filter((u) => u.unlock === 0);
+  assert.ok(open.length >= 4, 'only ' + open.length + ' upgrades on the shelf at 0 m');
+  for (const key of ['drill', 'cargo', 'thrust'])
+    assert.equal(H.UPGRADES.find((u) => u.key === key).unlock, 0,
+      key + ' must be available from the first visit');
 });

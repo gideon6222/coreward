@@ -1,4 +1,6 @@
-import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor } from './config';
+import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
+         bombRadius, laserRange } from './config';
+import { CHARGE_MAX } from './feel';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
@@ -14,6 +16,8 @@ export const g: {
   px: number; pd: number;
   face: Dir;
   fuel: number; hull: number; soak: number;
+  /* the shared ordnance meter; see chargeAfter in feel.ts */
+  charge: number;
   cargo: Cargo; weight: number;
   /* Minerals banked at the pad, spent on upgrades alongside credits. Counts
      only - the credits for the same ore were already paid on the same sale. */
@@ -26,13 +30,13 @@ export const g: {
   mode: Mode;
 } = {
   planet: 0, credits: 0, shards: 0,
-  up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
+  up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0 },
   kit: { coolant: 0, patch: 0, cell: 0 },
   dug: new Set<string>(),
   rubble: new Set<string>(),
   px: START_X, pd: -1,
   face: 'down',
-  fuel: 90, hull: HULL_MAX, soak: 0,
+  fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
   cargo: {}, weight: 0, stock: {}, drops: {},
   best: { depth: 0, haul: 0 },
   mode: 'play'
@@ -48,7 +52,9 @@ export const S = {
   shield: () => Math.min(0.72, g.up.cool * 0.09),
   light: () => 8 + g.up.scan * 2.4,
   towCut: () => Math.max(0.1, 0.5 - g.up.tow * 0.05),
-  autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075)
+  autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075),
+  bombR: () => bombRadius(g.up.bomb),
+  laserLen: () => laserRange(g.up.laser)
 };
 
 /* A save written before minerals existed has no stock, and its owner has
@@ -72,7 +78,7 @@ export function save() {
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
-      drops: g.drops
+      drops: g.drops, charge: g.charge
     }));
   } catch (e) { /* ignore */ }
 }
@@ -89,6 +95,7 @@ export function load() {
       g.dug = new Set(s.dug || []);
       g.rubble = new Set(s.rubble || []);
       g.drops = s.drops || {};
+      if (typeof s.charge === 'number') g.charge = s.charge;
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;

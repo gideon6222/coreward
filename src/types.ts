@@ -65,7 +65,8 @@ export interface Block {
 }
 
 export type UpgradeKey =
-  | 'drill' | 'cargo' | 'thrust' | 'tank' | 'cool' | 'scan' | 'tow' | 'auto';
+  | 'drill' | 'cargo' | 'thrust' | 'tank' | 'cool' | 'scan' | 'tow' | 'auto'
+  | 'bomb' | 'laser';
 
 export type SupplyKey = 'coolant' | 'patch' | 'cell';
 
@@ -130,6 +131,12 @@ export interface Upgrade {
      Its depth is the real gate: you cannot buy the thing until you have been
      where it lives. */
   mat: string;
+  /* Which counter of the Outfitter this sits on. */
+  group: 'rig' | 'survival' | 'instruments' | 'ordnance';
+  /* Deepest metre ever reached before this appears on the shelf at all. Zero
+     for the opening kit. A shop that shows everything at once on the first run
+     is a wall of numbers; a shop that grows is a reason to go deeper. */
+  unlock: number;
 }
 
 /* What a purchase costs beyond credits: mineral id -> count. */
@@ -196,6 +203,7 @@ export interface SaveV2 {
   rubble?: string[];
   best?: Partial<Best>;
   drops?: Drops;
+  charge?: number;
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no
