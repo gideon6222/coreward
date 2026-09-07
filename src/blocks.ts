@@ -238,19 +238,55 @@ export function resetBlockCache() { lastRow = null; }
 
    The world edge counts as solid. Treating out-of-bounds as open would put a
    bright rim down both sides of the map for no reason. */
-function openAt(x: number, d: number): boolean {
-  if (x < 0 || x >= W) return false;
-  if (d < 0) return true;
-  return blockAt(x, d) === null;
+/* One scan of the four orthogonal neighbours produces both effects, since they
+   need the same information. Results land in module scratch rather than a
+   returned object, because this runs for every streamed cell on every rebuild
+   and allocating there would be wasteful for no benefit. */
+let nOpen = 0;
+let nGlowR = 0, nGlowG = 0, nGlowB = 0, nGlowCount = 0;
+const bleedColor = new THREE.Color();
+
+function scanNeighbour(x: number, d: number) {
+  /* The world edge counts as solid. Treating out-of-bounds as open would put a
+     bright rim down both sides of the map for no reason. */
+  if (x < 0 || x >= W) return;
+  if (d < 0) { nOpen++; return; }          /* sky */
+  const nb = blockAt(x, d);
+  if (!nb) { nOpen++; return; }            /* dug */
+  /* Bright ore spills a little of its colour onto the rock it is embedded in.
+     Only the genuinely luminous ores - dull copper and iron would just muddy
+     the stone. */
+  if (nb.ore && (nb.glow || 0) >= 0.2) {
+    bleedColor.setHex(nb.color);
+    nGlowR += bleedColor.r; nGlowG += bleedColor.g; nGlowB += bleedColor.b;
+    nGlowCount++;
+  }
 }
 
-function occlusion(x: number, d: number): number {
-  let open = 0;
-  if (openAt(x, d - 1)) open++;
-  if (openAt(x, d + 1)) open++;
-  if (openAt(x - 1, d)) open++;
-  if (openAt(x + 1, d)) open++;
-  return 0.72 + 0.28 * Math.min(1, open / 2);
+function scanNeighbours(x: number, d: number) {
+  nOpen = 0;
+  nGlowR = nGlowG = nGlowB = 0;
+  nGlowCount = 0;
+  scanNeighbour(x, d - 1);
+  scanNeighbour(x, d + 1);
+  scanNeighbour(x - 1, d);
+  scanNeighbour(x + 1, d);
+}
+
+/* Rock buried in the mass gets no light; rock at the edge of a tunnel catches
+   it. Gentle on purpose - a realistic falloff would black out a fresh planet,
+   since nothing is dug yet. */
+function occlusionFromScan(): number {
+  return 0.72 + 0.28 * Math.min(1, nOpen / 2);
+}
+
+/* Tint a rock colour toward whatever bright ore is next to it, so a vein looks
+   like it is casting light into the surrounding stone rather than sitting in it
+   like a sticker. Free: it is the same per-instance colour write. */
+function bleedInto(target: THREE.Color) {
+  if (!nGlowCount) return;
+  const k = Math.min(0.22, 0.13 * nGlowCount);
+  target.lerp(bleedColor.setRGB(nGlowR / nGlowCount, nGlowG / nGlowCount, nGlowB / nGlowCount), k);
 }
 
 /* Orient one rock chunk.
@@ -289,7 +325,8 @@ function rebuild() {
 
       const pool = poolFor(b);
       const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
-      const ao = occlusion(x, d);
+      scanNeighbours(x, d);
+      const ao = occlusionFromScan();
       const px = worldX(x), py = -d;
 
       if (!b.ore) {
@@ -297,7 +334,9 @@ function rebuild() {
         orientChunk(x, d);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit * ao)));
+        scratchColor.setHex(shade(b.color, jit * ao));
+        bleedInto(scratchColor);
+        pool.body.setColorAt(pool.bodies, scratchColor);
         pool.bodies++;
 
         if (rnd(x + 61, d + 17, g.planet) > 0.66) {
@@ -307,7 +346,9 @@ function rebuild() {
           scratch.scale.set(1, 1, 1);
           scratch.updateMatrix();
           pool.detail.setMatrixAt(pool.details, scratch.matrix);
-          pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(b.color, jit * 1.22 * ao)));
+          scratchColor.setHex(shade(b.color, jit * 1.22 * ao));
+          bleedInto(scratchColor);
+          pool.detail.setColorAt(pool.details, scratchColor);
           pool.details++;
         }
         continue;

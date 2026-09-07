@@ -116,7 +116,7 @@ export function frame(now: number) {
           cr.position.set((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, 0.5);
           cr.scale.x = 0.5 + Math.random() * 0.5;
           o.add(cr);
-          spray(o.position.x, o.position.y, b.color, 7, 2.8, 0.5);
+          spray(o.position.x, o.position.y, b.color, 12, 2.8, 0.5);
           sfx.crack(b.hard);
           R.shake = Math.max(R.shake, SHAKE_CRACK);
         }
@@ -131,7 +131,7 @@ export function frame(now: number) {
       if (R.digging.t >= R.digging.total) {
         g.dug.add(k);
         dropBlock(k);
-        spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 30 : 13, b.ore ? 6.5 : 4, 0.85);
+        spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 52 : 24, b.ore ? 6.5 : 4, 0.85);
         sfx.digStop();
         freeze = b.ore ? FREEZE_ORE : FREEZE_ROCK;
         R.shake = Math.max(R.shake, b.ore ? SHAKE_ORE : SHAKE_ROCK);
@@ -225,7 +225,7 @@ export function frame(now: number) {
   dustMat.color.setHex(0xc8b89a).lerp(new THREE.Color(0xff6a28), hot);
   starMat.opacity = clamp(1 - tDeep * 2.4, 0, 0.9);
   sunSprite.material.opacity = clamp(0.5 - tDeep, 0, 0.5);
-  dustMat.opacity = clamp(tDeep * 0.55, 0, 0.5);
+  dustMat.opacity = clamp(tDeep * 0.7, 0, 0.62);
   dust.position.set(px, py, 0);
   dust.rotation.z += raw * 0.04;
 
@@ -233,6 +233,16 @@ export function frame(now: number) {
   if (skyTick > 0.12) {
     skyTick = 0;
     gameEl.style.background = 'linear-gradient(180deg,#' + hi.getHexString() + ' 0%,#' + lo.getHexString() + ' 100%)';
+    /* The vignette closes in as you descend. At the surface it is a soft frame;
+       deep down the clear area shrinks to not much more than the lamp's pool,
+       which is most of what makes being deep feel enclosed rather than merely
+       dark. Updated on the same slow tick as the sky - it does not need to run
+       every frame and this is a CSS property write. */
+    const clear = 42 - tDeep * 20;
+    const edge = 0.58 + tDeep * 0.28;
+    ui.vignette.style.background =
+      'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) ' + clear.toFixed(1) +
+      '%, rgba(0,0,0,' + edge.toFixed(2) + ') 100%)';
   }
 
   const glowT = now / 1000;

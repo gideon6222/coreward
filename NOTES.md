@@ -265,6 +265,32 @@ attribute renders it black. Only the chunk geometries carry one - crystal shards
 are octahedra and haloes are quads - so `mat()` takes a flag and the pools set
 it per geometry.
 
+## Stage 3 finished (2026-09-07)
+
+**Shadows were considered and rejected, with a reason.** The lamp sits at z=+1.7,
+the camera at z=+22, the terrain in a single layer at z=0. The light is on the
+*same side* as the camera, so every shadow a chunk casts falls directly behind
+it and is hidden by the chunk itself. Shadow mapping would have cost a whole
+extra render pass to produce almost nothing visible. Do not reach for it later
+without changing that geometry first.
+
+What was done instead:
+
+- **Ore bleeds light into the rock it sits in.** The four-neighbour scan that
+  already computes AO now also collects the colour of any adjacent bright ore
+  and tints the rock toward it. Only ores with glow >= 0.2 - dull copper and
+  iron would just muddy the stone. Free, and it stops a vein looking like a
+  sticker on the rock face.
+- **The vignette closes in with depth.** Clear area shrinks 42% -> 22% and the
+  edge darkens as you descend, so deep feels enclosed rather than merely dark.
+  CSS only, updated on the same slow tick as the sky.
+- **Denser debris.** The particle ring buffer is one Points draw whatever the
+  count, so more debris per strike is free: 30 -> 52 on ore, 13 -> 24 on rock,
+  drifting haze 140 -> 260 motes.
+
+Draw-call budget test still passes, so the whole of Stage 3 came in at no
+rendering cost.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
@@ -281,10 +307,9 @@ Nothing here is committed to; they are the live threads.
   without becoming routine?
 - **Content past the mid-game.** Nine ores and six planet names cycle; nobody
   has played deep enough to know whether the late game holds up.
-- **Stage 3 continued.** Fake AO and vertex-colour form are in. Still unspent:
-  real shadows from the player's lamp (a SpotLight would be one shadow-map face
-  rather than a point light's six), light shafts down the entry tunnel, and
-  denser debris now that there is budget for it.
+- **Stage 4: variety.** Events, consumables, run modifiers - the recorded reason
+  players quit this genre, and what would give the heat zone more than one reason
+  to exist.
 - **Stage 4: variety.** Events, consumables, run modifiers - the recorded reason
   players quit this genre is predictability, and it is also what gives the heat
   zone more than one reason to exist.

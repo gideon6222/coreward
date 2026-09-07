@@ -22,6 +22,7 @@ export const ui = {
   manifest: mustEl('manifest'), manifestRows: mustEl('manifestRows'), manifestTotal: mustEl('manifestTotal'),
   pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
   btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
+  vignette: mustEl('vignette'),
   flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto')
 };
 

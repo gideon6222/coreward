@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { scene } from './scene';
 import { makeGlow } from './materials';
 
-const PMAX = 700;
+/* One Points draw whatever the count, so a bigger ring buffer is free except
+   for the memory. More debris per strike is the cheapest weight in the game. */
+const PMAX = 1200;
 const pGeo = new THREE.BufferGeometry();
 const pPos = new Float32Array(PMAX * 3);
 const pCol = new Float32Array(PMAX * 3);
@@ -51,7 +53,7 @@ export function stepParticles(dt: number) {
 }
 
 /* drifting dust underground */
-const DMAX = 140;
+const DMAX = 260;
 const dGeo = new THREE.BufferGeometry();
 const dPos = new Float32Array(DMAX * 3);
 for (let i = 0; i < DMAX; i++) {
