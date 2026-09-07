@@ -987,6 +987,46 @@ There is also a test that no stretch longer than 45 m of reachable ground is
 without a new ore, and that the last stretch before planet 5's core is not
 either. That is the check that would have caught this a month ago.
 
+## Parallax rock behind the tunnels (2026-09-07)
+
+Underground there was one flat backdrop plane and nothing else, so a tunnel
+read as a hole cut in a wall rather than as a space with anything behind it.
+Two layers of dark angular chunks now scroll at fractions of the camera's
+motion - which is the whole of parallax: something further away moves less.
+
+Two `InstancedMesh` layers, two draw calls, no lighting and no shader work.
+They are `MeshBasicMaterial` and dark on purpose, so the scene fog tints them
+toward the depth colour and they go ember below the heat line along with
+everything else without knowing anything about heat. Positions come from
+`rnd`, so a planet's background is as reproducible as its ore, and each layer
+wraps into a 46 m window around the camera - a fixed instance count no matter
+how deep the ship goes, and the wrap happens twenty-plus metres off screen so
+nothing pops.
+
+Three things went wrong, all of them worth keeping:
+
+**The backdrop plane is opaque, and it was in front of them.** The first
+version put the layers at z -3.2 and -6.0, behind a 60x400 unlit plane at
+-1.4. They rendered perfectly into nothing - invisible even when I coloured
+them pure red to check. They have to sit behind the drifting dust (z -0.7 to
+-1.3) and in front of the backdrop, which at -1.4 left a tenth of a unit; the
+backdrop moved to -3.2 to make room. **When something new is invisible, check
+what is already in that slice of z before touching its colour.**
+
+**z is for occlusion here, not for the effect.** The parallax comes entirely
+from the offset maths, so the layers can sit a fraction of a unit apart and
+still read as far apart.
+
+**Rectangles read as rectangles.** `PlaneGeometry` slabs, however rotated and
+scaled, looked like UI panels behind the level - in a world made entirely of
+chipped angular rock that is the one silhouette that says "not part of this".
+A jittered six-sided disc reads as a chunk. Same lesson as the gas pocket and
+the supply cache, for the third time: **silhouette carries more than colour**.
+
+Faded in over the first six metres rather than switched on at a depth
+threshold, because a hard toggle pops in the corner of your eye every time you
+leave the pad.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
