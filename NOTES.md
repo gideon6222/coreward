@@ -148,6 +148,11 @@ that fails any of it cannot deploy - the previous version stays up.
 Then check it on the phone. Expect the first open to show the old build; close
 it fully and open again. The stamp in the pause menu is the source of truth.
 
+Do **not** poll the live site to confirm the deploy landed. CI's smoke tests
+already ran against that exact artifact, so the confirmation is re-verifying
+what is already verified, and the polling loop is the most expensive part of
+the whole cycle. Push, say it is pushed, move on.
+
 If something plays badly: `git revert <sha>` and push. CI redeploys the previous
 state in about two minutes.
 
