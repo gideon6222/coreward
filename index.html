@@ -47,10 +47,19 @@
     position:fixed; inset:0; pointer-events:none; z-index:5;
     background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,.58) 100%);
   }
+  /* Two edge treatments, two meanings. These used to be one red vignette
+     driven by max(hull danger, soak), which made every source of damage look
+     like heat - a gas pocket emptying the hull lit the same red as being
+     cooked. Ember is heat and only heat. Red is the hull, whatever emptied it. */
   #heat{
     position:fixed; inset:0; pointer-events:none; z-index:6; opacity:0;
-    background:radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0) 38%, rgba(255,45,55,.8) 100%);
-    transition:opacity .2s linear;
+    background:radial-gradient(ellipse at 50% 50%, rgba(255,130,30,0) 34%, rgba(255,96,18,.78) 100%);
+    transition:opacity .25s linear;
+  }
+  #alarm{
+    position:fixed; inset:0; pointer-events:none; z-index:7; opacity:0;
+    background:radial-gradient(ellipse at 50% 50%, rgba(255,40,60,0) 48%, rgba(255,28,52,.85) 100%);
+    transition:opacity .12s linear;
   }
 
   #hud{position:fixed; inset:0; pointer-events:none; z-index:8; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;}
@@ -75,6 +84,38 @@
   }
   .fuel i{background:linear-gradient(90deg,#1d5f38,var(--green)); box-shadow:0 0 12px rgba(75,224,138,.5);}
   .hull i{background:linear-gradient(90deg,#6a2129,var(--red)); box-shadow:0 0 12px rgba(255,92,107,.5);}
+
+  /* Heat soak, drawn INSIDE the hull bar rather than beside it.
+
+     The complaint this answers is that heat did not obviously connect to the
+     hull draining, which got worse once gas pockets could drain it too. Putting
+     the gauge on the bar it is eating makes the causation the layout. It creeps
+     in from the right, against the hull's own fill from the left, so the two
+     never read as the same quantity.
+
+     Id selectors on purpose: `.bar i` and `.hull i` would otherwise hand this
+     the left anchor and the red gradient. */
+  /* A stripe along the bottom, not a full-height fill. At full height a
+     70% soak covered almost the whole bar and you could no longer read the
+     hull level underneath it - the gauge was hiding the thing it explains.
+     Seven pixels of nineteen keeps both legible at once. */
+  #soakBar{
+    inset:auto 0 0 auto; height:7px;
+    background:linear-gradient(90deg, rgba(255,120,20,0) 0%, rgba(255,120,24,.72) 38%, rgba(255,196,96,1) 100%);
+    box-shadow:inset 2px 0 0 rgba(255,224,150,1), 0 0 9px rgba(255,140,40,.6);
+    /* slower than the other fills: soak builds far too gradually to see, but a
+       Coolant Flush zeroes it in one frame and this is what makes that land as
+       a visible sweep rather than a jump-cut */
+    transition:width .38s ease-out;
+  }
+  #soakBar.hot{animation:ember 1.15s ease-in-out infinite;}
+  @keyframes ember{0%,100%{filter:brightness(1);} 50%{filter:brightness(1.55);}}
+  /* Tighter than the other bar labels because it carries a number while the
+     heat is actually flowing, and only then. */
+  #hullTxt.hot{
+    color:#ffd08a; font-size:9px; letter-spacing:.02em;
+    text-shadow:0 0 8px rgba(255,150,40,.95), 0 1px 3px #000;
+  }
   .cargo i{background:linear-gradient(90deg,#164a63,var(--cyan)); box-shadow:0 0 12px rgba(63,224,255,.45);}
 
   #depth{margin-top:8px; text-align:center; font-size:11.5px; letter-spacing:.16em; color:var(--dim); text-shadow:0 1px 4px #000;}
@@ -224,6 +265,7 @@
 <div id="game"></div>
 <div id="vignette"></div>
 <div id="heat"></div>
+<div id="alarm"></div>
 
 <div id="hud">
   <div class="row top">
@@ -235,7 +277,7 @@
   </div>
   <div class="row bars">
     <div class="bar fuel"><i id="fuelBar"></i><b>FUEL</b></div>
-    <div class="bar hull"><i id="hullBar"></i><b>HULL</b></div>
+    <div class="bar hull"><i id="hullBar"></i><i id="soakBar"></i><b id="hullTxt">HULL</b></div>
     <div class="bar cargo"><i id="cargoBar"></i><b id="cargoTxt">0 / 60 KG</b></div>
   </div>
   <div id="depth">DEPTH 0 m</div>

@@ -192,10 +192,20 @@ export function frame(now: number) {
       /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
       g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * dt;
       R.hullCause = 'heat';
+      /* Say it once, at the metre it starts. The HUD carries it from here. */
+      if (!R.wasHot) {
+        R.wasHot = true;
+        toast('Overheating - the hull is draining');
+        flash('rgba(255,120,30,.20)', 420);
+      }
     } else if (atSurface()) {
       g.hull = Math.min(HULL_MAX, g.hull + HULL_REGEN * dt);
       g.fuel = S.fuelCap();
     }
+
+    /* Two metres of hysteresis, so hovering on the line cannot spam the
+       warning every time the camera lerp nudges you across it. */
+    if (R.wasHot && g.pd < HEAT_DEPTH - 2) R.wasHot = false;
 
     if (g.fuel <= 0) { g.fuel = 0; tow('Your tank ran dry at ' + Math.round(g.pd) + ' m.'); }
     else if (g.hull <= 0) {

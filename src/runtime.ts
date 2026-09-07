@@ -26,6 +26,10 @@ export const R = {
      continuous drain; a gas pocket overwrites it on the frame it fires. */
   hullCause: 'heat' as 'heat' | 'gas',
 
+  /* Whether the last frame was inside the heat zone, so crossing in can
+     announce itself once instead of every frame. */
+  wasHot: false,
+
   /* actions -> loop, decayed by the loop */
   shake: 0,
   squash: 0,

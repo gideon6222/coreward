@@ -30,6 +30,7 @@ export function goSurface() {
   sfx.digStop();
   g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0;
   R.hullCause = 'heat';
+  R.wasHot = false;
   syncBlocks(true);
   save();
 }

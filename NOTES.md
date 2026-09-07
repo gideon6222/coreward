@@ -550,6 +550,56 @@ is left unlabelled. The pause menu carries the full sentence, and the launch
 screen after a core break sells the next planet with it, which is the moment
 the information is actually worth reading.
 
+## Heat as its own channel (2026-09-07)
+
+Playtest, after Stage 4: *"I think hull damage and heat should be separated
+slightly... right now it is kind of hard to tell that the heat is what damages
+the hull, especially now that there are other things that can cause damage."*
+
+He is describing a bug in the display rather than a preference. There was one
+red vignette driven by `max(hull danger, soak)`, so heat and a failing hull lit
+the same red at the same edges. That was survivable while heat was the only
+thing that emptied the hull. Gas pockets made it wrong: a pocket taking 26 hull
+lit the identical warning, so the screen said "heat" for something that was not
+heat.
+
+Three signals now, none shared with any other kind of damage:
+
+**An ember stripe inside the hull bar**, right-anchored, width = soak. The
+gauge lives on the bar it is eating, so the causation is the layout rather than
+something the player has to be told. First attempt made it a full-height fill
+and at 70% soak it covered the hull level entirely - the gauge was hiding the
+thing it explains. Seven pixels of nineteen along the bottom keeps both legible.
+
+**The hull bar's own label**, which reads `HULL` normally and `HULL -3.4/s`
+while heat is flowing. This turned out to be the load-bearing one. A flush
+takes it from `-1.7/s` to `-0.7/s` in front of you, which is the clearest
+possible statement of what fifteen hundred credits just bought - no bar
+communicates that.
+
+**Ember edges instead of red.** `#heat` is now orange and keyed only to heat,
+holding a floor the moment you cross the line (damage starts there whether or
+not you have soaked yet) and fading to a residue above it. A new red `#alarm`
+carries low hull, whatever emptied it. Two colours, two meanings.
+
+Plus a one-shot toast at the metre it begins, with two metres of hysteresis so
+hovering on the line cannot spam it.
+
+An accident worth keeping: a gas pocket's +0.3 soak spike was previously
+invisible, and now shows as a small ember stub appearing above the heat line
+with no rate label. That reads as "you are carrying heat now, and it will cost
+you when you go deeper", which is exactly what it does.
+
+### A test-writing trap this exposed twice
+
+`useSupply` changes game state synchronously; the bars are only repainted by
+the next `updateHUD`. Sampling a bar width once, immediately after a spend, can
+land in that gap. It did - and only under the load of the full suite, passing
+every time in isolation. Both the supply test and the new heat test now poll.
+The rule at the top of `e2e/smoke.spec.ts` about waiting on state rather than
+wall-clock time extends to this: wait for the state you asserted to be
+*rendered*, not just set.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
