@@ -75,9 +75,25 @@ together:
 1. Merge `vite-migration` into `main` (brings the Vite build *and* the workflow).
 2. Immediately switch **Settings → Pages → Source** to **GitHub Actions**.
 3. Watch the run finish, then hard-reload the live URL.
-4. **Open the installed PWA on the phone** and confirm it updates rather than
-   getting stuck on the old worker. This is the step that actually matters and
-   it cannot be checked from a desktop.
+4. **Open the installed PWA on the phone.** Expect the *first* open to still
+   show the old game: the old worker serves the old `index.html` from cache
+   while the new worker installs behind it. **Close it fully and open it a
+   second time** and you should get the new build. This handover was measured
+   on a real old-to-new upgrade, not assumed - see below.
+
+The upgrade path was tested end to end by installing the pre-Vite worker on a
+clean origin, then serving the new build at that same origin:
+
+| | Before | After reload 1 | After reload 2 |
+|---|---|---|---|
+| caches | `coreward-v5` (7) | workbox precache (5) | workbox precache (5) |
+| `coreward-v5` | present | **deleted** | gone |
+| loaded script | `app.js` | `app.js` (old, from cache) | `./assets/index-<hash>.js` |
+
+`public/sw-legacy-cleanup.js` is what deletes the old cache. Workbox's
+`cleanupOutdatedCaches` only removes precaches it created itself, so without
+that script `coreward-v5` sat on the device permanently - measured at 1.31 MB
+of orphaned data, including the old CDN copy of three.js.
 
 The site is down between steps 1 and 2, so do them back to back. If it goes
 wrong: `git revert` the merge and switch Pages back to branch mode, or reset to

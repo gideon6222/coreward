@@ -30,6 +30,11 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        /* cleanupOutdatedCaches only removes Workbox's own precaches. The
+           pre-migration worker used a hand-rolled cache named coreward-v5,
+           which Workbox cannot see and which measured 1.31 MB of orphaned
+           data on a real upgrade. This script deletes it on activate. */
+        importScripts: ['sw-legacy-cleanup.js'],
         globPatterns: ['**/*.{js,css,html,svg,webmanifest}'],
         /* the sourcemap is ~2 MB and only devtools ever asks for it */
         globIgnores: ['**/*.map'],
