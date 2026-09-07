@@ -112,6 +112,47 @@
     border-radius:12px; padding:12px 14px; font-size:11px; font-weight:700; letter-spacing:.09em;
     backdrop-filter:blur(8px); white-space:nowrap; box-shadow:0 3px 12px rgba(0,0,0,.4);
   }
+  /* Bottom LEFT, mirroring the d-pad. Movement is the right thumb, supplies
+     are the left, so spending one never fights with steering. Deliberately
+     the same 60 px module as a d-pad key. */
+  #kit{
+    position:fixed; left:18px; bottom:calc(var(--safe-b) + 14px); z-index:9;
+    display:flex; flex-direction:column-reverse; gap:5px;
+  }
+  /* Worded, not pictured. The three glyphs that read best for these - a
+     snowflake, a cross and a fuel pump - do not share a presentation: the pump
+     is emoji by default and rendered in colour next to two monochrome symbols,
+     which looked like a bug. Four letters at 60 px are unambiguous, need no
+     learning, and match the shop rows. */
+  .sup{
+    position:relative; width:60px; height:60px; border-radius:13px;
+    border:1px solid var(--line); background:rgba(10,16,26,.74); color:var(--ink);
+    font-size:11px; font-weight:700; letter-spacing:.07em; line-height:1;
+    backdrop-filter:blur(8px);
+    box-shadow:0 3px 12px rgba(0,0,0,.4); transition:transform .06s, opacity .12s;
+  }
+  /* Owning none hides it entirely rather than greying it: an empty slot is
+     clutter, and the shop is where you learn these exist. */
+  .sup.none{display:none;}
+  /* Owned but useless right now - full tank, no soak - stays visible and dim,
+     so the count is still readable and the button does not move under a thumb
+     that was about to press it. */
+  .sup.idle{opacity:.4;}
+  .sup:active{transform:scale(.94);}
+  .sup .n{
+    position:absolute; right:6px; bottom:4px; font-size:12px; font-weight:800;
+    color:var(--cyan); text-shadow:0 0 6px rgba(0,0,0,.9), 0 1px 3px #000;
+  }
+  .sup .g{
+    position:absolute; left:0; right:0; top:17px; font-size:12.5px; letter-spacing:.09em;
+  }
+  #supCoolant{border-color:#2a5570;}
+  #supPatch{border-color:#5a2530;}
+  #supCell{border-color:#2f6f52;}
+  .kithead{
+    margin-top:16px; padding-top:12px; border-top:1px solid var(--line);
+    font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--dim);
+  }
   #btnShop{border-color:#2f6f52; color:var(--green);}
   #btnAuto{border-color:#2a5570; color:var(--cyan);}
   #btnPause{color:var(--dim);}
@@ -208,6 +249,12 @@
   <button id="btnAuto" style="display:none">AUTOPILOT</button>
 </div>
 
+<div id="kit">
+  <button class="sup none" id="supCoolant"><span class="g">COOL</span><span class="n">0</span></button>
+  <button class="sup none" id="supPatch"><span class="g">HULL</span><span class="n">0</span></button>
+  <button class="sup none" id="supCell"><span class="g">FUEL</span><span class="n">0</span></button>
+</div>
+
 <div id="ctrl">
   <div id="dpad">
     <button class="k" data-dir="up">▲</button>
@@ -222,6 +269,8 @@
     <h2>Outfitter</h2>
     <div class="sub">Credits ◈ <span id="shopCredits">0</span></div>
     <div id="upgrades"></div>
+    <div class="kithead">SUPPLIES · SPENT UNDERGROUND</div>
+    <div id="supplies"></div>
     <button id="shopClose" class="wide">CLOSE</button>
   </div>
 </div>

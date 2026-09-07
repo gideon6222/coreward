@@ -1,0 +1,33 @@
+{
+  "supplies": [
+    {
+      "key": "coolant",
+      "name": "Coolant Flush",
+      "icon": "COOL",
+      "cost": 1500,
+      "max": 2,
+      "blurb": "Dumps accumulated heat soak back to zero. Does not cool the rock.",
+      "idle": "no soak"
+    },
+    {
+      "key": "patch",
+      "name": "Hull Patch",
+      "icon": "HULL",
+      "cost": 850,
+      "max": 3,
+      "blurb": "Welds 45 hull back on, anywhere.",
+      "idle": "hull full"
+    },
+    {
+      "key": "cell",
+      "name": "Fuel Cell",
+      "icon": "FUEL",
+      "cost": 600,
+      "max": 3,
+      "blurb": "Burns 55 fuel straight into the tank.",
+      "idle": "tank full"
+    }
+  ],
+  "patchHull": 45,
+  "cellFuel": 55
+}

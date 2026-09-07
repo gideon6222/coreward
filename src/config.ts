@@ -1,6 +1,6 @@
 /* Tuning constants and the pure functions over them. Imports only types. */
 
-import type { Ore, Rock, Material, Upgrade, UpgradeKey } from './types';
+import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply } from './types';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
    framing, so the rest is lateral room to explore: which way to dig at a given
@@ -114,6 +114,40 @@ for (const o of ORES) DEF[o.id] = o;
 DEF[GEODE.id] = GEODE;
 DEF[GAS.id] = GAS;
 for (const r of ROCKS) DEF[r.id] = r;
+
+/* ---------- supplies ----------
+
+   Upgrades and supplies answer the same threats on different axes: an upgrade
+   raises the ceiling on every future run, a supply buys one more minute on
+   THIS run. That is the whole decision - bank toward the permanent thing, or
+   spend now because the core is forty metres away and you are nearly out.
+
+   Priced against the loss they prevent rather than against a haul. A tow takes
+   half your cargo (a tenth once Tow Insurance is maxed) and a haul from 90 m
+   runs to several thousand, so anything that reliably averts a tow has to cost
+   enough to still be a choice.
+
+   Coolant is the dear one because soak is the only pressure with no permanent
+   answer: the cooling rig caps at a 72% shield on purpose, so past a certain
+   depth the clock always wins. A flush is the one way to reset that clock, and
+   you can only carry two. */
+export const PATCH_HULL = 45;
+export const CELL_FUEL = 55;
+
+export const SUPPLIES: Supply[] = [
+  { key: 'coolant', name: 'Coolant Flush', icon: 'COOL', cost: 1500, max: 2,
+    blurb: 'Dumps accumulated heat soak back to zero. Does not cool the rock.',
+    idle: 'no soak' },
+  { key: 'patch', name: 'Hull Patch', icon: 'HULL', cost: 850, max: 3,
+    blurb: 'Welds ' + PATCH_HULL + ' hull back on, anywhere.',
+    idle: 'hull full' },
+  { key: 'cell', name: 'Fuel Cell', icon: 'FUEL', cost: 600, max: 3,
+    blurb: 'Burns ' + CELL_FUEL + ' fuel straight into the tank.',
+    idle: 'tank full' }
+];
+
+export const SUPPLY_OF: Record<string, Supply> = {};
+for (const sup of SUPPLIES) SUPPLY_OF[sup.key] = sup;
 
 export const UPGRADES: Upgrade[] = [
   { key: 'drill',  name: 'Drill Bit',     base: 130, mul: 2.00, max: 9,

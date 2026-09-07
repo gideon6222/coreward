@@ -435,6 +435,71 @@ moment something other than heat could empty the hull. `R.hullCause` records
 which one it was. The same pass replaced a literal `70` in the frame loop with
 `HEAT_DEPTH`; it had already drifted apart from the rock band once.
 
+## Stage 4: supplies (2026-09-07)
+
+Upgrades raise the ceiling on every future run. Supplies buy one more minute on
+*this* one. Before this the shop only sold the first kind, so a run had exactly
+one shape: dig until a bar runs out, then leave. Now there is a second question
+at the pad - bank toward the ladder, or spend so that tonight's descent reaches
+the core.
+
+Three of them, each answering a pressure that already existed:
+
+- **Coolant Flush** (1,500, carry 2) - soak back to zero. The dearest, because
+  soak is the only pressure with no permanent answer: the cooling rig caps at a
+  72% shield deliberately, so past a certain depth the clock always wins. A
+  flush is the one way to restart that clock.
+- **Hull Patch** (850, carry 3) - +45 hull, less than half of max on purpose.
+  A patch that nearly full-heals removes the reason to surface.
+- **Fuel Cell** (600, carry 3) - +55 fuel against a 90 base tank. A top-up, not
+  a spare tank.
+
+Stack limits are small so stocking up cannot replace deciding.
+
+### Spending one has to be safe to mis-tap
+
+The kit sits bottom-**left**, mirroring the d-pad: movement is the right thumb,
+supplies are the left, so a spend never fights with steering. Same 60 px module
+as a d-pad key.
+
+`useSupply` refuses rather than spending when the item would do nothing - a
+full tank, an intact hull, no soak - and says why. A consumable silently burnt
+for no effect is the kind of thing a player never forgives, and these buttons
+live next to the controls on a phone. Three states: hidden when you own none
+(an empty slot is clutter, and the shop is where you learn these exist), dim
+when owned but useless right now, lit when it would help. In practice that
+means the button that can save you is the one that is bright, which turned out
+to be better feedback than the count.
+
+Nothing is usable at the pad, because the pad already refuels, repairs and
+cools for free. The buttons hide up there for the same reason.
+
+### Labels, not icons
+
+First pass used ❄ ✚ ⛽. The first two render monochrome and the fuel pump
+renders as a colour emoji, so the row looked broken rather than designed. Four
+letters at 60 px - COOL / HULL / FUEL - are unambiguous, need no learning, and
+match the shop rows. Border colour still carries the category.
+
+### What the tests hold
+
+`test/baseline/supplies.json` freezes the table. Beyond that the assertions are
+about the two kinds of purchase staying on different axes: no supply may fully
+solve what it patches, coolant must stay the dearest and dearer than the first
+Cooling Rig level (or the rig is pointless), and a full kit must cost more than
+three levels of cooling (or stocking up stops competing with the ladder).
+
+The smoke test walks the whole chain against the real build - buy at the pad,
+descend, mis-tap a supply that has nothing to do and keep it, then spend one
+that does and watch the bar move. Every step of that lives in a different
+module, so nothing else covers the seam.
+
+One trap worth remembering: seeding credits through `localStorage` and
+reloading does not work, because the game saves on `visibilitychange`, which
+fires during the reload and writes the live state straight back over the seed.
+Freeze `Storage.prototype.setItem` for that key on the outgoing page first.
+This has now cost time twice.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
