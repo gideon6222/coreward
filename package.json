@@ -8,12 +8,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test test/blocks.test.mjs test/stats.test.mjs test/route.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "three": "0.166.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.4.1",
     "@types/three": "^0.166.0",
     "typescript": "^7.0.2",
     "vite": "^5.4.0",

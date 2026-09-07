@@ -178,6 +178,39 @@ npm test
 
 CI runs it on every push and pull request, and the deploy job depends on it.
 
+### Smoke test
+
+```
+npm run e2e
+```
+
+Playwright boots the **production build** in headless Chrome at 375x812 and
+checks the things a unit test structurally cannot: a live WebGL context, that
+**the frame loop actually advances**, that digging and selling work end to end,
+that every id `ui.ts` requires is still in `index.html`, and that the build stamp
+is populated.
+
+It exists because of a specific incident. The module split dropped
+`requestAnimationFrame(frame)` from the entry point: golden tests green,
+typecheck clean, build successful, game frozen after one frame. Both were
+mutation-tested — deleting that line fails exactly the two loop assertions, and
+renaming a required element id fails every test with `missing required element
+#haul`.
+
+Two things to know if you touch these tests:
+
+- **Never sleep for a fixed time; wait on game state.** The frame loop clamps its
+  delta to 50 ms, so on a machine with no GPU the game runs in slow motion under
+  load and any wall-clock assumption becomes a flake. They run serially for the
+  same reason.
+- **The HUD rounds.** It reads `DEPTH 0 m` while the ship is still a cell above
+  the pad, so waiting on the depth readout to detect a landing is a race. Wait
+  for credits to change instead.
+
+`tsconfig.json` covers `src` only; `tsconfig.e2e.json` covers the test tooling
+and is the only one with node types. That split is deliberate — game code should
+not typecheck against `process`.
+
 `test/harness.mjs` bundles `test/pure-entry.ts` with esbuild and imports the
 result, so the tests exercise the real modules through the real import graph.
 Before the split it sliced `app.ts` and evaluated the pure prelude with

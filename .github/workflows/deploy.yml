@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   test:
-    name: Golden tests
+    name: Typecheck and golden tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,15 +29,68 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npm run typecheck
-      # The Phase 0 safety net. Pure functions only: world generation, upgrade
-      # costs, derived stats, planet scaling, haul values and pathfinding.
-      # It cannot catch a feel regression, so it gates the deploy but does not
-      # replace playing the game.
+      # Pure functions only: world generation, upgrade costs, derived stats,
+      # planet scaling, haul values and pathfinding. Fast, and they cannot
+      # catch a wiring bug - that is what the smoke job is for.
       - run: npm test
 
-  build:
-    name: Build
+  smoke:
+    name: Smoke test the built game
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      # Fail loudly if the service worker did not pick up the hashed bundle,
+      # rather than shipping a PWA that silently precaches nothing.
+      - name: Verify the precache manifest
+        run: |
+          test -f dist/sw.js || { echo "dist/sw.js missing"; exit 1; }
+          grep -q 'assets/index-.*\.js' dist/sw.js || { echo "hashed bundle missing from precache"; exit 1; }
+          echo "precache manifest looks right:"
+          grep -o '{url:"[^"]*"' dist/sw.js
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Boots the real build in a headless browser and checks the things a
+      # unit test structurally cannot: that a WebGL context exists, that the
+      # frame loop actually advances, that digging and selling work end to end,
+      # and that every id ui.ts requires is still in index.html.
+      #
+      # This job exists because the module split once dropped
+      # requestAnimationFrame(frame). Golden tests passed, typecheck was clean,
+      # the build succeeded, and the game was frozen.
+      - name: Smoke test
+        run: npm run e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  build:
+    name: Build and upload Pages artifact
+    needs: smoke
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -48,14 +101,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      # Fail loudly if the service worker did not pick up the hashed bundle,
-      # rather than shipping a PWA that silently precaches nothing.
-      - name: Verify the precache manifest
-        run: |
-          test -f dist/sw.js || { echo "dist/sw.js missing"; exit 1; }
-          grep -q 'assets/index-.*\.js' dist/sw.js || { echo "hashed bundle missing from precache"; exit 1; }
-          echo "precache manifest looks right:"
-          grep -o '{url:"[^"]*"' dist/sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
