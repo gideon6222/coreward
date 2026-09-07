@@ -52,10 +52,10 @@ which is the quickest way to tell whether a phone has picked up a deploy.
 game-specific decisions and what to do next, and warns that this repo no longer
 matches the five-file no-build pattern that new games start from.
 
-CLAUDE.md It covers the stack, the deploy flow, the
-constraints that are not obvious from the code, and — most importantly — the
-handful of feel rules that are load-bearing rather than decorative. Changing
-them changes how the game plays.
+CLAUDE.md covers the stack, the deploy flow, the constraints that are not
+obvious from the code, and — most importantly — the handful of feel rules that
+are load-bearing rather than decorative. Changing them changes how the game
+plays.
 
 Design and technical lessons that carry across games live in a separate repo,
 [gamedev-notes](https://github.com/gideon6222/gamedev-notes):
