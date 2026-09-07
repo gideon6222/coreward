@@ -42,7 +42,11 @@ const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(60, 400),
   new THREE.MeshBasicMaterial({ color: 0x14161c })
 );
-backdrop.position.set(0, 0.5 - 200, -1.4);
+/* Moved back from -1.4 to make room for the parallax layers, which have to
+   sit BEHIND the drifting dust (z -0.7 to -1.3) and IN FRONT of this. At -1.4
+   there was a tenth of a unit to work with; the first attempt put them behind
+   this plane, which is opaque, and they rendered perfectly into nothing. */
+backdrop.position.set(0, 0.5 - 200, -3.2);
 scene.add(backdrop);
 
 export const lamp = new THREE.PointLight(0xffd9a0, 30, S.light(), 1.25);

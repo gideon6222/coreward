@@ -25,6 +25,7 @@ import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './parti
 import { player, rig, bit, flames, headlight, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
+import { stepParallax, fadeParallax } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { sell, goSurface, tow, breakCore, tremor } from './actions';
 import { sfx, setDepth, setMood } from './audio';
@@ -383,6 +384,12 @@ export function frame(now: number) {
   camera.position.x = approach(camera.position.x, clamp(px, -lim, lim), kx, raw);
   camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET, ky, raw);
   camera.position.z = approach(camera.position.z, zNow, CAM_ZOOM_RATE, raw);
+  /* Parallax reads the camera AFTER the follow but BEFORE the shake, or the
+     background jitters independently of the foreground and the illusion that
+     they are one space goes with it. */
+  fadeParallax(g.pd);
+  stepParallax(camera.position.x, camera.position.y);
+
   if (R.shake > 0) {
     camera.position.x += (Math.random() - 0.5) * R.shake;
     camera.position.y += (Math.random() - 0.5) * R.shake;
