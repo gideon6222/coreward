@@ -104,10 +104,11 @@ Nothing here is committed to; they are the live threads.
   frame makes the camera snap rather than lag. Correct form is
   `1 - exp(-rate * dt)`. There is a test pinning current behaviour, so changing
   it is a deliberate act. **Changes how the camera feels — phone check.**
-- **Revisit upgrade pricing against the depth where each threat begins.** The
-  original complaint was "I can afford upgrades pretty early on for fuel and
-  cooling so neither is a risk". The tow and autopilot economy addressed the
-  escape hatch, but the pricing curve itself was never re-examined.
+- **Re-tune Stage 1 against actual play.** The soak rates, the 0.72 shield cap
+  and the new prices are a first pass derived from modelling, not from playing.
+  The open questions: does the descent past 70 m feel like a decision, is
+  cooling worth saving for, and does the tow fire often enough to create tension
+  without becoming routine?
 - **Content past the mid-game.** Nine ores and six planet names cycle; nobody
   has played deep enough to know whether the late game holds up.
 - **A draw-call budget in the smoke test.** `renderer.info` exposes draw calls
