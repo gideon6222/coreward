@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { W, HULL_MAX, DIG_BASE, coreDepth, valueMult, skyHi, skyLo } from './config';
+import { W, HULL_MAX, DIG_BASE, coreDepth, valueMult, skyHi, skyLo,
+         GAS_HULL_DAMAGE, GAS_SOAK } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
 import { blockAt } from './world';
@@ -11,7 +12,7 @@ import {
   SQUASH_DIG, SQUASH_BREAK, SQUASH_DECAY, SQUASH_SCALE,
   CAM_FOLLOW_PLAY, CAM_FOLLOW_FLY, CAM_ZOOM_RATE, CAM_Y_OFFSET,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
-  FUEL_PER_MOVE, HULL_REGEN,
+  FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH,
   depthT, heatT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
@@ -137,6 +138,25 @@ export function frame(now: number) {
         R.shake = Math.max(R.shake, b.ore ? SHAKE_ORE : SHAKE_ROCK);
         R.squash = SQUASH_BREAK;
         if (b.core) { R.digging = null; breakCore(); }
+        else if (b.hazard) {
+          /* A gas pocket pays nothing and costs you. It breaks faster than the
+             rock around it, so you usually hit one by accident - which is the
+             point: it is the surprise that makes a descent differ from the last
+             one, and it gives dwelling deep a second thing to fear besides
+             heat. The soak spike is what actually bites, because it multiplies
+             every bit of heat damage for the rest of the trip. */
+          g.hull -= GAS_HULL_DAMAGE;
+          R.hullCause = 'gas';
+          g.soak = Math.min(1, g.soak + GAS_SOAK);
+          R.shake = Math.max(R.shake, 0.7);
+          flash('rgba(150,220,80,.30)', 380);
+          spray(worldX(R.digging.x), -R.digging.d, b.color, 90, 9, 1.5);
+          sfx.gas();
+          toast('Gas pocket! Hull -' + GAS_HULL_DAMAGE);
+          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
+          R.digging = null;
+          save();
+        }
         else {
           g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
           g.weight += b.wt;
@@ -167,16 +187,22 @@ export function frame(now: number) {
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
     g.soak = soakAfter(g.soak, g.pd, dt);
-    if (g.pd > 70) {
+    if (g.pd > HEAT_DEPTH) {
       /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
       g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * dt;
+      R.hullCause = 'heat';
     } else if (atSurface()) {
       g.hull = Math.min(HULL_MAX, g.hull + HULL_REGEN * dt);
       g.fuel = S.fuelCap();
     }
 
     if (g.fuel <= 0) { g.fuel = 0; tow('Your tank ran dry at ' + Math.round(g.pd) + ' m.'); }
-    else if (g.hull <= 0) { g.hull = 1; tow('Your hull buckled in the heat at ' + Math.round(g.pd) + ' m.'); }
+    else if (g.hull <= 0) {
+      g.hull = 1;
+      tow(R.hullCause === 'gas'
+        ? 'A gas pocket finished your hull at ' + Math.round(g.pd) + ' m.'
+        : 'Your hull buckled in the heat at ' + Math.round(g.pd) + ' m.');
+    }
   }
 
   stepParticles(dt);

@@ -55,6 +55,8 @@ export interface Block {
   tone?: number;
   ore?: boolean;
   core?: boolean;
+  /* Breaking this hurts instead of paying. Hazards never enter cargo. */
+  hazard?: boolean;
 }
 
 export type UpgradeKey =

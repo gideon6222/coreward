@@ -106,7 +106,11 @@ export function chunkFor(_id: string): THREE.BufferGeometry {
 /* How far each rock type's surface breaks up. Soft material stays lumpy and
    shallow, hard material is chipped and angular. */
 export const ROCK_BUMP: Record<string, number> = {
-  dirt: 0.16, stone: 0.20, granite: 0.26, scoria: 0.30, basalt: 0.32
+  dirt: 0.16, stone: 0.20, granite: 0.26, scoria: 0.30, basalt: 0.32,
+  /* A gas pocket is a bubble, so its shell is the smoothest thing in the
+     ground; a geode is a cracked-open shell, so it is the roughest. Both read
+     as "not rock" at a glance, which is the entire point of a pocket. */
+  gas: 0.10, geode: 0.34
 };
 
 /* Inject the displacement into a standard material.

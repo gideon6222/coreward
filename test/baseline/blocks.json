@@ -6,17 +6,19 @@
     "rowsFrom": -1,
     "rowsTo": 111,
     "counts": {
-      "(empty)": 13,
+      "(empty)": 79,
       "dirt": 123,
-      "copper": 29,
-      "stone": 407,
-      "iron": 34,
-      "silver": 18,
+      "copper": 28,
+      "stone": 397,
+      "iron": 32,
+      "silver": 17,
       "gold": 11,
-      "granite": 300,
-      "amethyst": 16,
-      "scoria": 474,
-      "emerald": 13,
+      "gas": 12,
+      "granite": 273,
+      "geode": 4,
+      "amethyst": 15,
+      "scoria": 438,
+      "emerald": 9,
       "ruby": 5,
       "core": 13,
       "bedrock": 13
@@ -94,6 +96,20 @@
         "value": 420,
         "ore": true
       },
+      "gas": {
+        "id": "gas",
+        "name": "Gas Pocket",
+        "color": 13954602,
+        "host": 2765600,
+        "glow": 0.45,
+        "shards": 5,
+        "tone": 2,
+        "hard": 1.8,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "hazard": true
+      },
       "granite": {
         "id": "granite",
         "name": "Granite",
@@ -103,6 +119,19 @@
         "wt": 1.8,
         "value": 9,
         "ore": false
+      },
+      "geode": {
+        "id": "geode",
+        "name": "Geode",
+        "color": 8388576,
+        "host": 2831168,
+        "glow": 0.75,
+        "shards": 9,
+        "tone": 10,
+        "hard": 6,
+        "wt": 4,
+        "value": 6200,
+        "ore": true
       },
       "amethyst": {
         "id": "amethyst",
@@ -177,7 +206,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhehhhehhhhhhhhhhhehhhhhehhhhhhhhhehhhehhhhhhhhhhhhhhhhhhhqqqqqqqqqqqqqqqqqeeqqqqqqqqqqqqqqqqqqqqqqeqqqqqqqqqqqllqqqqqqllqqqqqlqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlqqlqlqqqqqqqqqqqqqqlqqlqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqqqqqqqqqpqqqqqqepqeqqqqqqqqqppqqqqqqqqqqqqqqqqqqqqqqqqqqqqqeqqqqqqqpqqqqqqqqqpqqlqqqqqqqqqqqqqqqepqqqqqqqqpqqqlqqqqqqpqqeqqqqqqqqqqqqqqqqlqqqqqqpqqqqqqqqqqqqpqqqqqqqqjqqqqqqqqqjqqqqqqqpqqqpjqqqqqqqqqjqqqqqjqqqqqqeqqqqqpqqqqqjqqqqqjqlqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkkkekkkkkkjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkekkkkkkkkkkkkbkbkkkkkkkbkbklkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbblpkkkkkkkkkbkkkbkkkkkkkkbkkkkkkkkkkkbkkkklkkkkkkkkkkjkkbjkkklbkkkkkkkkkkkkkkkekkkkkkkkkkkkkkkekkkkkkkkkooooobooooboopoooooooooooooooooeooooooooooooooooboooooooooooooooooooooooooooooooooooooooobooooooooooooooooooooooooooooooooopooooooooooooooooooooooooooooooiooooooooooooooooooooloooooooooooooooioooioooooooioioooooooooooooooilooooooooiooooooooooooojooooooooooooooooooooooooeoooooooooooolooooooooooloooooiooooooooooooooooooooeioooeooooooeoloooooooooooiooooleoooooooooooooooiooooooooooooooooooooooooooooooeoooooolooiollooooooooooooooooooooooooooooooooooiooooooooooooooollooooooooooonooonooooloonooooooooooolonnooooooooooooeoofffffffffffffddddddddddddd"
+    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhehhhehhhhhhhhhhhehhhhhehhhhhhhhhehhhehhhhhhhhhhhhhhhhhhhssssssssssssssssseessssssssssssssssssssssesssssssssssnnssssssnnsssssnssssnssssssssssssssssssssssssssssssnssnsnssssssssssssssnssnsssssssssssssnsssssssssssssssssssssssssrssssssssssssrssssssersesssssssssrrsssssssssssssssssssssssssssssesssssssrssssaasssrssnssssaasssssssssaassssssssrssaassssssrssessssssssssssssssnssssssrssssssssssssrsssssssslssjsssssslsssssssrsssrlssssaassslssssslsaasssesssssrssssslssssslsnsssssnssssssssssssssssssssssssssssssssssssssssssssmmmemmmmmmlmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmemmmmmmmmmmmmmmmjmmmmmmmmmmmmmmmmmmmmmmmmmmkmmmmmmmjmmmmkmkmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmemmmmjmaammmmbmbmjmmaambmaanmmmmmmmmmmaammmmmmmmmmmmmaammmmmmmmmmmaammmmmmmmbbnrmaammmmmmbmmmbaammmmjmbmmmmmmmmmmmbmmmmnmmmmmmmmmmlmmblaamnbmmmmmmmmaammmmmemmmmmmmmmmmmmmmemmmmmmmmmqqqqqbqqqqbqqrqqqqqqqqqqqqqqqqqeqqqqjqjqqqqqqqqqbqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqbqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqrqqqqqqqqaaqqqqqqqqqqqaaqqqqqqqiqqqqqqqqqqqqqqqqqqqqnqqqqqqqqqqqqqqaaqqqiqqqqqqqaaiqqaaqqqqqqqqqqqaaqqqqqqqqiqqqqqqqqaaqqqlqqqqqqqaaqqqqqqqqqaaqqqqeqqqqqqaaqqqqnqqqqqqqqqqnqqqqqiqqqqqqqqqqqqqqqqqqqjeijaqeqqqqqqeqnqaqqqqqqqqqiqqqqneqqqqqqqqqqqqqqqiqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqeqqqkqqnqqiqnnqqaaqqqqaaqqqqjaaqqqqaaqqqqqqqqqqqaaqqqqqqqqqqqaaqnnqqqqqqqqqqqpqjqpqqqqnqqpqqqqqqqqqqqnqppqqqqqqqqqqqqeqqfffffffffffffddddddddddddd"
   },
   {
     "planet": 1,
@@ -186,19 +215,21 @@
     "rowsFrom": -1,
     "rowsTo": 146,
     "counts": {
-      "(empty)": 13,
+      "(empty)": 113,
       "dirt": 122,
-      "copper": 25,
-      "stone": 408,
-      "iron": 39,
+      "copper": 24,
+      "stone": 395,
+      "iron": 36,
       "silver": 29,
-      "gold": 28,
-      "granite": 287,
-      "amethyst": 24,
-      "scoria": 591,
-      "emerald": 18,
-      "ruby": 12,
-      "basalt": 302,
+      "gas": 20,
+      "gold": 27,
+      "granite": 267,
+      "geode": 16,
+      "amethyst": 22,
+      "scoria": 529,
+      "emerald": 17,
+      "ruby": 10,
+      "basalt": 271,
       "core": 13,
       "bedrock": 13
     },
@@ -262,6 +293,20 @@
         "value": 150,
         "ore": true
       },
+      "gas": {
+        "id": "gas",
+        "name": "Gas Pocket",
+        "color": 13954602,
+        "host": 2765600,
+        "glow": 0.45,
+        "shards": 5,
+        "tone": 2,
+        "hard": 2.3040000000000003,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "hazard": true
+      },
       "gold": {
         "id": "gold",
         "name": "Gold",
@@ -284,6 +329,19 @@
         "wt": 1.8,
         "value": 9,
         "ore": false
+      },
+      "geode": {
+        "id": "geode",
+        "name": "Geode",
+        "color": 8388576,
+        "host": 2831168,
+        "glow": 0.75,
+        "shards": 9,
+        "tone": 10,
+        "hard": 7.68,
+        "wt": 4,
+        "value": 6200,
+        "ore": true
       },
       "amethyst": {
         "id": "amethyst",
@@ -368,7 +426,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhehhhehhhhhhhhhhhhhhhehhhhhhhhhhehhhhehhhhhhhhhhhheheheqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlqqqqllqlqqqqqqqqqqqqqqqqqlqqqqqqeqqqqqqqqqqqqqqqqqqqqqllqqqlqqqqqqqqqlqqlqqqqllqqqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqpqqqqqqqeqqeqqqqqqqqqqqqqqqqqqqqqqqqqqqleqqqqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqpqppqqqqqqqqqpppqlqqqqqqqqqqqqqqqjqqqqjqqqqjqqqqjqqjqqqqqlqqqqqqqqqqqjqqjqqqqqqqqqqqqqqqqjqqqqqpqqjqqqqqqqqqqjqqqqeqqqqqqqqqqqqqqqqqqqqqqqjqqqekkkkkkkkkkkkkjkkkkklkkkkkkkjkkkkkkkkkkkkkkkkjkkkkkklkkkkkkekkkkkkkkkkkkkkkkkkkkkkkkkkkkjkkkjkkjkkkkkkkkkkkkkkkkkkkkkljkkkkkkkkkkkjkjlkkjkkkkjjkkkkkkkkkkkkbkkkklkkkjkkpkkkpkkkkkkkkkkkkkkkpekkbkkbkkkbkkkkkkkkkkkkkbkkkkkkbkkkkkkkkkkkkkkkkkkkkkklkkkkkkpkkkkkkkkkkkkkkllkkkkkkkkkkkbkkkkkbbkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkjkkkkkkkbkoooooooobeoooboooooooobooobolooooooooooobooooooooooobbooooooooooooooooooooooooooooeoooooobooooooooobobooooooooooooooeoooooooooooooooooooiooooooooooooooooooioooiooooooooooiooooooooolooooooooooooiooooooooooooloooeooooooooiojooooooooioooooeoooooooooooooooooiooooooooooooooeooooooooooooioooooooooobooooooooeoooioooooooioooooooooooioooooooooooooooooooooooooooooooooooooopoiloooioooooooooooopooioooopoojooooooooopooooooooooooooooooooooooooooooooooopoooooooooooooooooooooooooooooooooooooooooolonoolooolooooooooooooooooonoooooooooooooooooooooooloboooooooooooloooooooooooooooooooooooooolboloooooooooooooooooooooonooooooooooooooonoooooeooooooooooonooooooooooooccpccccccccccccncccccccccccccccccccccccccccccncccccbccccccccccccccccccpcccncccccccicccccccccccccccccccccccccccccccccccccccccncccccccclcccicccccccccccccccccccccccccccccclccccccccccccccccccclcccicccccccccccccccccjpccccccccccccccccccccpcccccccccccnpcpccccccccccccccccccccccccccccccpcccccccnccccncccccccclccccccccccccccccccccccccfffffffffffffddddddddddddd"
+    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhehhhehhhhhhhhhhhhhhhehhhhhhhhhhehhhhehhhhhhhhhhhhehehesssssssssssssssssssssssssssssssssnssssnnsnsssssssssssssssssnssssssesssssssssssssssssssssnnsssnsssssssssnssnssssnnsssssssssssssssssnsssssssssssssssssssssssssssssssrsssssrssssssssssssssssssssssssssssssssssrsrsssssssessesssssssssssssssssssssssssssnesssssssssssssssssrsssssssssssssssssssssssssssaasssssssssssaassrssrsrrssjssssssrrrsnssssssssssssssslsssslsssslsssslsslsssssnaassssssssslsaasssssaassssssjsslsaassrsslsssssssssslssssessssssssssssssssssssssslsssemmmmmmmmmmmmmlmmmmmnmmmmmmmlmmmmmmmmmmmmmmmmlmmmmmmnmmmmmmemmmmmmmmaammmmmmmmmmmaammmmmlmmmlmmlmmmmmmmkmmmmmmmmmmmmmnlmaammmmmmmmlmlaamlmmmmllmmmmmmmmmmmmbmmkmnmmmlmmrmmmrmmmmmmmmmmmmmmmremmbmmbmmmbmmmaammmmmmmmbmmaammbmmmmmmaammmmmmmmmmmaamnmmmmjmrmmmmmmmmmmmmmmnnmmmmmmmmmmmbmmmmmbbmmmmmmmmmmmmmmmmmmmmmmmjmkmmmmmlmmmmmmmbmqqqqqqqqbeaaqbqqqqqqqqbaaqbqnqqqqqqqqqqqbqqqqjqqqqqqbbqqqqqqqqjqqqqqqqqqqqqqqqqqqqeqqqqqqbqqqqqqjqqbqbqqqqkqqqqqqqqqeqqqqqqqqqqqqqqqqqqqiqqqqqqqqqqqqqqqqqqiqqqiqqqqqqqqqqiqqqqqqqqqnqqkqqqqqqqqqiqqqqqqqqqqqqnqqqaaqqqqqqqjqlqaaqqqqqiqqqaaeqqqqqqqqqqaaqqqqqiqqqqqaaaaqqqqqeqqqaaaaqqqqqiqjqqqqqqqqjqqaaqqqqeqqqiqqaaqqqiqqqqqqqqqqqiqqjqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqrqinqqqiqqqqqqqqqqqqrqqiqjqqrqqlqqqqqaqqqrqqqqkqqqaqqqqqqqqqqqqqqqqqqkqqqqqqkrqkqqqqqqqqqqqqqqqqqqqqqqqqqqqaaqqqqqqqqqqqaapqqnqqqnqqqqqqqqqaaaqqqqqpqqqqaaaqqqqqqqqqqqqqqqqnqbqqqqqqqqqqqnqkqqqqqqqqqqqqqqqqqqqqqqqaaaanqqqqqqqqaaaaqqqqqqqqqjkqqqqqqqqqqqqqqqpqqqqkeqqqqaaqqqkapqqqqqaaqqqqaccrcccccccaacccpcccccccaacccccccaaccccckccjccaaccccbccccccccccccacccccrcccpccakcccicccccccccccccccccccccccccccccjjccccjcckccpccccccccnccciaacccccccccccaacccccccccccaaccnccccccccaacccccccccnccciccccccccccccccccclrccccaacccccccccccaacrcccccccccccprcrjccccccccccccccjccccccccccccccrcccccccpccccpccccccccnjcccccccccccccccccccccccfffffffffffffddddddddddddd"
   },
   {
     "planet": 2,
@@ -377,20 +435,22 @@
     "rowsFrom": -1,
     "rowsTo": 181,
     "counts": {
-      "(empty)": 13,
+      "(empty)": 183,
       "dirt": 122,
-      "copper": 42,
-      "stone": 418,
-      "iron": 39,
-      "silver": 35,
+      "copper": 39,
+      "stone": 413,
+      "iron": 36,
+      "silver": 30,
       "gold": 18,
-      "granite": 299,
-      "amethyst": 23,
-      "scoria": 580,
-      "emerald": 23,
-      "ruby": 27,
-      "basalt": 697,
-      "magmite": 17,
+      "gas": 24,
+      "granite": 267,
+      "geode": 16,
+      "amethyst": 19,
+      "scoria": 526,
+      "emerald": 18,
+      "ruby": 23,
+      "basalt": 604,
+      "magmite": 15,
       "core": 13,
       "bedrock": 13
     },
@@ -467,6 +527,20 @@
         "value": 420,
         "ore": true
       },
+      "gas": {
+        "id": "gas",
+        "name": "Gas Pocket",
+        "color": 13954602,
+        "host": 2765600,
+        "glow": 0.45,
+        "shards": 5,
+        "tone": 2,
+        "hard": 2.8080000000000003,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "hazard": true
+      },
       "granite": {
         "id": "granite",
         "name": "Granite",
@@ -476,6 +550,19 @@
         "wt": 1.8,
         "value": 9,
         "ore": false
+      },
+      "geode": {
+        "id": "geode",
+        "name": "Geode",
+        "color": 8388576,
+        "host": 2831168,
+        "glow": 0.75,
+        "shards": 9,
+        "tone": 10,
+        "hard": 9.36,
+        "wt": 4,
+        "value": 6200,
+        "ore": true
       },
       "amethyst": {
         "id": "amethyst",
@@ -573,7 +660,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhheehhhhhhehhhhhhhhhhhhehhhhhhehhehhhhehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhqqqqqqeqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlqqqqqlqqqqqqqqqqqqlqlqlqlqqqqlqqqqqqqqqqqqqqqqqlqqqeqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqeqlqqqqqqqqqqqqqqqqqqpqqqqqpqqqpqeqpqqqqpqqqqqqqqqqpqqqqqqqqqqqqqqqqqqpqqpqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqeqqpqqqqqqqqqqqqqqqqqqqqqqqqeqqqqqqqqqqqqqqqqqqqjqqqqqqqqqqqqqqqqqqqqqqqqqqqqqjqqqqqqqqqqjqqqqqqqqqqqqqqqqqqeqjqqqqeqqjqqlqqqqqlqqqqqqqjqqqqqqkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkjkkkkkkkkjkkkkkkkkkklkkkpkkkkjkkkkkkkkjkkkkkkkkkkkkkekkkkkkkkkjkkkkkjkkkkkkkkkkkkjkkkkkkjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkekkkbkkkkkkkkkkkkkkkkkkkbkpkkbkkkkkkkkkkkkkkbkkkkblkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkbkkkkkkkkkbkkkbkkkkkkkkkekekkkkkkkkkkkkkkooooooooooolooooooooooooooooloooooooooooooooooooooooooooooobeooooooolooooooooooooooobbooooooooooooooooooooioioooooooooooooooooooooooooooloooooooooooooooooiooooooooooooooooooooooooiooooooooiooooooooooooooooooooooooojoooooopoooooooooooeoooooooooeooooooloooooloooooooooooooooooooooooooooooioooooooobooooooooooooeooooooooooooooooooiooooooooobippooooooooooooooooooooooooooooooooooooooooeooololieooopooloooooooiopoooooooooooleooooooooooioooooiooiioioooooooioooooonoooooooeoooopoooooonooonoooooooooooooooooolooooooioooooooooopooopooooooopooobooooooooooonoooooopoooooooooooooloooooooooooooooooooooooooeoonoooonoooooooooopoooonooooooiooeoooioooonnoooooopooeooccccccccccnccccccccccccccccccncccccccncbcccccccccccnccccncjcclccccccccpccccccccccccccbccncccccccccnccccpciccccccccccccccccccncccccccncecccccccccccccccjcccccccccccccccccccccccccccccncccccccncbccccncccncpccccccccnpccccncccccccplcccccccccbccccclcccccccccccccccccccccccccpccccccccnncccccccccncccccccccccceccccccccccccccccbcccccccmccccccclcccccccccccccccccmcccpccccccccccccccccccccccmccccccccccccccccccccccccccpcccccccccccccccccccccccccccccccccmccccccccccccccccccccccccccccccccccccccccccicccmcccccccicccccccccccmcccccccccccccclcccccccccccccccccccceccccccccjcecccccpccclccccccccccleccbccccccccmcccecccccmclmccecccpccccccccccccccmccccmcccccclcccccclpclccccccecccccccecccccccmcccccccccccccccccmcmccccmcclcccccmecccccccccccceiccccccccccccccccccccccccccccccccccccccccccccbcccccccccccccmccccfffffffffffffddddddddddddd"
+    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhheehhhhhhehhhhhhhhhhhhehhhhhhehhehhhhehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhssssssesssssssssssssnsssssssssssssssssssssssssssssssssssssssssssnsssssnssssssssssssnsnsnsnssssnsssssssssssssssssnsssesssssssnsssssssssssssssssssssssssesnssssssssssssssssssrsssssrsssrsesrssssrssssssssssrssssssssssssssssssrssrssssssssrsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssseaarssssssssssaassssssssssssessssssssssssssssssslssssssssssssssssssssssssssssslsssssssssslssssssssssjssssssseslssssesslssnsssssnssssssslssssssmmmmmmjmmmmmmmmmmmmmmmmmmmmmmmmmlmmmmjmaalmmmmmmmmmmaammrmmmmlmmmmmmmmlmmmmmmmmmmmmmemmjmmmmmklmmmmmlmmmmmmmmmmmmlmmmmmmlmmmmmmaammmmmmmmmmmaammmmmmmmmmmmmmmmmmbmmmmmjmmmmmmmmmmmmmmmmmmmmemmmbmmmjmmmmmmmaaaammmmbmrmmaaaammmmmmmmmmmbmmmmbnmmmmmmmmmmmmmmmmmmmmmmjmmmmmmmmmmbmaammmmmmmmaamaammmmmmbmaabmmmmmmmmaamemmmmmmmmkaammmqqqqqqqqqqqnqqqqqqqqqqqqqqqqnqqqaakqqqqqqqqqqaaqqqqqqqqqqqqbeqqqqqqqnqqqqqqqqqqqqqqqbbjqqqqqqqqqqqqqqqqqqqiqiqqqqqqqqqqqqqqqqqqqqqqqqqqqnqqqqqqqqqqqqqqqqqiqaaqqqqqqqqqqqaaqqqqqqqqiqqqqqqqqiqaaqqqqqqqqqqqaaqqqqqqqqqlqaaqqqrqqqqqqqaaqqeqqqqqqqqqeqqqqqqnqqqqqnqqqqqqqqqqqaaqqaqqqqqqqqaaqqakqqqqqqqqbqqqqqqqqqqqqeqqqqqqqqqqqqqqqqqqiqqqqqqqqqbirrqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqjqqqqqeqqqnqniejqqrqqaaqqaaqqjqrqqaakqaaqqqneqqqqqqaaqqiqqqqqiqqaaqaaqqqqqqiqqqqaapqqqqqqqeqqqqrqqqqqqpqqqpqqqjqqqqqqqjqqqqqqnqqqqqqiqqqqqqqqqqrqqqrqqqqqqqrqqqbqqqqqqqqqqqpqaaqqqrqqqqqqqaaqqqqnkqqqqqkqqqqqqqkqqqqqqqqqqeqqpqqqaaqqaaqqqqqqraaqqaaqqqqqiqqeqqqiqqqqppqqqqqqrqqeqqccccccaaccpcccccjccaaccccccccpcccccccpcbcccccccccccpccccpclccnccacccccrccccccacccccccbccpjccccccccpcccckciccccccccjcccccccccpccccccjpceccccccccccccccclcccccccccccccccccccccccccccccpcaaccccaabccccaaccpcaacccccaaprccccpccccaakrncccccjcccbcccccnccccaccccccccccccaccjcccckccccccccppcckccccccpjcccccaaccccjccccccaacccaacccbaacccccaaccccaancccccccccccjcccccocccrcccccccccccccccckcccccocccccccccccccaaccccaacccccaaccccaacccaacccccccccccaaccccccccoccccccccccaacccccccccccaacccccccccccccaaccickcoccccaacicccccccccccoccccccccccccccnccccccccccccccccccccecccaaccclcecccccaaccnccccccccaaneaaaacccccaaokaaaaccccocnoccecccrccccccccccccccoccccoccccccncaccccnrcnccccacecccccccecccccccoccccccccccaaccaajococccaaccaaccccoejccccccccccaeiccccccccccaccccccaacccccccccccaaccccccckcccaacccccccccccaaoccccfffffffffffffddddddddddddd"
   },
   {
     "planet": 3,
@@ -582,21 +669,23 @@
     "rowsFrom": -1,
     "rowsTo": 216,
     "counts": {
-      "(empty)": 13,
+      "(empty)": 197,
       "dirt": 122,
-      "copper": 49,
-      "stone": 412,
-      "iron": 52,
-      "silver": 36,
-      "gold": 28,
-      "granite": 290,
-      "amethyst": 26,
-      "scoria": 592,
-      "emerald": 17,
-      "ruby": 29,
-      "basalt": 1116,
-      "magmite": 20,
-      "coreite": 6,
+      "copper": 44,
+      "stone": 397,
+      "iron": 50,
+      "silver": 32,
+      "gold": 27,
+      "gas": 30,
+      "granite": 263,
+      "geode": 17,
+      "amethyst": 24,
+      "scoria": 539,
+      "emerald": 16,
+      "ruby": 27,
+      "basalt": 1000,
+      "magmite": 18,
+      "coreite": 5,
       "core": 13,
       "bedrock": 13
     },
@@ -673,6 +762,20 @@
         "value": 420,
         "ore": true
       },
+      "gas": {
+        "id": "gas",
+        "name": "Gas Pocket",
+        "color": 13954602,
+        "host": 2765600,
+        "glow": 0.45,
+        "shards": 5,
+        "tone": 2,
+        "hard": 3.3120000000000003,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "hazard": true
+      },
       "granite": {
         "id": "granite",
         "name": "Granite",
@@ -682,6 +785,19 @@
         "wt": 1.8,
         "value": 9,
         "ore": false
+      },
+      "geode": {
+        "id": "geode",
+        "name": "Geode",
+        "color": 8388576,
+        "host": 2831168,
+        "glow": 0.75,
+        "shards": 9,
+        "tone": 10,
+        "hard": 11.040000000000001,
+        "wt": 4,
+        "value": 6200,
+        "ore": true
       },
       "amethyst": {
         "id": "amethyst",
@@ -792,7 +908,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhhhhehhhehhhhhhheehhhhhhhhhhhhhhhhhhehhehhhhhhhhhhhhhhhhhhehhhhhqqqqqqqqqqqqqqqqqqqqlqlqqqqqqqleqqqqqqqqqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqeqlqqqqlqqqqqqqqqqqqqqqlqqqqqqqqlqqqqqlqqqqeqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqlqqqlqqqqqpqqqqqpqqqlqqqqqqqqqqqqqqqpqqqqqqqqpqqqqqqqqqqqqqqqqqqpqqqeqqqqqqqqqqqqqqqqqqqqppqqqqqqqqqqqqqqqqqpqqqqqqqpqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpeqqqqqqqqqqqqpqqqqeqqqqqjqqqqqqqqqqqjqqqjqqqqqqqqqqqqqqqqqjqqeqqqqqqqqqqqqqqqqjlqqqeqqqqqqqqqjqqqqqqqqqqqqqqqqqqjqqqqqqqqqqqqqqeqqqlqqqqkkkklkkkkkkkkkkkkkkkkkjkkkkkkpkkkkkkjkkjkkkkkkkkkkkkkkkkjpkkkkkkkkkkkkkkkkkjkjkkkkkekkkkkkkjlklkkkkkkkkpkkkjkkjkkkkkkkkekkkkkkkkkkkkkkkkkkkkkjkkkkkkkbkkkkekkkkkbkkkkkkkkkkkbkkkkkkkkkkkkkbkkklkkkkkbkkklkkbkkkkkkkkkkkkkkkkkkkkkkjkkkkkkkkkkkkkkkkkkkkkkplkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkpkkkkkkjkekkkbkkkkkkkkkkkkkkkkbooooooooooooooooooooooooooooooooooooooooooooooooooobooboeoooooblooooooooooooobooolooooooooooooooeooooooooooooooboooooooooooooooooooooiooooooooooooiooooooooooioooooooooooooooioooooooojoooooooooeoooooooooojoooooopoooooijoooooooooooooooooooiooooooooooooooooooojoooooooooooooooojeoooooooooooooooooooooooooooooooooooooloooeoooooooloooooooooooooooolooooooooooooooooooooooooooloooooooooooooooooooiooloiooooooioooplooooooooiloooooooiooopooooooioooooooooooooooooooooooooooooooonoonoooloooonoooooooooooooooooooooonooooooooooooooooooooooooooloooooooooooooooeooooooooooooeoonoonoooooooooooooooooolooooooooonoooooionoooooooeooooooooooolooonooooooooooooooooooooloclcncccccccececcccccccccccccccccecncccccccccccbccccccccncccccccccecccccecccccnccccnccccccccbccccccccnlcccccccccccccccccccncccccccccccccccccccccccbcncccnccccccccccccccccccccccccccccnccccccccccnccccceeccccccccccclcccccccpccccccccccnccccccccccccccccccccccccccnccnccccccccccclcccncccccccccccccccccccccnccccccccccccccccccccccccccccclccccccbccpccccccccccmcmcpmcccccccccccccclccccccccccccccmccccceccccccccccccccccccccccclcccmccccccccccccnccccccccccccccccccccpccccccmcccccccccccccccccccclcccccccjcccccccmccccccccccccccccccccccccccclcccccccpcccmcccccccplccpccccccccccccccccccccccbccccmccccccccccccnlccccccccceccccccccccjccccpmccccccccccccccccccecccccccccccccmmcccccccccccccccccccccccccccccccpccccccccccccccbccccpccccccccccccccecccccccccccccciccceccccccccccccccccccclcccccccccmccccccccccccccccccccccbcccccccccccccccccccmccccmcccccmcccccccccccccjlccccccciccccpcccccccccccccccccccccccccccccccccccccccegccccccclccccccccccccccccccjccccccceccccccgccccpcccclccccccccecccmcccccccccccccecccncccccccccccccccccccmccnccccccccccegcccccccccccccccccccccccccccccccccbccccclcccpccccccccccmcbbcccccccccccccccccceclccccecccccccccccccccccccccccccccccccccicccccccccccmccccccccccccccecccccccccccccccccccccccpcccccccpcgcbcccccgcccccccgccciccccccccccccccccpccccccbccccfffffffffffffddddddddddddd"
+    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhhhhehhhehhhhhhheehhhhhhhhhhhhhhhhhhehhehhhhhhhhhhhhhhhhhhehhhhhssssssssssssssssssssnsnsssssssnesssssssssssssssssssssssnsssssssssssssssssssssesnssssnsssssssssssssssnssssssssnsssssnssssessnsssssssssssssssssssssssssssnsssnsssssrsssssrsssnsssssssssssssssrssssssssrsssssssssssaasssssrsssesaasssssssssssssssssrrsssssssssssssssssrsssssssraassssssrssssaasssssssssssssssssssssssssssssssssssressssssssssssrssssessssslssssssssssslssslssssssssssaassssslssessaasssssssjsssslnsssessssssssslsssssssssssssssssslssssssssssaassesssnssssaammnmmmmmmmmmmmmmmmmmljmmmmmrmmmmmmlmmlmmmaammmmaammmmmaammmmaammmmmmmmmmmlmlmmmmmemmmmmmmlnmnmmmmmmmmrmmmlmmlmmmmmmmmemmmmmmkmmmmmmmjmmmmmmlmmmmmmmbmaamemmmmmbmmmaammmmmmbmmmmmmmmmmmmmbjmmnmmmmmbmmmnmmbmmjmmmmmmmmmmmmmmmmmmmlmmaammmmmmmmmjmaammmmmrnmmaammmmmmmmmmmaammmmmmmmmmmmmmbmmmmmmmmmmmmrmmmmmmlmkmkmbmmmmmmmmmmmmmmmmbqqqqqqqqqqqkqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqbqjbaaqqqqqbnqqqqaaqqqqqqqbqqqnqqkqqqqqqqqqqqeqqqqqqqqqqqqqqaaqqqqqqqqqqqaaqqqqqqjiqqqqqqqqqqqqjqqqqqqqqjqiqqqqqqqqqqqqqqqiqqqqqqqqlqqqqqqqqqeqqqqqqqqqqlqqqqqqrqqqqqilqqqqqqqqqqqqqqqaaqqiqqqqqqjqaaqqqqqqqjqlqqqqqaaqqaaqqqqqleaaqqaaqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnqqqaaqqqqqqnqqqqaaqqqjqqqaaqnqqqqqqqqqaaqqqqqqqqqqqqqqqnqqqqqqqqqqqqqqqqqqqiqqnqiaaqqqjiqqqrnkaaqqqqqinqqqqqqqiqqqrqqqqqqiqqqqqqjqqjqqqqqqqqqqqqqqqqqqqqqqpqqpqqqnqqqqpqqqqqqqqqqqqqqqqqqqqqqpqaqqqqqqjqqqkqajqqqqqqqaaqnqqkqqqqqqaaqqqqeqqqqqqqqqqqqeqqpqqpqqqqqqqqqqqqqqqqqqnqqqqqqqqqpqqqqqiqpqqqqqqqeqqqqqqqqqkqnqqqpqqqqqjqqqqqqqqqqqqqqnqcncpcccccccececcccccccccccccccccecpcccccccccccbjcccccccpcccccccccecccccecccccpcjaapcaaaacccbcaaccaaaanccjcccaacjcccccccccaaccccccccccccccccccccccbcpcccpccccccccccccccccccccccccccccpccccccccccpccccceecccccccccccncccccccrcacccccckkpccjaccccccccccccccccccccccpccpccccaaccccaacccpcaaccccaaccccccccccccpccccccccccccckcccccccccccccccnccccccbccrccccccccccococroccccccccccccccncccccccaccccccocccccacccccccccccccccccccccccncccoccccccccccccpccccccccccccckcaaccaaccccccoaaccaacjccccccccccccnccccccclccccccaacccccccccccaaccccccccccccccnccccccaacjcocccccccaaccrccccccccccccccccccccccbccccockccccccccccpncccccccccecccccccccclcccjrocccccccccccccckccaacccccccccccaaoocccccccckccaccccccjcccccaccccccrcjccccccccccccbccccrcccccccaaaacccecccccaaaacccccicccecccccccccccccccccccncccccccaaoccccccccccaacccccaaaacbaacccccaaaaccaaccccoccccocccccoccccckccccccclnccaaccciccccrccaacccccccccccccccccccccccccccccccccaaegcccccccncaaccccccccccccccclcaacccceccccccaacccrccccnccccccccecccocccccccccccccecccpcccccccccccccccccccoccpccccccccccegcccccccccccccccccccccccccccccccccbcccccnaacrcccccccccaacbbccccccccccaaccccccecnccaaeaaccaacccccccaaccaaccccccccccccjcicccccccccccoccccccccccccccecccccccccccccccccccccaarcaaccccrcgaaccaacgcccccccgccciccccccccccccccccrccccccbccccfffffffffffffddddddddddddd"
   },
   {
     "planet": 4,
@@ -801,21 +917,23 @@
     "rowsFrom": -1,
     "rowsTo": 251,
     "counts": {
-      "(empty)": 13,
+      "(empty)": 253,
       "dirt": 119,
-      "copper": 62,
-      "stone": 395,
-      "iron": 65,
-      "silver": 53,
-      "gold": 37,
-      "granite": 291,
-      "amethyst": 30,
-      "scoria": 581,
-      "emerald": 31,
-      "ruby": 31,
-      "basalt": 1507,
-      "magmite": 25,
-      "coreite": 23,
+      "copper": 59,
+      "stone": 377,
+      "iron": 60,
+      "silver": 51,
+      "gas": 38,
+      "gold": 30,
+      "granite": 269,
+      "geode": 32,
+      "amethyst": 26,
+      "scoria": 526,
+      "emerald": 25,
+      "ruby": 28,
+      "basalt": 1331,
+      "magmite": 23,
+      "coreite": 16,
       "core": 13,
       "bedrock": 13
     },
@@ -879,6 +997,20 @@
         "value": 150,
         "ore": true
       },
+      "gas": {
+        "id": "gas",
+        "name": "Gas Pocket",
+        "color": 13954602,
+        "host": 2765600,
+        "glow": 0.45,
+        "shards": 5,
+        "tone": 2,
+        "hard": 3.8160000000000003,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "hazard": true
+      },
       "gold": {
         "id": "gold",
         "name": "Gold",
@@ -901,6 +1033,19 @@
         "wt": 1.8,
         "value": 9,
         "ore": false
+      },
+      "geode": {
+        "id": "geode",
+        "name": "Geode",
+        "color": 8388576,
+        "host": 2831168,
+        "glow": 0.75,
+        "shards": 9,
+        "tone": 10,
+        "hard": 12.72,
+        "wt": 4,
+        "value": 6200,
+        "ore": true
       },
       "amethyst": {
         "id": "amethyst",
@@ -1011,7 +1156,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehehhheehhhhhhehehhhhhhhhhhhhhhhhhhhhhhhehhhhhhhehehhhehhhhhhhehhhhhhhhhhheeqqeqqqqqqqqqlllqqqqqqqqqqqqqqqlqqqqqqqqqllqeqqqqqqqqqlqqqqlqqqqqqqqqqqqqqqqqqqqlqqqqqqqqqqqqqleqqlqqqqqqqqqqlqqlqqqqqqqqqqqqlqlqqqqlqqqqlqqqlqqqqqqqqqqqqqqqqqqqqqqqqlqpqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqeqeppqpqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqpqqqqqqqqqqqqqpqqqqqqqqqqqepqqqqqpqqqqeqqqqpqqqqqqqeqqjqqqqqqqqqqqqqqqjqqqqqqqqqqjqqjqqjqqqqqqqjqqqqqqqqqqqqqeqjpqqqqqqqqqqjqqlqjqqqqqqqqlqqqpqljqeqqjqjqqqqqqqqqqqqjkkkkkkkkkkkkkkkklekpkkkkkekkkkkkkkkkkkklkkkkkkkkkkkkkkkkjkkkkkkkkkkkkjkkkkkkkkkkkkkkkkkkkkkkklkkkkkjkkkkkkekkkkkjkkkkkkklkkkkkkkkkekkkkkkkkpkkbkkkkkkkkkkklkkkkkkkklkkkkkkkkkkkkkkkkkkkkpkkkkkkkkbkkkkkkkpkkkkkkkkkkkkkkkkkkkkkklkkkkkkkkkkkkkkjbkkkkkkkkkkkkkkkkkkbkkkkbkkekkkkbkbkklkkkkkkkkkkkkkklkkbkkbkkkkkkkbkkkkkkkkkkkkkkkkkooooooboooooobooooooooooooooooooooobbloooooobooooooojoeoboooooooooooooooobooooooooooooooooboooooopoooooooioooeooooooooooooloioooooooooeooooobooooooooooooooooooooiooooooooooooooooooooooooooooioooooooooooooeoooooooioooooooooooooooooooooooooooopooooioooooooooopooooeioooooooooooboooooooioloooooojojooooooooooooooooboooopoooooooopiooooooooooopooooooooooooioooooooooooloooooooooooooooooooojooooooojoooooooloioopoboioooiooolooooooooooooooooooooooooooooooooiooooojonoooonooooooooonoooonooonoooononooooolooooeooooooooooooooooooooooooooooooooeoooooooooooonooooooooooooooooooooonooooooooeoolooooooooooonoooooonoooooooloooooooooooooooopoooooonoooooooooooooooooocccccccccccccccccccccccncccpccnecccccncccnccnncccccccncccccccccccccpcccccccccccccccccccccccccceccccccccccccccccccccccccccccccccccccccccccccccpccccccccccccccccccncccccccccccccccclcccccccbcccccnccccccccccccccccccccccccccccccccccccccccccccccccccccccnccecpicccccccceccccccccccncccccccccccccccccccccccccnccccjccccccccccccccccpcccccbccccmecccccccmccccccmcccmccccmclcccccccccccbcccccccccccpjccccccccjcccccccclcccccccccccccccccccccccecccccccccmppcccccccmcccccccccccecccccplcclccccmlccccccccccccccccccccccclclccccccccclcccccccccccpccccccccccccccccmcccmcccccccccccclccccccccciccccccccccccccccccccccccpccccccccccncccpccccccccccmcccccccccccccccccccmccjcccccccccccccceccccccccccccccccccccccccccccccpccclccccpcencccccccccmccccmccccccccccccccccclcccccccccccccccccccccceccmcccccccccccccnciccccccccicccmccccccccccccemcccmcccmcccccmcccccmccccccpcccpciccccccccjcecccccccbccccccccccccpccccccccccccccccccccccccecbccmiccccccccccicccccccmcccggcccccgcccccccgbccccccpclccccjjccceccccccccccccccccccgcccccgcccempcccccccciccccccccccccgccgccccccccccccccccccccccccccccccccccecccccciceccccccccccccccgccccccccccccccccccccccccccccccccccccclcccccccccgliccccccccccccccccccccccnccpicccccccccgcccccccccgcicccccccccccccccccccccccccccccccccccccccccnpcciclccecccgcccclcpccccclccccccccccccclcccccccnccccccccccccccccecccccccceccccccpccjiccccgccccccccccccpccccccccccccgccccccccccccccccccecccccccjccccccccccccpclcccccccccccccccccccgccccccccccccpcccccccccccccccccccccccccccccccccccccccccccgcccccccccccccccccmbccccccgcccccccccccjccccccccccccccciccccccccclcjccccccccccccccccceecjccccccpccccccccccccccccccecccicccccccjccccccccccccgcigclccccccbccccccccccccccccccccgccgccccccccccccccccccncccccclccgccecccccccclcccccccccecccccccccccccccpccccfffffffffffffddddddddddddd"
+    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehehhheehhhhhhehehhhhhhhhhhhhhhhhhhhhhhhehhhhhhhehehhhehhhhhhhehhhhhhhhhhheessesssssssssnnnsssssssssssssssnsssssssssnnsesssssssssnssssnssssssssssssssssssssnsssssssssssssnessnssssssssssnssnssssssssssssnsnssssnssssnsssnssssssssssssssssssssssssnsrsssssssssssssssnssssssssssssssssssssssseserrsrssrsssssssssssssssssssssssssssssssssssssssssssssaasssssssssssaasssssssrsaasrsssssssssaassrsssssssssssersssssrssssessssrssssjssessjssssssssssssssslsssssssssslsslsslssssssslsssssssssaassesarsssssaassslaaaslssssssssnaasrsnlsesslsaasssssssssssaammmmmmmmmmmmmmmnejrmmmmmemmmmmmmmjmmmmnmmmmmmaammmmmmmmlmmaammmmmmmmlmmmmmmmmmmmmmmmmmmmmmkknmmmmmlmmammmemmmmmlmmammmmnmmmmmjmmmemmmmmmmmrmmbmmmmmmmmmmmnmmmmmmmmnmmmmmmmmmmmmaammmmmmrmmjmaammbmmmmmmmrmmmmmmmmmmmmmmmmmmmmmmnmmmmmmmmmmmmmjljmmmmmmmmmmmmmmmmjmbmmmmbmmemmmmbmbmmnmmmmmkmmmmmmmmnmmbmmbmmmmmmmbkjmmmmmmmmmmmmmmmjqqqqqbqkqqqqbqqqqqqqqqqqqqqqqqqqqqbbnqqqqqqbqqkkqkqlqeqbqqqqqqkqqqqqqqqqbqqqqqqqqqqqqqqqqaqqqqqqrqqqqqaqiqkqeqqqqqqqqqqqqnqiqqqqqqqqqeqqqqqbqaqqqjqqqqqqqqaqqqqqiqqqqqqqqjqqqqqqqqqqqqqqqqqqkiqqqqqqqqqqqqqeqqqqqqqiqqqqqqqqqqqqqqqqqqqqqqqqqqqqrqqqqaqqqqqqqqqqrqaqqeiqqqqaaqqqqqbqqqqqaaiqnqqqqqqkqlqkqqqqqqqqqqqqqqbqqqqrqqqqqqqqriqqqqqqqqqqqrqqqqqqqqqqqqijkqqqqkqqqqnqqqkqqqqaaqqqqqqqqqqlaaqqjqqlqqqaaqqnqiqqrqbqaaqqiqqqnqqqqqqqqqqqqqqqqjqqqqqqqjqqqqqaaiqqqqqlqpqqaapqqqqqqqqqpqqqqpqqqpqqqqpqpqjkqqnqqqqeqqqqqaqqqqqqqqqqqqaqqqqaaqqqqqqqeqqqaaqqqqqqqpqqqqqqqqqqqqqqqqqqqqqpqqqqqqqqeaanqqqqqqqqqqaaqqqqqqpqqqqqqaaqqqqqqqqqqqaaqqqrqqqqqqpaaqqqqqqqqqqqaaqqqccccccccccaacccccccccccaaccrccpecccccpcccpccppcccccccpcccccccccccccrcccccjccccccccccccccccccccecccccccccjccccccccccccccccccccccccccccccccccccrccccccccccccccccaapcaacccccccaaccaancccccccbcccccpccccccccccccccccccccccccccccaccccccccccccaaaccccccccccpaaecricccccccaaccccccccccaaaccccccccjcaaaccccccaaccpaacclcccaacccccccccccrcccccjccccoecccccccoccccjcocccoccccocncccccccccccaakcccccccccraacccccccaacccccccncccaaccccccccccccccccccecccccccccorrcccccccoccccaacccccecccccaaccncccconcjccccccccccccccckcccccncnaacccccccncccaaccccccrccccccccaaccccccocccoaacccccccaacnjccccccccaacccccccccccaaccccccccccraaccccccccpcccrccccccccccocccjcccccccccccccccocclcccccccccccccceccccccjcccccccccccccccccccccccrcccnccccrcepjccccccccoccccocccccccccccccccccncccccccccccjcccccccccceccocccccccccccccpciccccccccicckocccccccccccceocjcoccaacccccockccaaacccccrcccraaaaaccccclaacaaaaccbcccaacccccccrcaacccccccccccaacccccccaacbccoicccccaacccicccccaaocccggkccccaaccccccgbccccccrcnaaccllcccecccaacccccccccccccgcccccgccceorcccccccciccccccccccccgccgccckkcccccccaaaacccjcccccaaaacccccecccaacicecccccccaacccccgccccccccccccccccccckcccccccccccccccacncccccccccgaicaaaacccccccccaaaacckcpccriaaccccccaacccaaccccgcaacjcccccccccaacccccccckccaaccccckcccccccaprccicnkceccaaakccncraacccaaccccccaaccccncccccccpcccccccccccccccceccccccccecccjccrccliccccgccccccccccccrccccccccccccgccaacccccccccccaaceccjcjcclccccccccccccrcncccccccccccccccccccgccccccccccccrccccccccccccjccccccccccccccccccccccccccccccgcccccccccccaaccccobcccccaaccccccccccclcaacccccccccccaajccccccccnclcccjccccccccccccceeclccckccaacccccccccccaacccceccciccccccclccaccccccccckciacnccccccbccccccccccccccccccccgccaacccccccccccaaccccpccccccnccgcceccccccccnccccaaaacecccccccaaaaccccrccccfffffffffffffddddddddddddd"
   },
   {
     "planet": 5,
@@ -1020,21 +1165,23 @@
     "rowsFrom": -1,
     "rowsTo": 286,
     "counts": {
-      "(empty)": 13,
+      "(empty)": 255,
       "dirt": 124,
-      "copper": 56,
-      "stone": 413,
-      "iron": 57,
-      "silver": 39,
-      "gold": 38,
-      "granite": 288,
-      "amethyst": 40,
-      "scoria": 585,
-      "emerald": 41,
-      "ruby": 24,
-      "basalt": 1942,
-      "magmite": 27,
-      "coreite": 31,
+      "copper": 51,
+      "stone": 399,
+      "iron": 46,
+      "silver": 37,
+      "gas": 46,
+      "gold": 33,
+      "granite": 275,
+      "amethyst": 36,
+      "geode": 27,
+      "scoria": 535,
+      "emerald": 37,
+      "ruby": 20,
+      "basalt": 1746,
+      "magmite": 23,
+      "coreite": 28,
       "core": 13,
       "bedrock": 13
     },
@@ -1098,6 +1245,20 @@
         "value": 150,
         "ore": true
       },
+      "gas": {
+        "id": "gas",
+        "name": "Gas Pocket",
+        "color": 13954602,
+        "host": 2765600,
+        "glow": 0.45,
+        "shards": 5,
+        "tone": 2,
+        "hard": 4.320000000000001,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "hazard": true
+      },
       "gold": {
         "id": "gold",
         "name": "Gold",
@@ -1132,6 +1293,19 @@
         "hard": 16.800000000000004,
         "wt": 7,
         "value": 900,
+        "ore": true
+      },
+      "geode": {
+        "id": "geode",
+        "name": "Geode",
+        "color": 8388576,
+        "host": 2831168,
+        "glow": 0.75,
+        "shards": 9,
+        "tone": 10,
+        "hard": 14.400000000000002,
+        "wt": 4,
+        "value": 6200,
         "ore": true
       },
       "scoria": {
@@ -1230,6 +1404,6 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhhheehhhhhhehhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhehhhhhhqqqqqqeqeqqqqqqqqqqqlqlqqqqqqqqqqqlqqqeqqqqqqqqqqqqqqqqqqqlqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqleqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqeqqqqqqqpqpqqqqqqqqqqqqqqqqqqpqqqqlqqqqqqqqqqqpqqeqpqqqqpqqqqqqqqqqqqpqqqqqqqqqqqeqqqqqqqpqqpqqqqqqqqqqqqqqqqqqqqpeqqqqqqqqqqqqqqeqqqqlqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqjqqqqjqqqqqqqqqqjqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqjqqqqqjqqqqjeqqqqqqqqqljlqqqqqqqqqqqqqqqqqlqqjqqqqqqqqqqqqqqqqqqqkkkkkkkkkkkkkjkkkkjkkjkkejkkkkkkkkkkkjkpkkkkjkkkkkkkkkkjkkkkjkkkkkkkkkkkkekkkkklkkklkkkkkpkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkjjkkjkjkkkkjkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkklkkkkkkkkbkkkkekkekkpkkkkkekkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkkkbklkkkkkbkkkkkkkklkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkklbkkkkkkkkkjkkkkbkkkkkklkkkkoooooooooooooooooooooooooooooooooooooooooooooooboooooooooooooooooooooobooooplooooboolooooooooooooooooooooeooooooooooooooiooiiooooojoooooeoioooooooooojoboboeooooooooooooooiooooooooooooooooolooooioobooobooooooooloooooooooooooooololooooooiooooooioooiooooooooiiooooooeoooooooooopooloobooooooooiooooooooooooooooooooooooooooooooooooooooooooeooooopoooooooooloooopooooooooooooooioooooioooooooooooiojooooooiooeoooobobiooooooooojoooooooooooooooioioooooiooooooooooooooooooooooooonooooooooooooooooooooooooooonooolooooopoooooobooooooooobnooooooooooooooooooooeoooooooooonooooooooooonooooooooooooooeoooooooboooooooooooooooooooooooooooonoooooooooooooooooooooooooooooccccccccccccccccccccccclcccccccccpcccccccccicncnclbccccccccccpcccccccecccccclccccecccccccciccccccccccccccccccccccncccccccnccccccccccnnncccncecccccccccclcccccccpccccccccbccclcccccecccccncccccnccccccccccccccccccccccccccccccccccccciclcccccccccccccccccccccccccccccccpncbcncccccccccccccccccccccjcncccccccccccccccccccccccccccpccccccccccccccenccccccccccccccccccccccccccpcccccccccbcmccccbnccccccccccccmccccccccccccmccccmcciccccccccccccccccccccccccccecccmccccmmccccccccccmccccccccccccccccccccncccceccccmclcccccccccccccecccccccccclcccccccbccpcccccicccccccccccccccccccccccccccccccccccccccjcccccclccccccccccceccccccjccbcmcccpccccccccccnccceccmcccccccmcbcccccccccccccmlccccccccccccccceccbcccccccccccccccccccciccccccccccccccccccccccciciccccccccccccccccccccccccmcccicccccccccmcccccccccccccccccccccccccemclccccccccccpmcccccccccclmccmcccccccclcccccccccccccccpcccclcccccccccccccccccccccccccccccccccclcccccccccccccccccccccccccccmcccccgccccccccccccccccccccgccccccccccccccccccccccccccccccccjcccccccccccccccgccbcccicccccccccccccgccccccccccccccccccicccccccecccccccccjmgccccccccccccccccccccclcpccccecccccccjccccccccccgcccbcgcccccgcccccccccicccjcccciccccccccccccccccccccccccccccccccccmccccccbcccciccccccpccccgcccccccccccicccccccccccccccccccccccccccccccccccccccccccgccccccccccccccccccccccccgcccccccccccccccccccccbcccccccccccccccccccccgclcgcccccclcccmccccccccccbncccccccccccccccccccccccgccccccbcccccccccmcccccbcccccceccicccccccccccccjccccccgccccccccccccccccccccccccccccccccpcccccccccccccccecceccccccccccccccccceccccbccccccccccccccccccccilgcccccgcccccigcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccgccccccccccgccccccccccpcccccccccccccecclcccbccccepccccccccpccccccccccccccccccccccccccecccccccccccccccclccccimccccccccccecccccccccccccgcccclceccjcccccccccccccccccgccclccclcccccccccccccclcccccccccccccccccjccccccccccccccccccccccccccccccccccgccccgccccgpcccccgcccccccccclccccciccccccccgccccccccpccccccelcccccccccccccccccccccccccccjcclccbcccccccccccceccgccccmcccccgcccccccccccccccccccccccccgccccccccccccccccccccccccccccccccccccccgcceccccccccccccccccccccjcccccccccecccccccccccccccpccclcccccccccccccccccccccccccccccccciccccccccccccccmcccccccccfffffffffffffddddddddddddd"
+    "grid": "aaaaaaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhhheehhhhhhehhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhehhhhhhssssssesesssssssssssnsnsssssssssssnsssesssssssssssssssssssnsssssnsssssssssssssssssssssssssssnessssssssssssssssssssssssssssssssssssssnsssssssssssssssssssssesssssssrsrssssssssssssssssssrssssnsssssssssssrssesrssssrssssssssssssrsssssssssssesssssssrssrssssssssssssssssssssressssssssssssssessssnsssssssrsassssssssssssasssssssssssssssssjssssssrsslsssslsssssssssslsssjssssssssssssssssssssjssssjsssslsaasslsssslessaasssssnlnsssaasssssssssssaasslsssssssssjsssssssssmmmmmmmmmmmmmjmmmmlmmlmmeammmmmmmmmmmlarmmmmlmmmmmmammmlmmmmlmmmammmmmmmmemmmmmnmmmnmjmmmrmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmllmmlmlmmmmlmmmmmmmmmmmmmmbmmmmmmmkmmmmmmmmmmmmmmmmmmjmmmmmammbmmmmemmemarmmmmmemmmmmmmmmmmmmmmmmbmmmmmmmmmjmmmmmmmmmmmmmmmmmmbmnkmmmmbmmmmmmmmnmmmmmmmmmmmmmmjmmmmmmbmmmmmmmmmnbmmmmmmmmaammmmbmmmmjmaammmqkqqqqaaqqqqqqqqqqqaaqqqqqqqqqqqqqqqqqqqqqqqqqqbqqqqqqqqqqkqqqqqqqqqqqbqqqqrnqqqqbqqnqqqqqqqqqqqqqqqqqqqqeqqqqqqqqqqqqqqiqqiiqqqqqlqqqqqeqiqqqqqqqqqqlqbqbqeqqqqqqqqqqqqqqiqqqqqqqqqqqaaqqqqjqqqqiqaaqqqbqqqqqqqaaqqqqqqqqqqqaaqqqnqnqqqqqqiqqqqqqiqaaiqqqqqqqqiiaaqqqqeqqqqqqqqqqrqqnqqbqqqqqqqqiqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqeqqjqqrqqqqqqqqqnqqqqrqqqqqqqqaaqqqqiqqqqqiaajqqqjqqqqiqlqjqaaqiqqkqqqqbqaaqqqqqqqqqlqqqqqqqqqqqqqqqiqikqqqqiqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqaaqqnqqqqqrqqaaqqbqqqqqqqqqbpqqqqjaaqqqqqqqqqqqaaeqqqqqqqqqqpqqqqqqqqqqqpqqqqqqqqqqqqqqeqqqqqqqbqqqqqqqqaaqqqqqqqqqqqaajqqqqpqqqjqqqaaqqaaqjqqqqqaaqqaaqqqcccccccccccccccccccccccncccccccckrccckcccccicpcpcnbccccccccccrccccccceccccccncccaacccccccciccaaccccccccccccccccccpcccccccpccccccccccpppcccpcaacccccccccncaacaacrccccccccbaacncccccecccccpkccccpcccccccccccccccccccccccccccccccccccccicncccccccccccccccccccccccccccccccrpcbckccccccccccccccccccccclcpccccccckcccccjccccccaacccccrcccccaacccccccepcjccaacccccccccccaacccccccrcccccccccbcocccckpcccccccccccjoccccccccccccoccccoccicccccccccccccaccccccccccccacccoccccooccccccccccocccccccccjccccjcccccjcccceccccoknccccaacccccccecccaacccccjcccccaabccrcjcccicaacccccccccccccccccacjccccccccccaaaccaaccccccnaaccaacccccecccccclccbcocacrccccccccccaccceccocccccccocbccccccccccccconccccccccccccccceccbcccjcccccccccccccccciccccccccccaaaacccccccccaaaacccccccccccccccccccccccocccicccaaccccoccccccaacccccccccccccccccaacncccccccccaaoccccccccaaaaccoccccccaaaacccccccccccccaaccccnccccccaacccccaacccccccccccaaccccccnccccccccccccccaccccccccccccacccccgccccaacccccccccccaacjcccccccccccccccccccccccccccjcccclcccccccccccccccgccbcccicccaaccccccccgccaakccccccccccccaacccccccecccaacccclogcccccccccccccccccccccnkrcccceccccccjlccccccccccgcccbcgcccccgccccccccciccjlaaccicccaacccaackccccaacccaacccccccccccaajccccbcccciccccccrccccgccccccccccciccccaacccccccccccaajcjcccccccccccccccccccccgccccccccaacccccccccccaacgcccccccccccccccaaccccbccccccaacccccccccccccgcncgccccccncccoccccccccccbpcccccccccccccccccccccccgcccccckcccccccccojccccbccccckecciccccccccccccclccccccgccccccccccccccccccccccccccccacccrcckcccckaccccaaeccecccccccaacccccccceccccbcaacccccccccccaaccccingcccccgcccccigcccccccccccaacccccccccccaackjccccccccccckccccccccccccccccccccccaaaaaacccccccaaaaaacccgccccccccccgcccccccccjrccccccccccccceccnkccbccccerccccccccrccckcccccccccccccccccccaaceccaacccccaaccccaaccccioccccccccccecccccccccccccgccccjcecclcccccccccccccccccgcccncccnccccccjcccccccncccaaaacccccccccaaaacccccccccccccccccccccccccccccccaaccccaacccgraacccgaaccccccccncccccijccjccccgccccccccrccccccenccccccccccccccccaaccccccccclcaaccbcccccccccccceccgccccocccccgccccccccccccccckcccccccccgccccccccccccccccccccccccccccccccccccccgaaecaaccccckcaaccaajccclcccccccccecccccccccccccccrcccnccaacccccccccccaackcjccccccccccciccccccccccccccocccccccccfffffffffffffddddddddddddd"
   }
 ]
