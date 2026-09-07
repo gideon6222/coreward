@@ -1,0 +1,93 @@
+# Coreward — game notes
+
+Decisions specific to this game, and what to do next in it. Technical setup,
+constraints and the feel rules live in [CLAUDE.md](CLAUDE.md) — read that first.
+
+---
+
+## Read this before following the phone-game-studio skill
+
+**This repo no longer matches that skill's defaults, and following them here
+will waste your time.**
+
+The skill describes the stack every *new* game should start on: five files at
+the repo root, no build step, an importmap, and a hand-written `sw.js` whose
+`CACHE` constant you bump on every deploy. That was Coreward until
+2026-09-06, and it is still the right way to start a new game.
+
+Coreward outgrew it. What is true here now:
+
+| The skill says | This repo |
+|---|---|
+| Five files at the root, no build | Vite build, 16 modules under `src/` |
+| Bump `CACHE` in `sw.js` each deploy | **No hand-written `sw.js`.** Workbox generates it; there is nothing to bump |
+| "Change did nothing" → check cache version | → check the **build stamp** in the pause menu |
+| Push files, done | Push to `main`; CI gates on typecheck, 33 golden tests, 7 smoke tests and a bundle-size guard, then deploys |
+| `node --check app.js` before pushing | `npm run typecheck && npm test && npm run e2e` |
+
+If you change anything here, run the gate locally first. CI will catch you
+anyway, but it is slower.
+
+---
+
+## What this game is
+
+Dig toward a planet's core, sell ore at the surface pad, buy upgrades, break the
+core and the planet explodes, launch to a harder planet. Fuel and heat are the
+two pressures pushing you back up.
+
+## Decisions worth not re-litigating
+
+- **No return button.** An escape hatch with an invisible cost read as a free
+  teleport. Running dry gets you towed home for a cut of the haul instead, Tow
+  Insurance reduces the cut, and Autopilot is a separate expensive unlock. This
+  was the player's redesign and it is better than the original.
+- **Cargo is weight-based, not slot-based.** Counting units meant dirt and
+  rubies took the same space, so choosing between them was not a real choice.
+- **The autopilot flies a spline over a shortest path**, not the breadcrumb
+  trail it dug. Retracing was slower *and* read as a fast-forward.
+- **The score is a written 32-beat theme**, not randomised pentatonic notes.
+  Randomness is musically valid and still sounds like UI beeps, because without
+  repetition there is no phrase to latch onto.
+
+Full reasoning for all four is in `../gamedev-notes/PLAYTESTS.md`.
+
+## Content changes and the golden tests
+
+Adding an ore, retuning a price or changing planet scaling **will fail the
+golden tests**. That is the system working, not a problem. The workflow:
+
+1. Make the change
+2. `npm test` fails and prints the first differing line
+3. Read the diff and confirm it is what you intended
+4. Delete the affected file in `test/baseline/` and re-run to re-record
+5. Commit the new baseline alongside the change
+
+Never re-record without reading the diff. The whole value is in step 3.
+
+## What to do next
+
+Nothing here is committed to; they are the live threads.
+
+- **Fix `approach()` to be frame-rate independent.** It uses
+  `min(1, dt * rate)`, so camera lag differs with frame rate and a stuttering
+  frame makes the camera snap rather than lag. Correct form is
+  `1 - exp(-rate * dt)`. There is a test pinning current behaviour, so changing
+  it is a deliberate act. **Changes how the camera feels — phone check.**
+- **Revisit upgrade pricing against the depth where each threat begins.** The
+  original complaint was "I can afford upgrades pretty early on for fuel and
+  cooling so neither is a risk". The tow and autopilot economy addressed the
+  escape hatch, but the pricing curve itself was never re-examined.
+- **Content past the mid-game.** Nine ores and six planet names cycle; nobody
+  has played deep enough to know whether the late game holds up.
+- **A draw-call budget in the smoke test.** `renderer.info` exposes draw calls
+  and triangle counts. A change that quietly doubles them is invisible on a
+  desktop and matters on a phone.
+
+## Not done, and deliberately
+
+- **No branch previews.** GitHub Pages serves one site per repo. The accepted
+  trade is: merge to `main`, check the stamp, revert if wrong. To test a branch
+  on the phone, run `npm run preview -- --host 0.0.0.0` and open the PC's LAN
+  address — no service worker over plain http, so that will not test offline
+  behaviour, but it is fine for checking feel.

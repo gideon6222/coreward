@@ -48,7 +48,11 @@ which is the quickest way to tell whether a phone has picked up a deploy.
 
 ## For whoever works on this next
 
-**Read [CLAUDE.md](CLAUDE.md) first.** It covers the stack, the deploy flow, the
+**Read [CLAUDE.md](CLAUDE.md) and [NOTES.md](NOTES.md) first.** NOTES.md covers
+game-specific decisions and what to do next, and warns that this repo no longer
+matches the five-file no-build pattern that new games start from.
+
+CLAUDE.md It covers the stack, the deploy flow, the
 constraints that are not obvious from the code, and — most importantly — the
 handful of feel rules that are load-bearing rather than decorative. Changing
 them changes how the game plays.
