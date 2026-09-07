@@ -102,6 +102,64 @@ export function approach(current: number, target: number, rate: number, dt: numb
 }
 
 
+/* ---------- tremor clock ----------
+
+   Pulled out of the frame loop as a pure reducer, because otherwise the only
+   way to watch it run is to sit in the unstable band for thirty-four seconds
+   with a renderer attached - and the rhythm IS the mechanic, so it deserves to
+   be checkable in milliseconds.
+
+   `t` counts down to the next tremor and `warn` counts down the rumble before
+   it lands. Both go to zero the moment the ship leaves the band, so climbing
+   out is a real reprieve rather than a pause.
+
+   The depth the band starts at lives in config.ts with the rest of what the
+   world IS. The rhythm lives here with the rest of how it feels. */
+export const TREMOR_FIRST = 34;    /* seconds in the band before the first one */
+export const TREMOR_EVERY = 27;    /* and the rhythm after that */
+export const TREMOR_JITTER = 8;
+export const TREMOR_WARN = 2.6;    /* seconds of rumble before it lands */
+
+export interface TremorClock { t: number; warn: number }
+export interface TremorTick {
+  t: number;
+  warn: number;
+  warned: boolean;   /* true on the one frame the rumble starts */
+  fired: boolean;    /* true on the one frame the ground moves */
+  shake: number;     /* 0 while quiet, ramping to 1 as it lands */
+}
+
+export function tremorTick(
+  c: TremorClock, dt: number, inBand: boolean, nextGap: () => number
+): TremorTick {
+  if (!inBand) return { t: 0, warn: 0, warned: false, fired: false, shake: 0 };
+
+  let t = c.t <= 0 ? TREMOR_FIRST : c.t;
+  let warn = Math.max(0, c.warn);
+  const alreadyWarning = warn > 0;
+
+  t -= dt;
+
+  /* Landing is checked first. A frame long enough to step over the whole
+     warning window would otherwise arm the rumble and fire on the same tick,
+     and then arm it a second time on the next one - two warnings for one
+     tremor. Reporting `warned` here keeps the sound paired with the shake even
+     when the warning never got a chance to run. */
+  if (t <= 0) return { t: nextGap(), warn: 0, warned: !alreadyWarning, fired: true, shake: 1 };
+
+  if (t <= TREMOR_WARN && !alreadyWarning) warn = TREMOR_WARN;
+  /* warn is armed at TREMOR_WARN when t is already below it, so warn >= t
+     always holds and warn cannot reach zero before the tremor lands. */
+  if (warn > 0) warn = Math.max(0, warn - dt);
+
+  return {
+    t, warn,
+    warned: warn > 0 && !alreadyWarning,
+    fired: false,
+    shake: warn > 0 ? clamp01(1 - warn / TREMOR_WARN) : 0
+  };
+}
+
 /* ---------- costs and damage ---------- */
 
 export const FUEL_PER_MOVE = 0.8;           /* per second while flying */

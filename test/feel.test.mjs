@@ -323,3 +323,109 @@ test('the soak rise multiplier speeds building without slowing recovery', () => 
     'omitting the multiplier must behave exactly as before it existed');
   assert.ok(H.soakAfter(0.9, deep, 10, 3) <= 1, 'soak must stay clamped at 1');
 });
+
+/* ---------- the tremor rhythm ----------
+
+   Simulated at 60 fps rather than reasoned about, because the whole reason
+   this lives in feel.ts as a reducer is that the alternative is watching a
+   34-second timer through a renderer. */
+
+function runTremors(seconds, opts = {}) {
+  const dt = opts.dt || 1 / 60;
+  const inBand = opts.inBand || (() => true);
+  let c = { t: 0, warn: 0 };
+  const fires = [], warns = [];
+  let peakShake = 0, t = 0;
+  const gap = () => H.TREMOR_EVERY + (opts.jitter === undefined ? H.TREMOR_JITTER / 2 : opts.jitter);
+  for (let i = 0; i * dt < seconds; i++) {
+    t = i * dt;
+    const tick = H.tremorTick(c, dt, inBand(t), gap);
+    c = { t: tick.t, warn: tick.warn };
+    if (tick.warned) warns.push(t);
+    if (tick.fired) fires.push(t);
+    peakShake = Math.max(peakShake, tick.shake);
+  }
+  return { fires, warns, peakShake, clock: c };
+}
+
+test('the first tremor is late, and the ones after it keep a rhythm', () => {
+  const { fires } = runTremors(180);
+  assert.ok(fires.length >= 4, 'expected several tremors in three minutes, got ' + fires.length);
+
+  assert.ok(Math.abs(fires[0] - H.TREMOR_FIRST) < 0.1,
+    'the first tremor landed at ' + fires[0].toFixed(1) + 's, not ' + H.TREMOR_FIRST + 's');
+  assert.ok(fires[0] > H.TREMOR_EVERY,
+    'arriving in the band should not be punished faster than staying in it');
+
+  const gap = H.TREMOR_EVERY + H.TREMOR_JITTER / 2;
+  for (let i = 1; i < fires.length; i++) {
+    const d = fires[i] - fires[i - 1];
+    assert.ok(Math.abs(d - gap) < 0.2,
+      'gap ' + i + ' was ' + d.toFixed(1) + 's, expected about ' + gap + 's');
+  }
+});
+
+test('every tremor is announced before it lands, exactly once', () => {
+  const { fires, warns, peakShake } = runTremors(180);
+  assert.equal(warns.length, fires.length, 'a tremor landed without a warning, or warned twice');
+  for (let i = 0; i < fires.length; i++) {
+    const lead = fires[i] - warns[i];
+    assert.ok(Math.abs(lead - H.TREMOR_WARN) < 0.1,
+      'tremor ' + i + ' gave ' + lead.toFixed(2) + 's of notice, not ' + H.TREMOR_WARN + 's');
+  }
+  assert.ok(peakShake > 0.95, 'the shake ramp should reach full by the time it lands');
+});
+
+test('the shake ramps up through the warning rather than appearing at the end', () => {
+  let c = { t: H.TREMOR_WARN, warn: 0 };
+  const dt = 1 / 60;
+  const seen = [];
+  for (let i = 0; i < Math.ceil(H.TREMOR_WARN / dt); i++) {
+    const tick = H.tremorTick(c, dt, true, () => H.TREMOR_EVERY);
+    c = { t: tick.t, warn: tick.warn };
+    seen.push(tick.shake);
+    if (tick.fired) break;
+  }
+  assert.ok(seen.length > 30, 'the warning should span many frames');
+  assert.ok(seen[0] < 0.15, 'the rumble must start quiet, not at full strength');
+  assert.ok(seen[seen.length - 1] > 0.85, 'and reach full as it lands');
+  for (let i = 1; i < seen.length; i++)
+    assert.ok(seen[i] >= seen[i - 1] - 1e-9, 'the ramp went backwards at frame ' + i);
+});
+
+test('leaving the band genuinely resets the threat', () => {
+  /* thirty seconds down - almost to the first tremor - then surface */
+  const { fires, clock } = runTremors(60, { inBand: (t) => t < 30 });
+  assert.equal(fires.length, 0, 'a tremor fired after the ship left the band');
+  assert.equal(clock.t, 0, 'the clock must reset, not pause');
+  assert.equal(clock.warn, 0);
+
+  /* and going back down starts the long first gap again */
+  const again = runTremors(40, { inBand: (t) => t >= 2 });
+  assert.ok(again.fires.length === 1 && again.fires[0] > H.TREMOR_FIRST,
+    're-entering the band should restart the full first delay');
+});
+
+test('the rhythm does not depend on frame rate', () => {
+  const fast = runTremors(120, { dt: 1 / 120 });
+  const slow = runTremors(120, { dt: 1 / 30 });
+  assert.equal(fast.fires.length, slow.fires.length,
+    'a slower machine got a different number of tremors');
+  for (let i = 0; i < fast.fires.length; i++)
+    assert.ok(Math.abs(fast.fires[i] - slow.fires[i]) < 0.1,
+      'tremor ' + i + ' drifted between frame rates');
+});
+
+test('a single enormous frame cannot skip a warning', () => {
+  /* the loop caps its delta at 50 ms, but the reducer should not rely on that */
+  let c = { t: 0, warn: 0 };
+  let warned = 0, fired = 0;
+  for (let i = 0; i < 40; i++) {
+    const tick = H.tremorTick(c, 5, true, () => H.TREMOR_EVERY);
+    c = { t: tick.t, warn: tick.warn };
+    if (tick.warned) warned++;
+    if (tick.fired) fired++;
+  }
+  assert.ok(fired > 0, 'nothing fired at all');
+  assert.equal(warned, fired, 'huge frames desynced the warning from the landing');
+});

@@ -1,6 +1,7 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
-         GEODE, GAS, CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
-import { key } from './util';
+         GEODE, GAS, RUBBLE, RUBBLE_HARD, TREMOR_SAFE_RADIUS,
+         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
+import { key, mixHex } from './util';
 import { g } from './state';
 import type { Block } from './types';
 
@@ -17,6 +18,22 @@ export function blockAt(x: number, d: number): Block | null {
   if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(g.planet), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
   const hm = hardMult(g.planet);
+
+  /* Checked before generation, and only after `dug`, so a cell you have
+     re-cleared stays clear. Hardness rides on the band it sits in; weight and
+     value are the flat DEF numbers, because haulValue() looks those up by id
+     and cannot know what depth a given unit came from. */
+  if (g.rubble.has(key(x, d))) {
+    /* Coloured as broken pieces of whatever band it sits in rather than as one
+       fixed grey. A neutral fill dropped into the scoria zone looked like
+       sandstone boulders in a lava tube; half-blended it reads as the local
+       rock, shattered - identifiable as fill without leaving the palette.
+       Free: the pool is keyed by block id but the shade rides on the instance. */
+    const band = baseRock(d);
+    return { id: RUBBLE.id, name: RUBBLE.name, glow: RUBBLE.glow,
+             color: mixHex(band.color, RUBBLE.color, 0.5),
+             hard: band.hard * hm * RUBBLE_HARD, wt: RUBBLE.wt, value: RUBBLE.value, ore: false };
+  }
 
   /* Caves, in 2x2 blobs so they read as open ground rather than confetti.
      Evaluated on a coarse grid and with its own seed offset, so adding them
@@ -58,6 +75,50 @@ export const haulValue = () => {
   for (const k in g.cargo) v += g.cargo[k] * DEF[k].value;
   return Math.round(v * valueMult(g.planet));
 };
+
+/* ---------- collapse ----------
+
+   Chooses which cells a tremor fills in, applies it, and guarantees the result
+   is survivable. Lives here rather than in actions.ts because the guarantee is
+   the whole design and it has to be testable without a renderer.
+
+   The guarantee: after the collapse, `findRoute()` must still find open tunnel
+   from the ship to the pad. If it cannot, the entire collapse is reverted and
+   the tremor is spent as noise. A tremor takes time, fuel and patience. It
+   must never take the run.
+
+   Candidates are dug cells ABOVE the ship and outside the safe radius. Above,
+   because what a collapse threatens is the way out; filling in dead ends below
+   you would be a light show rather than a mechanic. */
+export function planCollapse(want: number, rand: () => number = Math.random): string[] {
+  const sx = Math.round(g.px), sd = Math.round(g.pd);
+  const pool: string[] = [];
+  for (const k of g.dug) {
+    const c = k.split(',');
+    const x = +c[0], d = +c[1];
+    if (d < 0 || d > sd - 1) continue;
+    if (Math.abs(x - sx) + Math.abs(d - sd) < TREMOR_SAFE_RADIUS) continue;
+    pool.push(k);
+  }
+  if (!pool.length) return [];
+
+  /* Shuffled so a tremor does not always eat the same end of the tunnel.
+     Fisher-Yates rather than sort(() => rand() - 0.5), which is not a shuffle
+     and is biased toward leaving the array roughly where it started. */
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+
+  const taken = pool.slice(0, want);
+  for (const k of taken) { g.rubble.add(k); g.dug.delete(k); }
+
+  if (!findRoute()) {
+    for (const k of taken) { g.rubble.delete(k); g.dug.add(k); }
+    return [];
+  }
+  return taken;
+}
 
 /* shortest route home through already dug tunnels, breadth first */
 export function findRoute() {

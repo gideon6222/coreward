@@ -176,6 +176,7 @@ export interface SaveV2 {
   pd?: number;
   kit?: Partial<Kit>;
   stock?: Cargo;
+  rubble?: string[];
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

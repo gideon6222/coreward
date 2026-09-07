@@ -306,3 +306,129 @@ test('rnd() is a pure deterministic hash', () => {
   for (let x = 0; x < 40; x++) for (let d = 0; d < 40; d++) seen.add(H.rnd(x, d, 0));
   assert.ok(seen.size > 1500, 'hash is collapsing: only ' + seen.size + ' distinct values in 1600');
 });
+
+/* ---------- tremors and rubble ----------
+
+   A collapsed cell has to regenerate as rubble rather than as whatever was
+   originally there, or a tremor becomes an ore respawn and the deepest vein in
+   the game can be farmed forever from one spot. */
+
+test('a collapsed cell comes back as rubble, never as the ore it held', () => {
+  H.g.planet = 0;
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+
+  /* find a cell that generates something valuable */
+  let found = null;
+  for (let d = 56; d < 110 && !found; d++)
+    for (let x = 0; x < H.W; x++) {
+      const b = H.blockAt(x, d);
+      if (b && b.ore && b.value > 500) { found = [x, d, b]; break; }
+    }
+  assert.ok(found, 'expected some valuable ore on planet 0');
+  const [x, d, original] = found;
+
+  const k = H.key(x, d);
+  H.g.dug.add(k);
+  assert.equal(H.blockAt(x, d), null, 'mined cell should be empty');
+
+  /* a tremor fills it back in */
+  H.g.dug.delete(k);
+  H.g.rubble.add(k);
+  const now = H.blockAt(x, d);
+  assert.equal(now.id, 'rubble', 'a collapsed ore cell must not come back as ore');
+  assert.ok(now.value < original.value / 10,
+    'rubble must be worth almost nothing, or collapsing is a payday');
+  assert.equal(now.ore, false);
+
+  /* hardness rides on the band it sits in, and is easier than that band */
+  assert.ok(now.hard < H.baseRock(d).hard * H.hardMult(0),
+    'clearing rubble should be easier than cutting fresh rock');
+  assert.ok(now.hard > 0);
+
+  /* clearing it again wins: dug beats rubble, so no cleanup is needed */
+  H.g.dug.add(k);
+  assert.equal(H.blockAt(x, d), null, 're-cleared rubble must read as empty');
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+});
+
+test('rubble never appears on its own, only where something put it', () => {
+  H.g.planet = 0;
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+  for (let d = 0; d < H.coreDepth(0); d++)
+    for (let x = 0; x < H.W; x++) {
+      const b = H.blockAt(x, d);
+      assert.notEqual(b && b.id, 'rubble', 'rubble generated at (' + x + ',' + d + ')');
+    }
+});
+
+test('the tremor band is reachable on the planet everyone starts on', () => {
+  assert.ok(H.TREMOR_DEPTH > H.HEAT_DEPTH,
+    'tremors must be a THIRD band, not a second thing happening at the heat line');
+  assert.ok(H.TREMOR_DEPTH < H.coreDepth(0) - 15,
+    'the unstable band would be unreachable or vestigial on planet 0: ' +
+    H.TREMOR_DEPTH + ' against a core at ' + H.coreDepth(0));
+});
+
+test('a tremor takes more of the tunnel the deeper you are, but stays bounded', () => {
+  let prev = 0;
+  for (let d = H.TREMOR_DEPTH; d < 600; d += 5) {
+    const n = H.tremorCells(d);
+    assert.ok(n >= prev, 'collapse size went backwards at ' + d + ' m');
+    assert.ok(n >= 1 && n <= 12, n + ' cells at ' + d + ' m is outside any sane range');
+    prev = n;
+  }
+  assert.ok(H.tremorCells(600) > H.tremorCells(H.TREMOR_DEPTH),
+    'depth should make tremors worse or the band has no gradient');
+  assert.ok(H.TREMOR_SAFE_RADIUS >= 2, 'a tremor must never land next to the ship');
+  assert.ok(H.TREMOR_WARN > 1.5, 'the player needs time to read the warning');
+  assert.ok(H.TREMOR_FIRST > H.TREMOR_EVERY,
+    'the first tremor should come later than the rhythm that follows, so ' +
+    'arriving in the band is not immediately punished');
+});
+
+test('rubble is coloured as the band it sits in, not one fixed grey', () => {
+  H.g.planet = 0;
+  H.g.dug = new Set();
+  H.g.rubble = new Set();
+  const at = (d) => {
+    H.g.rubble = new Set([H.key(3, d)]);
+    return H.blockAt(3, d);
+  };
+  /* dirt at 5 m against scoria at 90 m: two very different bands */
+  const shallow = at(5), deep = at(90);
+  assert.notEqual(shallow.color, deep.color,
+    'rubble is one flat colour everywhere, so it reads as imported rock');
+
+  /* and it sits between the band and the neutral fill rather than being either.
+     Kept above coreDepth(0): bedrock is resolved before rubble is, correctly,
+     since there is no tunnel down there to collapse. */
+  for (const d of [5, 30, 60, 90, 108]) {
+    const b = at(d);
+    const band = H.baseRock(d).color;
+    assert.notEqual(b.color, band, 'rubble at ' + d + ' m is indistinguishable from fresh rock');
+    assert.notEqual(b.color, H.RUBBLE.color, 'rubble at ' + d + ' m ignored its band');
+    assert.equal(b.color, H.mixHex(band, H.RUBBLE.color, 0.5));
+  }
+
+  /* and it never overrides the two things that are not tunnel */
+  const cd = H.coreDepth(0);
+  H.g.rubble = new Set([H.key(3, cd), H.key(3, cd + 1)]);
+  assert.equal(H.blockAt(3, cd).id, 'core', 'rubble must not overwrite the core');
+  assert.equal(H.blockAt(3, cd + 1).id, 'bedrock', 'rubble must not overwrite bedrock');
+  H.g.rubble = new Set();
+});
+
+test('mixHex blends channels and stays inside 24 bits', () => {
+  assert.equal(H.mixHex(0x000000, 0xffffff, 0), 0x000000);
+  assert.equal(H.mixHex(0x000000, 0xffffff, 1), 0xffffff);
+  assert.equal(H.mixHex(0x000000, 0xffffff, 0.5), 0x808080);
+  assert.equal(H.mixHex(0xff0000, 0x0000ff, 0.5), 0x800080);
+  for (const t of [0, 0.13, 0.5, 0.87, 1]) {
+    const v = H.mixHex(0x6b2a18, 0x6d6459, t);
+    assert.ok(v >= 0 && v <= 0xffffff, 'mixHex escaped 24 bits at t=' + t);
+    assert.equal(v, Math.round(v), 'mixHex produced a non-integer colour');
+  }
+});

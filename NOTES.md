@@ -694,6 +694,81 @@ of the gate. Left out because the gate needs to be *felt* before it is
 softened, and because it wants a second button on every shop row. Revisit after
 a playtest.
 
+## Tremors: the deep game's second tooth (2026-09-07)
+
+The open thread said it plainly: below 70 m, soak was the only pressure, and
+soak is attrition. Attrition charges you for time and nothing else, so the deep
+game had one question and the answer was always "leave a bit sooner". The
+research pass on Dome Keeper named the shape that is missing - its tension is a
+**recurring event on a rhythm**, not a drain, and every mining session becomes
+a bet against the next one.
+
+Past 85 m the ground periodically shifts and fills in part of the tunnel you
+dug. It never touches where you are standing. It takes the way **out**.
+
+That turns depth from a number you push into a commitment. The further down you
+are when one lands, the worse your route home gets and the more of your
+remaining fuel goes on re-digging it - and because the clock resets the moment
+you leave the band, climbing out is a real reprieve rather than a pause.
+
+85 m puts the band below the heat line, so the world now reads in three:
+quiet, hot, unstable. It also leaves a 25 m window on planet 0, whose core sits
+at 110 - the CRAFT lesson about content bands that are unreachable on the
+planet everyone starts on, applied before rather than after.
+
+### Rubble, and why a collapse cannot be farmed
+
+A collapsed cell regenerates as **rubble**, not as whatever was there before.
+Refilling with the original block would make a tremor an ore respawn, and the
+richest vein on the planet could be farmed forever from one spot. Rubble is
+cheap to clear (0.55x the local band) and nearly worthless, so digging out
+costs time and fuel and pays almost nothing.
+
+It is coloured as a half-blend of the band it sits in. A single neutral grey
+looked like sandstone boulders dropped into a lava tube; blended it reads as
+the local rock, shattered. That needed `mixHex` in util.ts rather than the
+existing `lerpHex` in materials.ts, because materials.ts imports three.js and
+world generation must not - the bundle guard's entire premise is that the pure
+layer stays pure.
+
+`g.rubble` is runtime state, not generation, so none of this touches the ore
+stream and the additive-only test stayed green throughout.
+
+### The guarantee, and where it lives
+
+**A tremor may cost you time, fuel and patience. It must never take the run.**
+After choosing cells, the collapse is applied and `findRoute()` is re-run; if
+the ship can no longer reach the pad, the whole thing is reverted and the
+tremor is spent as noise.
+
+That is in `planCollapse()` in world.ts rather than in actions.ts, because the
+guarantee is the entire difference between a mechanic and a rage-quit and it
+has to be testable without a renderer. It is now asserted across forty tunnel
+shapes and two hundred and forty collapses.
+
+Writing those tests caught two things worth recording. The first fixture dug
+past `coreDepth`, where `findRoute` refuses to path - so every collapse
+reverted and three tests passed while checking nothing. The fixture now asserts
+its own depth, and the guarantee test counts cells actually collapsed so it
+cannot pass by doing nothing. **A safety property tested against a case that
+cannot trigger it is worse than no test, because it reads as covered.**
+
+### The rhythm lives in feel.ts as a reducer
+
+`tremorTick()` is pure: clock in, clock out, plus `warned` / `fired` / `shake`.
+The frame loop just applies the result.
+
+This was not tidiness. The Browser pane stops `requestAnimationFrame` entirely
+when it is hidden, so there is no way to watch a thirty-four-second timer run -
+the only visual confirmation possible was seeding rubble into a save and
+looking at it. Extracting the clock made the rhythm checkable in milliseconds,
+and it immediately found a real bug: a frame long enough to step over the whole
+warning window armed the rumble and fired on the same tick, then armed it again
+on the next - two warnings for one tremor. Unreachable at 60 fps, but the loop
+caps its delta at 50 ms precisely because frames are not always 60 fps.
+
+**When a mechanic is a clock, the clock is the part to extract.**
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

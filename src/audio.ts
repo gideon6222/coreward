@@ -388,6 +388,43 @@ export const sfx = {
     }
   },
 
+  /* The warning. A slow swell of filtered noise under a detuned low pair -
+     more felt than heard, which is what a rumble should be. */
+  rumble() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 2.4, 150, 0.32, 'lowpass');
+    for (const f of [41, 43.6]) {
+      const o = G.ctx.createOscillator();
+      const gn = G.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f, t);
+      /* long attack: the point is that you hear it arriving, not that it hits */
+      env(gn, t, 0.3, 1.6, 1.1);
+      o.connect(gn); gn.connect(G.sfxBus);
+      o.start(t); o.stop(t + 3.0);
+    }
+  },
+
+  /* The landing. Broadband crack over a falling body, then settling grit. */
+  collapse() {
+    const G = live();
+    if (!G) return;
+    const t = G.ctx.currentTime;
+    noiseBurst(G, t, 0.5, 1800, 0.55, 'lowpass');
+    noiseBurst(G, t + 0.18, 1.5, 420, 0.34, 'lowpass');
+    noiseBurst(G, t + 0.5, 1.1, 3200, 0.12, 'highpass');
+    const o = G.ctx.createOscillator();
+    const gn = G.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(96, t);
+    o.frequency.exponentialRampToValueAtTime(30, t + 0.9);
+    env(gn, t, 0.5, 0.01, 1.1);
+    o.connect(gn); gn.connect(G.sfxBus);
+    o.start(t); o.stop(t + 1.3);
+  },
+
   gas() {
     const G = live();
     if (!G) return;

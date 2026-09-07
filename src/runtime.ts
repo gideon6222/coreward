@@ -30,6 +30,12 @@ export const R = {
      announce itself once instead of every frame. */
   wasHot: false,
 
+  /* Tremor clock. `tremorT` counts down to the next one and is reset whenever
+     the ship leaves the unstable band, so surfacing genuinely resets the
+     threat rather than merely pausing it. */
+  tremorT: 0,
+  tremorWarn: 0,
+
   /* actions -> loop, decayed by the loop */
   shake: 0,
   squash: 0,
