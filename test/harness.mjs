@@ -61,6 +61,11 @@ export function ser(value) {
   }, 2);
 }
 
+/* git core.autocrlf rewrites these baselines to CRLF on checkout, while this
+   harness writes LF. Compare line-ending-agnostically or every golden test
+   breaks on a fresh clone and in CI. */
+const norm = (s) => s.split(String.fromCharCode(13)).join('');
+
 function firstDiff(a, b) {
   const la = a.split('\n'), lb = b.split('\n');
   const n = Math.max(la.length, lb.length);
@@ -83,10 +88,10 @@ export function assertGolden(name, actual) {
     console.log('  baseline CREATED: test/baseline/' + name + '.json');
     return;
   }
-  const expected = readFileSync(path, 'utf8');
-  if (expected !== text) {
+  const expected = norm(readFileSync(path, 'utf8'));
+  if (expected !== norm(text)) {
     throw new Error(
-      'golden mismatch: ' + name + '\n' + firstDiff(expected, text) +
+      'golden mismatch: ' + name + '\n' + firstDiff(expected, norm(text)) +
       '\n\nIf this change is intentional, delete test/baseline/' + name +
       '.json and re-run to re-record.'
     );

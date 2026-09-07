@@ -1,0 +1,4 @@
+# Everything stays LF in the repo and in the working tree. The golden-test
+# baselines in test/baseline are compared as text, and a CRLF checkout would
+# break every one of them.
+* text=auto eol=lf
