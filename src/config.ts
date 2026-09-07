@@ -39,9 +39,32 @@ export const ROCKS: Rock[] = [
   { id: 'dirt',    name: 'Dirt',    color: 0x6b4b2a, hard: 1,   wt: 0.4, value: 1,  glow: 0.02 },
   { id: 'stone',   name: 'Stone',   color: 0x807a72, hard: 2.4, wt: 0.9, value: 3,  glow: 0.02 },
   { id: 'granite', name: 'Granite', color: 0x5e5a66, hard: 5,   wt: 1.8, value: 9,  glow: 0.02 },
+  /* The hot-zone rock. Its whole job is to be unmistakable: it starts at
+     exactly HEAT_DEPTH, so the moment the rock turns to smouldering ember you
+     are in the zone where dwell time starts killing you. Emissive is high for a
+     rock, on purpose - it should look like it is holding heat. */
+  { id: 'scoria',  name: 'Scoria',  color: 0x6b2a18, hard: 7,   wt: 2.3, value: 16, glow: 0.10 },
   { id: 'basalt',  name: 'Basalt',  color: 0x3a3540, hard: 9,   wt: 2.8, value: 22, glow: 0.03 }
 ];
-export const baseRock = (d: number) => (d < 10 ? ROCKS[0] : d < 60 ? ROCKS[1] : d < 130 ? ROCKS[2] : ROCKS[3]);
+
+/* Band boundaries are deliberately tied to the mechanics rather than round
+   numbers. Granite arriving at 45 telegraphs "this is getting harder" before
+   the danger; scoria at 70 IS the danger line, matching HEAT_DEPTH in feel.ts.
+   Change one and change the other, or the world stops explaining itself.
+
+   Basalt moved from 130 to 120 because planet 0's core sits at 110 - the old
+   band meant the deepest rock in the game was unreachable on the first planet. */
+const DIRT_TO_STONE = 10;
+const STONE_TO_GRANITE = 45;
+export const GRANITE_TO_SCORIA = 70;   /* === HEAT_DEPTH */
+const SCORIA_TO_BASALT = 120;
+
+export const baseRock = (d: number) =>
+  d < DIRT_TO_STONE ? ROCKS[0]
+  : d < STONE_TO_GRANITE ? ROCKS[1]
+  : d < GRANITE_TO_SCORIA ? ROCKS[2]
+  : d < SCORIA_TO_BASALT ? ROCKS[3]
+  : ROCKS[4];
 
 export const DEF: Record<string, Material> = {};
 for (const o of ORES) DEF[o.id] = o;

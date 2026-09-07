@@ -92,6 +92,29 @@ Survival at the core (110 m), hull 100:
 | L5 (45%) | 54 s | 22 s |
 | L8 (72%) | 106 s | 42 s |
 
+**Making the line visible.** First playtest of the soak said the mechanic was
+good but "it doesn't seem very obvious that there is a distinct line". It was
+not: the rock band changed at 60 m while heat started at 70 m, so nothing on
+screen marked the real boundary.
+
+Now four signals land on the same metre:
+
+- **Scoria**, a new smouldering rock, starts at exactly `HEAT_DEPTH`. There is a
+  test asserting those two numbers stay equal - if they drift apart again the
+  world stops explaining itself.
+- **The world turns ember.** Sky, fog, ambient light and drifting dust all warm
+  together over ~26 m, which is shorter than the 40 s soak ramp on purpose: the
+  world should say "you are somewhere dangerous" before the hull says "and it is
+  costing you".
+- Hull starts draining, and the vignette builds with it.
+
+Measured crossing: sky goes rgb(25,48,66) at 66 m to rgb(80,22,14) at 86 m,
+hull 100% to 95%.
+
+Also fixed while in there: basalt started at 130 m while planet 0's core sits at
+110, so the deepest rock in the game was unreachable on the first planet. Bands
+are now dirt 10 / stone 45 / granite 70 / scoria 120 / basalt.
+
 **This balance is a first pass and wants playtest feedback**, not more theory.
 The intended shape is: fuel first to reach depth, then cooling to survive it.
 

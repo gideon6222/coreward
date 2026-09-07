@@ -100,6 +100,14 @@ export const SOAK_RISE = 1 / 40;    /* deep-seconds from cold to fully soaked */
 export const SOAK_FALL = 1 / 14;    /* shallow-seconds back to cold, faster */
 export const SOAK_MAX_MULT = 2.5;   /* damage multiplier when fully soaked */
 
+/* How far into the hot zone you are, 0 at the boundary and 1 well inside it.
+   Drives the world going ember: rock, sky, fog and dust all shift together so
+   crossing the line is a change you see rather than a number you read. Shorter
+   than the soak ramp on purpose - the world should announce the zone
+   immediately, while the danger itself builds over time. */
+export const HEAT_TINT_RAMP = 26;
+export const heatT = (pd: number) => clamp01((pd - HEAT_DEPTH) / HEAT_TINT_RAMP);
+
 export function soakAfter(soak: number, pd: number, dt: number): number {
   const rate = pd > HEAT_DEPTH ? SOAK_RISE : -SOAK_FALL;
   return clamp01(soak + rate * dt);

@@ -9,12 +9,13 @@
       "(empty)": 9,
       "dirt": 86,
       "copper": 20,
-      "stone": 410,
+      "stone": 281,
       "iron": 21,
       "silver": 14,
       "gold": 6,
+      "granite": 209,
       "amethyst": 7,
-      "granite": 417,
+      "scoria": 337,
       "emerald": 7,
       "ruby": 2,
       "core": 9,
@@ -93,6 +94,16 @@
         "value": 420,
         "ore": true
       },
+      "granite": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 5,
+        "wt": 1.8,
+        "value": 9,
+        "ore": false
+      },
       "amethyst": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -106,14 +117,14 @@
         "value": 900,
         "ore": true
       },
-      "granite": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 5,
-        "wt": 1.8,
-        "value": 9,
+      "scoria": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 7,
+        "wt": 2.3,
+        "value": 16,
         "ore": false
       },
       "emerald": {
@@ -166,7 +177,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhhehhhhhehhhehhhhhhhhhhhpppppppppppppeeppppppppppppppepppppppllppppppppplpppplpppppppppppppppppplpplplpppppppppplppppppppppppppppppppppppppppppppppppppppppeopepppppoopppppppppppppppppppppppppopppppopplpppppppppppepppppoppppppoppepppppppppppppppoppppppppoppppjpppppppppppppoppppppppppjpjppppppepopppppjppplppppplpppppppppppppppppppppppppppppppeppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppeppppppppbpbpppppbplpppppppppppppppkkkkkkkkkkkkkkkkkkblokkkkkkkkkbkkkkkkkkkkkkkkkkklkkkkkkjkkbjkkkkkkkkkkkkekkkkkkkkkkkekkkkkkkkkkbkkkokkkkkkkkkkkkkekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkokkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkklkkkkkkkkkkkikkkkkkkikkkkkkkkkilkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkklkikkkkkkkkkkkkkkkkkekkkkkkekkkkkkkkkklekkkkkkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkklkkikkkkkkkkkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkkkkkkkknkkkklkknkkkkkkklkkkkkkkkkkfffffffffddddddddd"
+    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhhhehhhhhehhhehhhhhhhhhhhqqqqqqqqqqqqqeeqqqqqqqqqqqqqqeqqqqqqqllqqqqqqqqqlqqqqlqqqqqqqqqqqqqqqqqqlqqlqlqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqepqeqqqqqppqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqqpqqlqqqqqqqqqqqeqqqqqpqqqqqqpqqeqqqqqqqqqqqqqqqpqqqqqqqqpqqqqjqqqqqqqqqqqqqpqqqqqqqqqqjqjqqqqqqeqpqqqqqjqqqlqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqkkkekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkekkkkkkkkbkbkkkkkbklkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkblpkkkkkkkkkbkkkkkkkkkkkkkkkkklkkkkkkjkkbjkkkkkkkkkkkkekkkkkkkkkkkekkkkkooooobooopoooooooooooooeooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopoooooooooooooooooooooooooooooooooooloooooooooooioooooooioooooooooiloooooooooooooooooooooooooooooooooooooooooooooooooooloioooooooooooooooooeooooooeooooooooooleoooooooooooiooooooooooooooooooooooooolooioooooooooooooooooooooooooioooooooooooooooooooonooooloonoooooooloooooooooofffffffffddddddddd"
   },
   {
     "planet": 1,
@@ -178,15 +189,16 @@
       "(empty)": 9,
       "dirt": 86,
       "copper": 14,
-      "stone": 401,
+      "stone": 283,
       "iron": 29,
       "silver": 23,
       "gold": 20,
+      "granite": 200,
       "amethyst": 14,
-      "granite": 572,
+      "scoria": 406,
       "emerald": 11,
       "ruby": 10,
-      "basalt": 125,
+      "basalt": 209,
       "core": 9,
       "bedrock": 9
     },
@@ -263,6 +275,16 @@
         "value": 420,
         "ore": true
       },
+      "granite": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 6.4,
+        "wt": 1.8,
+        "value": 9,
+        "ore": false
+      },
       "amethyst": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -276,14 +298,14 @@
         "value": 900,
         "ore": true
       },
-      "granite": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 6.4,
-        "wt": 1.8,
-        "value": 9,
+      "scoria": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 8.96,
+        "wt": 2.3,
+        "value": 16,
         "ore": false
       },
       "emerald": {
@@ -346,7 +368,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhehhhhhhhhhhhehhhhhhehhhhhhhhhhhhheppppppppppppppppppppppppplllplppppppppppppplppepppppppppppppppppplppppplpplpppplpppppppppplpppppppppppppppppppppppopoppppppppppppppppppppppppppppppppepppppppppppppppppppppppppppppppppopppppppppppppppppppppppppppppppopoopppppoooplpppppppppppjpppppjppppppppplpppppppjppjppppppppppppppoppjppppppjppppppppppppppppppppjpppppppppjppppplpppjppppppppppppjpppppppppeppppppppppppppppppppjppjppppppppppppppjpppppppppjlppjppppppppppppppplpppjppopppppppppppoeppbkkbkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkklkkokkkkkkkkkkllkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkjkkkkkkkkkkkkkbbkkkkkkkkbklkkkkkkkbkkkkkkkbbkkkkkkkkkkkkkkkkkkkkekkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkkikkkkkkikkkkkkkkkkkkkkkkkkkkkkkkkkkekkkkkkjkkkkkkkkkkekkkkkkkkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkekkkikkkikkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkkkokilkkkikkkkkkkkokkkokkjkkkkkokkkkkkkkkkkkkkkkkkkkkkkokkkkkkkkkkkkkkkkkkkkkkkkkkkkkklknkklkkkkkkkkkkkkknkkkkkkkkkkkkkkklkbkkkkkkklkkkkkkkkkkkkkkkkkklbklkkkkkkkkkkkkkknkkkkkkkkkkknkekkkkkkknkkkkkkkkkkokkkkkkkknkkkkkkkkkkkkkkkkkkkkknkkkkkkkkkkkkkkkkokkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkkkkkknkccclcccicccccccccccccccccccccccccccccccccclcccccccccccccjocccccccccccccccccccccccoccccccccccccccccccccccocccnccccncccclccccccccccccccccfffffffffddddddddd"
+    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhehhhhhhhhhhhehhhhhhehhhhhhhhhhhhheqqqqqqqqqqqqqqqqqqqqqqqqqlllqlqqqqqqqqqqqqqlqqeqqqqqqqqqqqqqqqqqqlqqqqqlqqlqqqqlqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqpqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqeqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqppqqqqqpppqlqqqqqqqqqqqjqqqqqjqqqqqqqqqlqqqqqqqjqqjqqqqqqqqqqqqqqpqqjqqqqqqjqqqqqqqqqqqqqqqqqqqqjkkkkkkkkkjkkkkklkkkjkkkkkkkkkkkkjkkkkkkkkkekkkkkkkkkkkkkkkkkkkkjkkjkkkkkkkkkkkkkkjkkkkkkkkkjlkkjkkkkkkkkkkkkkkklkkkjkkpkkkkkkkkkkkpekkbkkbkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkklkkpkkkkkkkkkkllkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkjkkkkkoooooooobboooooooobolooooooobooooooobbooooooooooooooooooooeoooooooooooobooooooooooooooooooooooooiooooooooooooooiooooooioooooooooooooooooooooooooooeoooooojooooooooooeoooooooooooooioooooooooooooooooooooooooobooooeoooioooioooooooioooooooooooooooooooooooooopoiloooioooooooopooopoojooooopooooooooooooooooooooooopoooooooooooooooooooooooooooooolonoolooooooooooooonoooooooooooooooloboooooooloooooooooooooooooolboloooooooooooooonooooooooooonoeooooooonooooooooccpccccccccncccccccccccccccccccccnccccccccccccccccpcccccccicccccccccccccccccccccccccccccncccclcccicccccccccccccccccccccccccccccccccclcccccccccccccjpcccccccccccccccccccccccpccccccccccccccccccccccpcccnccccncccclccccccccccccccccfffffffffddddddddd"
   },
   {
     "planet": 2,
@@ -358,15 +380,16 @@
       "(empty)": 9,
       "dirt": 83,
       "copper": 29,
-      "stone": 415,
+      "stone": 290,
       "iron": 29,
       "silver": 28,
       "gold": 13,
+      "granite": 209,
       "amethyst": 16,
-      "granite": 566,
+      "scoria": 401,
       "emerald": 18,
       "ruby": 19,
-      "basalt": 394,
+      "basalt": 475,
       "magmite": 10,
       "core": 9,
       "bedrock": 9
@@ -444,6 +467,16 @@
         "value": 420,
         "ore": true
       },
+      "granite": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 7.800000000000001,
+        "wt": 1.8,
+        "value": 9,
+        "ore": false
+      },
       "amethyst": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -457,14 +490,14 @@
         "value": 900,
         "ore": true
       },
-      "granite": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 7.800000000000001,
-        "wt": 1.8,
-        "value": 9,
+      "scoria": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 10.92,
+        "wt": 2.3,
+        "value": 16,
         "ore": false
       },
       "emerald": {
@@ -540,7 +573,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhheehhhhhhehhhhhhhhehhehhehhhhhhhhhhhhhhhhhhhhhhhehhhhhhppppppeppppppppplppppppppppppppppppppppppppppppppplpppppppplplpppplppppppppppppplppppppplpppppppppppppppppeppppppppppppopppppopepoppppoppppppopppppppppppppopppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppeppoppppppppppppppppepppppppppppppppppppppppppppppppppjpppppppppppppppppppppepjpppjpplpppppppppjppppppppppppppppppppppppppjppppjpppppplpppopppppppppjpppppppppepppppjpppppppppppppppppjpppppppppppppppppppppppppppbppppppppppppppppppepppkkkkkkkkkkkkbkokkbkkkkkkkkkkkblkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkklkkkkkkkkkkkkkkkkkkkkkkbekkklkkkkkkkkkkkbbkkkkkkkkkkkkikikkkkkkkkkkkkkkkkkkklkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkkkkkjkkokkkkkkkkkkkkkkkkkkkklkkkkkkkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkkkkkikkkkkkiookkkkkkkkkkkkkkkkkkkkkkkkkkkkekkklkkkokklkkkikokkkkkkklekkkkkkikkkkkikikkkkkkkikknkkkkkkkkokkkkkknkkkkkkkkkkkkkklkkikkkkkkkkkkokkkkkkkbkkkkkkknkkkkkkokkkkkkkkklkkkkkkkkkkkkkkkkkekkknkkkkkkokkkknkkikkekkkiknkkkkkkokkkkkkkkkkkkkkkkkkkkkknkkkkkbkkkkkkkkkkkknkjkkkkkkkokkkkkkkkkkbkkkkkkkknkkikkkkkkkkkkkkkknkccncecccccccccccjcccccccccccccccccccccccccncbncccncoccccnoccccncccolcccccbccccclcccccccccccccccccoccccnncccccncccccccceccccccccccccbcccmccccccclcccccccccmcccoccccccccccccccmccccccccccccccccccoccccccccccccccccccccccccccccccccccccccccccccccccccccicccmcccicccccccccccccccccclcccccccccccccccccccccjcecoccclccccccleccbccccmccceccclmccecccccccccccccccmcccccccccloclccecccccccccccmccccccccccccccccmcclccecccccccceiccccccccccccccccccccccccccccccccbcccccccccmfffffffffddddddddd"
+    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhheehhhhhhehhhhhhhhehhehhehhhhhhhhhhhhhhhhhhhhhhhehhhhhhqqqqqqeqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqlqqqqqqqqlqlqqqqlqqqqqqqqqqqqqlqqqqqqqlqqqqqqqqqqqqqqqqqeqqqqqqqqqqqqpqqqqqpqeqpqqqqpqqqqqqpqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqeqqpqqqqqqqqqqqqqqqqeqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqjqqqqqqqqqqqqqqqqqqqqqeqjqqqjqqlqqqqqqqqqjqqkkkkkkkkkkkkkkkkkkkkkkkkjkkkkjkkkkkklkkkpkkkkkkkkkjkkkkkkkkkekkkkkjkkkkkkkkkkkkkkkkkjkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkekkkkkkkkkkkkkkkbkpkkbkkkkkkkkkkkblkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkooooooooooooooooooooloooooooooooooooooooooobeooolooooooooooobbooooooooooooioioooooooooooooooooooloooooooooooooooooooooooooooooooooooiooooooooooooooooojoopooooooooooooooooooooloooooooooooooooooooooooiooooooooooooooooooooooooooooiooooooippooooooooooooooooooooooooooooeooolooopooloooiopoooooooleooooooioooooioioooooooioonoooooooopoooooonoooooooooooooolooioooooooooopooooooobooooooonoooooopoooooooooloooooooooooooooooeooonoooooopoooonooiooeoooionoooooopocccccccccccccccccccccncccccbccccccccccccncjcccccccpccccccccccbccccccccncciccccccccccccccncccncecccccccccccjcccccccccccccccccccccccccncbncccncpccccnpccccncccplcccccbccccclcccccccccccccccccpccccnncccccncccccccceccccccccccccbcccmccccccclcccccccccmcccpccccccccccccccmccccccccccccccccccpccccccccccccccccccccccccccccccccccccccccccccccccccccicccmcccicccccccccccccccccclcccccccccccccccccccccjcecpccclccccccleccbccccmccceccclmccecccccccccccccccmccccccccclpclccecccccccccccmccccccccccccccccmcclccecccccccceiccccccccccccccccccccccccccccccccbcccccccccmfffffffffddddddddd"
   },
   {
     "planet": 3,
@@ -552,15 +585,16 @@
       "(empty)": 9,
       "dirt": 84,
       "copper": 37,
-      "stone": 401,
+      "stone": 283,
       "iron": 39,
       "silver": 26,
       "gold": 18,
+      "granite": 200,
       "amethyst": 18,
-      "granite": 566,
+      "scoria": 406,
       "emerald": 12,
       "ruby": 19,
-      "basalt": 695,
+      "basalt": 773,
       "magmite": 15,
       "coreite": 5,
       "core": 9,
@@ -639,6 +673,16 @@
         "value": 420,
         "ore": true
       },
+      "granite": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 9.200000000000001,
+        "wt": 1.8,
+        "value": 9,
+        "ore": false
+      },
       "amethyst": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -652,14 +696,14 @@
         "value": 900,
         "ore": true
       },
-      "granite": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 9.200000000000001,
-        "wt": 1.8,
-        "value": 9,
+      "scoria": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 12.88,
+        "wt": 2.3,
+        "value": 16,
         "ore": false
       },
       "emerald": {
@@ -748,7 +792,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhehhhhhhheehhhhhhhhhhhhhehhhhhhhhhhhhhhehpppppppppppppppplpppppleppppppppppppppplppppppppppppppplpppplpppppppppppppppplppppppepplppppppppppppppppppplpppppoppppplpppppppppppoppppoppppppppppppppoppppppppppppppppoopppppppppppppppppoppppopppppppppppppppppppppppppppppoeppppppppoppppppjpppppppjpppjpppppppppjppeppppppppppppjlppppppppppppppppppppjppppppppppeppplpppplppppppppppppppppopppppjppppppppppppjopppppppppppppppppepppjlplppppppppjppjppppepppppppppppppppppppppbppppppbpppppppbpppppppppbppplkbkkklkkbkkkkkkkkkkkkkkjkkkkkkkkkkkkkkolkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkjkekkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkbkekkkkkkkkkkkkbkkklkkkkkkkkkkekkkkkkkkkkbkkkkkkkkkkkkkikkkkkkkkikkkkkkikkkkkkkkkkkikkkkjkkkkkkkkkkkkkkkkkkkokkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkjekkkkkkkkkkkkkkkkkkkkkkkkklkkkekkklkkkkkkkkkkkklkkkkkkkkkkkkkkkkkklkkkkkkkkkkkikklkikkkkkkolkkkkilkkkkkkkokkkkkkikkkkkkkkkkkkkkkkkkkknkknkkklnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkekkkkkkkkekknkknkkkkkkkkkklkkkkkkkkkkkiknkkkekkkkkkkkkkknkkkkkkkkkkkkkkklknkkkkkekkkkkkkkkkkkkkeknkkkkkkkbkkkknkkkkkekkkkkekkkkkknkkkkbkkkkkkkkkkkkkkkkkkkkknkkkkcccccccccccbcncccnccccccccccccccccccccccccccccceeccccccclccccccccccccccncccccccccccccccccccccccccccccnccccccccccccccccccccccccccccccccccclccccccccccccccccomcccccccccclccccccccccmcccccccccccccccccccccmccccccccncccccccccccccccccccmccccccccccccccccccccjcccmccccccccccccccccccclcccccccmcccccccocccccccccccccccccccmccccccccnlcccccecccccccccccomcccccccccccccccccccccmcccccccccccccccccccccccoccccccccccboccccccccccecccccccccciccceccccccccccclccccccccccccccccccccccccccccccccccccmccccmcmcccccccccjlccccccccocccccccccccccccccccccccccccegccclccccccccccccccjccceccccccgocccclccccecccmcccccccccecccccccccccccccmccnccccccegcccccccccccccccccccccbccccclcccccccccccccccccccccccceclccccccccccccccccccccccccccicccccccmccccccccccecccccccccccccccocccocgcbcccccccccgccccccccccccoccccccbfffffffffddddddddd"
+    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhhhhhhehhhhhhheehhhhhhhhhhhhhehhhhhhhhhhhhhhehqqqqqqqqqqqqqqqqlqqqqqleqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqlqqqqlqqqqqqqqqqqqqqqqlqqqqqqeqqlqqqqqqqqqqqqqqqqqqqlqqqqqpqqqqqlqqqqqqqqqqqpqqqqpqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqppqqqqqqqqqqqqqqqqqpqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpeqqqqqqqqpqqqqqqjqqqqqqqjqqqjqqqqqqqqqjqqeqqqqqqqqqqqqjlqqqqqqqqqqqqqqqqqqqqjqqqqqqqqqqeqqqlkkkklkkkkkkkkkkkkkkkkpkkkkkjkkkkkkkkkkkkjpkkkkkkkkkkkkkkkkkekkkjlklkkkkkkkkjkkjkkkkekkkkkkkkkkkkkkkkkkkkkbkkkkkkbkkkkkkkbkkkkkkkkkbkkklkbkkklkkbkkkkkkkkkkkkkkjkkkkkkkkkkkkkkplkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkjkekkkkkkkkkkkkbooooooooooooooooooooooooooooooooooobooboeoooooooooooobooolooooooooooeooooooooooboooooooooooooiooooooooiooooooioooooooooooioooojooooooooooooooooooopooooooooooooooooooioooooooooooooooooooooooojeoooooooooooooooooooooooooloooeoooloooooooooooolooooooooooooooooooloooooooooooiooloiooooooplooooilooooooopooooooioooooooooooooooooooonoonooolnoooooooooooooooooooooooooooooooooooooooooooooeooooooooeoonoonooooooooooloooooooooooionoooeooooooooooonooooooooooooooclcnccccceccccccccccccccecncccccccbccccnccccceccccceccccccnccccbcccccccccccccccccccccncccccccccccccccbcncccnccccccccccccccccccccccccccccceeccccccclccccccccccccccncccccccccccccccccccccccccccccnccccccccccccccccccccccccccccccccccclccccccccccccccccpmcccccccccclccccccccccmcccccccccccccccccccccmccccccccncccccccccccccccccccmccccccccccccccccccccjcccmccccccccccccccccccclcccccccmcccccccpcccccccccccccccccccmccccccccnlcccccecccccccccccpmcccccccccccccccccccccmcccccccccccccccccccccccpccccccccccbpccccccccccecccccccccciccceccccccccccclccccccccccccccccccccccccccccccccccccmccccmcmcccccccccjlccccccccpcccccccccccccccccccccccccccegccclccccccccccccccjccceccccccgpcccclccccecccmcccccccccecccccccccccccccmccnccccccegcccccccccccccccccccccbccccclcccccccccccccccccccccccceclccccccccccccccccccccccccccicccccccmccccccccccecccccccccccccccpcccpcgcbcccccccccgccccccccccccpccccccbfffffffffddddddddd"
   },
   {
     "planet": 4,
@@ -760,15 +804,16 @@
       "(empty)": 9,
       "dirt": 81,
       "copper": 51,
-      "stone": 391,
+      "stone": 271,
       "iron": 48,
       "silver": 42,
       "gold": 25,
+      "granite": 197,
       "amethyst": 22,
-      "granite": 557,
+      "scoria": 399,
       "emerald": 22,
       "ruby": 20,
-      "basalt": 960,
+      "basalt": 1041,
       "magmite": 19,
       "coreite": 12,
       "core": 9,
@@ -847,6 +892,16 @@
         "value": 420,
         "ore": true
       },
+      "granite": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 10.600000000000001,
+        "wt": 1.8,
+        "value": 9,
+        "ore": false
+      },
       "amethyst": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -860,14 +915,14 @@
         "value": 900,
         "ore": true
       },
-      "granite": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 10.600000000000001,
-        "wt": 1.8,
-        "value": 9,
+      "scoria": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 14.84,
+        "wt": 2.3,
+        "value": 16,
         "ore": false
       },
       "emerald": {
@@ -956,7 +1011,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehehhhhhhhehehhhhhhhhhhhhhhhehhhehehhhehhhehhhhhhheeppeppppplllppppppppppplpppppllpeppppplpppplpppppppppppplppppppppplepplpppppplpppppppppppppplpppplppppppppppppppppppoppppppppppplpppppppppppppppepeoopoppppppppppppppppppppppppppppppppppppppppppppppoppppopppppppppopppppppeoppppppeppppppppeppjppppppppppppppppppjpjppppppppppppppppoppppppppplpjppppppppopljpejppppppppjpppppppppppplepopeppppppppplppppppppppppjppppppppjppppppppppppppplppppppppeppppppppplpppppepppppppbpppppppppppppppplppppppppppppopppppkkkkkkkokkkkkkkkkkkkkklkkkkkkkkkkjbkkkkkkkkkkbkkkkbkkebkbkklkkkkkkkkkklkbkkkkkkkbkkkkkkkkkkkkkkkbkkbkkkkkkkkkkkkkkkkkkkkkkbkkkjkekbkkkkkkkkkkkkbkkkkkkkkkkkkkkkokkkikkkekkkkkkkklkikkkkkekkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkkkkkkkkikkkkkkkkkkkkkikkkkkkkkkkkkkkkkkkkkokkkkkkkkkkkkeikkkkkkkbkkkkkkkkkkkkjkjkkkkkkkkkkkkkokkkkoikkkkkkkokkkkkkkkikkkkkkkkkkkkkkkkkkkkkkkkjkkkjkkkkkkkkokbkikkklkkkkkkkkkkkkkkkkkkkkkkkkikjknkkkknkkkkknkkkknkkkknknklkkkkekkkkkkkkkkkkkkkkkkkkekkkkkkkknkkkkkkkkkkkkkkkkkkkkkkekklkkkkkkknkknkkkkkkkkkkkkkkkkokkkkkknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkokknekkkkknkknnkkknkkkkkkkkkokkkkkkkkkkkkkkkkkkekkkkkkkkkkkkkkkkkkkkkkkccccccccccccccccccccccncccccccccccclcccbcccccccccccccccccccccccccccccccccccccccccccecoiccccecccccccccccccccccccccccccccccjccccccccccccocbccccmecccmccccccmccccmclcccccccbcccccccojccccjccccccccccccccccccccccccccccccmoocccmcccccccecccccoccccmlccccccccccccccclclccccclcccccccoccccccccccccmcccccccccccccccccciccccccccccccccccoccccccncccoccccccmccccccccccccccjccccccccccecccccccccccccccccccccclccccocencccccmcccccccccccccclcccccccccccccccccmcccccccccnciccccicccmccccccccemcccmcccccmcmccccccociccccccccccccccbccccccccoccccccccccccccccecbccccccccccccccmcccgccgcccccccccccoclcjccceccccccccccccccccgcccemccccciccccccccgccgccccccccccccccccccccccecccceccccccccccgccccccccccccccccccccccccclcccccccicccccccccccccccccoicccccccccccccccgcccccccccccccccccccccccccccnocciclccgcccclcoclccccccccclccccccccccccccccecccccccccccoccjicccccccccccccccccccccccccccccccccecccjccccccccoclccccccccccccccccccccccccccccccccccccccccccccccccccccgcccccccccccccmbccgcccccccjccccccccccciccccclcjccccccccccccceeccccocccccccccccccciccccccccccccccccclccccccbccccccccccccgccgccccccccccccccccclcccccccccclcccccecccccccccccofffffffffddddddddd"
+    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehehhhhhhhehehhhhhhhhhhhhhhhehhhehehhhehhhehhhhhhheeqqeqqqqqlllqqqqqqqqqqqlqqqqqllqeqqqqqlqqqqlqqqqqqqqqqqqlqqqqqqqqqleqqlqqqqqqlqqqqqqqqqqqqqqlqqqqlqqqqqqqqqqqqqqqqqqpqqqqqqqqqqqlqqqqqqqqqqqqqqqeqeppqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpqqqqpqqqqqqqqqpqqqqqqqepqqqqqqeqqqqqqqqeqqjqqqqqqqqqqqqqqqqqqjqjqqqqqqqqqqqqqqqqpqqqqqqqqqlqjqqqqqqqqpqljqejqqqqqqqqjkkkkkkkkkkkklekpkekkkkkkkkklkkkkkkkkkkkkjkkkkkkkkjkkkkkkkkkkkkkkklkkkkkkkkekkkkkkkkklkkkkkekkkkkkkbkkkkkkkkkkkkkkkklkkkkkkkkkkkkpkkkkkkkkkkkkpkkkkkkkkkkkkkklkkkkkkkkkkjbkkkkkkkkkkbkkkkbkkebkbkklkkkkkkkkkklkbkkkkkkkbkkkkkkkkkoooooobooboooooooooooooooooooooobooojoeoboooooooooooobooooooooooooooopoooioooeooooooooloioooooeooooooooooooooooooiooooooooooooooooooooioooooooooooooioooooooooooooooooooopooooooooooooeioooooooboooooooooooojojooooooooooooopoooopiooooooopooooooooioooooooooooooooooooooooojooojoooooooopoboiooolooooooooooooooooooooooooiojonoooonooooonoooonoooononolooooeooooooooooooooooooooeoooooooonooooooooooooooooooooooeoolooooooonoonoooooooooooooooopoooooonoooooooooocccccccccccccccccccpccnecccccnccnncccncccccccccpccccccccccccccccccecccccccccccccccccccccccccccccccccccccccccccccncccccccccccclcccbcccccccccccccccccccccccccccccccccccccccccccecpiccccecccccccccccccccccccccccccccccjccccccccccccpcbccccmecccmccccccmccccmclcccccccbcccccccpjccccjccccccccccccccccccccccccccccccmppcccmcccccccecccccpccccmlccccccccccccccclclccccclcccccccpccccccccccccmcccccccccccccccccciccccccccccccccccpccccccncccpccccccmccccccccccccccjccccccccccecccccccccccccccccccccclccccpcencccccmcccccccccccccclcccccccccccccccccmcccccccccnciccccicccmccccccccemcccmcccccmcmccccccpciccccccccccccccbccccccccpccccccccccccccccecbccccccccccccccmcccgccgcccccccccccpclcjccceccccccccccccccccgcccemccccciccccccccgccgccccccccccccccccccccccecccceccccccccccgccccccccccccccccccccccccclcccccccicccccccccccccccccpicccccccccccccccgcccccccccccccccccccccccccccnpcciclccgcccclcpclccccccccclccccccccccccccccecccccccccccpccjicccccccccccccccccccccccccccccccccecccjccccccccpclccccccccccccccccccccccccccccccccccccccccccccccccccccgcccccccccccccmbccgcccccccjccccccccccciccccclcjccccccccccccceeccccpcccccccccccccciccccccccccccccccclccccccbccccccccccccgccgccccccccccccccccclcccccccccclcccccecccccccccccpfffffffffddddddddd"
   },
   {
     "planet": 5,
@@ -968,15 +1023,16 @@
       "(empty)": 9,
       "dirt": 86,
       "copper": 36,
-      "stone": 406,
+      "stone": 288,
       "iron": 38,
       "silver": 26,
       "gold": 29,
+      "granite": 200,
       "amethyst": 31,
-      "granite": 568,
+      "scoria": 403,
       "emerald": 29,
       "ruby": 17,
-      "basalt": 1257,
+      "basalt": 1340,
       "magmite": 18,
       "coreite": 24,
       "core": 9,
@@ -1055,6 +1111,16 @@
         "value": 420,
         "ore": true
       },
+      "granite": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 12.000000000000002,
+        "wt": 1.8,
+        "value": 9,
+        "ore": false
+      },
       "amethyst": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -1068,14 +1134,14 @@
         "value": 900,
         "ore": true
       },
-      "granite": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 12.000000000000002,
-        "wt": 1.8,
-        "value": 9,
+      "scoria": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 16.800000000000004,
+        "wt": 2.3,
+        "value": 16,
         "ore": false
       },
       "emerald": {
@@ -1164,6 +1230,6 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhehhhhhhhhhhhhhhhhhehhhhhhhehhppppppepeppppppplppppppppplppppppppppppppplppppppppppppppppppppplepppppppppppppppppppppppppplpppppppppppppppppppppopoppppppppppopppplpppppppoppeppoppppppppopppppppepppppppppppppppppppppppoeppppppppppplppppppppppppppppppppppppppppppppppjppppjppppppjppppppppppppppppppppppjpppppjppppppppppppppppppppppplppjppppppppppppppppppppjppppjppjpppppppppoppppjppppppjppppjppppppppeplppplppppppppppppppppppppppppppjjpppppjppppppppppbpppppppppppppppppplppppbppppepokkkkkekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbklkkkkkkkkkklkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkbkkkkkklkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkbkkkkkkbkklkkkkkkkkkkkkekkkkkkkkkkikkiikjkkkkkekikkkkkkjkbkkkkkkkkkkikkkkkkkkkkkkklkkkbkkkbkkkklkkkkkkkkkkkklklkkikkkkkkikkkkkkkkikkkekkkkkkokklkkbkkkkikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkokkkkkkkkkkokkkkkkkkkkikkkkkkkkkkkjkkkkkkikkkbkbikkkkkjkkkkkkkkkkkikikikkkkkkkkkkkkkkkkknkkkkkkkkkkkkkkkkkkknkkklkkkkkkkkbkkkkkbnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkokkkkkiknknkkkkkkkkkkkkkekkkkkkkekkkkkkkkkkkkkkkkkkkkkkkkkkknkkkkccnnncccncccccccclcccocccccccclcccccccncccccnccccccccccccccccccccccccciccccccccccccccccccccconcbcncccccccccccccjcncccccccccccccccccccoccccccccccccccccccccccccccccccccccccbccbnccccccccmccccccccmccccmcccccccccccccccccccccmccccmcccccccmccccccccccccnccccecclcccccccccecccccclcccccccbccccicccccccccccccccccccccccccccjcccccccccccccccccjccbcocccccccccceccmcccmcbcccccccccmlccccccccccceccccccccccccccciccccccccccccccciciccccccccccccccccmcccccccccmcccccccccccccccccemccccccccomcccccclmccccccclcccccccccccclccccccccccccccccccccccccccccccccccccccccccccccccgccccccccccccgccccccccccccccccccccccccjccccccccccbcccicccccccccgccccccccccccccccccecccccjmgccccccccccccclcoccccecccjccccccgcccbcgcgcccccccccjcccciccccccccccccccccccccccmccccccciccccccogcccccccccccccccccccccccccccccccccccccccgccccccccccccccccgcccccccccccccccccccccccccccccccgcccccclccccccccccbccccccccccccccccgccbcccccccccccbcccccicccccccccjcccccccccccccccccccccccccccocccccccccccecccccccccccceccccbccccccccccccilgcccccccigcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccoccccccccceccbcccceoccccoccccccccccccccccccecccccccccccccimccccccecccccccccgcccclceccccccccccccgccclcccccccccclcccccccccccccjccccccccccccccccccccccgccccgcccccccgcccccclccccccccccgccccocccccceccccccccccccccccccclccbcccccccceccgccccccgcccccccccccccccccgccccccccccccccccccccccccccgcceccccccccccccjcccccecccccccccccoccclcccccccccccccccccccciccccccccccmcccccfffffffffddddddddd"
+    "grid": "aaaaaaaaahhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhehhhhhhehhhhhhhhhhhhhhhhhehhhhhhhehhqqqqqqeqeqqqqqqqlqqqqqqqqqlqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqleqqqqqqqqqqqqqqqqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqpqpqqqqqqqqqqpqqqqlqqqqqqqpqqeqqpqqqqqqqqpqqqqqqqeqqqqqqqqqqqqqqqqqqqqqqqpeqqqqqqqqqqqlqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqjqqqqjqqqqqqjqqqqqqqqqqqqqqqqqqqqqqjqqqqqjqqqqqqqqqqqqqqqqqqqqqqqlqqjqqqqqqqqqqqkkkkkkkkkjkkkkjkkjkkkkkkkkkpkkkkjkkkkkkjkkkkjkkkkkkkkeklkkklkkkkkkkkkkkkkkkkkkkkkkkkkkjjkkkkkjkkkkkkkkkkbkkkkkkkkkkkkkkkkkklkkkkbkkkkekpkkkkkekkkkkkkkkkkkkkkkkkkkkkkkkkkkkkbklkkkkkkkkkklkkkkkkkkkkkkkbkkkkkkkkkkkkkkkkkbkkkkkkloooooooooooooooooooooooooooooooooooboooooooooooooobooooooboolooooooooooooeooooooooooiooiiojoooooeoioooooojobooooooooooiooooooooooooolooobooobooooloooooooooooololooiooooooiooooooooioooeoooooopooloobooooioooooooooooooooooooooooooooooooooopoooooooooopooooooooooiooooooooooojooooooiooobobiooooojoooooooooooioioiooooooooooooooooonooooooooooooooooooonoooloooooooobooooobnooooooooooooooooooooooooooooooooooooooooooooooboooooooooooooooooooooooooooooooooooooocccccccccccccccccccccccccpcccccicncncccccccccccccecccccccecccccccccccccccccccccccccccnccccccnnncccncccccccclcccpcccccccclcccccccncccccncccccccccccccccccccccccccicccccccccccccccccccccpncbcncccccccccccccjcncccccccccccccccccccpccccccccccccccccccccccccccccccccccccbccbnccccccccmccccccccmccccmcccccccccccccccccccccmccccmcccccccmccccccccccccnccccecclcccccccccecccccclcccccccbccccicccccccccccccccccccccccccccjcccccccccccccccccjccbcpcccccccccceccmcccmcbcccccccccmlccccccccccceccccccccccccccciccccccccccccccciciccccccccccccccccmcccccccccmcccccccccccccccccemccccccccpmcccccclmccccccclcccccccccccclccccccccccccccccccccccccccccccccccccccccccccccccgccccccccccccgccccccccccccccccccccccccjccccccccccbcccicccccccccgccccccccccccccccccecccccjmgccccccccccccclcpccccecccjccccccgcccbcgcgcccccccccjcccciccccccccccccccccccccccmccccccciccccccpgcccccccccccccccccccccccccccccccccccccccgccccccccccccccccgcccccccccccccccccccccccccccccccgcccccclccccccccccbccccccccccccccccgccbcccccccccccbcccccicccccccccjcccccccccccccccccccccccccccpcccccccccccecccccccccccceccccbccccccccccccilgcccccccigcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccpccccccccceccbccccepccccpccccccccccccccccccecccccccccccccimccccccecccccccccgcccclceccccccccccccgccclcccccccccclcccccccccccccjccccccccccccccccccccccgccccgcccccccgcccccclccccccccccgccccpcccccceccccccccccccccccccclccbcccccccceccgccccccgcccccccccccccccccgccccccccccccccccccccccccccgcceccccccccccccjcccccecccccccccccpccclcccccccccccccccccccciccccccccccmcccccfffffffffddddddddd"
   }
 ]

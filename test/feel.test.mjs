@@ -44,7 +44,8 @@ test('feel constants are unchanged', () => {
       depth: H.HEAT_DEPTH, ramp: H.HEAT_RAMP,
       exponent: H.HEAT_EXPONENT, rate: H.HEAT_RATE
     },
-    soak: { rise: H.SOAK_RISE, fall: H.SOAK_FALL, maxMult: H.SOAK_MAX_MULT }
+    soak: { rise: H.SOAK_RISE, fall: H.SOAK_FALL, maxMult: H.SOAK_MAX_MULT },
+    heatTint: { ramp: H.HEAT_TINT_RAMP }
   });
 });
 
@@ -79,6 +80,40 @@ test('soak escalates heat damage without replacing depth as the driver', () => {
     'depth must still matter more than dwell time');
   /* and soak cannot conjure damage where there is none */
   assert.equal(H.heatDamagePerSecond(H.HEAT_DEPTH - 1, 0, 1), 0, 'no heat above the threshold, however soaked');
+});
+
+/* The world has to explain the mechanic. If the rock band and the heat
+   threshold ever drift apart again, crossing into danger stops being visible
+   and the player is back to reading a number that is not on screen. */
+test('the scoria band starts exactly at the heat threshold', () => {
+  assert.equal(H.GRANITE_TO_SCORIA, H.HEAT_DEPTH,
+    'the rock must change on the same metre the heat starts');
+  assert.equal(H.baseRock(H.HEAT_DEPTH - 1).id, 'granite', 'still safe rock just above the line');
+  assert.equal(H.baseRock(H.HEAT_DEPTH).id, 'scoria', 'hot rock from the line down');
+});
+
+test('the world tint announces the zone faster than the danger builds', () => {
+  assert.equal(H.heatT(H.HEAT_DEPTH), 0, 'no tint above the line');
+  assert.equal(H.heatT(0), 0);
+  assert.ok(H.heatT(H.HEAT_DEPTH + 10) > 0.3, 'the shift must be obvious within a few blocks');
+  assert.equal(H.heatT(200), 1, 'and clamp');
+  /* tint ramps over ~26 m of digging; soak takes 40 s. The world should say
+     "you are somewhere dangerous" well before the hull says "and it is
+     costing you". */
+  assert.ok(H.HEAT_TINT_RAMP < 40, 'the visual cue must not lag the damage');
+});
+
+test('every rock band is reachable, and they get harder with depth', () => {
+  const bands = [0, 20, 50, 80, 130].map((d) => H.baseRock(d));
+  const ids = bands.map((b) => b.id);
+  assert.deepEqual(ids, ['dirt', 'stone', 'granite', 'scoria', 'basalt']);
+  for (let i = 1; i < bands.length; i++) {
+    assert.ok(bands[i].hard > bands[i - 1].hard, ids[i] + ' must be harder than ' + ids[i - 1]);
+    assert.ok(bands[i].value > bands[i - 1].value, ids[i] + ' must be worth more than ' + ids[i - 1]);
+  }
+  /* basalt used to start at 130 while planet 0's core sits at 110, so the
+     deepest rock in the game could never be seen on the first planet */
+  assert.ok(H.baseRock(H.coreDepth(1) - 5).id === 'basalt', 'basalt must be reachable by planet 1');
 });
 
 test('cooling buys time but never immunity', () => {

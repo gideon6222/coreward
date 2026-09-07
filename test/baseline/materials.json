@@ -156,6 +156,15 @@
       "glow": 0.02
     },
     {
+      "id": "scoria",
+      "name": "Scoria",
+      "color": 7023128,
+      "hard": 7,
+      "wt": 2.3,
+      "value": 16,
+      "glow": 0.1
+    },
+    {
       "id": "basalt",
       "name": "Basalt",
       "color": 3814720,

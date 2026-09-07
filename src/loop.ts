@@ -12,7 +12,7 @@ import {
   CAM_FOLLOW_PLAY, CAM_FOLLOW_FLY, CAM_ZOOM_RATE, CAM_Y_OFFSET,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
   FUEL_PER_MOVE, HULL_REGEN,
-  depthT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter
+  depthT, heatT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
@@ -210,9 +210,16 @@ export function frame(now: number) {
   sun.intensity = 1.5 * (1 - tDeep);
   rim.intensity = 0.5 - 0.32 * tDeep;
   fog.density = FOG_SURFACE + tDeep * FOG_GAIN;
-  const hi = lerpHex(skyHi(g.planet), 0x02030a, tDeep);
-  const lo = lerpHex(skyLo(g.planet), 0x0a0c14, tDeep);
+  /* Below the heat line the whole world turns ember: sky, fog and the drifting
+     dust all warm together. Three coordinated signals so the boundary reads at
+     a glance instead of having to be noticed in the HUD. */
+  const hot = heatT(g.pd);
+  const hi = lerpHex(skyHi(g.planet), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
+  const lo = lerpHex(skyLo(g.planet), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
   fog.color.copy(lo);
+  /* ambient warms too, so the rock itself is lit hot rather than just fogged */
+  amb.color.setHex(0xffffff).lerp(new THREE.Color(0xff8a52), hot * 0.6);
+  dustMat.color.setHex(0xc8b89a).lerp(new THREE.Color(0xff6a28), hot);
   starMat.opacity = clamp(1 - tDeep * 2.4, 0, 0.9);
   sunSprite.material.opacity = clamp(0.5 - tDeep, 0, 0.5);
   dustMat.opacity = clamp(tDeep * 0.55, 0, 0.5);
