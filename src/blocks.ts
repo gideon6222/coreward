@@ -32,7 +32,7 @@ export function makeBlock(x: number, d: number, b: Block) {
   const grp = new THREE.Group();
   grp.add(new THREE.Mesh(boxGeo, mat(shade(b.host || 0x333038, jit), 0.02)));
   const n = b.shards || 5;
-  const sm = mat(b.color, b.glow);
+  const sm = mat(b.color, b.glow, false);   /* crystals stay ungrained */
   for (let i = 0; i < n; i++) {
     const r1 = rnd(x * 13 + i, d * 7 + i * 3, g.planet);
     const r2 = rnd(x * 3 + i * 5, d * 17 + i, g.planet + 11);

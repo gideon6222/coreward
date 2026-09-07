@@ -87,10 +87,29 @@ export const HEAT_RATE = 4.5;
 export const digFuelPerSecond = (hardness: number) =>
   FUEL_DIG_BASE + hardness * FUEL_DIG_PER_HARDNESS;
 
-/* Hull loss per second at a given depth, after the cooling rig's shield.
-   Zero above HEAT_DEPTH, then accelerating. */
-export function heatDamagePerSecond(pd: number, shield: number): number {
+/* ---------- heat soak ----------
+   Depth alone made heat a place rather than a clock: at a safe-enough depth you
+   could sit forever, so the only question was "how deep", never "how long".
+   Soak builds while you are below HEAT_DEPTH and bleeds off above it, and it
+   multiplies the damage depth is already doing.
+
+   That turns lingering into the gamble. One quick dip is nearly free; parking
+   on a rich vein is what kills you, and the choice to stay one more block is
+   the decision the loop was missing. */
+export const SOAK_RISE = 1 / 40;    /* deep-seconds from cold to fully soaked */
+export const SOAK_FALL = 1 / 14;    /* shallow-seconds back to cold, faster */
+export const SOAK_MAX_MULT = 2.5;   /* damage multiplier when fully soaked */
+
+export function soakAfter(soak: number, pd: number, dt: number): number {
+  const rate = pd > HEAT_DEPTH ? SOAK_RISE : -SOAK_FALL;
+  return clamp01(soak + rate * dt);
+}
+
+/* Hull loss per second at a given depth, after the cooling rig's shield and
+   scaled by how long you have been down there. Zero above HEAT_DEPTH. */
+export function heatDamagePerSecond(pd: number, shield: number, soak = 0): number {
   if (pd <= HEAT_DEPTH) return 0;
   const ex = (pd - HEAT_DEPTH) / HEAT_RAMP;
-  return Math.pow(ex, HEAT_EXPONENT) * HEAT_RATE * (1 - shield);
+  const escalation = 1 + clamp01(soak) * (SOAK_MAX_MULT - 1);
+  return Math.pow(ex, HEAT_EXPONENT) * HEAT_RATE * (1 - shield) * escalation;
 }

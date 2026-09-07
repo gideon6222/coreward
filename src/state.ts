@@ -8,7 +8,7 @@ export const g: {
   dug: Set<string>;
   px: number; pd: number;
   face: Dir;
-  fuel: number; hull: number;
+  fuel: number; hull: number; soak: number;
   cargo: Cargo; weight: number;
   mode: Mode;
 } = {
@@ -17,7 +17,7 @@ export const g: {
   dug: new Set<string>(),
   px: START_X, pd: -1,
   face: 'down',
-  fuel: 90, hull: HULL_MAX,
+  fuel: 90, hull: HULL_MAX, soak: 0,
   cargo: {}, weight: 0,
   mode: 'play'
 };
@@ -27,7 +27,9 @@ export const S = {
   cargoCap: () => 60 + g.up.cargo * 45,
   speed: () => 3.0 + g.up.thrust * 0.7,
   fuelCap: () => 90 + g.up.tank * 40,
-  shield: () => Math.min(0.9, g.up.cool * 0.1),
+  /* capped below 1 on purpose - a fully upgraded rig buys time, it does
+     not make deep water safe. See the soak note in feel.ts. */
+  shield: () => Math.min(0.72, g.up.cool * 0.09),
   light: () => 8 + g.up.scan * 2.4,
   towCut: () => Math.max(0.1, 0.5 - g.up.tow * 0.05),
   autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075)

@@ -26,7 +26,7 @@ export function goSurface() {
   g.px = START_X; g.pd = -1; g.face = 'down';
   R.moving = null; R.digging = null; R.flight = null;
   sfx.digStop();
-  g.fuel = S.fuelCap(); g.hull = HULL_MAX;
+  g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0;
   syncBlocks(true);
   save();
 }

@@ -55,10 +55,15 @@ export const UPGRADES: Upgrade[] = [
     effect: (l: number) => (60 + l * 45) + ' kg' },
   { key: 'thrust', name: 'Thrusters',     base: 100, mul: 1.95, max: 9,
     effect: (l: number) => (3.0 + l * 0.7).toFixed(1) + ' cells/s' },
-  { key: 'tank',   name: 'Fuel Tank',     base: 200, mul: 2.10, max: 9,
+  /* Priced against the depth where running dry actually strands you, not
+     against the first haul. The old 200 was pocket change by 36 m. */
+  { key: 'tank',   name: 'Fuel Tank',     base: 480, mul: 2.00, max: 9,
     effect: (l: number) => (90 + l * 40) + ' fuel' },
-  { key: 'cool',   name: 'Cooling Rig',   base: 300, mul: 2.15, max: 9,
-    effect: (l: number) => Math.round(Math.min(0.9, l * 0.1) * 100) + '% heat shield' },
+  /* The expensive one, and the ladder you save for. Heat starts at 70 m, so
+     the first level costs about half a good run from that depth rather than
+     one gold block. The shallower multiplier keeps later levels reachable. */
+  { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9,
+    effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
   { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9,
     effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light' },
   { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8,

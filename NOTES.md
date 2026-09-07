@@ -65,6 +65,36 @@ golden tests**. That is the system working, not a problem. The workflow:
 
 Never re-record without reading the diff. The whole value is in step 3.
 
+## Stage 1 of the overhaul (2026-09-06)
+
+**Heat soak.** Depth alone made heat a *place* rather than a clock — at a safe
+depth you could sit forever, so the only question was "how deep", never "how
+long". `g.soak` now builds while below `HEAT_DEPTH` and bleeds off above it
+(faster than it builds, so a dip in and out stays cheap), and multiplies heat
+damage up to 2.5x. Lingering is the gamble now.
+
+**Cooling can no longer be bought away.** Shield was 0.1/level capped at 0.9 —
+near immunity. Now 0.09/level capped at **0.72**, so a maxed rig buys time
+rather than safety. Combined with soak, a fully upgraded ship at the core still
+loses hull.
+
+**Both counters repriced against the depth where their threat starts**, which is
+the lesson from the original playtest complaint ("I can afford upgrades pretty
+early on for fuel and cooling so neither is a risk"). Fuel tank 200 -> 480,
+cooling 300 -> 1000 with a shallower multiplier so the ladder stays climbable.
+
+Survival at the core (110 m), hull 100:
+
+| cooling | cold | fully soaked |
+|---|---|---|
+| none | 30 s | 12 s |
+| L3 (27%) | 41 s | 16 s |
+| L5 (45%) | 54 s | 22 s |
+| L8 (72%) | 106 s | 42 s |
+
+**This balance is a first pass and wants playtest feedback**, not more theory.
+The intended shape is: fuel first to reach depth, then cooling to survive it.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

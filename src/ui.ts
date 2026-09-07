@@ -56,8 +56,14 @@ export function updateHUD() {
   } else {
     ui.btnAuto.style.display = 'none';
   }
+  /* Two different warnings share the one vignette. Soak reddens the edges
+     steadily, so you can watch the pressure build and decide whether to push
+     one more block. A failing hull pulses on top of it, because that is an
+     alarm rather than a gauge. */
   const danger = clamp((45 - g.hull) / 45, 0, 1);
-  ui.heat.style.opacity = String(danger * (0.35 + 0.25 * Math.sin(performance.now() / 180)));
+  const alarm = danger * (0.35 + 0.25 * Math.sin(performance.now() / 180));
+  const building = g.soak * 0.34;
+  ui.heat.style.opacity = String(Math.max(alarm, building));
 }
 
 export function buildManifest() {

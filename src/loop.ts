@@ -12,7 +12,7 @@ import {
   CAM_FOLLOW_PLAY, CAM_FOLLOW_FLY, CAM_ZOOM_RATE, CAM_Y_OFFSET,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
   FUEL_PER_MOVE, HULL_REGEN,
-  depthT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond
+  depthT, easeInOut, approach, digFuelPerSecond, heatDamagePerSecond, soakAfter
 } from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
@@ -162,9 +162,11 @@ export function frame(now: number) {
       bank += (0 - bank) * Math.min(1, raw * 6);
     }
 
+    /* soak builds while deep and bleeds off above, so staying is the gamble */
+    g.soak = soakAfter(g.soak, g.pd, dt);
     if (g.pd > 70) {
-      /* heat ramps in below HEAT_DEPTH; see feel.ts */
-      g.hull -= heatDamagePerSecond(g.pd, S.shield()) * dt;
+      /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
+      g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * dt;
     } else if (atSurface()) {
       g.hull = Math.min(HULL_MAX, g.hull + HULL_REGEN * dt);
       g.fuel = S.fuelCap();

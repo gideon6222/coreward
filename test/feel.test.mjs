@@ -43,8 +43,52 @@ test('feel constants are unchanged', () => {
     heat: {
       depth: H.HEAT_DEPTH, ramp: H.HEAT_RAMP,
       exponent: H.HEAT_EXPONENT, rate: H.HEAT_RATE
-    }
+    },
+    soak: { rise: H.SOAK_RISE, fall: H.SOAK_FALL, maxMult: H.SOAK_MAX_MULT }
   });
+});
+
+/* ---- heat soak: the tension mechanic, so its shape is asserted, not just its
+   numbers. The design intent is "lingering is the gamble". ---- */
+
+test('soak builds while deep and bleeds off above the threshold', () => {
+  const deep = H.HEAT_DEPTH + 20;
+  const shallow = H.HEAT_DEPTH - 20;
+  assert.ok(H.soakAfter(0, deep, 1) > 0, 'must build below the heat threshold');
+  assert.equal(H.soakAfter(0, shallow, 1), 0, 'must not build above it, and must not go negative');
+  assert.ok(H.soakAfter(0.5, shallow, 1) < 0.5, 'must bleed off above it');
+  assert.ok(H.soakAfter(1, deep, 999) <= 1, 'must clamp at fully soaked');
+  assert.equal(H.soakAfter(0, deep, 0), 0, 'a zero-length frame changes nothing');
+});
+
+test('recovering is faster than soaking, so a dip in and out is cheap', () => {
+  /* if recovery were slower than the build, a single deep trip would poison the
+     rest of the run and the mechanic would read as punishment rather than as a
+     decision */
+  assert.ok(H.SOAK_FALL > H.SOAK_RISE, 'recovery must outpace accumulation');
+});
+
+test('soak escalates heat damage without replacing depth as the driver', () => {
+  const deep = 100;
+  const cold = H.heatDamagePerSecond(deep, 0, 0);
+  const hot = H.heatDamagePerSecond(deep, 0, 1);
+  assert.ok(hot > cold, 'a soaked hull must take more damage');
+  assert.ok(Math.abs(hot / cold - H.SOAK_MAX_MULT) < 1e-9, 'full soak must apply exactly the stated multiplier');
+  /* depth still dominates: shallow-and-soaked must beat deep-and-cold */
+  assert.ok(H.heatDamagePerSecond(80, 0, 1) < H.heatDamagePerSecond(110, 0, 0),
+    'depth must still matter more than dwell time');
+  /* and soak cannot conjure damage where there is none */
+  assert.equal(H.heatDamagePerSecond(H.HEAT_DEPTH - 1, 0, 1), 0, 'no heat above the threshold, however soaked');
+});
+
+test('cooling buys time but never immunity', () => {
+  const maxShield = 0.72;
+  assert.ok(H.heatDamagePerSecond(110, maxShield, 1) > 0,
+    'a fully upgraded rig fully soaked at the core must still be losing hull');
+  /* the whole point of the rebalance: the pressure is not purchasable away */
+  const unprotected = H.heatDamagePerSecond(110, 0, 1);
+  const protectedRate = H.heatDamagePerSecond(110, maxShield, 1);
+  assert.ok(protectedRate < unprotected / 2, 'cooling must still be clearly worth buying');
 });
 
 test('the curves are unchanged', () => {
