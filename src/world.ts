@@ -23,7 +23,7 @@ export function blockAt(x: number, d: number): Block | null {
   /* The relic, before anything that could hide it. It is one cell on the whole
      planet and it must not lose a coin flip to a cave. */
   const rl = relicAt(g.planet);
-  if (x === rl.x && d === rl.d && !g.relics.includes(relicFor(g.planet).id)) {
+  if (x === rl.x && d === rl.d && !g.relicsTaken.includes(g.planet)) {
     return { id: 'relic', name: relicFor(g.planet).name, color: RELIC_COLOR, host: RELIC_HOST,
              glow: 0.95, shards: 9, tone: 10, hard: 9 * hm, wt: 0, value: 0,
              ore: true, relic: true };

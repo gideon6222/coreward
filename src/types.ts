@@ -224,6 +224,7 @@ export interface SaveV2 {
   drops?: Drops;
   charge?: number;
   relics?: string[];
+  relicsTaken?: number[];
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

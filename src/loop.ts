@@ -181,6 +181,7 @@ export function frame(now: number) {
              core with this still in the ground and it goes with the planet. */
           const rel = relicFor(g.planet);
           g.relics.push(rel.id);
+          g.relicsTaken.push(g.planet);
           spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 160, 11, 2.0);
           spray(worldX(R.digging.x), -R.digging.d, RELIC_COLOR, 120, 8, 2.4);
           flash('rgba(255,240,255,.55)', 700);
