@@ -500,6 +500,56 @@ fires during the reload and writes the live state straight back over the seed.
 Freeze `Storage.prototype.setItem` for that key on the outgoing page first.
 This has now cost time twice.
 
+## Stage 4: planet traits (2026-09-07)
+
+Planets differed by three numbers that all climbed together - deeper core,
+harder rock, better prices. That is a difficulty slider, not variety: every
+planet was the last one with the dial turned up, so the ladder gave you nothing
+new to learn. Traits make each one a different question.
+
+- **Stable** - the baseline, and always Verdax. A trait on the first planet
+  would just read as "the game is like this" to someone who has never seen one
+  bite.
+- **Volatile** - gas 2.2x as common and 35% more damage. The ground is hostile.
+- **Hollow** - caves 2.4x. Roughly 12-14% of the crust is open air against
+  Verdax's 4.6%, so it is fast to cross and there is 8 points less to mine.
+- **Crystalline** - geodes 3x. Digging sideways finally pays properly.
+- **Searing** - soak builds 60% faster. Depth costs the same; dwelling costs
+  much more.
+
+`traitOf(p)` is a hash of the planet index, so a planet is the same every time
+you reach it and the golden tests stay reproducible. Which trait lands where is
+therefore silent to change, which is why `test/baseline/traits.json` snapshots
+the assignment for the first 24 planets.
+
+### The rule that keeps traits safe
+
+**Every trait multiplies something layered over generation - pocket and cave
+frequency, hazard damage, soak rate - and never `rnd(x, d, planet)`.** A trait
+that shifted the ore stream would rebalance every depth on every planet at
+once, and would look in a diff like a one-line change.
+
+This is enforced rather than remembered: the additive-only test runs with
+traits applied, so it fails the moment a trait reaches into the ore roll. That
+also ruled out the trait I wanted most, a planet where heat starts fifteen
+metres higher. `HEAT_DEPTH` is welded to the scoria band, the sky, the fog and
+the ambient tint - the whole "four things land on the same metre" fix from the
+first heat playtest - and making the band planet-aware changes block ids.
+Searing gets at the same idea from the soak side for none of that cost.
+
+Rates are capped after the multiply (`CAVE_CHANCE_CAP` 0.17, pockets 0.06),
+because cave chance already climbs with depth and 2.4x on top of it dissolves
+the deep ground into open air. There is a test asserting a planet never drops
+below 80% minable.
+
+### Where the player meets it
+
+The name chip, because it is the only always-visible place a planet is named
+and a modifier you must open a menu to remember is one you play without. Stable
+is left unlabelled. The pause menu carries the full sentence, and the launch
+screen after a core break sells the next planet with it, which is the moment
+the information is actually worth reading.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

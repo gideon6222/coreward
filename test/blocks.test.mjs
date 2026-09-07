@@ -183,25 +183,108 @@ test('a geode outvalues every ore available at its depth', () => {
     'a geode has to out-shine every ore or you will never spot one across a cave');
 });
 
-test('pockets stay rare enough to read as events', () => {
-  for (const p of PLANETS) {
-    H.g.planet = p;
-    H.g.dug = new Set();
-    const cd = H.coreDepth(p);
-    let cells = 0, gas = 0, geo = 0;
-    for (let d = 0; d < cd; d++) for (let x = 0; x < H.W; x++) {
-      cells++;
-      const b = H.blockAt(x, d);
-      if (b && b.id === H.GAS.id) gas++;
-      else if (b && b.id === H.GEODE.id) geo++;
+/* ---------- planet traits ----------
+
+   The additive-only test above runs with traits applied, so its passing is
+   also the proof that no trait perturbs the ore stream. If a future trait
+   reaches into `rnd(x, d, planet)` it fails there, not here. */
+
+function census(p) {
+  H.g.planet = p;
+  H.g.dug = new Set();
+  const cd = H.coreDepth(p);
+  let cells = 0, gas = 0, geo = 0, cave = 0;
+  for (let d = 0; d < cd; d++) for (let x = 0; x < H.W; x++) {
+    cells++;
+    const b = H.blockAt(x, d);
+    if (!b) cave++;
+    else if (b.id === H.GAS.id) gas++;
+    else if (b.id === H.GEODE.id) geo++;
+  }
+  const pct = (n) => 100 * n / cells;
+  return { cells, gas: pct(gas), geode: pct(geo), cave: pct(cave), minable: pct(cells - cave - gas) };
+}
+
+const WIDE = Array.from({ length: 40 }, (_, i) => i);
+
+test('planet 0 is Stable and every later planet has a real trait', () => {
+  assert.equal(H.traitOf(0).id, 'stable', 'Verdax is where you learn what normal feels like');
+  for (const p of WIDE.slice(1))
+    assert.notEqual(H.traitOf(p).id, 'stable', 'planet ' + p + ' fell back to Stable');
+  for (const p of WIDE)
+    assert.equal(H.traitOf(p), H.traitOf(p), 'traitOf must be pure');
+});
+
+test('every trait actually occurs, and none dominates the ladder', () => {
+  const seen = new Map();
+  for (const p of WIDE.slice(1)) {
+    const id = H.traitOf(p).id;
+    seen.set(id, (seen.get(id) || 0) + 1);
+  }
+  for (const t of H.TRAITS) {
+    if (t.id === 'stable') continue;
+    const n = seen.get(t.id) || 0;
+    assert.ok(n > 0, t.id + ' never appears in the first 40 planets - it is dead content');
+    assert.ok(n < WIDE.length * 0.55,
+      t.id + ' takes ' + n + ' of 39 planets, so the ladder is mostly one trait');
+  }
+});
+
+test('every trait is described and does something', () => {
+  const ids = new Set();
+  for (const t of H.TRAITS) {
+    assert.ok(!ids.has(t.id), 'duplicate trait id ' + t.id);
+    ids.add(t.id);
+    assert.equal(H.TRAIT_OF[t.id], t);
+    assert.ok(t.blurb.length > 20 && t.blurb.length < 110,
+      t.id + ' blurb must fit one line on the launch screen');
+    const knobs = [t.gas, t.gasDamage, t.geode, t.cave, t.soak].filter((v) => v !== undefined);
+    if (t.id === 'stable') assert.equal(knobs.length, 0, 'Stable must be the baseline');
+    else assert.ok(knobs.length > 0, t.id + ' changes nothing, so it is a label not a trait');
+    for (const v of knobs) assert.ok(v > 1 && v <= 3.5, t.id + ' multiplier ' + v + ' is out of range');
+  }
+});
+
+test('a trait bends its own rate without turning a pocket into terrain', () => {
+  const stable = census(0);
+  assert.ok(stable.gas < 1.5 && stable.geode < 1.5,
+    'a Stable planet must stay quiet: ' + JSON.stringify(stable));
+
+  for (const p of WIDE.slice(1, 16)) {
+    const c = census(p);
+    const t = H.traitOf(p);
+    for (const [name, pct] of [['gas', c.gas], ['geode', c.geode]]) {
+      assert.ok(pct > 0.15, 'planet ' + p + ' (' + t.id + '): ' + name + ' at ' +
+        pct.toFixed(2) + '% is too rare to ever be met');
+      assert.ok(pct < 3.5, 'planet ' + p + ' (' + t.id + '): ' + name + ' at ' +
+        pct.toFixed(2) + '% is terrain, not an event');
     }
-    for (const [name, n] of [['gas', gas], ['geode', geo]]) {
-      const pct = 100 * n / cells;
-      assert.ok(pct > 0.15, 'planet ' + p + ': ' + name + ' is at ' + pct.toFixed(2) +
-        '% - too rare to ever be met');
-      assert.ok(pct < 2.5, 'planet ' + p + ': ' + name + ' is at ' + pct.toFixed(2) +
-        '% - common enough to be terrain rather than an event');
+    /* Hollow trades material for speed. Past a point it stops being a trade. */
+    assert.ok(c.minable > 80, 'planet ' + p + ' (' + t.id + ') is only ' +
+      c.minable.toFixed(1) + '% minable - there is nothing left to dig for');
+    assert.ok(c.cave < H.CAVE_CHANCE_CAP * 100 + 1,
+      'planet ' + p + ' cave fraction ' + c.cave.toFixed(1) + '% broke the cap');
+  }
+
+  /* the flagship effects must be visible against Stable, or the trait is a
+     name rather than a change the player can feel */
+  const volatilePlanet = WIDE.slice(1).find((p) => H.traitOf(p).id === 'volatile');
+  const crystalPlanet = WIDE.slice(1).find((p) => H.traitOf(p).id === 'crystalline');
+  const hollowPlanet = WIDE.slice(1).find((p) => H.traitOf(p).id === 'hollow');
+  assert.ok(census(volatilePlanet).gas > stable.gas * 1.8, 'Volatile is not volatile');
+  assert.ok(census(crystalPlanet).geode > stable.geode * 2.5, 'Crystalline is not crystalline');
+  assert.ok(census(hollowPlanet).cave > stable.cave * 1.8, 'Hollow is not hollow');
+});
+
+test('trait-adjusted rates stay inside their caps at any depth', () => {
+  for (const p of WIDE) {
+    for (const d of [26, 60, 120, 400, 5000]) {
+      assert.ok(H.caveChanceOn(d, p) <= H.CAVE_CHANCE_CAP + 1e-9,
+        'cave chance broke the cap on planet ' + p + ' at ' + d + ' m');
+      assert.ok(H.caveChanceOn(d, p) > 0);
     }
+    assert.ok(H.gasChanceOn(p) <= 0.06 && H.gasChanceOn(p) >= H.GAS.chance);
+    assert.ok(H.geodeChanceOn(p) <= 0.06 && H.geodeChanceOn(p) >= H.GEODE.chance);
   }
 });
 

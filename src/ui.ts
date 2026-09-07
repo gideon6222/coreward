@@ -1,4 +1,5 @@
-import { HULL_MAX, DEF, UPGRADES, SUPPLIES, coreDepth, planetName, valueMult, costOf } from './config';
+import { HULL_MAX, DEF, UPGRADES, SUPPLIES, coreDepth, planetName, traitOf,
+         valueMult, costOf } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { haulValue } from './world';
@@ -49,7 +50,15 @@ export function flash(color: string, ms?: number) {
 export const atSurface = () => g.pd <= -0.6;
 
 export function updateHUD() {
-  ui.planet.textContent = planetName(g.planet);
+  /* The chip carries the trait because it is the only always-visible place a
+     planet is named, and a modifier you have to open a menu to remember is a
+     modifier you play without. Stable is left unlabelled - "Verdax · Stable"
+     would teach the first-time player that traits are a thing before they have
+     ever seen one bite. */
+  const tr = traitOf(g.planet);
+  ui.planet.textContent = tr.id === 'stable'
+    ? planetName(g.planet)
+    : planetName(g.planet) + '  ·  ' + tr.name.toUpperCase();
   ui.credits.textContent = Math.floor(g.credits).toLocaleString();
   ui.haul.textContent = haulValue().toLocaleString();
   ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   CORE ' + coreDepth(g.planet) + ' m';

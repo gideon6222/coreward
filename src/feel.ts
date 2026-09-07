@@ -108,8 +108,11 @@ export const SOAK_MAX_MULT = 2.5;   /* damage multiplier when fully soaked */
 export const HEAT_TINT_RAMP = 26;
 export const heatT = (pd: number) => clamp01((pd - HEAT_DEPTH) / HEAT_TINT_RAMP);
 
-export function soakAfter(soak: number, pd: number, dt: number): number {
-  const rate = pd > HEAT_DEPTH ? SOAK_RISE : -SOAK_FALL;
+/* `rise` is the planet's soak multiplier (Searing runs hot). Only the build
+   side scales - bleeding off at the surface is the same everywhere, because a
+   trait that also slowed recovery would punish twice for one idea. */
+export function soakAfter(soak: number, pd: number, dt: number, rise = 1): number {
+  const rate = pd > HEAT_DEPTH ? SOAK_RISE * rise : -SOAK_FALL;
   return clamp01(soak + rate * dt);
 }
 

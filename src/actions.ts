@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { W, HULL_MAX, DEF, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
-         PATCH_HULL, CELL_FUEL, coreDepth, planetName, valueMult } from './config';
+         PATCH_HULL, CELL_FUEL, coreDepth, planetName, traitOf, valueMult } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
 import { haulValue, findRoute } from './world';
@@ -133,7 +133,8 @@ export function breakCore() {
     const next = g.planet + 1;
     showEvent(planetName(g.planet).toUpperCase() + ' DESTROYED',
       'The core gave way and the planet tore itself apart. You recovered a Core Shard, worth a permanent 8% drill power. ' +
-      'Total shards: ' + g.shards + '. Next stop: ' + planetName(next) + ', where the crust is tougher and the veins run richer.',
+      'Total shards: ' + g.shards + '. Next stop: ' + planetName(next) +
+      ', where the crust is tougher and the veins run richer. ' + traitOf(next).blurb,
       'LAUNCH TO ' + planetName(next).toUpperCase(),
       () => {
         g.planet = next;

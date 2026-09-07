@@ -1,5 +1,5 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
-         GEODE, GAS, CAVE_MIN_DEPTH, caveChance } from './config';
+         GEODE, GAS, CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
 import { key } from './util';
 import { g } from './state';
 import type { Block } from './types';
@@ -22,7 +22,7 @@ export function blockAt(x: number, d: number): Block | null {
      Evaluated on a coarse grid and with its own seed offset, so adding them
      leaves every ore and rock roll exactly where it was. */
   if (d >= CAVE_MIN_DEPTH &&
-      rnd(Math.floor(x / 2), Math.floor(d / 2), g.planet + 77) < caveChance(d)) {
+      rnd(Math.floor(x / 2), Math.floor(d / 2), g.planet + 77) < caveChanceOn(d, g.planet)) {
     return null;
   }
 
@@ -32,12 +32,12 @@ export function blockAt(x: number, d: number): Block | null {
      enough to be an event rather than a resource. Gas first: it is the one you
      do not want, and it should not be crowded out by a geode roll. */
   const pr = rnd(x + 313, d + 977, g.planet + 41);
-  if (d >= GAS.min && pr < GAS.chance) {
+  if (d >= GAS.min && pr < gasChanceOn(g.planet)) {
     return { id: GAS.id, name: GAS.name, color: GAS.color, host: GAS.host, glow: GAS.glow,
              shards: GAS.shards, tone: GAS.tone, hard: GAS.hard * hm, wt: GAS.wt,
              value: GAS.value, ore: true, hazard: true };
   }
-  if (d >= GEODE.min && pr > 1 - GEODE.chance) {
+  if (d >= GEODE.min && pr > 1 - geodeChanceOn(g.planet)) {
     return { id: GEODE.id, name: GEODE.name, color: GEODE.color, host: GEODE.host, glow: GEODE.glow,
              shards: GEODE.shards, tone: GEODE.tone, hard: GEODE.hard * hm, wt: GEODE.wt,
              value: GEODE.value, ore: true };

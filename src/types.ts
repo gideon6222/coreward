@@ -85,6 +85,25 @@ export interface Supply {
 
 export type Kit = Record<SupplyKey, number>;
 
+/* A planet's personality.
+
+   Every field is a multiplier applied to something layered ON TOP of world
+   generation - pocket and cave frequency, hazard damage, how fast soak builds.
+   None of them touches `rnd(x, d, planet)`, which is the ore stream, because a
+   trait that shifted the ore would rebalance every depth at once and would be
+   invisible in a diff. See the additive-only test in test/blocks.test.mjs. */
+export interface Trait {
+  id: string;
+  name: string;
+  /* one line, shown on the launch screen and in the pause menu */
+  blurb: string;
+  gas?: number;
+  gasDamage?: number;
+  geode?: number;
+  cave?: number;
+  soak?: number;
+}
+
 export interface Upgrade {
   key: UpgradeKey;
   name: string;

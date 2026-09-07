@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { W, HULL_MAX, DIG_BASE, coreDepth, valueMult, skyHi, skyLo,
-         GAS_HULL_DAMAGE, GAS_SOAK } from './config';
+         GAS_HULL_DAMAGE, GAS_SOAK, traitOf } from './config';
 import { clamp, key } from './util';
 import { g, S, save } from './state';
 import { blockAt } from './world';
@@ -145,14 +145,15 @@ export function frame(now: number) {
              one, and it gives dwelling deep a second thing to fear besides
              heat. The soak spike is what actually bites, because it multiplies
              every bit of heat damage for the rest of the trip. */
-          g.hull -= GAS_HULL_DAMAGE;
+          const dmg = Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1));
+          g.hull -= dmg;
           R.hullCause = 'gas';
           g.soak = Math.min(1, g.soak + GAS_SOAK);
           R.shake = Math.max(R.shake, 0.7);
           flash('rgba(150,220,80,.30)', 380);
           spray(worldX(R.digging.x), -R.digging.d, b.color, 90, 9, 1.5);
           sfx.gas();
-          toast('Gas pocket! Hull -' + GAS_HULL_DAMAGE);
+          toast('Gas pocket! Hull -' + dmg);
           R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
@@ -186,7 +187,7 @@ export function frame(now: number) {
     }
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
-    g.soak = soakAfter(g.soak, g.pd, dt);
+    g.soak = soakAfter(g.soak, g.pd, dt, traitOf(g.planet).soak || 1);
     if (g.pd > HEAT_DEPTH) {
       /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
       g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * dt;

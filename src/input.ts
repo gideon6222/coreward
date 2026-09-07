@@ -1,4 +1,4 @@
-import { coreDepth, planetName, SUPPLIES } from './config';
+import { coreDepth, planetName, traitOf, SUPPLIES } from './config';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
@@ -55,8 +55,10 @@ mustEl('btnPause').onclick = () => {
   disarmReset();
   audioLabels();
   ui.pauseStats.innerHTML =
-    '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.planet) + '</div>' +
-    '<div class="upeff">Core at ' + coreDepth(g.planet) + ' m · you are at ' + Math.max(0, Math.round(g.pd)) + ' m</div></div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.planet) +
+    (traitOf(g.planet).id === 'stable' ? '' : ' <span class="mult">' + traitOf(g.planet).name + '</span>') + '</div>' +
+    '<div class="upeff">Core at ' + coreDepth(g.planet) + ' m · you are at ' + Math.max(0, Math.round(g.pd)) + ' m</div>' +
+    '<div class="upeff">' + traitOf(g.planet).blurb + '</div></div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Credits</div>' +
     '<div class="upeff">Haul aboard worth ◈ ' + haulValue().toLocaleString() + '</div></div>' +
     '<div class="val">◈ ' + Math.floor(g.credits).toLocaleString() + '</div></div>' +
