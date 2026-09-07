@@ -82,6 +82,24 @@ export function chunkGeometry(size: number, bump: number, seg = 2) {
     pos.setXYZ(i, c[0], c[1], c[2]);
   }
   pos.needsUpdate = true;
+
+  /* Bake a vertical light gradient into the geometry as vertex colours.
+
+     Flat shading alone gives each facet one tone, so a chunk reads as a cluster
+     of flat planes. Brightening upward-facing vertices and darkening the
+     undersides makes every chunk read as a lump with a lit top and a shaded
+     belly, which is most of what sells them as rocks rather than facets.
+
+     Free: it lives in the one shared geometry, and multiplies with the
+     per-instance colour rather than replacing it. */
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const t = (pos.getY(i) / size) + 0.5;          /* 0 at the bottom, 1 at the top */
+    const v = 0.84 + Math.max(0, Math.min(1, t)) * 0.3;
+    col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
   g.computeVertexNormals();
   return g;
 }
@@ -148,12 +166,15 @@ const rockTex = (() => {
 })();
 
 const matCache = new Map<string, THREE.MeshLambertMaterial>();
-export function mat(color: number, glow?: number, grain = true) {
-  const k = color + '|' + (glow || 0) + '|' + (grain ? 1 : 0);
+/* `vcol` must match the geometry: enabling vertex colours on a geometry that
+   has no colour attribute renders it black. Only the chunk geometries carry
+   one - shards and haloes do not. */
+export function mat(color: number, glow?: number, grain = true, vcol = false) {
+  const k = color + '|' + (glow || 0) + '|' + (grain ? 1 : 0) + '|' + (vcol ? 1 : 0);
   if (!matCache.has(k)) {
     matCache.set(k, new THREE.MeshLambertMaterial({
       color: color, emissive: new THREE.Color(color).multiplyScalar(glow || 0.02),
-      flatShading: true, map: grain ? rockTex : null
+      flatShading: true, map: grain ? rockTex : null, vertexColors: vcol
     }));
   }
   return matCache.get(k)!;

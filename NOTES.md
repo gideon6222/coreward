@@ -242,6 +242,29 @@ layer, so it hides behind the first row and never covers sky, stars or the pad.
 Unlit and dark, so fog tints it to whatever the depth colour is and it goes
 ember below the heat line with everything else. One draw call, set once.
 
+## Stage 3: atmosphere, the free half (2026-09-07)
+
+Both changes ride on data already being written, so the draw-call count did not
+move at all.
+
+**Fake ambient occlusion.** Each chunk counts its open orthogonal neighbours and
+darkens if it is buried: fully enclosed rock renders at 0.72, rock at a tunnel
+edge at 1.0. This is what makes a tunnel read as *carved into* something rather
+than as a gap between floating blocks. Deliberately gentle - a realistic falloff
+would black out a fresh planet entirely, since nothing is dug yet. The world
+edge counts as solid, or there would be a bright rim down both sides of the map.
+
+**Vertex colours baked into the chunk geometry**, one of the techniques CRAFT
+listed as untried. Upward-facing vertices are brightened and undersides
+darkened, so every chunk reads as a lump with a lit top and a shaded belly
+rather than a cluster of flat facets. It lives in the one shared geometry and
+multiplies with the per-instance colour.
+
+One trap: enabling `vertexColors` on a material whose geometry has no colour
+attribute renders it black. Only the chunk geometries carry one - crystal shards
+are octahedra and haloes are quads - so `mat()` takes a flag and the pools set
+it per geometry.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
@@ -258,8 +281,10 @@ Nothing here is committed to; they are the live threads.
   without becoming routine?
 - **Content past the mid-game.** Nine ores and six planet names cycle; nobody
   has played deep enough to know whether the late game holds up.
-- **Stage 3: atmosphere.** Stage 2 freed the draw-call budget; spend it. Real
-  shadows, a wider view, denser debris, better ore reads.
+- **Stage 3 continued.** Fake AO and vertex-colour form are in. Still unspent:
+  real shadows from the player's lamp (a SpotLight would be one shadow-map face
+  rather than a point light's six), light shafts down the entry tunnel, and
+  denser debris now that there is budget for it.
 - **Stage 4: variety.** Events, consumables, run modifiers - the recorded reason
   players quit this genre is predictability, and it is also what gives the heat
   zone more than one reason to exist.

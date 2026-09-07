@@ -62,7 +62,8 @@ function poolFor(b: Block): Pool {
   const detailEmissive = new THREE.Color(b.color).multiplyScalar(b.glow || 0.02);
 
   const bodyMat = new THREE.MeshLambertMaterial({
-    color: 0xffffff, emissive: bodyEmissive, flatShading: true, map: mat(0xffffff, 0).map
+    color: 0xffffff, emissive: bodyEmissive, flatShading: true,
+    map: mat(0xffffff, 0).map, vertexColors: true
   });
   const body = new THREE.InstancedMesh(chunkFor(b.id), bodyMat, MAX_CELLS);
   body.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -74,7 +75,10 @@ function poolFor(b: Block): Pool {
      ungrained because rock grain on a gemstone reads as dirt */
   const detailMat = new THREE.MeshLambertMaterial({
     color: 0xffffff, emissive: detailEmissive, flatShading: true,
-    map: b.ore ? null : mat(0xffffff, 0).map
+    map: b.ore ? null : mat(0xffffff, 0).map,
+    /* pebbles are chunk geometry and carry vertex colours; crystal shards are
+       octahedra and do not */
+    vertexColors: !b.ore
   });
   const detail = new THREE.InstancedMesh(
     b.ore ? shardGeo : pebbleGeo, detailMat, b.ore ? MAX_DETAILS : MAX_CELLS
@@ -143,7 +147,7 @@ function makeBlock(x: number, d: number, b: Block) {
   const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
   if (!b.ore) {
     const grp = new THREE.Group();
-    const m = new THREE.Mesh(chunkFor(b.id), mat(shade(b.color, jit), b.glow));
+    const m = new THREE.Mesh(chunkFor(b.id), mat(shade(b.color, jit), b.glow, true, true));
     /* same orientation and oversize as the instanced version, or the block
        being drilled visibly pops the moment drilling starts */
     orientChunk(x, d);
@@ -151,7 +155,7 @@ function makeBlock(x: number, d: number, b: Block) {
     m.scale.copy(scratch.scale);
     grp.add(m);
     if (rnd(x + 61, d + 17, g.planet) > 0.66) {
-      const p = new THREE.Mesh(pebbleGeo, mat(shade(b.color, jit * 1.22), b.glow));
+      const p = new THREE.Mesh(pebbleGeo, mat(shade(b.color, jit * 1.22), b.glow, true, true));
       const r1 = rnd(x + 12, d + 44, g.planet), r2 = rnd(x + 31, d + 6, g.planet);
       p.position.set((r1 - 0.5) * 0.6, (r2 - 0.5) * 0.6, 0.44);
       p.rotation.set(r1 * 3, r2 * 3, r1 * 2);
@@ -160,7 +164,7 @@ function makeBlock(x: number, d: number, b: Block) {
     return grp;
   }
   const grp = new THREE.Group();
-  const host = new THREE.Mesh(chunkFor(b.id), mat(shade(b.host || 0x333038, jit), 0.02));
+  const host = new THREE.Mesh(chunkFor(b.id), mat(shade(b.host || 0x333038, jit), 0.02, true, true));
   orientChunk(x, d);
   host.rotation.copy(scratch.rotation);
   host.scale.copy(scratch.scale);
@@ -220,6 +224,35 @@ let lastRow: number | null = null;
 /* hardReset() used to assign lastRow directly when it lived in the same file */
 export function resetBlockCache() { lastRow = null; }
 
+/* Fake ambient occlusion.
+
+   Rock buried in the mass gets no light; rock at the edge of a tunnel catches
+   it. Counting open orthogonal neighbours and darkening accordingly costs
+   nothing - it rides on the per-instance colour we already write - and it is
+   what makes a tunnel read as *carved into* something rather than as a gap
+   between floating blocks.
+
+   Kept deliberately gentle. A realistic falloff would black out everything but
+   the shaft on a fresh planet, since nothing is dug yet; this is a depth cue,
+   not a lighting model. The player's lamp still does the real lighting.
+
+   The world edge counts as solid. Treating out-of-bounds as open would put a
+   bright rim down both sides of the map for no reason. */
+function openAt(x: number, d: number): boolean {
+  if (x < 0 || x >= W) return false;
+  if (d < 0) return true;
+  return blockAt(x, d) === null;
+}
+
+function occlusion(x: number, d: number): number {
+  let open = 0;
+  if (openAt(x, d - 1)) open++;
+  if (openAt(x, d + 1)) open++;
+  if (openAt(x - 1, d)) open++;
+  if (openAt(x + 1, d)) open++;
+  return 0.72 + 0.28 * Math.min(1, open / 2);
+}
+
 /* Orient one rock chunk.
 
    Quarter-turns on all three axes give 64 distinct orientations of the single
@@ -256,6 +289,7 @@ function rebuild() {
 
       const pool = poolFor(b);
       const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
+      const ao = occlusion(x, d);
       const px = worldX(x), py = -d;
 
       if (!b.ore) {
@@ -263,7 +297,7 @@ function rebuild() {
         orientChunk(x, d);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit)));
+        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit * ao)));
         pool.bodies++;
 
         if (rnd(x + 61, d + 17, g.planet) > 0.66) {
@@ -273,7 +307,7 @@ function rebuild() {
           scratch.scale.set(1, 1, 1);
           scratch.updateMatrix();
           pool.detail.setMatrixAt(pool.details, scratch.matrix);
-          pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(b.color, jit * 1.22)));
+          pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(b.color, jit * 1.22 * ao)));
           pool.details++;
         }
         continue;
@@ -284,7 +318,7 @@ function rebuild() {
       orientChunk(x, d);
       scratch.updateMatrix();
       pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-      pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.host || 0x333038, jit)));
+      pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.host || 0x333038, jit * ao)));
       pool.bodies++;
 
       const n = b.shards || 5;
