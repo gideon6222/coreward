@@ -27,6 +27,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
       # The Phase 0 safety net. Pure functions only: world generation, upgrade
       # costs, derived stats, planet scaling, haul values and pathfinding.
       # It cannot catch a feel regression, so it gates the deploy but does not

@@ -473,7 +473,7 @@ function dropBlock(k) {
   scene.remove(o);
   meshes.delete(k);
 }
-function syncBlocks(force) {
+function syncBlocks(force?) {
   const row = Math.floor(g.pd);
   if (!force && row === lastRow) return;
   lastRow = row;
@@ -537,7 +537,7 @@ function updateHUD() {
     ui.btnAuto.style.display = 'none';
   }
   const danger = clamp((45 - g.hull) / 45, 0, 1);
-  ui.heat.style.opacity = danger * (0.35 + 0.25 * Math.sin(performance.now() / 180));
+  ui.heat.style.opacity = String(danger * (0.35 + 0.25 * Math.sin(performance.now() / 180)));
 }
 
 function buildManifest() {
@@ -709,7 +709,7 @@ function firstTouch() { audioInit(); }
 window.addEventListener('pointerdown', firstTouch, { once: true });
 window.addEventListener('keydown', firstTouch, { once: true });
 
-document.querySelectorAll('#dpad .k').forEach((b) => {
+document.querySelectorAll<HTMLElement>('#dpad .k').forEach((b) => {
   const dir = b.dataset.dir;
   b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.classList.add('on'); held = dir; });
   const up = (e) => { if (e) e.preventDefault(); b.classList.remove('on'); if (held === dir) held = null; };
@@ -1069,7 +1069,7 @@ function stampBuild() {
   let when = 'unbuilt';
   if (typeof __BUILD_TIME__ === 'string') {
     const d = new Date(__BUILD_TIME__);
-    when = isNaN(d) ? __BUILD_TIME__ : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    when = isNaN(d.getTime()) ? __BUILD_TIME__ : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
   }
   const node = el('build');
   if (node) node.textContent = 'build ' + sha + '  ·  ' + when;

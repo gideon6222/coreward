@@ -1,4 +1,12 @@
 /* Phase 0 golden-test harness.
+
+   WARNING for Phase 5: this evaluates the sliced prelude with `new Function`,
+   which parses it as plain JavaScript. The prelude is still valid JS today
+   because Phase 3 added no type annotations above the `three` banner. The
+   moment a type annotation lands in that region, this throws a SyntaxError.
+   Migrate to real imports from the split modules (Phase 4) BEFORE turning on
+   strict mode and annotating (Phase 5).
+
    Loads the pure prelude of app.js WITHOUT modifying it, by slicing the real
    source at the existing section banner and stripping the module imports.
    The tests therefore run against shipping code, not a copy of it.
@@ -24,10 +32,10 @@ const NAMES = [
 ];
 
 export function loadPure() {
-  const src = readFileSync(join(REPO, 'src', 'app.js'), 'utf8');
+  const src = readFileSync(join(REPO, 'src', 'app.ts'), 'utf8');
   const cut = src.indexOf(MARKER);
   if (cut < 0) {
-    throw new Error('harness: banner not found in src/app.js: ' + MARKER +
+    throw new Error('harness: banner not found in src/app.ts: ' + MARKER +
       '\nIf the banner moved or was renamed, update MARKER in test/harness.mjs.');
   }
   const prelude = src.slice(0, cut)

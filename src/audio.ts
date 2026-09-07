@@ -252,7 +252,7 @@ function blip(freq, t, dur, type, peak) {
   o.start(t); o.stop(t + dur + 0.05);
 }
 
-function noiseBurst(t, dur, cutoff, peak, type) {
+function noiseBurst(t, dur, cutoff, peak, type?) {
   const src = A.ctx.createBufferSource();
   src.buffer = A.noise;
   src.playbackRate.value = 0.7 + Math.random() * 0.6;

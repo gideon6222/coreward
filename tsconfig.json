@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    /* Phase 3 is a mechanical rename. Strictness is deliberately off so the
+       conversion stays behaviour-preserving; Phase 5 turns it on and adds the
+       real domain types. Do not tighten these piecemeal - the point of one
+       loud switch-on later is that every resulting error gets looked at. */
+    "strict": false,
+    "noImplicitAny": false,
+
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+}
