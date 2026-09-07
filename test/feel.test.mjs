@@ -16,6 +16,10 @@ import { loadPure, assertGolden } from './harness.mjs';
 
 const H = await loadPure();
 
+/* How much of the remaining distance a smoothing rate covers in one 60 fps
+   frame, rounded past floating-point noise so the baseline is readable. */
+const perFrame = (rate) => Math.round((1 - Math.exp(-rate / 60)) * 1e6) / 1e6;
+
 test('feel constants are unchanged', () => {
   assertGolden('feel', {
     hitStop: { ore: H.FREEZE_ORE, rock: H.FREEZE_ROCK },
@@ -28,9 +32,18 @@ test('feel constants are unchanged', () => {
       dig: H.SQUASH_DIG, brk: H.SQUASH_BREAK,
       decay: H.SQUASH_DECAY, scale: H.SQUASH_SCALE
     },
+    /* Recorded as the fraction each rate covers in one 60 fps frame rather
+       than as the raw exponential constant. That is the quantity that was
+       actually tuned by eye, it is readable in a diff, and it stays put
+       across any future change of smoothing form. */
     camera: {
-      play: H.CAM_FOLLOW_PLAY, fly: H.CAM_FOLLOW_FLY,
-      zoom: H.CAM_ZOOM_RATE, yOffset: H.CAM_Y_OFFSET
+      play: perFrame(H.CAM_FOLLOW_PLAY), playY: perFrame(H.CAM_FOLLOW_PLAY_Y),
+      fly: perFrame(H.CAM_FOLLOW_FLY), flyY: perFrame(H.CAM_FOLLOW_FLY_Y),
+      zoom: perFrame(H.CAM_ZOOM_RATE), yOffset: H.CAM_Y_OFFSET
+    },
+    smoothing: {
+      camBoost: perFrame(H.CAM_BOOST_DECAY), bankIn: perFrame(H.BANK_INTO_MOVE),
+      bankSettle: perFrame(H.BANK_SETTLE), faceTurn: perFrame(H.FACE_TURN_RATE)
     },
     depth: {
       ramp: H.DEPTH_RAMP, ambientSurface: H.AMBIENT_SURFACE,
@@ -203,28 +216,65 @@ test('approach moves toward the target and never overshoots', () => {
   assert.ok(H.approach(100, 0, 6, 0.016) < 100);
 });
 
-/* KNOWN CHARACTERISTIC, pinned deliberately.
+/* The fix for the characteristic that used to be pinned here.
 
-   approach() uses the common `min(1, dt * rate)` lerp, which is NOT frame-rate
-   independent: one 100 ms step covers 60% of the distance, while ten 10 ms
-   steps cover 46%. So camera lag genuinely differs with frame rate, and the
-   frame loop's 50 ms delta cap means a stuttering frame makes the camera snap
-   harder rather than merely slower.
+   approach() was `min(1, dt * rate)`, where one 100 ms step covered 60% of the
+   distance and ten 10 ms steps covered 46%. Combined with the frame loop's
+   50 ms delta cap, a stuttering frame made the camera snap rather than lag.
 
-   This is pre-existing behaviour, extracted as it was rather than fixed,
-   because changing it changes how the camera feels and that needs a phone
-   check rather than a quiet edit. The exact form is 1 - exp(-rate * dt).
-
-   This test exists so that switching to the correct form fails here and has to
-   be a decision. If you do switch, delete this test, re-record the baselines,
-   and check the camera on the phone. */
-test('CHARACTERISTIC: approach is frame-rate dependent (see comment)', () => {
+   It is now `1 - exp(-rate * dt)`, and every tuned rate goes through
+   asExpRate() so that a 60 fps frame still covers exactly the fraction the
+   original number was tuned to cover. The two tests below are the two halves
+   of that claim: the maths is right, and the feel at 60 fps did not move. */
+test('approach is frame-rate independent', () => {
   const oneStep = H.approach(0, 100, 6, 0.1);
   let many = 0;
   for (let i = 0; i < 10; i++) many = H.approach(many, 100, 6, 0.01);
-  assert.ok(Math.abs(oneStep - 60) < 1e-9, 'one 100ms step should cover 60%');
-  assert.ok(Math.abs(many - 46.138) < 0.01, 'ten 10ms steps should cover ~46%');
-  assert.ok(oneStep > many, 'coarser steps currently converge faster');
+  assert.ok(Math.abs(oneStep - many) < 1e-9,
+    'one 100ms step (' + oneStep + ') must land where ten 10ms steps land (' + many + ')');
+
+  /* and at any subdivision, from any start, toward any target */
+  for (const [from, to, rate] of [[0, 100, 6], [100, 0, 11], [-3.5, 7.25, 4], [2, 2, 9]]) {
+    const coarse = H.approach(from, to, rate, 0.048);
+    let fine = from;
+    for (let i = 0; i < 16; i++) fine = H.approach(fine, to, rate, 0.003);
+    assert.ok(Math.abs(coarse - fine) < 1e-9,
+      'rate ' + rate + ' from ' + from + ': ' + coarse + ' vs ' + fine);
+  }
+
+  /* it must still never overshoot, at any dt */
+  for (const dt of [0.001, 0.05, 1, 999]) {
+    const v = H.approach(0, 100, 6, dt);
+    assert.ok(v >= 0 && v <= 100, 'overshoot at dt ' + dt + ': ' + v);
+  }
+  assert.ok(H.approach(0, 100, 6, 999) > 99.999, 'a huge dt should essentially arrive');
+});
+
+test('asExpRate preserves what each rate did in one 60 fps frame', () => {
+  /* This is the whole safety argument for changing the smoothing: at 60 fps
+     nothing moved, so the change cannot have altered how the camera feels on a
+     phone holding frame rate. */
+  const FRAME = 1 / 60;
+  for (const tuned of [4, 6, 7, 8, 11, 12, 14]) {
+    const legacy = Math.min(1, FRAME * tuned);
+    const now = 1 - Math.exp(-H.asExpRate(tuned) * FRAME);
+    assert.ok(Math.abs(legacy - now) < 1e-12,
+      'rate ' + tuned + ' covered ' + legacy + ' per frame, now covers ' + now);
+  }
+  /* and the constants the game actually uses went through that conversion */
+  const pairs = [[H.CAM_FOLLOW_PLAY, 6], [H.CAM_FOLLOW_PLAY_Y, 7],
+                 [H.CAM_FOLLOW_FLY, 11], [H.CAM_FOLLOW_FLY_Y, 12],
+                 [H.CAM_ZOOM_RATE, 4], [H.CAM_BOOST_DECAY, 4],
+                 [H.BANK_INTO_MOVE, 8], [H.BANK_SETTLE, 6], [H.FACE_TURN_RATE, 14]];
+  for (const [actual, tuned] of pairs)
+    assert.equal(actual, H.asExpRate(tuned), 'a camera rate skipped the conversion');
+});
+
+test('vertical follow stays slightly tighter than horizontal', () => {
+  /* Used to be written as `k + 1` at the call site. The ship travels down far
+     more than sideways, so the axis it moves along should lag less. */
+  assert.ok(H.CAM_FOLLOW_PLAY_Y > H.CAM_FOLLOW_PLAY);
+  assert.ok(H.CAM_FOLLOW_FLY_Y > H.CAM_FOLLOW_FLY);
 });
 
 test('the autopilot camera is tighter than the play camera', () => {
