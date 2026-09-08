@@ -6,7 +6,8 @@ import { chainCompile } from './shader';
 import { LM_ATT, LM_PINCH, LM_SEEP, LM_SEEP_STEPS, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN, LM_CONTRAST,
          LM_HAZE, LM_HAZE_COLOR, LM_INDIRECT, LM_FOCUS, LM_OMNI_NEAR, LM_OMNI_FAR,
-         LM_SHADOW_SOFT, LM_RAYS } from './feel';
+         LM_SHADOW_SOFT, LM_RAYS, LM_BOUNCE_RANGE, LM_BOUNCE_POW,
+         LM_HAZE_SPILL, LM_GLOW_FLOOR, LM_GLOW_POW } from './feel';
 
 /* The grid the solver works on, and the bridge from it to every shader.
 
@@ -86,7 +87,10 @@ const U = {
   uLmDir: { value: new THREE.Vector4(0, 1, LM_INDIRECT, LM_FOCUS) },
   /* how far the shadow edge is smeared, and the reach the fan's distances are
      stored as a fraction of */
-  uLmShade: { value: new THREE.Vector2(LM_SHADOW_SOFT, 8) }
+  uLmShade: { value: new THREE.Vector2(LM_SHADOW_SOFT, 8) },
+  /* 1 / the bounce's own reach, and the floor and curve that decide how far
+     glowing things stay visible through unlit rock */
+  uLmSoft: { value: new THREE.Vector3(1 / 14, LM_GLOW_FLOOR, LM_GLOW_POW) }
 };
 
 const OPTS = { att: LM_ATT, pinch: LM_PINCH, seep: LM_SEEP, seepSteps: LM_SEEP_STEPS };
@@ -148,7 +152,11 @@ export function updateLight(
        upload - the alternative is a second texture for one bit of extra
        information. */
     data[n * 4] = b;
-    data[n * 4 + 1] = solid[n] ? 0 : b;
+    /* A solid cell keeps a share rather than nothing, so the glow spills onto
+       the lip of the tunnel wall. Without it, the bulges the displacement
+       pushes into a tunnel sat in the middle of a lit shaft completely unlit,
+       and read as rock poking through the fog. */
+    data[n * 4 + 1] = solid[n] ? (b * LM_HAZE_SPILL) | 0 : b;
   }
   lmTex.needsUpdate = true;
 
@@ -170,6 +178,7 @@ export function updateLight(
   U.uLmLamp.value.set(worldX(px), -pd, 1 / reach, LM_GAIN);
   U.uLmDir.value.set(dirX, dirD, LM_INDIRECT, LM_FOCUS);
   U.uLmShade.value.set(LM_SHADOW_SOFT, reach);
+  U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), LM_GLOW_FLOOR, LM_GLOW_POW);
   haze.position.set(0, -pd, HAZE_Z);
 }
 
@@ -187,6 +196,7 @@ const DECL = `
   uniform vec4 uLmDir;
   uniform vec3 uLmDark;
   uniform vec2 uLmShade;
+  uniform vec3 uLmSoft;
 
   /* Where p sits in the light grid. */
   vec2 coreUv(vec2 p) {
@@ -235,9 +245,16 @@ const DECL = `
     /* The beam, and the bounce. Combined with max() rather than multiplied:
        somewhere both behind the ship and in shadow would otherwise land on the
        product of two floors, which is black. Both are still gated by the
-       flood, so this lights tunnels you have opened and never solid rock. */
+       flood, so this lights tunnels you have opened and never solid rock.
+
+       The bounce gets its OWN falloff - longer than the beam's and far
+       gentler. Sharing the beam's pool made the glow behind the ship end
+       exactly where the beam did, with the same hard edge, which is the one
+       thing the soft half must not do. */
+    float rB = min(1.0, dist * uLmSoft.x);
+    float bounce = clamp(1.0 - pow(rB, ${LM_BOUNCE_POW.toFixed(2)}), 0.0, 1.0);
     float direct = pool * lobe * clear;
-    float indirect = pool * uLmDir.z;
+    float indirect = bounce * uLmDir.z;
     return vis * max(direct, indirect);
   }
 
@@ -257,6 +274,16 @@ const DECL = `
   float coreLit(vec2 p) {
     float fl = coreFloor(p);
     return fl + (1.0 - fl) * coreShade(p);
+  }
+
+  /* What a GLOWING thing keeps here - emissive rock, ore crystals, haloes.
+
+     A much gentler curve than a surface, with a floor. Ore glowing through
+     unlit rock is the find-the-vein mechanic and has to survive; at full
+     strength, though, a vein five cells inside the mass read as clearly as one
+     you were about to break into. */
+  float coreGlow(vec2 p) {
+    return mix(uLmSoft.y, 1.0, pow(coreShade(p), uLmSoft.z));
   }
 `;
 
@@ -404,8 +431,29 @@ export function applyLight<T extends THREE.Material>(m: T): T {
           reflectedLight.indirectDiffuse *= lit;
           reflectedLight.directSpecular *= lit;
           reflectedLight.indirectSpecular *= lit;
+          /* Emissive is dimmed too, but on the glow curve rather than this
+             one. Left alone, a vein deep in the rock is the brightest thing on
+             screen however dark its surroundings are. */
+          totalEmissiveRadiance *= coreGlow(vLmPos);
         }`)
   }, 'lm');
+  return m;
+}
+
+/* For additive glows - ore haloes and the like.
+
+   Same injection, the gentler curve. These are the loudest thing on screen at
+   any depth, and until they answered to the light field at all, a vein deep
+   inside unlit rock announced itself exactly as strongly as one at the mouth
+   of the tunnel you were standing in. */
+export function applyGlow<T extends THREE.Material>(m: T): T {
+  inject(m, (shader) => {
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+${DECL}`)
+      .replace('#include <opaque_fragment>', `#include <opaque_fragment>
+  gl_FragColor.rgb *= coreGlow(vLmPos);`);
+  }, 'lmg');
   return m;
 }
 

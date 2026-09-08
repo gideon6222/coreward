@@ -16,9 +16,19 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.12.1';
+export const VERSION = '0.12.2';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.12.2', date: '2026-09-08', title: 'Three layers deep',
+    notes: [
+      'Rock no longer casts a shadow on itself. Angled shadows now only come from actual tunnels.',
+      'Three layers of rock read either side of a tunnel, and anything past that is black.',
+      'You can no longer tell what a mineral is through four cells of unlit rock.',
+      'The glow behind the ship reaches further and fades away instead of ending at an edge.',
+      'The light in a tunnel now spills onto the rock at its edge, so nothing pokes through it.'
+    ]
+  },
   {
     version: '0.12.1', date: '2026-09-08', title: 'The lamp points somewhere',
     notes: [

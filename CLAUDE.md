@@ -117,7 +117,16 @@ supplies.
 lighting value in `feel.ts` is still the ceiling it was calibrated to be. If the world ever
 needs to be brighter, that is a change to the lights, not to the lightmap.
 
-**The shadow fan records the FAR side of the first wall it hits, not the near side.** A rock
+**The shadow fan records the distance to the farthest CORNER of the first wall cell it hits,
+not where the ray leaves it.** The fan is sampled by angle and interpolated between rays, so a
+fragment's occluder is a blend of two rays that may have clipped different parts of a wall;
+with the exit distance, roughly an eighth of every wall face falls beyond its own occluder and
+goes dark - a hard diagonal cut across every block in the frame, which reads as every rock
+shadowing itself. There is a test that samples across a wall face and fails above five per
+cent.
+
+**The old rule, still true underneath it:** the fan records the FAR side of the first wall, not
+the near side. A rock
 face is the surface the lamp is falling on and has to stay lit; shadow starts behind it.
 Recording the near side puts every rock face in the game into its own shadow.
 
@@ -160,6 +169,12 @@ as you fly. Rock seeps 0.32 per cell for three cells. Unreached cells settle to 
 light they would otherwise get, which is dark enough to read as unreachable and light enough
 to keep the rock's shape. Daylight gives out between 2 m and 14 m, read from each CELL's own
 depth rather than the ship's, so the top of a shaft still glows from ninety metres down.
+Rock seeps 0.62 per cell for three cells, which is 1.0, 0.38, 0.15, 0.06 once the contrast
+below is applied - a wall, two readable layers and a third that is nearly gone. **Any threshold
+about how dark something looks belongs on the post-contrast value**: two tests were written
+against the raw field and both failed the moment the seep was retuned to exactly what a
+playtest asked for, which is the wrong way round for a test to behave.
+
 The multiplier is then SQUARED (`LM_CONTRAST`) before it is applied, because it multiplies
 linear light that is about to be sRGB-encoded: six per cent of the lamp displays as roughly a
 third of full brightness, which is how an early version came out as a grey wash over a field
@@ -168,7 +183,16 @@ that was numerically correct.
 **Beam and bounce, combined with max() and never multiplied.** Direct light is the lobe times
 the shadow; the bounce is a flat 0.22, omnidirectional and unshadowed, and both are gated by
 the flood. Multiplied, somewhere both behind the ship and in shadow lands on the product of
-two floors and goes black - which erases the shaft you came down.
+two floors and goes black - which erases the shaft you came down. The bounce also has its OWN
+falloff, 1.7x the beam's reach on a much gentler curve: sharing the beam's pool made the glow
+behind the ship end exactly where the beam did, with the same hard edge, which is the one thing
+the soft half must not do.
+
+**Glow is dimmed on its own curve, not the surface one.** Ore glowing through unlit rock is the
+find-the-vein mechanic and must not switch off, so emissive and the ore haloes go through
+`coreGlow()` - a square-root curve over a small floor - rather than `coreLit()`. `LM_GLOW_FLOOR`
+and `LM_GLOW_POW` are the dial if ore becomes hard to find rather than merely hard to see
+through rock.
 
 **Framing.** 18 rows solved into a camera distance in `resize()`, then multiplied by
 `zoomForScan(g.up.scan)` — 0.82 at Scanner 0 up to 1.22 at 9. The Scanner *is* the framing;

@@ -1308,9 +1308,17 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
     .toEqual([]);
 
   /* The shaft the ship is sitting in is fully lit; its wall catches the lamp;
-     four cells into untouched rock is nearly nothing. */
+     four cells into untouched rock is nearly nothing.
+
+     The last one is asserted on what reaches the SCREEN, because the shader
+     squares this field before applying it and a threshold on the raw byte is a
+     threshold on an intermediate value nobody sees. The raw version of this
+     line failed the moment the rock gradient was retuned to exactly what a
+     playtest asked for, which is the wrong way round for a test to behave. */
+  const onScreen = (b: number) => Math.pow(b / 255, 2);
   expect(r.shaft, 'the cell the ship is in').toBeGreaterThan(240);
   expect(r.wall, 'the wall of the shaft').toBeGreaterThan(120);
-  expect(r.four, 'four cells into solid rock').toBeLessThan(40);
+  expect(onScreen(r.four), 'four cells into solid rock, as displayed')
+    .toBeLessThan(0.08);
   expect(r.two, 'two cells in is darker than one').toBeLessThan(r.wall);
 });

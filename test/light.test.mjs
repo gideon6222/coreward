@@ -72,18 +72,32 @@ test('a shaft is lit all the way down and the rock beside it catches the light',
   assert.ok(r.at(4, 3) > 0.5, 'tunnel wall is lit');
 });
 
-test('rock fades into the mass instead of cutting to black at the first wall', () => {
+test('three layers of rock read, and the fourth does not', () => {
+  /* Playtest: *"rocks to the sides of the tunnel should be a bit brighter and
+     gradually dim, so around 3 layers should be visible but start bright and
+     dim quickly by the third. Rocks any further than that should be almost
+     completely black."*
+
+     Asserted on what reaches the SCREEN, not on the raw field. The shader puts
+     the multiplier through LM_CONTRAST before applying it, so the two differ by
+     a square - and a threshold written against the raw field is a threshold
+     about an intermediate value nobody ever sees. This one was: it failed the
+     moment the seep was retuned to give exactly the gradient that was asked
+     for, which is the wrong way round for a test to behave. */
   const rows = Array.from({ length: 9 }, (_, j) => (j === 4 ? '.'.repeat(9) : '#'.repeat(9)));
   const r = solve(rows, 4, 4);
-  const one = r.at(4, 3), two = r.at(4, 2), three = r.at(4, 1), four = r.at(4, 0);
-  assert.ok(one > two && two > three && three > four, 'each cell in is darker than the last');
-  /* The face of the wall is not dimmed at all - it is pointing at the lamp.
-     Everything behind it is the seep, which is a fixed fraction per cell, so
-     the fourth cell is under a tenth however the first one came out. */
-  assert.ok(one > 0.6, 'the wall of the tunnel is clearly lit');
-  assert.ok(two < 0.55, 'one cell behind the wall has already dropped by half');
-  assert.ok(three < 0.25, 'three cells in is nearly dark');
-  assert.ok(four < 0.1, 'four cells in is dark');
+  const onScreen = (v) => Math.pow(v, H.LM_CONTRAST);
+  const one = onScreen(r.at(4, 3)), two = onScreen(r.at(4, 2));
+  const three = onScreen(r.at(4, 1)), four = onScreen(r.at(4, 0));
+
+  assert.ok(one > two && two > three && three > four, 'each layer in is darker than the last');
+  assert.ok(one > 0.35, `the wall of the tunnel is clearly lit: ${one}`);
+  assert.ok(two > 0.1, `the second layer still reads: ${two}`);
+  assert.ok(three > 0.03 && three < 0.15, `the third is nearly gone but not gone: ${three}`);
+  /* 0.06 directly above the ship, less anywhere off that line. Dim enough
+     that the band it belongs to is no longer identifiable, which is the claim
+     the playtest actually made. */
+  assert.ok(four < 0.07, `the fourth is as good as black: ${four}`);
 });
 
 test('a side branch is dimmer than open air the same distance away', () => {
@@ -270,8 +284,14 @@ function lit(out, li, lj, x, y) {
   if (dist < 1e-6) return true;
   let u = Math.atan2(dy, dx) / (Math.PI * 2);
   if (u < 0) u += 1;
-  const k = Math.min(out.length - 1, Math.max(0, Math.round(u * out.length - 0.5)));
-  return dist <= out[k];
+  /* Interpolated between the two nearest rays, and wrapped, because that is
+     what the shader's LinearFilter/RepeatWrapping lookup does. Taking the
+     nearest ray instead would test a fan the game never samples - and would
+     miss the self-shadowing artefact below entirely, which is the one thing
+     that only shows up once two rays are blended. */
+  const n = out.length, f = u * n - 0.5, k = Math.floor(f), t = f - k;
+  const a = out[((k % n) + n) % n], b = out[(((k + 1) % n) + n) % n];
+  return dist <= a + (b - a) * t;
 }
 
 test('nothing in the way means nothing is in shadow', () => {
@@ -340,4 +360,38 @@ test('the shadow in a crossing tunnel is thrown by the corner, not by distance',
 
   const open = Array.from({ length: 5 }, () => '.'.repeat(9));
   assert.ok(lit(fan(open, 1, 1), 1, 1, 4, 3), 'the same bearing and distance, unobstructed');
+});
+
+test('the whole of the first wall is lit, not just where a ray clips it', () => {
+  /* The fan records the far corner of the cell it hits, and this is why.
+
+     Rays are sampled by angle and blended, so a fragment's occluder is a mix
+     of two rays that may have clipped quite different parts of a wall. Record
+     where each ray happens to LEAVE the cell and parts of that same cell end
+     up beyond their own occluder: on screen, a hard diagonal cut across every
+     block in the frame. It reads as every rock casting a shadow on itself, and
+     that is exactly what a playtester called it.
+
+     Sampled across the face of a wall six cells away rather than at cell
+     centres, because a centre is the one point that passes either way. */
+  const rows = Array.from({ length: 15 }, () =>
+    Array.from({ length: 15 }, (_, i) => (i === 9 ? '#' : '.')).join(''));
+  const out = fan(rows, 3, 7, 512, 20);
+
+  let dark = 0, total = 0;
+  for (let j = 4; j <= 10; j++) {
+    for (let ox = -0.45; ox <= 0.46; ox += 0.15) {
+      for (let oy = -0.45; oy <= 0.46; oy += 0.15) {
+        total++;
+        if (!lit(out, 3, 7, 9 + ox, j + oy)) dark++;
+      }
+    }
+  }
+  /* A handful of samples on the extreme silhouette edge can still fall out,
+     and those are a pixel wide on screen. A wall shadowing a twentieth of
+     itself is invisible; a wall shadowing a third of itself is the artefact. */
+  assert.ok(dark / total < 0.05,
+    `${dark} of ${total} samples on the lit face of a wall are in its own shadow`);
+
+  assert.ok(!lit(out, 3, 7, 11, 7), 'and the cell behind the wall is still shadowed');
 });

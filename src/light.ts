@@ -272,10 +272,32 @@ function rayHit(
     /* outside the grid entirely: nothing out there to light */
     if (ix < 0 || ix >= cols || iy < 0 || iy >= rows) return enter;
     if (solid[iy * cols + ix]) {
-      const exit = tx < ty ? tx : ty;
-      return exit < maxDist ? exit : maxDist;
+      /* The FARTHEST corner of the cell, not where this particular ray happens
+         to leave it.
+
+         The fan is sampled by angle and interpolated between neighbouring rays,
+         so a fragment's occluder is a blend of two rays that may have clipped
+         quite different parts of the wall. With the exit distance, parts of a
+         cell end up beyond their own occluder and fall into shadow - on screen,
+         a hard diagonal cut across every single block in the frame, which reads
+         as every rock casting a shadow on itself. Found by eye in a playtest.
+
+         The rule the fan exists to express is "the first wall is lit", and a
+         wall is a whole cell. The far corner makes the recorded value large
+         enough, and smooth enough across the cell, that every fragment of it
+         clears its own occluder. Bleeding a fraction of a cell past the wall
+         costs nothing: behind it is either more rock, which the seep already
+         darkens, or open air the flood never reached, which is zero anyway. */
+      const far = farCorner(li, lj, ix, iy);
+      return far < maxDist ? far : maxDist;
     }
   }
+}
+
+/* Distance from the lamp to the farthest of a cell's four corners. */
+function farCorner(li: number, lj: number, ix: number, iy: number): number {
+  const dx = Math.abs(ix - li) + 0.5, dy = Math.abs(iy - lj) + 0.5;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /* Fill `out` with one occluder distance per angle, evenly around the lamp.

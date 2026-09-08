@@ -2275,6 +2275,76 @@ that wants a z will have to fit into it.
 crossing corridor. The fan and the extra texture fetch are not measurable
 against the rest.
 
+## Four notes from the phone, and one that was a real bug (2026-09-08)
+
+Gideon, on v0.12.1: *"each block shows that angled shadow. that should only
+show on actual branched off tunnels ... I want light behind the ship to have
+more of an ambient glow rather than that sharp beam look ... rocks to the sides
+of the tunnel should be a bit brighter and gradually dim, so around 3 layers
+should be visible ... rocks any further than that should be almost completely
+black ... you shouldn't be able to see the mineral type or color."*
+
+**The per-block shadow was shadow acne, and the cause is worth keeping.** The
+fan recorded where each ray happened to LEAVE the wall cell it hit. Per ray
+that is exactly right - a point inside the cell is always between entry and
+exit. But the shader does not sample one ray: it interpolates between the two
+nearest, and those two may have clipped quite different parts of the wall, or
+missed it. So parts of a cell come out beyond their own occluder and go dark.
+Measured, it was thirteen per cent of every wall face, and on screen that is a
+hard diagonal across every block in the frame.
+
+The fix is to record the distance to the farthest CORNER of that cell, which is
+large enough and smooth enough across the cell that no fragment of it can fall
+behind. The rule the fan exists to express was always "the first wall is lit",
+and a wall is a whole cell.
+
+**The test for it took three goes**, and the two failures are the interesting
+part. The first sampled cell centres, which pass either way. The second used a
+nearest-ray lookup, which cannot see the artefact at all - the artefact only
+exists once two rays are blended. The one that works interpolates exactly as
+the shader does and asserts a RATIO across a wall face: under five per cent
+lit-face-in-shadow passes, the old rule gives thirteen. Mutation-tested.
+
+**A grep-and-replace destroyed `src/light.ts` mid-session.** A `cp` from a
+backup path that did not exist truncated the file to zero bytes, and the fix
+had not been committed. Recovered from HEAD and reapplied by hand. This is the
+second time this session that shell file juggling for a two-line experiment
+cost real work; the first was `git checkout -- src/loop.ts` in an earlier one.
+Use the editing tools for source, and if an experiment needs the file swapped,
+swap it with an edit that can be swapped back.
+
+**Two tests asserted on a value nobody sees.** Both the golden "rock fades into
+the mass" and the e2e "four cells into solid rock" were written against the raw
+light field. The shader squares that field before applying it, so the raw value
+and the displayed one differ by a lot at the dark end - and both tests failed
+the moment the rock gradient was retuned to exactly what the playtest asked
+for. A test that fails when the code becomes more correct is a test aimed at
+the wrong layer. Both now assert on the post-contrast value and read in the
+same units the playtest note did.
+
+**The rest was tuning, all of it in feel.ts:**
+
+- Seep 0.32 to 0.62. Read as what lands on screen - which is after the contrast
+  squares it - that is 1.0, 0.38, 0.15, 0.06: a wall, two readable layers, a
+  third that is nearly gone, nothing past it.
+- The bounce got its own falloff, 1.7x the beam's reach on a much gentler
+  curve. Sharing the beam's pool meant the glow behind the ship ended exactly
+  where the beam did, with the same hard edge, which is the one thing the soft
+  half must not do.
+- Glow - emissive rock, ore crystals, haloes - now goes through `coreGlow()`, a
+  square-root curve over a small floor, rather than being exempt. Ore glowing
+  through unlit rock is the find-the-vein mechanic and must not switch off, but
+  at full strength a vein five cells inside the mass read as clearly as one you
+  were about to break into. `LM_GLOW_FLOOR` and `LM_GLOW_POW` are the dial if it
+  has gone too far the other way.
+- The haze channel gives solid cells half their value instead of zero, so the
+  glow in a tunnel spills onto the lip of its walls. That is what "the rocks
+  still stick up past the fog" turned out to be: the displacement pushes wall
+  vertices a fifth of a cell into the tunnel, and those bulges sat in a lit
+  shaft with no light on them.
+
+**Cost unchanged:** 56 draw calls of 150, 0.83 ms a tick.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

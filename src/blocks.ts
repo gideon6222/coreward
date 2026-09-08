@@ -6,7 +6,7 @@ import { rnd, blockAt } from './world';
 import { scene } from './scene';
 import { crackGeo, crackMat, mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, rockRelief, ROCK_BUMP } from './materials';
-import { applyLight, markLightDirty } from './lightmap';
+import { applyLight, applyGlow, markLightDirty } from './lightmap';
 import type { Block } from './types';
 
 /* Terrain rendering.
@@ -134,10 +134,15 @@ function poolFor(b: Block): Pool {
 /* two instances per ore: a tight core and a wide, dim bloom */
 const MAX_HALOS = 340;
 const haloGeo = new THREE.PlaneGeometry(1, 1);
-const haloMat = new THREE.MeshBasicMaterial({
+/* Dimmed by the light field, gently. A vein glowing through rock you have not
+   opened is how ore is found, so it must not go out - but at full strength one
+   five cells inside the mass announced itself exactly as loudly as one at the
+   mouth of the tunnel you were standing in, and the depth stopped meaning
+   anything. See coreGlow in lightmap.ts. */
+const haloMat = applyGlow(new THREE.MeshBasicMaterial({
   map: glowTex, transparent: true, opacity: 0.5,
   blending: THREE.AdditiveBlending, depthWrite: false
-});
+}));
 const haloMesh = new THREE.InstancedMesh(haloGeo, haloMat, MAX_HALOS);
 haloMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 haloMesh.frustumCulled = false;

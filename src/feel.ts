@@ -226,9 +226,19 @@ export const LM_ATT = 0.78;
    rendering artefact rather than as a shadow. */
 export const LM_PINCH = 0.9;
 /* How much of a lit rock face carries into the rock behind it, per cell, and
-   how far that goes at all. Three cells at 0.44 is 0.44, 0.19, 0.09 - a fade
-   into the mass rather than a cliff at the first wall. */
-export const LM_SEEP = 0.32;
+   how far that goes at all.
+
+   Playtest: *"rocks to the sides of the tunnel should be a bit brighter and
+   gradually dim, so around 3 layers should be visible but start bright and dim
+   quickly by the third. Rocks any further than that should be almost
+   completely black."*
+
+   Read those as what ends up on SCREEN, which is after LM_CONTRAST squares the
+   multiplier - so the per-cell fraction has to be the square root of the step
+   you want to see. 0.62 gives roughly 1.0, 0.38, 0.15, 0.06 on screen: a wall,
+   two clearly readable layers behind it, a third that is nearly gone, and
+   nothing at all past that. */
+export const LM_SEEP = 0.62;
 export const LM_SEEP_STEPS = 3;
 /* How fast a cell eases to its new value. Breaking a block changes the light
    over a whole region at once, and a hard cut there reads as a glitch; this is
@@ -278,6 +288,27 @@ export const LM_GAIN = 1.15;
    to a display that disagrees. */
 export const LM_CONTRAST = 2.0;
 
+/* Glow - emissive rock, ore crystals and their haloes - is dimmed by the light
+   field too, but on a much gentler curve than a surface.
+
+   Ore glowing through unlit rock is the find-the-vein mechanic and must not be
+   switched off. But at full strength it was the loudest thing on screen at any
+   depth, so a vein five cells inside the mass read as clearly as one you were
+   about to break into - which is the "you shouldn't be able to see the mineral
+   type" half of the same playtest note.
+
+   The square root keeps a vein one or two cells in bright and pushes a distant
+   one down to a smudge; the floor is what stops it vanishing entirely. */
+export const LM_GLOW_FLOOR = 0.04;
+export const LM_GLOW_POW = 0.7;
+
+/* These two are the dial if ore becomes hard to FIND rather than merely hard
+   to see through rock. Raising the floor brings distant veins back; lowering
+   the exponent brings back the middle distance. A vein one or two cells in
+   still sits around 0.4 to 0.6 at these values, which is what the mechanic
+   actually needs - the rest was decoration that happened to be the loudest
+   thing on screen. */
+
 /* ---------- the lamp as a direction, and its shadows ----------
 
    Playtest: *"I want the light to be coming from the front of the ship, so if
@@ -305,6 +336,17 @@ export const LM_CONTRAST = 2.0;
    Crucially it is still multiplied by the flood, so this brightens tunnels you
    have opened and never the solid rock you have not. */
 export const LM_INDIRECT = 0.22;
+/* The bounce gets its own reach, longer than the beam's and with a much
+   gentler curve.
+
+   Playtest: *"I want light behind the ship to have more of an ambient glow
+   rather than that sharp beam look from the front. I also want it to extend
+   back a little further and fade out more gradually."* Sharing the beam's pool
+   meant the glow behind the ship ended exactly where the beam did, with the
+   same hard edge - which is the one thing it must not do, because the whole
+   job of the bounce is to be the soft part. */
+export const LM_BOUNCE_RANGE = 1.7;   /* multiple of the beam's reach */
+export const LM_BOUNCE_POW = 1.25;    /* against the beam's 3: a long fade */
 /* How tightly the beam narrows to the front. Higher is a spotlight, lower is a
    bare bulb with a reflector behind it. */
 export const LM_FOCUS = 1.7;
@@ -330,6 +372,15 @@ export const LM_RAYS = 512;
    looking empty and starts looking filled in. */
 export const LM_HAZE = 0.34;
 export const LM_HAZE_COLOR = 0xffb46a;
+/* How far the glow in a tunnel spills onto the rock at its edge.
+
+   The open/solid channel is per cell, but a rock face is not flat - the
+   displacement pushes tunnel walls a fifth of a cell into the tunnel, and
+   those bulges landed in the middle of a glowing shaft with no glow on them
+   at all. Gideon: *"the rocks still stick up past the fog in certain areas."*
+   Letting the edge cells carry a share of the glow puts light in the air in
+   front of the wall, which is where it should have been anyway. */
+export const LM_HAZE_SPILL = 0.5;
 
 /* ---------- the vignette ----------
    How much of the frame stays clear, and how black the edge goes. Deep, the
