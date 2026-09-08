@@ -11,7 +11,7 @@ import { setDrillTier, setUpgradeHardware } from './ship';
 import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './telemetry';
 import { R } from './runtime';
-import { selectedBay } from './station';
+import { selectedBay, refreshBays } from './station';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
    ones the game cannot run without: throwing here reaches the on-screen
@@ -257,6 +257,10 @@ export function buildVault() {
 export function buildShop() {
   ui.shopCredits.textContent = Math.floor(g.credits).toLocaleString();
   ui.shopPlanet.textContent = planetName(g.planet).toUpperCase();
+  /* The cases carry price and availability too, so they have to be redrawn
+     whenever anything they show can have changed - which is exactly when this
+     runs: opening the shop, and after every purchase. */
+  refreshBays();
   buildCard();
   buildSupplies();
 }

@@ -2047,6 +2047,66 @@ Supplies became three chips on one line. As a stacked list they were a third of
 the screen, and they are consumables with a count and a price and nothing else
 to say - the room should keep the space.
 
+## Reading the room without tapping it (2026-09-08)
+
+Playtest: *"can you label each upgrade so that it is easy to tell what it is
+without clicking on it, and doing something to visually show that certain
+upgrades aren't available or you don't have enough money to purchase it by
+dimming it."*
+
+**Labels are canvas plates on the plinths**, not HTML floating over the room. A
+label that belongs to the case turns and moves with it the way a museum label
+does; HTML would hover in front of everything and stop the room being a room.
+
+**Their size was decided by the screen, not by taste.** At this camera the
+visible width is about 3.5 world units across 375 CSS pixels, so a 0.66-unit
+plate is roughly 70 px. That is a six-character word and nothing more - which is
+why the plates read DRILL and THRUST rather than "Drill Bit" and "Thrusters".
+The full name is in the card the moment you tap.
+
+**Four states, each said three ways** - the strip of light along the plinth, the
+plate's second line, and how far the alcove is shuttered - so it reads at a
+glance and also survives being colour-blind, which a colour-only code would not:
+
+| | strip | line | alcove |
+|---|---|---|---|
+| ready | cyan | the price | clear |
+| short | amber | what is missing | smoked |
+| sealed | off | the depth | smoked harder |
+| max | green | MAX | clear |
+
+**The part is never dimmed by touching its material**, because those materials
+are shared with the hull - dimming a case would dim the same part bolted to the
+ship parked in the middle of the room. A smoked panel in front does the job and
+keeps the one-set-of-objects promise the room is built on.
+
+### The decision is pure, and the ordering is the design
+
+`shelfState()` lives in config.ts and is unit tested, because which state wins
+when several apply is judgement, not drawing. Sealed beats everything: quoting a
+price for something no amount of money can buy is a lie, and the depth IS the
+price. Maxed beats affordability. And when you cannot afford it the MINERAL is
+named ahead of the credits, because credits are what the loop pays constantly
+and a mineral you have never seen is the thing actually stopping you.
+
+**One of those tests was passing for the wrong reason.** "A depth lock beats
+being able to pay" used a rich player, and a rich player reads as sealed whether
+the depth check runs first or last - so it proved nothing about the ordering. A
+mutation of that ordering was caught by a different test entirely, which is how
+it surfaced. It tests broke-and-sealed now, which is the case where the two
+orderings genuinely disagree: the wrong one says "short" and sends the player
+off to earn money for something money cannot buy.
+
+### Two small ones
+
+The state strip was first placed at the plinth lip, which is *inside* the
+plinth's own top slab, so it rendered perfectly into the middle of a solid box.
+
+A run of the e2e suite reported nine failures that were all my own fault: I
+started Playwright while a backgrounded `npm run build` was still writing
+`dist/`, so it was testing a half-written bundle. Every one passed on a clean
+run. **Do not start the smoke tests while a build is in flight.**
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

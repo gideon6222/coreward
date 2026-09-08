@@ -460,6 +460,36 @@ export const bombCells = (l: number) => { const r = bombRadius(l); return 2 * r 
 export const laserRange = (l: number) => 3 + l * 2;          /* 5, 7, 9 */
 
 export const MAT_FROM_LEVEL = 4;
+/* What state a shop case is in, and what its plate should say.
+
+   Pure, and separate from the room that draws it, because this is the part with
+   judgement in it: which of four states wins when several apply at once, and
+   what the one line of text under the name should say.
+
+   The order matters and is the design. Sealed beats everything - a depth lock
+   is not negotiable and quoting a price you could pay would be a lie. Maxed
+   beats affordability, because there is nothing to buy. And when you cannot
+   afford it, the MINERAL is named ahead of the credits, because credits are
+   what the loop pays constantly and a mineral you have never seen is the thing
+   actually stopping you. */
+export type ShelfState = 'ready' | 'short' | 'sealed' | 'max';
+export interface Shelf { state: ShelfState; line: string; }
+
+export function shelfState(
+  u: Upgrade, lvl: number, credits: number, stock: Record<string, number>, bestDepth: number
+): Shelf {
+  if (bestDepth < u.unlock) return { state: 'sealed', line: u.unlock + ' m' };
+  if (lvl >= u.max) return { state: 'max', line: 'MAX' };
+  const cost = costOf(u, lvl);
+  const mat = matCost(u, lvl);
+  if (mat && (stock[mat.id] || 0) < mat.need) {
+    const def = DEF[mat.id];
+    return { state: 'short', line: mat.need + ' ' + (def ? def.name.toUpperCase() : mat.id.toUpperCase()) };
+  }
+  const price = '◈ ' + cost.toLocaleString();
+  return { state: credits < cost ? 'short' : 'ready', line: price };
+}
+
 export const matCost = (u: Upgrade, lvl: number): MatCost => {
   const buying = lvl + 1;
   if (buying < MAT_FROM_LEVEL) return null;

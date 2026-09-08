@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
 import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat } from './ship';
 import { asMetal } from './materials';
-import { UPGRADES } from './config';
+import { UPGRADES, shelfState } from './config';
+import { g } from './state';
 import type { UpgradeKey } from './types';
 
 /* The Outfitter, as a room you are standing in.
@@ -139,6 +140,14 @@ export interface Bay {
   group: THREE.Group;
   part: THREE.Object3D;
   glow: THREE.Mesh;
+  /* the engraved plate on the front of the plinth */
+  plate: THREE.Mesh;
+  plateTex: THREE.CanvasTexture;
+  plateCtx: CanvasRenderingContext2D;
+  /* the strip of light along the plinth that carries the state at a glance */
+  lamp: THREE.Mesh;
+  /* darkens the alcove when the thing in it cannot be bought */
+  scrim: THREE.Mesh;
 }
 export const bays: Bay[] = [];
 
@@ -192,6 +201,62 @@ function makePart(key: UpgradeKey): THREE.Object3D {
   return g;
 }
 
+/* ---------- the engraved plate ----------
+
+   Playtest: *"can you label each upgrade so that it is easy to tell what it is
+   without clicking on it."*
+
+   A canvas texture on a small plate on the front of each plinth, rather than
+   HTML floating over the room: the label belongs to the case, the way a museum
+   label does, and text pinned to the world moves and turns with it instead of
+   hovering in front of everything.
+
+   The size is decided by the screen, not by taste. At this camera the visible
+   width is about 3.5 world units across 375 CSS pixels, so a 0.66-unit plate is
+   roughly 70 px wide - which is a six-character word at a readable size and
+   nothing more. That is why the labels are DRILL and THRUST rather than "Drill
+   Bit" and "Thrusters": the full names are in the card the moment you tap. */
+const PLATE_W = 512, PLATE_H = 168;
+
+/* Short enough to read at seventy pixels. The card carries the full name. */
+const SHORT: Record<string, string> = {
+  drill: 'DRILL', cargo: 'CARGO', thrust: 'THRUST', tank: 'FUEL',
+  cool: 'COOLING', scan: 'SCANNER', tow: 'TOW', auto: 'AUTOPILOT',
+  bomb: 'CHARGE', laser: 'LASER'
+};
+
+function makePlate() {
+  const c = document.createElement('canvas');
+  c.width = PLATE_W; c.height = PLATE_H;
+  const ctx = c.getContext('2d')!;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.66, 0.216),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+  );
+  return { mesh, tex, ctx };
+}
+
+/* Redrawn whenever the shop opens or something is bought - never per frame. */
+function drawPlate(b: Bay, name: string, line: string, tone: string, dim: boolean) {
+  const x = b.plateCtx;
+  x.clearRect(0, 0, PLATE_W, PLATE_H);
+  /* the plate itself, so the text sits on brushed metal rather than in mid-air */
+  x.fillStyle = dim ? 'rgba(16,20,27,0.92)' : 'rgba(26,32,42,0.95)';
+  x.fillRect(0, 0, PLATE_W, PLATE_H);
+  x.fillStyle = dim ? 'rgba(70,80,96,0.5)' : 'rgba(120,140,170,0.55)';
+  x.fillRect(0, 0, PLATE_W, 5);
+  x.textAlign = 'center';
+  x.font = '700 62px "Chakra Petch", system-ui, sans-serif';
+  x.fillStyle = dim ? '#5d6779' : '#e8f0ff';
+  x.fillText(name, PLATE_W / 2, 70);
+  x.font = '700 46px "Chakra Petch", system-ui, sans-serif';
+  x.fillStyle = tone;
+  x.fillText(line, PLATE_W / 2, 132);
+  b.plateTex.needsUpdate = true;
+}
+
 /* Two columns flanking the ship, five high, plus one over the top. Every slot
    sits inside what a portrait frame can actually show at this camera distance -
    see the note on the room above. Angled inward so the wall reads as facing
@@ -230,9 +295,80 @@ UPGRADES.forEach((u, i) => {
   glow.position.set(0, 0.16, -0.22);
   grp.add(glow);
 
+  const { mesh: plate, tex: plateTex, ctx: plateCtx } = makePlate();
+  plate.position.set(0, -0.2, 0.212);
+  grp.add(plate);
+
+  /* A strip of light along the front lip. This is the part that reads from
+     across the room without being read: colour alone, no text. */
+  const lamp = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.46, 0.026),
+    new THREE.MeshBasicMaterial({ color: 0x3fe0ff, transparent: true, opacity: 0.9 })
+  );
+  /* Below the plate, on the front face. The first attempt put it above, at the
+     lip - which is inside the plinth's own top slab, so it rendered perfectly
+     into the middle of a solid box and could not be seen at all. */
+  lamp.position.set(0, -0.335, 0.213);
+  grp.add(lamp);
+
+  /* Smoked glass across the alcove for anything that cannot be bought. It
+     darkens the part WITHOUT touching its material - which matters, because
+     those materials are shared with the hull, and dimming a case would
+     otherwise dim the tanks on the ship parked three feet away. */
+  const scrim = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.6, 0.72),
+    new THREE.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0, depthWrite: false })
+  );
+  scrim.position.set(0, 0.18, 0.16);
+  grp.add(scrim);
+
   stationScene.add(grp);
-  bays.push({ key: u.key, group: grp, part, glow });
+  bays.push({ key: u.key, group: grp, part, glow, plate, plateTex, plateCtx, lamp, scrim });
 });
+
+/* ---------- availability ----------
+
+   Playtest: *"doing something to visually show that certain upgrades aren't
+   available or you don't have enough money to purchase it by dimming it."*
+
+   Four states, and each one is said three ways - the strip of light, the plate,
+   and how dark the alcove is - so it reads at a glance AND survives being
+   colour-blind, which a colour-only code would not.
+
+     READY    cyan strip, price in cyan, alcove clear
+     SHORT    amber strip, price in amber, alcove smoked
+     SEALED   strip off, the depth in dull red, alcove smoked harder
+     MAX      green strip, "MAX", alcove clear
+
+   The part itself is never dimmed by touching its material, because those
+   materials are shared with the hull - dimming a case would dim the same part
+   bolted to the ship parked in the middle of the room. The smoked panel in
+   front does the job without that.
+
+   Runs on opening the shop and after every purchase; never per frame. */
+export function refreshBays() {
+  for (const b of bays) {
+    const u = UPGRADES.find((x) => x.key === b.key);
+    if (!u) continue;
+    const sh = shelfState(u, g.up[u.key], g.credits, g.stock, g.best.depth);
+
+    /* One row per state, so adding a fifth is a line rather than an edit to a
+       chain of conditionals. tone is the plate's second line, lamp is the strip
+       along the front lip, smoke is how far the alcove is shuttered. */
+    const look = {
+      ready:  { tone: '#3fe0ff', lamp: 0x3fe0ff, on: 0.9,  smoke: 0    },
+      short:  { tone: '#ffc861', lamp: 0xffc861, on: 0.8,  smoke: 0.42 },
+      sealed: { tone: '#8c4a52', lamp: 0x101010, on: 0,    smoke: 0.62 },
+      max:    { tone: '#4be08a', lamp: 0x4be08a, on: 0.85, smoke: 0    }
+    }[sh.state];
+
+    drawPlate(b, SHORT[b.key] || u.name.toUpperCase(), sh.line, look.tone, sh.state === 'sealed');
+    const lm = b.lamp.material as THREE.MeshBasicMaterial;
+    lm.color.setHex(look.lamp);
+    lm.opacity = look.on;
+    (b.scrim.material as THREE.MeshBasicMaterial).opacity = look.smoke;
+  }
+}
 
 /* ---------- docking ---------- */
 
@@ -245,6 +381,7 @@ export function isDocked() { return docked; }
 export function dockShip() {
   if (docked) return;
   docked = true;
+  refreshBays();
   stationScene.add(player);
   player.position.set(0, 0.35, 0.9);
   player.scale.setScalar(1.05);

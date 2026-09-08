@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.11.0';
+export const VERSION = '0.11.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.11.1', date: '2026-09-08', title: 'Read the room',
+    notes: [
+      'Every display case has a name plate, so you can see what is what without tapping.',
+      'A strip of light on each case: cyan means you can buy it, amber means not yet.',
+      'Locked cases are shuttered and stamped with the depth that opens them.',
+      'When a mineral is what you are missing, the plate names the mineral, not the price.'
+    ]
+  },
   {
     version: '0.11.0', date: '2026-09-08', title: 'The Outfitter is a place',
     notes: [
