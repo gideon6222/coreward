@@ -32,7 +32,8 @@ import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
-import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent } from './actions';
+import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent,
+         stopDigging } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 
 export function step(dir: Dir) {
@@ -50,8 +51,14 @@ export function startAction() {
     if (b.hard === Infinity) return;
     /* lift this cell out of the instanced terrain into a real mesh, so the
        dig animation has something to scale, jitter and hang cracks on */
-    beginDig(t.x, t.d, b);
-    R.digging = { x: t.x, d: t.d, t: 0, total: (b.hard * DIG_BASE) / S.drill(), block: b, stage: 0, spark: 0 };
+    /* Pick up where the last attempt stopped. The stored value is a fraction,
+       so a drill bought in between makes the REMAINDER faster without making
+       the work already done disappear. */
+    const total = (b.hard * DIG_BASE) / S.drill();
+    const done = clamp(g.damage[key(t.x, t.d)] || 0, 0, 0.985);
+    beginDig(t.x, t.d, b, done);
+    R.digging = { x: t.x, d: t.d, t: done * total, total, block: b,
+                  stage: Math.floor(done * 5), spark: 0 };
     sfx.digStart(b.hard);
     R.squash = SQUASH_DIG;
   } else {
@@ -103,6 +110,12 @@ export function frame(now: number) {
     }
   } else if (g.mode === 'play') {
     camZBoost = approach(camZBoost, 0, CAM_BOOST_DECAY, raw);
+    /* Let go and the drill stops. It used to run to completion no matter what,
+       which meant the only way to change your mind about a block was to have
+       not started it. */
+    if (R.digging && (!R.held || step(R.held).x !== R.digging.x || step(R.held).d !== R.digging.d)) {
+      stopDigging();
+    }
     startAction();
 
     if (R.digging) {
@@ -150,6 +163,7 @@ export function frame(now: number) {
 
       if (R.digging.t >= R.digging.total) {
         g.dug.add(k);
+        delete g.damage[k];
         dropBlock(k);
         spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 52 : 24, b.ore ? 6.5 : 4, 0.85);
         sfx.digStop();

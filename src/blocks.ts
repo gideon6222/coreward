@@ -4,7 +4,7 @@ import { key } from './util';
 import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
-import { mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
+import { crackGeo, crackMat, mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, ROCK_BUMP } from './materials';
 import type { Block } from './types';
 
@@ -207,11 +207,29 @@ function makeBlock(x: number, d: number, b: Block) {
 /* Called when drilling starts. Promotes one cell out of the instanced terrain
    into a real Group so the dig animation has something to scale, jitter and
    parent cracks to. */
-export function beginDig(x: number, d: number, b: Block) {
+export function beginDig(x: number, d: number, b: Block, done = 0) {
   const k = key(x, d);
   if (meshes.has(k)) return;
   const grp = makeBlock(x, d, b);
   grp.position.set(worldX(x), -d, 0);
+  /* Damage the block already carries, drawn back on before it is shown. A
+     block you half cut has to LOOK half cut when you come back to it, or the
+     memory is a number in a save file rather than something in the world.
+
+     Seeded from the cell so the same block always breaks the same way, which
+     matters more than it sounds: without it the cracks jump to new positions
+     every time you re-approach the same rock. */
+  const stage = Math.floor(Math.max(0, Math.min(1, done)) * 5);
+  grp.scale.setScalar(1 - 0.07 * stage);
+  for (let i = 0; i < stage; i++) {
+    const r1 = rnd(x * 17 + i, d * 5 + i * 3, 909);
+    const r2 = rnd(x * 3 + i * 7, d * 11 + i, 313);
+    const cr = new THREE.Mesh(crackGeo, crackMat);
+    cr.rotation.z = r1 * Math.PI;
+    cr.position.set((r1 - 0.5) * 0.3, (r2 - 0.5) * 0.3, 0.5);
+    cr.scale.x = 0.5 + r2 * 0.5;
+    grp.add(cr);
+  }
   scene.add(grp);
   meshes.set(k, grp);
   digCell = k;

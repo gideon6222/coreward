@@ -222,6 +222,7 @@ export interface SaveV2 {
   rubble?: string[];
   best?: Partial<Best>;
   drops?: Drops;
+  damage?: Cargo;
   charge?: number;
   relics?: string[];
   relicsTaken?: number[];

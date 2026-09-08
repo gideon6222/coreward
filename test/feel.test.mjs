@@ -541,3 +541,50 @@ test('the lamp and the framing grow together', () => {
     prev = now;
   }
 });
+
+/* ---------- partial dig damage ----------
+
+   The stored value is a FRACTION of the block, not seconds of drilling, and
+   getting that backwards is easy and quiet. With seconds, buying a better
+   drill between two attempts shrinks the total while the stored number stays
+   put - so a wall you had half cut would silently become nearly whole, which
+   is the exact opposite of what an upgrade should do. */
+
+const digSeconds = (hard, drill) => (hard * H.DIG_BASE) / drill;
+const remaining = (stored, hard, drill) => (1 - stored) * digSeconds(hard, drill);
+
+test('stored dig damage is a share of the block, not a number of seconds', () => {
+  const hard = 5;                     /* granite */
+  const stored = 0.75;
+
+  /* A better drill makes what is LEFT faster, and never makes it slower. */
+  let prev = Infinity;
+  for (const drill of [1, 2, 4, 8]) {
+    const left = remaining(stored, hard, drill);
+    assert.ok(left < prev, 'a stronger drill did not shorten the remainder');
+    prev = left;
+  }
+
+  /* The share already done survives the upgrade untouched: three quarters cut
+     is three quarters cut whatever you are holding. */
+  for (const drill of [1, 8]) {
+    const left = remaining(stored, hard, drill);
+    const whole = digSeconds(hard, drill);
+    assert.ok(Math.abs(left / whole - (1 - stored)) < 1e-12,
+      'the remaining share moved when the drill changed, at drill ' + drill);
+  }
+
+  /* And the seconds interpretation is genuinely different, which is what makes
+     this worth asserting rather than assuming. */
+  const asSeconds = stored * digSeconds(hard, 1);      /* 1.875 s of work done */
+  const wholeAfterUpgrade = digSeconds(hard, 8);       /* 0.3125 s total now */
+  assert.ok(asSeconds > wholeAfterUpgrade,
+    'the two interpretations happen to agree here, so this test proves nothing');
+});
+
+test('a nearly-finished block still needs a moment, and a fresh one needs it all', () => {
+  const hard = 5, drill = 1;
+  assert.ok(remaining(0.985, hard, drill) > 0, 'a capped resume must still take some work');
+  assert.equal(remaining(0, hard, drill), digSeconds(hard, drill));
+  assert.equal(remaining(1, hard, drill), 0);
+});

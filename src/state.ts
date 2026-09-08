@@ -37,6 +37,13 @@ export const g: {
      so a cell can only ever hold one - which it can, because breaking a block
      empties the cell it was in. */
   drops: Drops;
+  /* How far through a block you already are, 0..1, keyed by cell.
+
+     Stored as a FRACTION rather than as seconds of drilling. Seconds would be
+     invalidated by buying a better drill - a block you had half cut would
+     silently become nearly whole - and a fraction is the thing the player
+     actually saw on the rock face. */
+  damage: Cargo;
   best: Best;
   mode: Mode;
 } = {
@@ -48,7 +55,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
-  cargo: {}, weight: 0, stock: {}, drops: {}, relics: [], relicsTaken: [],
+  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [],
   best: { depth: 0, haul: 0 },
   mode: 'play'
 };
@@ -105,7 +112,8 @@ export function save() {
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
-      drops: g.drops, charge: g.charge, relics: g.relics, relicsTaken: g.relicsTaken
+      drops: g.drops, damage: g.damage, charge: g.charge,
+      relics: g.relics, relicsTaken: g.relicsTaken
     }));
   } catch (e) { /* ignore */ }
 }
@@ -122,6 +130,7 @@ export function load() {
       g.dug = new Set(s.dug || []);
       g.rubble = new Set(s.rubble || []);
       g.drops = s.drops || {};
+      g.damage = s.damage || {};
       if (typeof s.charge === 'number') g.charge = s.charge;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
       g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];

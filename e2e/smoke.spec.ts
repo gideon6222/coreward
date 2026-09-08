@@ -472,6 +472,63 @@ test('ore left behind is picked up by flying back through it', async ({ page }) 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
+/* Half-drilled blocks stay half-drilled.
+
+   Before this, letting go mid-block threw the work away, so the only way to
+   change your mind about a wall was to have not started it. The damage is
+   stored as a fraction rather than as seconds precisely so that buying a
+   better drill in between speeds up the REMAINDER instead of erasing the
+   progress - which is the part worth testing, because it is the part that is
+   easy to get backwards. */
+test('a block remembers how far through it you were', async ({ page }) => {
+  /* Granite at 50 m with an unupgraded drill takes 2.5 seconds to cut. Short
+     interrupted bursts can only ever finish it if each one picks up where the
+     last stopped.
+
+     Counted in bursts rather than timed, because SwiftShader under a full
+     suite run makes the game advance in slow motion and any fixed number of
+     fixed-length bursts becomes a coin flip. A slower machine simply needs
+     more bursts; what it can never do is finish the block in one. */
+  await page.evaluate(() => {
+    const dug: string[] = [];
+    for (let d = 0; d <= 49; d++) dug.push('6,' + d);
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 0, cargo: 5, thrust: 3, tank: 9, cool: 9, scan: 3, tow: 0, auto: 0, bomb: 0, laser: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {}, damage: {},
+      relics: [], relicsTaken: [], best: { depth: 300, haul: 0 }, charge: 4,
+      dug, cargo: {}, weight: 0, px: 6, pd: 49
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await expect(page.locator('#depth')).toContainText('DEPTH 49 m');
+
+  const key = page.locator('#dpad .k[data-dir=down]');
+  const stillAt49 = async () =>
+    (await page.locator('#depth').innerText()).includes('DEPTH 49 m');
+
+  let bursts = 0;
+  while (await stillAt49() && bursts < 30) {
+    await key.dispatchEvent('pointerdown');
+    await page.waitForTimeout(600);
+    await key.dispatchEvent('pointerup');
+    await page.waitForTimeout(220);
+    bursts++;
+  }
+
+  expect(bursts, 'one 0.6 s burst finished 2.5 s of granite, so this is not ' +
+    'testing interruption at all').toBeGreaterThan(1);
+  expect(bursts, 'thirty interrupted bursts did not finish the block - the ' +
+    'damage is being thrown away when the drill stops').toBeLessThan(30);
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});
+
 /* Ordnance: the shared power meter, and what each ability actually does.
 
    Four modules meet here - the meter in feel.ts, the shapes in config.ts, the
