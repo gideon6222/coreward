@@ -20,6 +20,26 @@ import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX } from './feel';
 import type { Dir, SupplyKey } from './types';
 
+/* Stop drilling, and remember how far through the block you were.
+
+   Called from every path that interrupts a dig - releasing the direction,
+   turning to another cell, an autopilot launch, a tow, a planet break. The
+   rock keeps the damage, so coming back finishes it off rather than starting
+   again. That is the difference between a wall you can probe and one you have
+   to commit to in a single go.
+
+   Lives here rather than in loop.ts because loop.ts already imports this
+   module, and goSurface() and autopilot() below both need it. */
+export function stopDigging() {
+  if (!R.digging) return;
+  const done = clamp(R.digging.t / R.digging.total, 0, 1);
+  /* Below a couple of per cent there is nothing to see on the rock face, and
+     recording it would fill the save with cells nobody touched. */
+  if (done > 0.02) g.damage[key(R.digging.x, R.digging.d)] = done;
+  R.digging = null;
+  sfx.digStop();
+}
+
 export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
@@ -46,13 +66,15 @@ export function sell() {
 }
 
 export function goSurface() {
+  /* Banked before the ship is moved, so a tow out of a half-cut block leaves
+     the damage on the rock rather than throwing it away. */
+  stopDigging();
   /* Freeze the marker at the record as it stands now, before the next descent
      starts pushing it deeper. */
   setMark(g.best.depth);
   g.px = START_X; g.pd = -1; g.face = 'down';
   R.warnedFull = false;
-  R.moving = null; R.digging = null; R.flight = null;
-  sfx.digStop();
+  R.moving = null; R.flight = null;
   g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0; g.charge = CHARGE_MAX;
   R.hullCause = 'heat';
   R.wasHot = false;
@@ -257,8 +279,8 @@ export function autopilot() {
   const len = curve.getLength();
   const cruise = clamp(len / 4.2, 8, 26);
   R.flight = { curve: curve, len: len, u: 0, dur: len / cruise, t: 0, last: pts3[0].clone() };
-  R.moving = null; R.digging = null; R.held = null;
-  sfx.digStop();
+  stopDigging();
+  R.moving = null; R.held = null;
   sfx.thrust();
   g.mode = 'fly';
   toast('Autopilot engaged · ' + route.length + ' m of tunnel');
@@ -312,6 +334,9 @@ export function breakCore() {
         g.planet = next;
         g.dug = new Set();
         g.rubble = new Set();
+        /* Cell keys carry no planet, so every per-cell map has to be cleared
+           together or the new world inherits the old one's holes. */
+        g.damage = {};
         g.drops = {}; syncDrops();
         for (const k of Array.from(meshes.keys())) dropBlock(k);
         goSurface();
@@ -328,6 +353,7 @@ export function hardReset() {
   g.stock = {};
   g.relics = []; g.relicsTaken = [];
   g.drops = {}; syncDrops();
+  g.damage = {};
   g.dug = new Set();
   g.rubble = new Set();
   g.cargo = {}; g.weight = 0;
