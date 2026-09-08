@@ -572,10 +572,18 @@ test('a block remembers how far through it you were', async ({ page }) => {
      interrupted bursts can only ever finish it if each one picks up where the
      last stopped.
 
-     Counted in bursts rather than timed, because SwiftShader under a full
-     suite run makes the game advance in slow motion and any fixed number of
-     fixed-length bursts becomes a coin flip. A slower machine simply needs
-     more bursts; what it can never do is finish the block in one. */
+     Driven through the headless seam rather than by holding a real d-pad for
+     600 ms at a time, and that is not a convenience. The frame loop clamps its
+     delta, so under SwiftShader a burst of 600 ms of WALL CLOCK delivers some
+     unknown smaller amount of GAME time - and how much depends on how heavy a
+     frame currently is. This test passed for months and then went red on CI,
+     on a commit that only touched lighting: the extra per-frame cost of a
+     shadow fan under a software rasteriser was enough that thirty bursts no
+     longer added up to 2.5 seconds of drilling. The failure message said the
+     damage was being thrown away, which was not true and was not close.
+
+     Fixed steps make the burst length mean exactly what it says on any
+     machine. The d-pad's own wiring is covered by the tests that hold it. */
   await page.evaluate(() => {
     const dug: string[] = [];
     for (let d = 0; d <= 49; d++) dug.push('6,' + d);
@@ -592,35 +600,34 @@ test('a block remembers how far through it you were', async ({ page }) => {
       return set.call(this, k, v);
     };
   });
-  await page.reload();
+  await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   await expect(page.locator('#depth')).toContainText('DEPTH 49 m');
 
-  const key = page.locator('#dpad .k[data-dir=down]');
-  const stillAt49 = async () =>
-    (await page.locator('#depth').innerText()).includes('DEPTH 49 m');
+  const r = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stopClock();
+    let bursts = 0;
+    /* 0.3 s on, 0.12 s off. Nine bursts of drilling would finish the block if
+       nothing is lost; one never can. */
+    while (w.g.pd < 49.5 && bursts < 30) {
+      w.R.held = 'down';
+      w.advance(0.3);
+      w.R.held = null;
+      w.advance(0.12);
+      bursts++;
+    }
+    return { bursts, depth: w.g.pd };
+  });
 
-  let bursts = 0;
-  while (await stillAt49() && bursts < 30) {
-    await key.dispatchEvent('pointerdown');
-    await page.waitForTimeout(600);
-    await key.dispatchEvent('pointerup');
-    await page.waitForTimeout(220);
-    bursts++;
-  }
-
-  expect(bursts, 'one 0.6 s burst finished 2.5 s of granite, so this is not ' +
+  expect(r.bursts, 'one 0.3 s burst finished 2.5 s of granite, so this is not ' +
     'testing interruption at all').toBeGreaterThan(1);
-  expect(bursts, 'thirty interrupted bursts did not finish the block - the ' +
+  expect(r.bursts, 'thirty interrupted bursts did not finish the block - the ' +
     'damage is being thrown away when the drill stops').toBeLessThan(30);
+  expect(r.depth, 'the block did break').toBeGreaterThanOrEqual(49.5);
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
-/* Ordnance: the shared power meter, and what each ability actually does.
-
-   Four modules meet here - the meter in feel.ts, the shapes in config.ts, the
-   break routine in actions.ts, the buttons in ui.ts - and none of them can see
-   whether the others agree. */
 test('the charge and the laser spend power and clear the ground', async ({ page }) => {
   await page.evaluate(() => {
     const dug: string[] = [];

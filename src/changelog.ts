@@ -16,11 +16,11 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.12.2';
+export const VERSION = '0.12.3';
 
 export const CHANGELOG: Release[] = [
   {
-    version: '0.12.2', date: '2026-09-08', title: 'Three layers deep',
+    version: '0.12.3', date: '2026-09-08', title: 'Three layers deep',
     notes: [
       'Rock no longer casts a shadow on itself. Angled shadows now only come from actual tunnels.',
       'Three layers of rock read either side of a tunnel, and anything past that is black.',

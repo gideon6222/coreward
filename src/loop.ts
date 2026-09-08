@@ -594,7 +594,7 @@ export function tick(raw: number, draw = true) {
      by the smoothed facing gives world (sin, -cos) - which in the grid's
      frame, where +y is deeper, is (sin, cos). */
   const fz = rig.rotation.z;
-  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw);
+  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw);
 
   const fscale = 0.25 + thrustLevel * 1.15;
   for (const f of flames) {

@@ -99,6 +99,8 @@ let row0 = 0;
 let srcI = -999, srcJ = -999;
 let dirty = true;
 let snap = true;
+/* game time that passed on ticks which did not draw, owed to the smoothing */
+let pending = 0;
 
 /* Terrain changed shape. Called from the one place that already knows -
    blocks.rebuild() - so a dug cell, a tremor and a planet change all reach it
@@ -126,12 +128,35 @@ function fillSolid() {
    Taken from the ship's SMOOTHED facing rather than from `g.face`, so the beam
    swings round with the model instead of snapping a quarter turn ahead of it. */
 export function updateLight(
-  px: number, pd: number, range: number, dirX: number, dirD: number, dt: number
+  px: number, pd: number, range: number, dirX: number, dirD: number, dt: number,
+  draw = true
 ) {
   const want = Math.round(pd) - LM_ABOVE;
   /* Scroll the smoothed field with the window, or descending drags every
      cell's old value one row along with it and the field smears. */
   if (want !== row0) { shiftField(cur, LM_COLS, LM_ROWS, want - row0); row0 = want; dirty = true; }
+
+  /* Nothing past this point is read by anything except a shader, so on a tick
+     that is not going to draw it is pure waste - and the headless seam runs
+     thousands of those in a row. The shadow fan alone is 512 ray casts a tick.
+
+     Skipping leaves `srcI`/`srcJ` stale, which is exactly right: the next tick
+     that does draw sees the ship in a different cell and re-solves from
+     scratch. The row bookkeeping above still runs, because that is the one
+     piece of state that has to stay lined up with the world either way.
+
+     The skipped time is CARRIED rather than dropped. Exponential smoothing
+     composes over dt - easing for a second in sixty steps lands where easing
+     for a second in one step does - so handing the drawing tick the whole
+     interval gives the same answer as never having skipped. Dropping it
+     instead silently turns the smoothing rate into "per drawn frame", which
+     under the headless seam means one step per half-second of game time: the
+     field then chases a target it never catches, and the first thing that
+     noticed was a test asserting the cell the ship is sitting in was fully
+     lit. It was not - it was at 82 per cent and still climbing. */
+  if (!draw) { pending += dt; return; }
+  dt += pending;
+  pending = 0;
 
   const si = Math.round(px) + 1, sj = Math.round(pd) - row0;
   if (dirty || si !== srcI || sj !== srcJ) {

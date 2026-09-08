@@ -2345,6 +2345,53 @@ same units the playtest note did.
 
 **Cost unchanged:** 56 draw calls of 150, 0.83 ms a tick.
 
+## The build that went red and sat there (2026-09-08)
+
+Gideon: *"Are you still working on this? It doesn't look like it is updating on
+my phone?"* - which is the worst way to find out a deploy failed.
+
+**What actually broke.** The lighting commit went red on CI and the smoke job
+took the two deploy jobs down with it. The failing test was
+`a block remembers how far through it you were`, and it had nothing to do with
+lighting on its face: it drives the drill by holding a real d-pad for 600 ms at
+a time and counting bursts. The frame loop clamps its delta, so a burst of 600
+milliseconds of WALL CLOCK delivers some smaller, unknown amount of GAME time -
+and how much depends on how heavy a frame currently is. Under SwiftShader on a
+CI runner, the extra per-frame cost of a shadow fan and a heavier fragment
+shader was enough that thirty bursts stopped adding up to the 2.5 seconds of
+granite the test needed.
+
+The failure message said the damage was being thrown away when the drill stops.
+That was not true and was not close, which is the real cost of a wall-clock
+test: it fails in the vocabulary of the feature, pointing at code that is fine.
+
+It is on the tick seam now - fixed 0.3 s bursts, deterministic on any machine,
+four seconds instead of twenty-five. Mutation-tested by disabling the damage
+write, which is what it claims to catch. **The rule was already in PIPELINE.md**
+- wait on game state, never on wall-clock time - and this test predates it.
+Worth a sweep for the others.
+
+**How it reached him.** I said "pushed, CI running, I'll confirm" and left a
+background poll to do the confirming. That poll hit the unauthenticated GitHub
+API every 15 seconds, burned the 60-an-hour budget, started getting rate-limit
+JSON instead of run status, and then printed **nothing at all** and exited
+zero. Silence read as "still running".
+
+Two things to keep: poll a remote API at 30 seconds or slower, and **a check
+that cannot determine the answer has to fail loudly** - printing nothing is
+indistinguishable from "not finished" and from "green". Both are in PIPELINE.md
+now.
+
+**And one bug I introduced while investigating.** Making `updateLight` skip its
+work on ticks that do not draw looked free - nothing below that line is read by
+anything but a shader. It is not free: it silently turned the smoothing rate
+into "per drawn frame", and under the headless seam that is one step per half
+second of game time, so the field chased a target it never caught. The fix is
+to carry the skipped time rather than drop it - exponential smoothing composes
+over an interval, so handing the drawing tick the whole gap gives the same
+answer as never having skipped. Caught by the lighting test asserting the cell
+the ship sits in was fully lit; it was at 82 per cent and still climbing.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
