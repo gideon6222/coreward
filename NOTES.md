@@ -1777,6 +1777,61 @@ A ratio that is always ~100% is measuring the wrong set.
 name. The telemetry suite was written, passed, and was not being run at all,
 because adding a file to `test/` joined nothing.
 
+## The v0.9.4 deploy that never happened (2026-09-08)
+
+Playtest: *"It's not automatically updating to the new version on my phone for
+some reason. I've restarted it multiple times now."*
+
+His phone was right and there was nothing wrong with it. **CI failed on e34e2b1,
+so the deploy job was skipped and the live site was still on v0.9.3.** He was
+restarting an app that had nothing new to fetch.
+
+The PWA side is fine and was never the problem: `registerType: 'autoUpdate'`
+with `skipWaiting` and `clientsClaim` picks up a new build on the next open or
+the one after. Worth confirming rather than assuming, given the same session had
+just lost an hour to a stale service worker locally - but that was `vite
+preview`, not the phone.
+
+**The process failure is mine.** "Push straight to main, say it is pushed, do
+not poll the live site" is right, and it does not mean "do not look at whether
+the gate passed". Those got conflated. Checking is one unauthenticated call:
+
+```bash
+curl -s "https://api.github.com/repos/gideon6222/coreward/actions/runs?per_page=3"
+```
+
+And when it has failed, the logs need auth but the **annotations do not** -
+`/check-runs/<job_id>/annotations` returns the actual assertion text, which is
+how the cause below was found without signing in.
+
+### What actually failed, and why it only failed there
+
+`heat reads as its own channel on the hull bar` polled for the soak gauge to
+pass 25% of its width and reached **24.4582%** before the test timed out. It
+passes locally every time, including with `CI=true`.
+
+Soak accrues in **game time**. The CI runner has no GPU, falls back to
+SwiftShader, and the frame loop clamps its delta - so the game advances in slow
+motion and thirty seconds of wall clock is not thirty seconds of play. The test
+was obeying the "wait on game state, never on wall-clock time" rule and still
+lost, because the state it waited on is itself measured in a clock it was not
+driving.
+
+Fixed by putting it on the tick seam that landed the same session: `advance(60)`
+is sixty game-seconds on any machine. **13.6 s and machine-dependent to 2.8 s
+and deterministic.** This is the first test converted; every other wall-clock
+poll in the suite is a candidate.
+
+Two structural things came out of it:
+
+- **The poll window and the test timeout were both 30 s**, so the poll could
+  never use its budget: the test died first and reported "test timeout
+  exceeded" instead of "soak reached 24.46 of 25". The real message was one
+  layer down. The suite timeout is 60 s now, deliberately longer than
+  `DEEP_ENOUGH`.
+- A green local suite says nothing about a machine an order of magnitude slower
+  at software WebGL. The seam is the answer to that, not bigger timeouts.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

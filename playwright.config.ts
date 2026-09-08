@@ -16,6 +16,16 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
+  /* Longer than DEEP_ENOUGH (30 s), and that relationship is the point.
+
+     A test that polls for 30 s inside a 30 s test timeout can never actually
+     use its window: the test dies first, and the failure it reports is "test
+     timeout exceeded" rather than the assertion that was waiting. That is
+     exactly how the heat test failed in CI - the real message, "soak reached
+     24.46 of the 25 it needed", was buried under a timeout.
+
+     A poll should be allowed to run out and say what it was waiting for. */
+  timeout: 60_000,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
 
   use: {

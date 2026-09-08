@@ -742,23 +742,44 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
         return set.call(this, k, v);
       };
     });
-    await page.reload();
+    /* Driven through the ?debug tick seam rather than by waiting.
+
+       This test used to sit and poll for the soak gauge to fill, and it FAILED
+       IN CI while passing everywhere else: soak builds in game time, the CI
+       runner has no GPU and falls back to a software rasteriser, so the game
+       crawls and thirty seconds of wall clock was not enough game time. It
+       reached 24.46% of the 25% it needed. Worse, the poll window and
+       Playwright's own test timeout were both 30 s, so the poll could never
+       actually use its full budget.
+
+       Waiting on real time to observe a thing measured in game time is the bug,
+       not the timeout value. advance() runs fixed steps as fast as the CPU
+       allows, so this is now both instant and identical on every machine. */
+    await page.goto('/?debug');
     await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
 
     const widthOf = (sel: string) => page.evaluate((s) =>
       parseFloat((document.querySelector(s) as HTMLElement).style.width) || 0, sel);
     const opacityOf = (sel: string) => page.evaluate((s) =>
       parseFloat((document.querySelector(s) as HTMLElement).style.opacity) || 0, sel);
+    /* The clock is stopped from here on, so the HUD only repaints when this
+       says so - every assertion below reads a settled frame rather than racing
+       one. */
+    const advance = (secs: number) =>
+      page.evaluate((n) => (window as any).__cw.advance(n), secs);
+
+    await page.evaluate(() => (window as any).__cw.stopClock());
+    await advance(0.2);
 
     /* Below the heat depth the hull label names heat as the cause and carries
        the rate. Above it, it must say nothing of the kind. */
     await expect(page.locator('#hullTxt')).toHaveText(/^HULL\s+-\d+\.\d\/s$/, { timeout: 10_000 });
     await expect(page.locator('#hullTxt')).toHaveClass(/hot/);
 
-    /* soak builds while you sit there - polled, never slept on, because the
-       frame loop advances in slow motion on a machine without a GPU */
-    await expect.poll(() => widthOf('#soakBar'), { timeout: DEEP_ENOUGH })
-      .toBeGreaterThan(25);
+    /* Sixty seconds of sitting at 96 m, in about a second of real time. */
+    await advance(60);
+    expect(await widthOf('#soakBar'),
+      'a minute at 96 m should visibly build heat soak').toBeGreaterThan(25);
 
     const soakBefore = await widthOf('#soakBar');
     const emberBefore = await opacityOf('#heat');
@@ -769,18 +790,15 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
     await page.locator('#supCoolant').dispatchEvent('pointerdown');
     await expect(page.locator('#toast')).toContainText('heat soak cleared');
 
-    /* Same polling discipline as above: the soak is zeroed synchronously, the
-       gauge that shows it is not repainted until the next frame. */
-    await expect
-      .poll(() => widthOf('#soakBar'), { timeout: 10_000, message: 'the flush must empty the soak gauge' })
+    /* The soak is zeroed synchronously; the gauge that shows it is not
+       repainted until the next frame, so give it one. */
+    await advance(0.2);
+    expect(await widthOf('#soakBar'), 'the flush must empty the soak gauge')
       .toBeLessThan(soakBefore / 4);
-    await expect
-      .poll(() => opacityOf('#heat'), { timeout: 10_000, message: 'the ember edges must fall back with it' })
+    expect(await opacityOf('#heat'), 'the ember edges must fall back with it')
       .toBeLessThan(emberBefore);
-    await expect
-      .poll(async () => Number((await page.locator('#hullTxt').innerText()).replace(/[^0-9.]/g, '')),
-        { timeout: 10_000, message: 'the drain rate is what the player actually bought' })
-      .toBeLessThan(rateBefore);
+    expect(Number((await page.locator('#hullTxt').innerText()).replace(/[^0-9.]/g, '')),
+      'the drain rate is what the player actually bought').toBeLessThan(rateBefore);
 
     /* Still in the zone, so the label keeps naming heat - a flush buys time,
        it does not cool the rock. */
