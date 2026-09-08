@@ -268,7 +268,18 @@ export const LM_DARK_RAMP = 12;
    ends: that reads as a lamp with a reach, where a linear ramp reads as a
    picture with a gradient over it. The radius is the Scanner's, so the upgrade
    buys reach in the propagated light as well as in the point light. */
-export const LM_POOL_POW = 3;
+/* Playtest: *"I like how you have this part set up but would like it to fade
+   more gradually and see further forward, rather than just an even circle
+   around the ship."*
+
+   Cubed was a lamp with a hard edge, which was right when the pool was the
+   only thing describing reach. It is not any more - the flood and the shadow
+   fan do that - so this can go back to being a falloff rather than a boundary. */
+export const LM_POOL_POW = 1.6;
+/* How much further the light reaches AHEAD than to the side, as a fraction of
+   the radius. 0.85 makes the lit area an egg pointing the way the drill points
+   rather than a circle with a bright half. */
+export const LM_FORWARD = 0.85;
 export const LM_RANGE_MULT = 1.1;
 /* Headroom so the middle of the pool saturates instead of asymptoting. */
 export const LM_GAIN = 1.15;
@@ -345,6 +356,16 @@ export const LM_INDIRECT = 0.22;
    meant the glow behind the ship ended exactly where the beam did, with the
    same hard edge - which is the one thing it must not do, because the whole
    job of the bounce is to be the soft part. */
+/* The air in a tunnel keeps far more ambient light than a rock face does, and
+   the two are deliberately different numbers.
+
+   Playtest: *"tunnels behind the ship should get light that is dispersed ... as
+   the light from the front of the ship passes a branching tunnel, it should
+   cast a shadow ... but the tunnel still has ambient light."* A tunnel is a
+   space full of dust with light bouncing around in it from every wall; a rock
+   face is a surface, and a surface the beam is not on is simply dark. Sharing
+   one bounce figure between them made every branch read as a hole. */
+export const LM_AIR_AMBIENT = 0.62;
 export const LM_BOUNCE_RANGE = 1.7;   /* multiple of the beam's reach */
 export const LM_BOUNCE_POW = 1.25;    /* against the beam's 3: a long fade */
 /* How tightly the beam narrows to the front. Higher is a spotlight, lower is a
@@ -370,7 +391,7 @@ export const LM_RAYS = 512;
    because the lamp is, and weak: this is the glow around a light source in
    dusty air, and the moment it reads as a solid colour the tunnel stops
    looking empty and starts looking filled in. */
-export const LM_HAZE = 0.34;
+export const LM_HAZE = 0.52;
 export const LM_HAZE_COLOR = 0xffb46a;
 /* How far the glow in a tunnel spills onto the rock at its edge.
 

@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.12.3';
+export const VERSION = '0.13.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.13.0', date: '2026-09-08', title: 'Two lights',
+    notes: [
+      'Tunnel light and rock light are separate now. Rock faces no longer have shadows cut across them.',
+      'Light spreads through every tunnel you have opened. The one you are facing is the brightest.',
+      'A branch the beam passes is still in shadow, but it keeps enough ambient light to read as a tunnel.',
+      'The lamp reaches further ahead than to the side, and fades out instead of ending at an edge.'
+    ]
+  },
   {
     version: '0.12.3', date: '2026-09-08', title: 'Three layers deep',
     notes: [

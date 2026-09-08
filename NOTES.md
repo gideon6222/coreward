@@ -2392,6 +2392,59 @@ over an interval, so handing the drawing tick the whole gap gives the same
 answer as never having skipped. Caught by the lighting test asserting the cell
 the ship sits in was fully lit; it was at 82 per cent and still climbing.
 
+## Two lights, not one (2026-09-08)
+
+Gideon, after the third pass: *"I think I am explaining what I want wrong.
+there should basically be two types of light. one will be the light in the
+tunnels, which will disperse and spread through all of the connected tunnels
+... the second type of light I want is on the rock faces and separate from the
+tunnel light."*
+
+He was not explaining it wrong. He had been describing two lights from the
+first message and I had been building one, so every note about the shadow read
+as a bug in the shadow rather than as a bug in where the shadow was applied.
+
+**The whole fix is a fork.** The terms are shared - flood, pool, beam lobe,
+bounce - and the two lights differ in exactly one thing:
+
+    ROCK   flood x pool x lobe                    (no shadow, ever)
+    AIR    flood x pool x lobe x shadow           (or ambient, whichever wins)
+
+A rock face is lit by being NEAR a lit tunnel. That is a property of the rock,
+not of the sightline to it, and running the ray fan over it was what put a hard
+diagonal across every block in the frame. The acne fix in the previous session
+was real and necessary, but it could only ever clean up a shadow that had no
+business being on walls in the first place - which is why "we are still getting
+angle shadows from the blocks" survived it.
+
+The air is the opposite: it is lit by light arriving ALONG the tunnel, and a
+corner in the way is exactly what stops it. That is where the fan belongs, and
+it is the only place it now runs.
+
+**The two also want different ambient, by a lot.** Sharing one bounce figure
+made every branch read as a hole. A tunnel is a space full of dust with light
+bouncing off every wall in it; a rock face the beam is not on is simply dark.
+`LM_AIR_AMBIENT` is 0.62 against the rock's 0.22, and that difference is what
+lets a branch the beam cannot see into still read as somewhere you could go.
+
+**The pool stopped being a boundary.** Cubed was right when the pool was the
+only thing describing reach; the flood and the fan do that now, so it went to
+1.6 and gained a forward stretch - reach divided by `1 + 0.85 * max(0, ahead)`,
+which makes the lit area an egg pointing where the drill points rather than a
+circle with a bright half. That was the other half of his note: *"fade more
+gradually and see further forward, rather than just an even circle."*
+
+**Cost:** 48 draw calls of 150, 0.68 ms a tick - cheaper than the fused version,
+because the rock path no longer samples the shadow texture at all.
+
+**The lesson worth keeping is not technical.** Three rounds of notes all
+pointed at the same structural mistake, and I read each one as a tuning
+request: acne, then gradient, then "still getting angle shadows". The tell was
+that the same complaint kept coming back after a fix that genuinely worked. **A
+note that survives a correct fix is a note about a different thing** - and the
+fourth message, where he said he was explaining it wrong, was him doing my job
+for me.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

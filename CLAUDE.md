@@ -113,6 +113,14 @@ the haze, which listed its uniforms by hand, worked. The haze now spreads `U` to
 e2e test that reads the declarations out of the compiled shader and fails on any that nothing
 supplies.
 
+**There are TWO lights and they must not be fused.** `coreReach()` lights rock faces:
+flood x pool x lobe, and **never the shadow fan**. `coreReachAir()` lights the air in a tunnel:
+the same terms plus the fan, over a much higher ambient. A rock face is lit by being near a lit
+tunnel, which is a property of the rock; the air in a tunnel is lit by light arriving along it,
+which a corner can block. Fusing them put hard-edged shadow wedges across every rock face in
+the frame, and no amount of fixing the fan could remove a shadow that was never meant to be
+there.
+
 **The propagated light only ever darkens.** `coreLit()` is clamped to at most 1, so every
 lighting value in `feel.ts` is still the ceiling it was calibrated to be. If the world ever
 needs to be brighter, that is a change to the lights, not to the lightmap.

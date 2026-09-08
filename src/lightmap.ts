@@ -7,7 +7,8 @@ import { LM_ATT, LM_PINCH, LM_SEEP, LM_SEEP_STEPS, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN, LM_CONTRAST,
          LM_HAZE, LM_HAZE_COLOR, LM_INDIRECT, LM_FOCUS, LM_OMNI_NEAR, LM_OMNI_FAR,
          LM_SHADOW_SOFT, LM_RAYS, LM_BOUNCE_RANGE, LM_BOUNCE_POW,
-         LM_HAZE_SPILL, LM_GLOW_FLOOR, LM_GLOW_POW } from './feel';
+         LM_HAZE_SPILL, LM_GLOW_FLOOR, LM_GLOW_POW, LM_FORWARD,
+         LM_AIR_AMBIENT } from './feel';
 
 /* The grid the solver works on, and the bridge from it to every shader.
 
@@ -87,10 +88,13 @@ const U = {
   uLmDir: { value: new THREE.Vector4(0, 1, LM_INDIRECT, LM_FOCUS) },
   /* how far the shadow edge is smeared, and the reach the fan's distances are
      stored as a fraction of */
-  uLmShade: { value: new THREE.Vector2(LM_SHADOW_SOFT, 8) },
-  /* 1 / the bounce's own reach, and the floor and curve that decide how far
-     glowing things stay visible through unlit rock */
-  uLmSoft: { value: new THREE.Vector3(1 / 14, LM_GLOW_FLOOR, LM_GLOW_POW) }
+  /* shadow-edge smear, the reach the fan's distances are a fraction of, and
+     how much further the light reaches ahead than to the side */
+  uLmShade: { value: new THREE.Vector3(LM_SHADOW_SOFT, 8, LM_FORWARD) },
+  /* 1 / the bounce's own reach, the floor and curve that decide how far
+     glowing things stay visible through unlit rock, and the ambient the AIR in
+     a tunnel keeps - which is much more than a rock face keeps */
+  uLmSoft: { value: new THREE.Vector4(1 / 14, LM_GLOW_FLOOR, LM_GLOW_POW, LM_AIR_AMBIENT) }
 };
 
 const OPTS = { att: LM_ATT, pinch: LM_PINCH, seep: LM_SEEP, seepSteps: LM_SEEP_STEPS };
@@ -202,8 +206,9 @@ export function updateLight(
   U.uLmFrame.value.set(worldX(-1) - 0.5, row0 - 0.5, 1 / LM_COLS, 1 / LM_ROWS);
   U.uLmLamp.value.set(worldX(px), -pd, 1 / reach, LM_GAIN);
   U.uLmDir.value.set(dirX, dirD, LM_INDIRECT, LM_FOCUS);
-  U.uLmShade.value.set(LM_SHADOW_SOFT, reach);
-  U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), LM_GLOW_FLOOR, LM_GLOW_POW);
+  U.uLmShade.value.set(LM_SHADOW_SOFT, reach, LM_FORWARD);
+  U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), LM_GLOW_FLOOR, LM_GLOW_POW,
+                      LM_AIR_AMBIENT);
   haze.position.set(0, -pd, HAZE_Z);
 }
 
@@ -220,67 +225,96 @@ const DECL = `
   uniform vec4 uLmLamp;
   uniform vec4 uLmDir;
   uniform vec3 uLmDark;
-  uniform vec2 uLmShade;
-  uniform vec3 uLmSoft;
+  uniform vec3 uLmShade;
+  uniform vec4 uLmSoft;
 
   /* Where p sits in the light grid. */
   vec2 coreUv(vec2 p) {
     return vec2((p.x - uLmFrame.x) * uLmFrame.z, (-p.y - uLmFrame.y) * uLmFrame.w);
   }
 
-  /* How much of the lamp arrives at p, before any surface is considered.
+  /* THERE ARE TWO LIGHTS, and keeping them apart is the whole shape of this.
 
-     Four terms, and they answer four different questions:
+     Playtest: *"there should basically be two types of light. one will be the
+     light in the tunnels, which will disperse and spread through all of the
+     connected tunnels ... the second type of light I want is on the rock faces
+     and separate from the tunnel light."*
 
-       vis    - can light get here through the tunnels at all (the flood)
-       pool   - how far away is it (continuous, from the ship's exact position)
-       lobe   - is the lamp pointing this way
-       shadow - is anything directly in the way (the ray fan)
+     He was right, and the version before this had them fused: one number went
+     to both, so the shadow fan - which belongs entirely to the air in a tunnel
+     - was also carving hard-edged wedges across every rock face in the frame.
+     That is what "we are still getting angle shadows from the blocks" was. The
+     acne fix earlier had removed the artefact from INSIDE a wall; it could not
+     remove a shadow that was never supposed to be on walls at all.
 
-     The last two are what a flood alone cannot express. A flood that turns a
-     corner arrives from that corner in every direction at once; the fan knows
-     the corner is a straight edge and throws a wedge behind it that widens
-     with distance, which is what a shadow actually looks like. */
-  float coreReach(vec2 p) {
-    float vis = texture2D(uLmMap, coreUv(p)).r;
+     So: the terms below are shared, and the two lights differ in exactly one
+     thing - whether the shadow applies.
 
-    /* Grid space: x across, y DEEPER, which is the frame the shadow fan and
-       the ship's facing are both expressed in. */
-    vec2 dg = vec2(p.x - uLmLamp.x, uLmLamp.y - p.y);
+       ROCK  flood x pool x lobe                 (no shadow, ever)
+       AIR   flood x pool x lobe x shadow        (or the bounce, whichever wins)
+
+     A rock face is lit by being NEAR a lit tunnel, and that is a property of
+     the rock, not of the sightline. The air in a tunnel is lit by light
+     arriving along it, and a corner in the way is exactly what stops it. */
+
+  /* dist, pool, lobe, bounce. One call, because both lights want all four. */
+  vec4 coreTerms(vec2 dg) {
     float dist = length(dg);
-    float r = min(1.0, dist * uLmLamp.z);
-    float pool = clamp(1.0 - pow(r, ${LM_POOL_POW.toFixed(1)}), 0.0, 1.0);
+    float ax = dist > 0.0001 ? dot(dg / dist, uLmDir.xy) : 1.0;
+
+    /* Reach is stretched along the way the ship points, so the lit area is an
+       egg pointing where the drill points rather than a circle with a bright
+       half - "see further forward, rather than just an even circle". */
+    float ahead = dist / (1.0 + uLmShade.z * max(0.0, ax));
+    float r = min(1.0, ahead * uLmLamp.z);
+    float pool = clamp(1.0 - pow(r, ${LM_POOL_POW.toFixed(2)}), 0.0, 1.0);
 
     /* The lamp points where the drill points. Omnidirectional close in - a
        real lamp lights its own surroundings whichever way it is aimed, and
        without this the ship sits in a hard-edged half-disc of its own
        shadow. */
-    float ax = dist > 0.0001 ? dot(dg / dist, uLmDir.xy) : 1.0;
     float lobe = pow(max(0.0, ax * 0.5 + 0.5), uLmDir.w);
     lobe = mix(1.0, lobe, smoothstep(${LM_OMNI_NEAR.toFixed(2)}, ${LM_OMNI_FAR.toFixed(2)}, dist));
 
-    /* The fan is indexed by angle and holds distance as a fraction of reach.
-       Anything further from the lamp than the occluder on its own bearing is
-       behind something. Sharp, because that is what was asked for; the smear
-       is one twentieth of a cell, purely so the edge does not alias into
-       stair steps as the ship moves. */
-    float occ = texture2D(uLmShadow, vec2(atan(dg.y, dg.x) * 0.15915494, 0.5)).r * uLmShade.y;
-    float clear = 1.0 - smoothstep(occ - uLmShade.x, occ + uLmShade.x, dist);
-
-    /* The beam, and the bounce. Combined with max() rather than multiplied:
-       somewhere both behind the ship and in shadow would otherwise land on the
-       product of two floors, which is black. Both are still gated by the
-       flood, so this lights tunnels you have opened and never solid rock.
-
-       The bounce gets its OWN falloff - longer than the beam's and far
-       gentler. Sharing the beam's pool made the glow behind the ship end
-       exactly where the beam did, with the same hard edge, which is the one
-       thing the soft half must not do. */
+    /* The bounce: omnidirectional, unshadowed, longer reach and a far gentler
+       curve than the beam. This is what keeps the way home readable and what
+       leaves ambient light in a branch the beam cannot see into. */
     float rB = min(1.0, dist * uLmSoft.x);
     float bounce = clamp(1.0 - pow(rB, ${LM_BOUNCE_POW.toFixed(2)}), 0.0, 1.0);
-    float direct = pool * lobe * clear;
-    float indirect = bounce * uLmDir.z;
-    return vis * max(direct, indirect);
+
+    return vec4(dist, pool, lobe, bounce);
+  }
+
+  vec2 coreOffset(vec2 p) {
+    /* Grid space: x across, y DEEPER, which is the frame the shadow fan and
+       the ship's facing are both expressed in. */
+    return vec2(p.x - uLmLamp.x, uLmLamp.y - p.y);
+  }
+
+  /* Light on a ROCK FACE. Near a lit tunnel is lit; a couple of layers into
+     the mass it is gone. No shadow term - a wall does not stop being a wall
+     because the sightline to it clips a corner. */
+  float coreReach(vec2 p) {
+    vec4 t = coreTerms(coreOffset(p));
+    float vis = texture2D(uLmMap, coreUv(p)).r;
+    return vis * max(t.y * t.z, t.w * uLmDir.z);
+  }
+
+  /* Light in the AIR of a tunnel. The flood spreads it through everything
+     connected; the beam makes the tunnel you are facing the brightest; the fan
+     throws a hard wedge into a branch the beam passes. The bounce underneath
+     is why that branch is still readable rather than a hole. */
+  float coreReachAir(vec2 p) {
+    vec2 dg = coreOffset(p);
+    vec4 t = coreTerms(dg);
+    float air = texture2D(uLmMap, coreUv(p)).g;
+    /* The fan is indexed by angle and holds distance as a fraction of reach.
+       Anything further from the lamp than the occluder on its own bearing is
+       behind something. The smear is a twentieth of a cell, purely so the edge
+       does not alias into stair steps as the ship moves. */
+    float occ = texture2D(uLmShadow, vec2(atan(dg.y, dg.x) * 0.15915494, 0.5)).r * uLmShade.y;
+    float clear = 1.0 - smoothstep(occ - uLmShade.x, occ + uLmShade.x, t.x);
+    return air * max(t.y * t.z * clear, t.w * uLmSoft.w);
   }
 
   /* Daylight, read from the CELL's own depth rather than the ship's, so the
@@ -289,11 +323,14 @@ const DECL = `
     return mix(1.0, uLmDark.x, clamp((-p.y - uLmDark.y) * uLmDark.z, 0.0, 1.0));
   }
 
-  /* coreReach put through the gamma curve - see LM_CONTRAST in feel.ts. The
-     one place it happens, so surfaces and the air in the tunnels cannot end up
-     on different curves. */
+  /* Both lights go through the same gamma curve - see LM_CONTRAST in feel.ts.
+     They differ in what reaches them, not in how they are displayed. */
   float coreShade(vec2 p) {
     return pow(min(1.0, coreReach(p) * uLmLamp.w), ${LM_CONTRAST.toFixed(2)});
+  }
+
+  float coreAir(vec2 p) {
+    return pow(min(1.0, coreReachAir(p) * uLmLamp.w), ${LM_CONTRAST.toFixed(2)});
   }
 
   float coreLit(vec2 p) {
@@ -386,14 +423,10 @@ export const haze = new THREE.Mesh(
       uniform float uHazeGain;
       ${DECL}
       void main() {
-        /* The open channel: non-zero only where the solver says a cell has air
-           in it, which is what makes this light in the tunnel rather than a
-           wash over the whole frame. */
-        float air = texture2D(uLmMap, coreUv(vLmPos)).g;
         /* Fades out at the surface with everything else - haze in daylight
            reads as a smudge on the screen. */
         float dep = clamp((-vLmPos.y - uLmDark.y) * uLmDark.z, 0.0, 1.0);
-        gl_FragColor = vec4(uHaze * (air * coreShade(vLmPos) * dep * uHazeGain), 1.0);
+        gl_FragColor = vec4(uHaze * (coreAir(vLmPos) * dep * uHazeGain), 1.0);
       }`,
     transparent: true,
     blending: THREE.AdditiveBlending,
