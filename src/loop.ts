@@ -17,6 +17,7 @@ import {
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN, RIM_SURFACE, RIM_FALLOFF,
   VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
+  LANE_PULL, DIG_ALIGNED,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
 } from './feel';
@@ -26,7 +27,7 @@ import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
-import { moveAndCollide, thrust } from './fly';
+import { moveAndCollide, thrust, laneVel } from './fly';
 import { player, rig, bit, flames, headlight, drillTint, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
@@ -58,7 +59,7 @@ export function solidAt(cx: number, cy: number) {
 }
 
 /* Begin drilling a cell the ship has flown into. */
-function startDig(tx: number, td: number) {
+function startDig(tx: number, td: number, dir: Dir) {
   if (R.digging) return;
   const b = blockAt(tx, td);
   if (!b || b.hard === Infinity) return;
@@ -72,7 +73,7 @@ function startDig(tx: number, td: number) {
     const total = (b.hard * DIG_BASE) / S.drill();
     const done = clamp(g.damage[key(t.x, t.d)] || 0, 0, 0.985);
     beginDig(t.x, t.d, b, done);
-    R.digging = { x: t.x, d: t.d, t: done * total, total, block: b,
+    R.digging = { x: t.x, d: t.d, dir, t: done * total, total, block: b,
                   stage: Math.floor(done * 5), spark: 0 };
     sfx.digStart(b.hard);
     R.squash = SQUASH_DIG;
@@ -127,13 +128,16 @@ export function frame(now: number) {
        which meant the only way to change your mind about a block was to have
        not started it. */
     /* Let go, or turn away, and the drill stops - the block keeps its damage.
-       Compared against the direction rather than the cell, because the ship is
-       no longer guaranteed to be exactly one cell away from what it is
-       cutting. */
-    if (R.digging && (!R.held || FACE_VEC[R.held][0] !== Math.sign(R.digging.x - Math.round(g.px)) ||
-                      FACE_VEC[R.held][1] !== Math.sign(R.digging.d - Math.round(g.pd)))) {
-      stopDigging();
-    }
+
+       Against the direction the cut STARTED in, and nothing else. The previous
+       version rebuilt that direction each frame from `Math.round()` of the
+       ship's position, which is a different fact: off a lane the ship's radius
+       reaches into the next row, so the collision could stop it on a cell one
+       row off its rounded position and the reconstructed direction came back
+       diagonal. It then cancelled the dig on the very frame after starting it,
+       forever - the ship pressed against rock, drill stuttering, nothing
+       happening. Two facts that could disagree are now one fact that cannot. */
+    if (R.digging && R.held !== R.digging.dir) stopDigging();
 
     if (R.digging) {
       const b = R.digging.block;
@@ -289,6 +293,17 @@ export function frame(now: number) {
       R.vx = thrust(R.vx, v[0], top, FLY_ACCEL, FLY_DRAG, raw);
       R.vy = thrust(R.vy, v[1], top, FLY_ACCEL, FLY_DRAG, raw);
 
+      /* Lanes. Travel freely along the axis being pushed on; be drawn onto the
+         centre line of the other one. With nothing held, both - so letting go
+         parks the ship in a cell rather than wherever the drag ran out.
+
+         Added to the velocity rather than written onto the position, so the
+         correction goes through the same collision as everything else and can
+         never seat the ship inside rock. */
+      if (v[0] !== 0)      R.vy += laneVel(g.pd, LANE_PULL, raw);
+      else if (v[1] !== 0) R.vx += laneVel(g.px, LANE_PULL, raw);
+      else { R.vx += laneVel(g.px, LANE_PULL, raw); R.vy += laneVel(g.pd, LANE_PULL, raw); }
+
       const hit = moveAndCollide(g.px, g.pd, R.vx, R.vy, raw, SHIP_R, solidAt);
       g.px = hit.x; g.pd = hit.y;
       R.vx = hit.vx; R.vy = hit.vy;
@@ -298,12 +313,28 @@ export function frame(now: number) {
         g.fuel -= FUEL_PER_MOVE * S.fuelUse() * dt;
         thrustLevel = 0.75;
         /* Only the axis being pushed on can start a dig. Scraping along a
-           ceiling while flying sideways must not begin drilling the ceiling. */
+           ceiling while flying sideways must not begin drilling the ceiling.
+
+           The collision says THAT the ship was stopped; the lane says WHICH
+           cell is ahead. Taking the target from the lane is what keeps the
+           drill pointing at what it is cutting - and while the ship is still
+           being pulled in after a turn, it is not lined up on anything yet, so
+           it waits. That is a tenth of a second, and it is the difference
+           between aiming and guessing. */
         const blocker = v[0] !== 0 ? hit.hitX : hit.hitY;
-        if (blocker) startDig(blocker.x, blocker.y);
+        const off = v[0] !== 0 ? g.pd - Math.round(g.pd) : g.px - Math.round(g.px);
+        if (blocker && Math.abs(off) < DIG_ALIGNED) {
+          const t = step(R.held);
+          if (blockAt(t.x, t.d)) startDig(t.x, t.d, R.held);
+        }
       }
 
-      bank = approach(bank, clamp(R.vx / Math.max(1, top), -1, 1) * 0.45, BANK_INTO_MOVE, raw);
+      /* Bank into the drift, in the ship's own frame: sideways for the ship is
+         whichever axis it is not pointing along. Reading it off vx regardless
+         of facing meant flying left or right banked the ship for going FAST
+         rather than for going sideways. */
+      const lateral = (g.face === 'left' || g.face === 'right') ? R.vy : R.vx;
+      bank = approach(bank, clamp(lateral / Math.max(1, top), -1, 1) * 0.45, BANK_INTO_MOVE, raw);
       bit.rotation.y += raw * (3 + Math.abs(R.vx) + Math.abs(R.vy));
       syncBlocks();
       collectHere();

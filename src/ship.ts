@@ -234,5 +234,20 @@ rig.add(headlight);
    scales `player`, so scaling `rig` here does not interfere with it. */
 rig.scale.setScalar(0.82);
 
+/* Facing (z) and bank (y) both live on this one object, and the order they
+   compose in decides whether the bank is a roll or a flip.
+
+   Under the default XYZ order the facing is applied to the model FIRST and the
+   bank then turns the already-turned ship about the WORLD vertical. Pointing
+   down that is a roll about the drill, which is what a bank should look like.
+   Pointing left or right the ship's long axis lies along world X, so the same
+   rotation swings its nose toward the camera - the ship visibly flips out of
+   the screen plane, worst at exactly the moment it is moving fastest.
+
+   ZYX composes the other way: the bank is applied in the ship's own frame and
+   the facing turns the result. It is then a roll about the drill in every
+   facing, which is the one thing it was ever meant to be. */
+rig.rotation.order = 'ZYX';
+
 scene.add(player);
 export const FACE_ANGLE = { down: 0, right: Math.PI / 2, left: -Math.PI / 2, up: Math.PI };

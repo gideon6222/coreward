@@ -108,3 +108,26 @@ export function thrust(
   }
   return v * Math.exp(-drag * dt);
 }
+
+/* ---------- lanes ----------
+
+   Free flight fixed how the ship *reads* and broke how it *aims*. Off a lane
+   the ship's 0.34 radius overlaps two rows at once, so the cell the collision
+   reported was not always the cell `Math.round()` said was ahead - and the two
+   disagreeing is what made the drill refuse to start and the ship snag on
+   openings it was clearly wide enough for.
+
+   The world is still built on cells, so the answer is not to fly off the grid
+   but to fly *along* it: travel freely down a lane, and be continuously drawn
+   onto the centre line of the lane you are not travelling along. All the
+   momentum stays; the ambiguity goes.
+
+   Returned as a velocity rather than applied as a position, so it goes through
+   the same collision as everything else and can never push the ship into rock.
+   Exponential, so it does not depend on frame rate. */
+export function laneVel(p: number, rate: number, dt: number): number {
+  if (dt <= 0) return 0;
+  const lane = Math.round(p);
+  const next = lane + (p - lane) * Math.exp(-rate * dt);
+  return (next - p) / dt;
+}

@@ -1435,6 +1435,88 @@ so the save can grow by two orders of magnitude before it is worth a thought.
 Device memory is not a factor either: three.js plus this game is a few tens of
 megabytes against the several hundred a Chrome tab gets on a modern phone.
 
+## Lanes: on the grid, but not stuck on it (2026-09-07)
+
+Playtest: *"I tested the ships free movement and it has a few issues. If you
+down line up quite right, it can cause some bugs like flipping around or not
+mining. Can you make the movements follow a grid again but make them feel
+smoother and not feel like you are stuck on a grid?"*
+
+He named the symptom, the cause and the fix in one sentence again. "If you
+don't line up quite right" is the whole diagnosis.
+
+### The bug, which was two facts allowed to disagree
+
+Free flight let the ship sit anywhere. Its radius is 0.34, so parked at
+`pd = 5.40` it spans 5.06 to 5.74 and touches **rows 5 and 6 at once** - while
+`Math.round(5.40)` says row 5. The collision reported whichever of the two was
+solid; the dig logic reconstructed the direction from the rounded position.
+Those are different facts about the same ship, and off a lane they disagreed.
+
+What that produced, both reported:
+
+- **"Not mining."** `startDig` fired off the collision's cell. On the very next
+  frame the stop test rebuilt the direction from `Math.round()`, got a diagonal,
+  and cancelled the cut. The collision then re-reported the same wall, so it
+  restarted and re-cancelled forever: ship pressed against rock, drill
+  stuttering, depth frozen.
+- **Snagging on your own shaft.** At `px = 6.4` in a one-cell shaft the ship
+  overlaps column 7, so the *wall it dug past* blocks it. It cannot descend and
+  it cannot drill. That is a hard deadlock reachable by ordinary play.
+
+### The fix is lanes, not a patch on either symptom
+
+Travel freely along the axis you are pushing on; be drawn continuously onto the
+centre line of the other one. `laneVel()` in `fly.ts` returns that correction
+**as a velocity**, so it goes through the same collision as everything else and
+can never seat the ship inside rock - a blocked lane ejects it into the free one
+instead. With nothing held, both axes pull, so letting go parks you in a cell.
+
+Momentum, acceleration and the coast are all untouched; there is a test
+asserting the coast distance is the same with the pull switched on. What is gone
+is the wobble across the lane, which was never doing anything for feel and was
+the sole source of the ambiguity.
+
+Then the two facts were collapsed into one, in both directions:
+
+- The dig **target** comes from the lane (`step()`), never from the collision.
+  The collision says *that* the ship was stopped; the lane says *which* cell is
+  ahead.
+- The dig **stop** test compares against `R.digging.dir`, the direction the cut
+  started in, which is now stored on the `Dig`. Nothing is reconstructed, so
+  nothing can disagree.
+- A dig only starts once the ship is within `DIG_ALIGNED` of the line. Mid-turn
+  it is not aimed at anything yet. That is under a tenth of a second, and there
+  is a test on it, because that delay is felt directly as drill lag.
+
+### The flipping was a gimbal, and it was one line
+
+`rig.rotation.z` is the facing and `rig.rotation.y` is the bank, on the same
+object. Under three.js's default `XYZ` order the facing composes first and the
+bank then rotates the already-turned ship about the **world** vertical. Facing
+down that is a roll about the drill, which is what a bank should be. Facing left
+or right the ship's long axis lies along world X, so the same rotation swings its
+nose at the camera - it visibly flips out of the screen plane, and worst at
+speed, because the bank is driven by velocity.
+
+`rig.rotation.order = 'ZYX'` composes the other way: the bank applies in the
+ship's own frame and the facing turns the result, so it is a roll about the drill
+in every facing. The bank input was also wrong - it read `R.vx` regardless of
+facing, so flying left or right banked the ship for going *fast* rather than for
+going sideways. It now reads whichever axis the ship is not pointing along.
+
+### Why the whole suite stayed green through all of this
+
+**Every existing test seeded the ship exactly on a cell centre.** 124 golden
+tests, 17 smoke tests, and not one of them could reach the bug, because the bug
+only exists off a lane. The new e2e test seeds `px: 6.4` deliberately - the
+comment says not to tidy it to 6, because that is precisely what would silently
+retire the test.
+
+Verified by reintroducing the bug rather than by trusting it: with `LANE_PULL`
+set to 0, five of the seven new golden tests fail and the e2e test fails on
+"the ship never got past its own shaft".
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

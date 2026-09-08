@@ -799,3 +799,55 @@ test('the build stamp is populated', async ({ page }) => {
   expect(stamp, 'an unbuilt stamp means the Vite define pipeline broke')
     .not.toContain('dev');
 });
+
+/* The bug that lanes exist to fix, reproduced end to end.
+
+   Free flight let the ship sit anywhere, and its 0.34 radius then reached into
+   the next column. Parked at px 6.4 in a one-cell shaft, the ship overlapped
+   column 7 - so the collision reported being blocked by the shaft WALL while
+   holding down, the drill was aimed at that wall, and the frame after starting
+   it the stop test rebuilt the direction from the ship's rounded position,
+   found it diagonal, and cancelled the cut. The ship could then neither move
+   nor dig: pressed into its own tunnel, drill stuttering, depth frozen.
+
+   Every existing test seeds the ship exactly on a cell centre, which is why
+   the whole suite stayed green through it. This one seeds it off-lane on
+   purpose - that is the entire point, so do not "tidy" 6.4 to 6. */
+test('a ship parked off-lane still digs instead of snagging on its own shaft', async ({ page }) => {
+  await page.evaluate(() => {
+    const dug: string[] = [];
+    /* a one-cell shaft straight down column 6, stopping at 70 - so row 71 is
+       untouched rock and the ship has something to actually drill */
+    for (let d = 0; d <= 70; d++) dug.push('6,' + d);
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 0, shards: 0,
+      up: { drill: 8, cargo: 4, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
+      best: { depth: 300, haul: 0 },
+      dug, cargo: {}, weight: 0,
+      /* off the centre line by 0.4 of a cell: enough that the ship's radius
+         reaches into column 7 and the old collision saw a wall */
+      px: 6.4, pd: 66
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await expect(page.locator('#depth')).toContainText('DEPTH 66 m');
+
+  /* Down through the open shaft, then through the rock under it. Reaching 72
+     means the ship both moved off-lane without snagging AND completed at least
+     one cut it could not previously start. */
+  await holdUntil(page, 'down', async () => {
+    await expect(
+      page.locator('#depth'),
+      'the ship never got past its own shaft, which is the snag this test is for'
+    ).toContainText(/DEPTH (7[2-9]|[89][0-9]) m/, { timeout: DEEP_ENOUGH });
+  });
+
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});

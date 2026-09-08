@@ -138,3 +138,151 @@ test('the ship stops quickly enough to feel controlled', () => {
   for (let i = 0; i < 600; i++) { v = H.thrust(v, 0, top, 18, 9, 1 / 60); d += v / 60; }
   assert.ok(d > 0.35 && d < 1.6, 'coasts ' + d.toFixed(2) + ' cells after release');
 });
+
+/* ---------- lanes ----------
+
+   Free flight fixed how the ship reads and broke how it aims. These are the
+   tests for the fix, and the first one is the bug: it asserts the ambiguity
+   that made the drill refuse to start, so that if lanes are ever removed the
+   suite says what actually goes wrong rather than just going red. */
+
+const LANE = 18;          /* LANE_PULL */
+const ALIGNED = 0.22;     /* DIG_ALIGNED */
+
+test('off a lane the ship touches two rows at once, which is the whole bug', () => {
+  /* Row 5 is open at column 5, row 6 is solid. The ship sits at 5.40: its
+     radius reaches to 5.74, inside row 6, while Math.round says row 5.
+
+     So the collision reports being stopped by (5, 6) and the ship's rounded
+     position says the cell ahead is (5, 5). Those two disagreeing is what
+     cancelled the dig on the frame after it started - forever, because the
+     collision kept re-reporting it. */
+  /* Close enough that one frame at this speed actually reaches column 5 - far
+     enough back and the ship simply has not arrived, which would make this
+     pass for the wrong reason. */
+  const o = H.moveAndCollide(4.2, 5.4, 6, 0, 1 / 60, R, world('5,6'));
+  assert.ok(o.hitX, 'the ship never reached the wall, so nothing was tested');
+  assert.deepEqual(o.hitX, { x: 5, y: 6 }, 'expected the off-lane row to be what stops it');
+  assert.notEqual(o.hitX.y, Math.round(5.4),
+    'the precondition for the bug is gone; this test no longer tests anything');
+});
+
+test('the lane pull centres the ship and does not overshoot', () => {
+  for (const start of [5.49, 5.4, 5.2, 4.8, 4.6, 4.51]) {
+    let y = start;
+    const lane = Math.round(start);
+    let prev = Math.abs(y - lane);
+    for (let i = 0; i < 60; i++) {
+      y += H.laneVel(y, LANE, 1 / 60) * (1 / 60);
+      const off = Math.abs(y - lane);
+      assert.ok(off <= prev + 1e-12, 'moved away from its lane, from ' + prev + ' to ' + off);
+      prev = off;
+    }
+    assert.ok(Math.abs(y - lane) < 1e-4, 'never settled, ended ' + y + ' from lane ' + lane);
+  }
+});
+
+test('the lane pull is settled inside a tenth of a second', () => {
+  /* The dig gate waits for alignment, so how long that takes IS how long the
+     drill hesitates after a turn. Anything past about a tenth of a second
+     would read as the controls being late. */
+  let y = 5.49;
+  let frames = 0;
+  while (Math.abs(y - 5) > ALIGNED && frames < 600) {
+    y += H.laneVel(y, LANE, 1 / 60) * (1 / 60);
+    frames++;
+  }
+  assert.ok(frames > 0, 'the worst case starts already aligned; the gate is not being tested');
+  assert.ok(frames / 60 < 0.1,
+    'takes ' + (frames / 60).toFixed(3) + 's to line up, which reads as lag');
+});
+
+test('the lane pull does not depend on frame rate', () => {
+  const after = (fps) => {
+    let y = 5.45;
+    for (let i = 0; i < fps; i++) y += H.laneVel(y, LANE, 1 / fps) * (1 / fps);
+    return y;
+  };
+  assert.ok(Math.abs(after(30) - after(240)) < 1e-6,
+    'lane pull differs with frame rate: ' + after(30) + ' vs ' + after(240));
+});
+
+test('on a lane, the cell that stops the ship is the cell the lane points at', () => {
+  /* The property lanes exist to guarantee, swept over every offset that used
+     to break it. Fly right along row 5 toward a solid column, from a start
+     anywhere in the row, and once the pull has settled the collision can only
+     ever report the row the ship is actually in. */
+  const solid = world('8,5', '8,6', '8,4');
+  for (const start of [4.51, 4.7, 5, 5.3, 5.49]) {
+    let x = 2, y = start, vx = 0, vy = 0;
+    let checked = 0;
+    for (let i = 0; i < 240; i++) {
+      vx = H.thrust(vx, 1, 8, 18, 9, 1 / 60);
+      vy = H.thrust(vy, 0, 8, 18, 9, 1 / 60);
+      vy += H.laneVel(y, LANE, 1 / 60);
+      const o = H.moveAndCollide(x, y, vx, vy, 1 / 60, R, solid);
+      x = o.x; y = o.y; vx = o.vx; vy = o.vy;
+      /* Only claimed once aligned, which is exactly the gate the game uses. */
+      if (o.hitX && Math.abs(y - Math.round(y)) < ALIGNED) {
+        assert.equal(o.hitX.y, Math.round(y),
+          'from ' + start + ': stopped by row ' + o.hitX.y + ' while in row ' + Math.round(y));
+        checked++;
+      }
+    }
+    assert.ok(checked > 0, 'from ' + start + ': never reached the wall, so nothing was checked');
+  }
+});
+
+test('a blocked lane ejects the ship rather than pulling it into rock', () => {
+  /* Hugging a floor at 5.6, the nearest lane is row 6 - which is solid. The
+     pull is a velocity, so the collision gets to veto it; the ship must end up
+     settled in the open row instead of embedded in the floor. */
+  const solid = (cx, cy) => cy >= 6;
+  let x = 2, y = 5.6, vx = 0, vy = 0;
+  for (let i = 0; i < 240; i++) {
+    vx = H.thrust(vx, 1, 8, 18, 9, 1 / 60);
+    vy = H.thrust(vy, 0, 8, 18, 9, 1 / 60);
+    vy += H.laneVel(y, LANE, 1 / 60);
+    const o = H.moveAndCollide(x, y, vx, vy, 1 / 60, R, solid);
+    x = o.x; y = o.y; vx = o.vx; vy = o.vy;
+    assert.ok(y < 5.5 + 1e-9, 'the pull dragged the ship into the floor, to ' + y);
+  }
+  assert.ok(Math.abs(y - 5) < ALIGNED,
+    'should have settled in the open lane, ended at ' + y);
+});
+
+test('letting go parks the ship on a cell', () => {
+  /* Coasting with nothing held pulls both axes, so releasing leaves the ship
+     in a cell rather than wherever the drag happened to run out. That is what
+     stops a tunnel dug on the drift from wandering off the grid. */
+  let x = 3.42, y = 5.61, vx = 6, vy = 2;
+  for (let i = 0; i < 180; i++) {
+    vx = H.thrust(vx, 0, 8, 18, 9, 1 / 60);
+    vy = H.thrust(vy, 0, 8, 18, 9, 1 / 60);
+    vx += H.laneVel(x, LANE, 1 / 60);
+    vy += H.laneVel(y, LANE, 1 / 60);
+    const o = H.moveAndCollide(x, y, vx, vy, 1 / 60, R, OPEN);
+    x = o.x; y = o.y; vx = o.vx; vy = o.vy;
+  }
+  assert.ok(Math.abs(x - Math.round(x)) < 1e-3, 'came to rest off-lane at x=' + x);
+  assert.ok(Math.abs(y - Math.round(y)) < 1e-3, 'came to rest off-lane at y=' + y);
+});
+
+test('lanes do not cost the coast that makes flight feel like flight', () => {
+  /* The lane pull acts across the direction of travel, so it must not shorten
+     the coast along it. Same assertion as the free-flight coast test, run with
+     the pull switched on. */
+  const top = 7;
+  let x = 3, y = 5, vx = top, vy = 0, d = 0;
+  for (let i = 0; i < 600; i++) {
+    vx = H.thrust(vx, 0, top, 18, 9, 1 / 60);
+    vy = H.thrust(vy, 0, top, 18, 9, 1 / 60);
+    const px = x;
+    vx += H.laneVel(x, LANE, 1 / 60);
+    vy += H.laneVel(y, LANE, 1 / 60);
+    const o = H.moveAndCollide(x, y, vx, vy, 1 / 60, R, OPEN);
+    x = o.x; y = o.y; vx = o.vx; vy = o.vy;
+    d += Math.abs(x - px);
+  }
+  assert.ok(d > 0.35 && d < 1.6, 'coasts ' + d.toFixed(2) + ' cells after release');
+});

@@ -74,6 +74,29 @@ export const SHIP_R = 0.34;
    drill visibly misses the rock it is cutting. */
 export const DIG_ALIGN = 14;
 
+/* How hard the ship is drawn onto the lane it is not travelling along.
+
+   Free flight let the ship sit between two rows, where its 0.34 radius touches
+   both. The cell the collision reported then disagreed with the cell
+   `Math.round()` said was ahead, and the drill refused to start - the ship
+   pressed against rock doing nothing. Lanes remove the ambiguity rather than
+   patching around it, and they are what "on a grid, but not stuck on one"
+   actually means: momentum along the lane, no wobble across it.
+
+   18 closes half the offset in about 39 ms - roughly a third of a cell of
+   travel at top speed, so a turn reads as an arc rather than a snap, and you
+   are lined up before you arrive at whatever you turned toward. It is a true
+   per-second rate used as exp(-rate*dt), not a legacy per-frame fraction, so
+   it does not go through asExpRate(). */
+export const LANE_PULL = 18;
+
+/* How far off the centre line the ship may be and still start a dig. Inside
+   this the lane the ship is in and the cell the collision stopped it on are
+   the same cell, which is the whole point of lanes; outside it the pull is
+   still bringing the ship in and drilling would aim at rock it is not
+   touching. At LANE_PULL the gap is crossed in under a tenth of a second. */
+export const DIG_ALIGNED = 0.22;
+
 /* ---------- camera ----------
    Exponential smoothing. The numbers inside asExpRate() are the originals,
    tuned by eye at 60 fps; see the note on asExpRate above. Vertical follow is

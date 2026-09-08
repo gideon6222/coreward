@@ -178,6 +178,12 @@ export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly' | 'b
 export interface Dig {
   x: number;
   d: number;
+  /* The direction that started the cut. Letting go or turning away stops the
+     drill, and that is tested against this rather than against the ship's
+     rounded position: the position test disagreed with itself whenever the
+     ship sat between two rows, which cancelled the dig on the frame after it
+     started and left the ship pressed against rock doing nothing. */
+  dir: Dir;
   t: number;
   total: number;
   block: Block;

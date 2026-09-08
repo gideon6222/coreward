@@ -16,9 +16,19 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.9.0';
+export const VERSION = '0.9.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.9.1', date: '2026-09-07', title: 'Flying straight',
+    notes: [
+      'The ship follows the tunnels again - it keeps its momentum but stops drifting off line.',
+      'Fixed the drill refusing to bite when the ship was not quite lined up.',
+      'Fixed the ship snagging on the edge of its own shaft.',
+      'The ship no longer twists out of shape when it banks flying sideways.',
+      'Letting go now parks you neatly in a cell instead of half in two.'
+    ]
+  },
   {
     version: '0.9.0', date: '2026-09-07', title: 'Free flight',
     notes: [
