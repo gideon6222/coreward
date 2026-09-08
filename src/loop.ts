@@ -14,7 +14,8 @@ import {
   CAM_FOLLOW_PLAY, CAM_FOLLOW_PLAY_Y, CAM_FOLLOW_FLY, CAM_FOLLOW_FLY_Y,
   CAM_ZOOM_RATE, CAM_Y_OFFSET, CAM_BOOST_DECAY, BANK_INTO_MOVE, BANK_SETTLE,
   FACE_TURN_RATE,
-  AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN,
+  AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN, RIM_SURFACE, RIM_FALLOFF,
+  VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
@@ -374,7 +375,7 @@ export function frame(now: number) {
   const tDeep = depthT(g.pd);
   amb.intensity = AMBIENT_SURFACE - AMBIENT_FALLOFF * tDeep;
   sun.intensity = 1.5 * (1 - tDeep);
-  rim.intensity = 0.5 - 0.32 * tDeep;
+  rim.intensity = RIM_SURFACE - RIM_FALLOFF * tDeep;
   fog.density = FOG_SURFACE + tDeep * FOG_GAIN;
   /* Below the heat line the whole world turns ember: sky, fog and the drifting
      dust all warm together. Three coordinated signals so the boundary reads at
@@ -401,11 +402,16 @@ export function frame(now: number) {
        which is most of what makes being deep feel enclosed rather than merely
        dark. Updated on the same slow tick as the sky - it does not need to run
        every frame and this is a CSS property write. */
-    const clear = 42 - tDeep * 20;
-    const edge = 0.58 + tDeep * 0.28;
+    const clear = VIGNETTE_CLEAR_SURFACE + tDeep * (VIGNETTE_CLEAR_DEEP - VIGNETTE_CLEAR_SURFACE);
+    const edge = VIGNETTE_EDGE_SURFACE + tDeep * (VIGNETTE_EDGE_DEEP - VIGNETTE_EDGE_SURFACE);
+    /* Three stops rather than two. With a single ramp from clear to black the
+       darkening is linear across the whole radius, which reads as a grey wash
+       over the picture; holding the middle mostly clear and then falling off
+       hard in the last third reads as light running out. */
+    const mid = (clear + 100) / 2;
     ui.vignette.style.background =
-      'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) ' + clear.toFixed(1) +
-      '%, rgba(0,0,0,' + edge.toFixed(2) + ') 100%)';
+      'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) ' + clear.toFixed(1) + '%, rgba(0,0,0,' +
+      (edge * 0.34).toFixed(2) + ') ' + mid.toFixed(1) + '%, rgba(0,0,0,' + edge.toFixed(2) + ') 100%)';
   }
 
   const glowT = now / 1000;

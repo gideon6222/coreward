@@ -29,6 +29,25 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
+  /* Chakra Petch, SIL Open Font License, self-hosted.
+
+     Self-hosted rather than linked from a font CDN for two reasons that both
+     matter for an installed PWA: an external stylesheet is a request that can
+     fail with no network, and a font that arrives late reflows the whole HUD
+     on the first frame the player sees. Two weights of the latin subset are
+     20 KB together, which is less than a third of the game's own code.
+
+     A condensed technical face rather than a display one: this UI is mostly
+     numbers under a thumb, and the thing that matters is that 8 and 6 and 0
+     are never confusable at 10 px. */
+  @font-face{
+    font-family:'Chakra Petch'; font-style:normal; font-weight:500; font-display:swap;
+    src:url(./fonts/chakrapetch-500.woff2) format('woff2');
+  }
+  @font-face{
+    font-family:'Chakra Petch'; font-style:normal; font-weight:700; font-display:swap;
+    src:url(./fonts/chakrapetch-700.woff2) format('woff2');
+  }
   :root{
     --ink:#e8f0ff; --dim:#8b9ab5; --panel:#0d131f; --line:#1e2a40;
     --cyan:#3fe0ff; --amber:#ffc861; --red:#ff5c6b; --green:#4be08a;
@@ -37,7 +56,7 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{
     margin:0; padding:0; height:100%; overflow:hidden; background:#05070d; color:var(--ink);
-    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    font-family:'Chakra Petch',"Segoe UI",system-ui,-apple-system,sans-serif;
     user-select:none; -webkit-user-select:none; touch-action:none; overscroll-behavior:none;
   }
   #game{position:fixed; inset:0; background:linear-gradient(180deg,#0d2b52 0%,#5aa8dd 100%);}
@@ -302,6 +321,29 @@
   }
   .danger.armed{background:rgba(255,92,107,.18); border-color:var(--red);}
   .fine{color:#5a6780; font-size:11px; text-align:center; margin-top:10px; line-height:1.5;}
+  /* Version and patch notes.
+
+     The build stamp answers "did my update land". It cannot answer "what is
+     actually different", which after a few sessions of work is the question
+     that matters more - so the version sits above it, and the notes are one
+     tap away rather than always open. */
+  .verline{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--line);
+    font-size:12.5px; font-weight:700; letter-spacing:.1em; color:var(--cyan);
+  }
+  .notesbtn{
+    border:1px solid #2a5570; background:rgba(63,224,255,.1); color:var(--cyan);
+    border-radius:9px; padding:7px 11px; font-size:10.5px; font-weight:700; letter-spacing:.09em;
+  }
+  .notes{max-height:230px; overflow-y:auto; margin-top:10px;}
+  .notes.hidden{display:none;}
+  .rel{padding:9px 0; border-top:1px solid var(--line);}
+  .rel:first-child{border-top:none;}
+  .relhead{font-size:11.5px; font-weight:700; letter-spacing:.06em;}
+  .relhead .v{color:var(--amber);}
+  .relhead .d{color:#4a5570; font-weight:500; letter-spacing:.02em;}
+  .rel ul{margin:5px 0 0; padding-left:15px; color:var(--dim); font-size:11px; line-height:1.6;}
   /* build stamp: dim, monospace, easy to read off a phone screen at a glance */
   .fine.build{margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
     font:10.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#48546b; letter-spacing:.02em;}
@@ -410,6 +452,11 @@
     <button id="btnResume" class="wide">RESUME</button>
     <button id="btnReset" class="danger">RESTART PROGRESS</button>
     <div class="fine">Restarting wipes credits, upgrades, core shards and every tunnel you have dug. It cannot be undone.</div>
+    <div class="verline">
+      <span id="verNum">v0.0.0</span>
+      <button id="btnNotes" class="notesbtn">WHAT&apos;S NEW</button>
+    </div>
+    <div id="notes" class="notes hidden"></div>
     <div class="fine build" id="build"></div>
   </div>
 </div>

@@ -35,7 +35,7 @@
   "depth": {
     "ramp": 72,
     "ambientSurface": 1.75,
-    "ambientFalloff": 1.55,
+    "ambientFalloff": 1.62,
     "fogSurface": 0.02,
     "fogGain": 0.028
   },

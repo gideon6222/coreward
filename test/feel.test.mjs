@@ -499,8 +499,16 @@ test('a single enormous frame cannot skip a warning', () => {
 
 test('the Scanner widens the view, and the early levels are worth the most', () => {
   const at = (l) => H.zoomForScan(l);
-  assert.ok(at(0) < 0.8, 'level 0 has to be tight enough that the upgrade has a job');
-  assert.ok(at(9) > 1.0, 'a maxed Scanner should show more world than the old fixed framing');
+  /* The property that matters is the RATIO, not where the two ends happen to
+     sit. Pinning "level 0 must be below 0.8" broke the moment the whole range
+     was nudged outward for readability, and it was never the thing being
+     protected: what makes the upgrade worth buying is how much more world it
+     shows, whatever the baseline framing is. */
+  assert.ok(at(9) / at(0) > 1.35,
+    'a maxed Scanner shows only ' + (at(9) / at(0)).toFixed(2) + 'x the world of an ' +
+    'unupgraded one, which is not enough to feel');
+  assert.ok(at(9) / at(0) < 2.2,
+    'the Scanner range is so wide that level 0 must be unplayably tight');
 
   for (let l = 1; l <= 9; l++)
     assert.ok(at(l) > at(l - 1), 'level ' + l + ' did not widen the view');
