@@ -1290,6 +1290,125 @@ golden baseline duly recorded a tow cut of 9.999999999999998%. True, useless,
 and precisely the kind of diff that teaches you to re-record without reading -
 which is the one habit these baselines cannot survive. Rounded before clamping.
 
+## Free flight (2026-09-07)
+
+Playtest: *"can you make the ship feel more like it is free to fly not on a
+grid? still make it easy and intuitive to control but don't keep it stuck on
+the grid."*
+
+The ship hopped cell to cell on a fixed timer. Every metre was a discrete
+decision resolved by a lerp, which is why the world read like a spreadsheet
+however good the rock looked. It has a velocity now: thrust toward whatever is
+held, coast when nothing is, push out of anything solid.
+
+`src/fly.ts` is pure, so the part that can actually go wrong is testable
+without a renderer - and the tests are the ones that matter: tunnelling through
+a wall at speed, catching on a corner, creeping into a block by leaning on it,
+getting wedged in a dead end, and thrust that does not depend on frame rate.
+Substepping rather than a swept test; at ten cells a second it almost never
+costs more than two iterations, and it is a tenth of the code.
+
+**Digging has no "is there a block in front of me" test any more.** The
+collision reports the cell that stopped the ship on each axis, and that cell is
+what the drill points at. Two things that used to be separate - where the ship
+is and what it is allowed to dig - are now the same fact, so they cannot
+disagree. Only the axis being pushed on can start a dig, or scraping along a
+ceiling while flying sideways would begin drilling the ceiling.
+
+### Three things the grid was doing for free
+
+**Selling.** It happened on arriving in the pad's cell. There are no cell
+arrivals any more, so it is an edge trigger on being at the surface at all -
+which also means it fires however slowly the ship drifts up onto the pad.
+
+**Momentum through a break.** Breaking a block used to schedule a step into it.
+Velocity is held at zero while drilling, so without a replacement the ship
+restarts from a standstill after every block - and at a fifth of a second to
+top speed, digging a shaft becomes a stutter. The ship now keeps its facing
+velocity through the break. This is the one thing about the grid worth keeping.
+
+**Staying on the grid.** The world is still built on cells, so a tunnel dug
+while drifting would wander off it and the drill would visibly miss the rock.
+While drilling, the ship is pulled onto the block's centre line.
+
+### The numbers
+
+`FLY_ACCEL 18` is about a fifth of a second to top speed; `FLY_DRAG 9` coasts
+roughly three quarters of a cell after release. Both deliberately fast: this is
+played with a thumb on a d-pad, and anything that reads as momentum also reads
+as the controls being late. There is a test on the coast distance, because that
+single number is most of what "free to fly" feels like.
+
+## Blocks remember being half cut (2026-09-07)
+
+Letting go mid-block threw the work away, so the only way to change your mind
+about a wall was to have not started it. The drill stops on release now and the
+rock keeps its damage; the cracks are drawn back on from the stored value and
+seeded from the cell, so a half-cut block *looks* half cut rather than the
+memory being a number in a save file.
+
+**Stored as a fraction, not as seconds.** With seconds, buying a better drill
+shrinks the total while the stored number stays put - a wall you had half cut
+would silently become nearly whole, which is the exact opposite of what an
+upgrade should do. There is a pure test for it that also asserts the two
+interpretations genuinely differ in the case being tested, because a test where
+both readings agree proves nothing.
+
+## The Outfitter is a place you dock at (2026-09-07)
+
+It was a card on a translucent backdrop. Half the world visible underneath says
+"you are still out there" however the card is styled, so the game is hidden
+entirely now: a viewport at the top looking out on the sky of the planet you
+are above, a fascia with the dock number and the planet, counters scrolling
+under it, UNDOCK fixed at the bottom.
+
+All gradients and repeating stripes rather than images. A station interior is
+mostly flat panels, seams and warning tape, which is what CSS is already good
+at and costs nothing to ship.
+
+An earlier attempt gave `#upgrades` its own `overflow-y`, which cut the shelves
+off at the fold - Life Support looked like it held one item and the Ordnance
+counter appeared not to exist. One scroll region, header outside it.
+
+## Assets: what was worth importing, and what was not (2026-09-07)
+
+Playtest: *"can you find where to get free assets for the game automatically
+and improve the ship, pad, and anything else that could easily benefit from
+pre-made assets?"*
+
+**Where to get them.** Kenney (kenney.nl, CC0, ~40k assets, one consistent
+style) is the best source for game-ready 3D and UI. Quaternius is CC0 and
+game-ready. Poly Pizza and Icosa archive the old Google Poly library, mostly
+CC-BY so attribution is required. Poly Haven is CC0 but photoreal, which is the
+wrong register here. Kenney's downloads go through a session redirect rather
+than a stable zip URL, so they are not fetchable unattended; Google Fonts is.
+
+**What was installed: the font.** Chakra Petch, OFL, two weights of the latin
+subset self-hosted at 20 KB, added to the Workbox glob so the installed app
+does not fall back to a system face offline. This was the clear win - the UI is
+mostly numbers under a thumb, and a condensed technical face where 8, 6 and 0
+are never confusable at 10 px changes every screen in the game.
+
+**What was not: 3D models, and this is a judgement worth recording.** The ship
+is about thirty pixels tall in play. The drill-tier experiment already proved
+what that means: repainting the auger per tier was correct, invisible, and had
+to be replaced with a change to the spark *count* to read at all. A downloaded
+model would arrive with its own topology, normals and sense of scale next to
+terrain that is flat-shaded low-poly on a hand-tuned palette, and the join
+would show in the first frame. It would also cost `GLTFLoader`, an async fetch
+and a precache entry, to buy surface detail at a distance nothing here is
+viewed from.
+
+The pad was rebuilt from primitives instead - splayed legs, stays, a gantry
+with a service rail, hazard chevrons, a landing collar. It is the one object
+that is stationary, close to the camera and looked at while nothing else is
+happening, which makes it the only place in this game where surface detail
+earns its keep.
+
+**The rule this leaves behind:** import assets for things the player reads at
+their real size - type, UI, sound - and model in code for anything that is
+thirty pixels tall and judged on silhouette.
+
 ## Budgets: which limits are real and which are mine
 
 Asked directly, so recorded here.
@@ -1320,35 +1439,25 @@ megabytes against the several hundred a Chrome tab gets on a modern phone.
 
 Nothing here is committed to; they are the live threads.
 
-**Everything from the second overhaul is unplayed**, same as the first. The
-tests prove nothing broke.
+**Free flight is the change most likely to need tuning**, and it is tuned
+entirely by two numbers. If the ship feels floaty, raise `FLY_DRAG`. If it
+feels late off the mark, raise `FLY_ACCEL`. If it feels like it fights a
+one-cell corridor, lower `SHIP_R`. Everything else about the movement is
+downstream of those three.
 
-- **Is the shop tight enough?** Sealed rows are meant to read as a promise. If
-  the first visit reads as a wall of locked content instead, fewer of them
-  should be sealed rather than the locks being softer.
-- **Does the tighter early camera feel cramped or focused?** Level 0 frames 74%
-  of what it used to. That is the single change most likely to be wrong, and
-  the fix if so is to raise `ZOOM_MIN` rather than to flatten the curve.
-- **Are seams noticeable without being told?** The whole design rests on the
-  flecks being a tell someone learns by themselves. If he has to be told, the
-  flecks need to be brighter, not more common.
-- **Is ordnance used, or saved?** Power that piles up unspent is power priced
-  wrong. Watch for a full meter at the surface.
-- **Do relics get found?** The Scanner mote is the whole search mechanic. If
-  relics are still being missed at high Scanner, the range needs to grow faster
-  or the mote needs to be louder.
-- **Is a full hold still a decision?** Ore now waits where it falls, so the
-  cargo cap no longer forces anything. That was the point, but it does mean the
-  pressure is now entirely fuel, heat and tremors.
-
-### The larger arc, unbuilt
-
-Relics answer "what is the point" for now: a collection that only grows,
-attached to permanent perks, on a timer that can be missed. The obvious next
-step is an **ending** - something that happens when the collection is complete,
-which currently it never is because relics keep repeating past the eighth.
-That wants his say-so before it gets built, because an ending is a promise
-about how long the game is.
+- **Does digging still feel deliberate?** The drill now stops on release and
+  the ship carries momentum into a broken cell. That should read as smoother,
+  but it is also less committal, and dig-stop-dig may turn out to be a tic
+  rather than a decision.
+- **Is the dark too dark?** Ambient is nearly gone underground and the vignette
+  goes almost solid at the corners. The intended read is "this is as far as the
+  light reaches"; the failure mode is "I cannot see what I am doing", and the
+  fix for that is `VIGNETTE_EDGE_DEEP` before anything else.
+- **Ordnance, relics and the mineral gate are all still unplayed**, three
+  sessions on. Everything in the previous two lists still stands.
+- **Relics have no ending.** The collection never completes, because the perks
+  repeat past the eighth. An ending is a promise about how long the game is, so
+  it wants saying out loud before it gets built.
 
 ## How changes get shipped
 
