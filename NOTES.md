@@ -2107,6 +2107,95 @@ started Playwright while a backgrounded `npm run build` was still writing
 `dist/`, so it was testing a half-written bundle. Every one passed on a clean
 run. **Do not start the smoke tests while a build is in flight.**
 
+## Light that travels down the tunnel (2026-09-08)
+
+Gideon: *"Instead of seeing a cone of light, I want the light to look like it
+actually spreading from the ship. When a tunnel is dug down or to the side,
+light should fill those tunnels and spread to nearby rocks, but areas that are
+multiple rocks deep should be very dark."*
+
+The lamp was a `PointLight`, and a point light does not know the rock is there.
+It falls off with distance and nothing else, so a side branch the player had
+never opened was lit exactly as brightly as the shaft they were flying down.
+Being underground read as "the picture got darker" rather than as "I can only
+see where my lamp reaches" - and there was no way to tune that away, because the
+information simply was not in the renderer.
+
+**`src/light.ts` is a real solver, and it is pure.** A Dijkstra flood over the
+cell grid where light travels through OPEN cells only, eight-way, diagonals
+costing `sqrt(2)` and refused entirely when both corners are rock. What each
+cell stores is not brightness but VISIBILITY:
+`exp(-att * (pathLength - octileDistance))` - how much longer the light's actual
+path was than a clear run through open air. Open space therefore comes out at
+exactly 1 and only geometry can take anything away.
+
+Getting the baseline right matters more than it sounds. Subtracting Euclidean
+distance instead of octile puts a permanent, ever-thickening haze over open
+ground, because eight-way steps do not add up to a straight line. There is a
+test that asserts every cell of an empty grid comes back at exactly 1.
+
+**Distance falloff is deliberately NOT in the grid.** It is computed per pixel
+in the shader from the ship's exact position. The grid cannot move smoothly and
+the ship can; leave the pool in the grid and it steps a whole metre at a time as
+you fly. That split - geometry on the CPU, distance on the GPU - is most of why
+this feels like lighting rather than like a tilemap.
+
+**Rock is relaxed but never expanded.** A wall beside a lit tunnel is lit, and
+light stops there. Letting rock pass light on leaks about a third of the lamp
+through a one-cell wall, so every sealed pocket in the game would glow faintly
+and tell the player it was there before they dug to it. The fade INTO the mass
+is a separate seep pass that only ever writes to rock, so it cannot leak into
+open air either. Three cells at 0.32 gives 0.32, 0.10, 0.03 - a gradient, not a
+cliff at the first wall.
+
+**It reaches the shader as a 15x36 texture.** `LinearFilter`, so light fades
+across a rock face instead of stepping at cell edges; 2 KB, re-uploaded once a
+frame. The solve itself only runs when the ship changes cell or the terrain
+changes shape, which `blocks.rebuild()` already knows about - one
+`markLightDirty()` there covers digging, tremors and planet changes without any
+of them having to remember.
+
+The injection multiplies `reflectedLight` after `<lights_fragment_end>` and
+leaves `totalEmissiveRadiance` alone, so **ore keeps glowing in the dark** -
+which in a mining game is the whole find-the-ore mechanic. It is clamped to at
+most 1, so it can only ever darken: every lighting value in `feel.ts` is still
+the ceiling it was calibrated to be.
+
+**Lighting surfaces turned out to be only half of it.** A dug cell contains no
+geometry, so there is nothing in it to light and a tunnel still read as an empty
+slot. The fix is one additive quad across the frame sampling a SECOND channel of
+the same texture, non-zero only where a cell is open: the void near the ship
+glows, the far end of a branch stays black. One draw call, and it is the single
+change that made the whole feature read.
+
+**The headlight cone is gone.** It was a shape drawn where light was *supposed*
+to be - it pointed the way the drill pointed, ended at a hard mouth, and went
+through solid rock as happily as through air. Once light actually propagates the
+cone contradicts the thing next to it. The one job it was uniquely good at,
+giving the Scanner a silhouette, moved to the size of the lamp's own glow, which
+sits BEHIND the ship: in front, an additive quad centred on the lamp washes over
+the hull and the ship renders as a bright blob with no facets, which is the
+exact fault the render layers were added to fix arriving by another route.
+
+**Cost, measured rather than assumed:** 69 draw calls against a budget of 150,
+0.76 ms per tick including render, at 50 m with a shaft and a branch dug. The
+solve is a few hundred cells and does not run most frames.
+
+**Two shader traps came out of this, and both are now in CRAFT.md.** A material
+has exactly one `onBeforeCompile`, so assigning it silently deletes whatever was
+already there - everything now goes through `chainCompile` in `src/shader.ts`.
+And `Material.clone()` copies neither that nor `customProgramCacheKey`, so the
+drilled block - the only cloned material in the game - came back as stock three
+with no displacement and no light. Both are guarded by an e2e test that reads
+the compiled shaders back out of WebGL, which is the only layer that can see the
+difference: the material is fine, it is the compile that lost it.
+
+**One tuning note for the phone.** These numbers were set on a desktop against a
+375x812 viewport, which is the right size but the wrong screen. `LM_FLOOR_DEEP`
+is the first thing to raise if unopened rock reads as a black rectangle rather
+than as rock; `LM_ATT` is the first thing to lower if turning a corner is
+disorienting rather than atmospheric.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
@@ -2130,7 +2219,11 @@ downstream of those three.
   seam means they can now at least be *tested* without playing to them, which is
   the first time that has been true.
 - **Bloom wants the sky in the scene first.** See the section above; the pass is
-  cheap and the sky is the blocker.
+  cheap and the sky is the blocker. It is worth more now than it was: with the
+  propagated light crushing everything the lamp cannot reach, the frame has real
+  contrast for a bloom to work with rather than a uniform mid-grey.
+- **The propagated light has not been on the phone yet.** `LM_FLOOR_DEEP` and
+  `LM_ATT` are the two dials; see the section above for which way each goes.
 - **Relics have no ending.** The collection never completes, because the perks
   repeat past the eighth. An ending is a promise about how long the game is, so
   it wants saying out loud before it gets built.

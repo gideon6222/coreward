@@ -198,6 +198,72 @@ export const LAMP_INTENSITY = 44;
 export const RIM_SURFACE = 0.42;
 export const RIM_DEEP = 0.03;
 
+/* ---------- propagated light ----------
+
+   A point light in three.js does not know the rock is there. It falls off with
+   distance and nothing else, so a side tunnel you have never opened was lit
+   exactly as brightly as the shaft you are flying down, and being underground
+   read as "the picture got darker" rather than as "I can only see where my
+   lamp reaches".
+
+   The solver in light.ts fixes that on the grid: it floods light through open
+   cells only and hands back, per cell, how much of the lamp survives getting
+   there. These are the numbers that decide what that looks like. See
+   lightmap.ts for how the grid reaches the shader.
+
+   Everything below is a MULTIPLIER on the lighting three already computes,
+   clamped to at most 1. It can darken and it can never brighten, which is
+   what lets it sit on top of lighting that was calibrated by eye without
+   invalidating any of it. */
+
+/* How fast light dies per unit of DETOUR - not per unit of distance. A cell
+   the light had to travel two extra cells to reach keeps exp(-2 * this).
+   Distance falloff is the pool below; this is purely what the geometry costs.
+   Raise it and corners go black; lower it and the rock stops mattering. */
+export const LM_ATT = 0.78;
+/* What it costs to slip diagonally past a single rock corner. Without a cost,
+   light turning a corner arrives as a clean diagonal edge, which reads as a
+   rendering artefact rather than as a shadow. */
+export const LM_PINCH = 0.9;
+/* How much of a lit rock face carries into the rock behind it, per cell, and
+   how far that goes at all. Three cells at 0.44 is 0.44, 0.19, 0.09 - a fade
+   into the mass rather than a cliff at the first wall. */
+export const LM_SEEP = 0.32;
+export const LM_SEEP_STEPS = 3;
+/* How fast a cell eases to its new value. Breaking a block changes the light
+   over a whole region at once, and a hard cut there reads as a glitch; this is
+   fast enough that it still feels caused by the drill. */
+export const LM_SMOOTH = asExpRate(11);
+
+/* What a cell the lamp never reaches is multiplied by. Not zero: at zero the
+   unopened rock is a black rectangle with no shape in it at all, and the
+   player loses the ability to read the band they are digging through. */
+export const LM_FLOOR_DEEP = 0.04;
+/* Where daylight stops and the lamp is all there is, in metres. Read from the
+   CELL's depth rather than the ship's, so the top of a shaft still glows when
+   you are twenty metres below it. */
+export const LM_DARK_START = 2;
+export const LM_DARK_RAMP = 12;
+
+/* The pool, evaluated per pixel from the ship's exact position rather than
+   from its cell - which is what stops the light stepping as you fly.
+
+   Cubed, so it holds near full brightness across most of the radius and then
+   ends: that reads as a lamp with a reach, where a linear ramp reads as a
+   picture with a gradient over it. The radius is the Scanner's, so the upgrade
+   buys reach in the propagated light as well as in the point light. */
+export const LM_POOL_POW = 3;
+export const LM_RANGE_MULT = 1.1;
+/* Headroom so the middle of the pool saturates instead of asymptoting. */
+export const LM_GAIN = 1.15;
+
+/* Light in the air of an open tunnel - see the haze in lightmap.ts. Warm,
+   because the lamp is, and weak: this is the glow around a light source in
+   dusty air, and the moment it reads as a solid colour the tunnel stops
+   looking empty and starts looking filled in. */
+export const LM_HAZE = 0.34;
+export const LM_HAZE_COLOR = 0xffb46a;
+
 /* ---------- the vignette ----------
    How much of the frame stays clear, and how black the edge goes. Deep, the
    clear area is not much more than the lamp's pool and the corners are close

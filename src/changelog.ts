@@ -16,9 +16,20 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.11.1';
+export const VERSION = '0.12.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.12.0', date: '2026-09-08', title: 'Light travels',
+    notes: [
+      'Your lamp lights the tunnel, not a circle: light runs down the shafts you have dug.',
+      'Turn a corner and the branch behind you goes dark - the light had to go the long way.',
+      'Rock more than a cell or two from open ground is black. There is nothing out there until you cut to it.',
+      'Open tunnels near the ship glow, so a shaft reads as a space with light in it rather than a hole.',
+      'The headlight cone is gone. The light is real now and does not need a triangle drawn on it.',
+      'The Scanner Array buys reach in all of this, so a bigger lamp opens up more of the ground.'
+    ]
+  },
   {
     version: '0.11.1', date: '2026-09-08', title: 'Read the room',
     notes: [

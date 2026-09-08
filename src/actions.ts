@@ -10,6 +10,7 @@ import { R } from './runtime';
 import { lamp } from './scene';
 import { worldX } from './materials';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
+import { resetLight } from './lightmap';
 import { spray } from './particles';
 import { takeDrop, syncDrops, leaveDrop } from './drops';
 import { fireBeam } from './beam';
@@ -379,6 +380,10 @@ export function hardReset() {
   g.cargo = {}; g.weight = 0;
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();
+  /* A new planet is a different set of tunnels. Easing the old world's
+     shadows into the new one's would show as light bleeding through fresh
+     rock for a fifth of a second at exactly the moment the player is looking. */
+  resetLight();
   lamp.distance = S.light();
   setDrillTier(0);
   setUpgradeHardware(g.up);

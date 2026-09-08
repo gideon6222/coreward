@@ -12,6 +12,7 @@ import { setDrillTier, setUpgradeHardware } from './ship';
 import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station';
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock } from './loop';
+import { lmDebug } from './lightmap';
 import { sfx } from './audio';
 import './input';
 
@@ -74,7 +75,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* The renderer's own handles, for tuning an art pass live. Every lighting
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
-    scene, camera, lamp, amb, sun, rim, fog, renderer,
+    scene, camera, lamp, amb, sun, rim, fog, renderer, lmDebug,
     setDrillTier, setUpgradeHardware,
     pickBay, selectBay, selectedBay, bays, stationCamera
   };

@@ -135,7 +135,7 @@ export const augerMat = asMetal(new THREE.MeshStandardMaterial({
    The Drill Bit is the most-bought upgrade in the game and it has ten named
    tiers - Steel, Tungsten, Carbide, up to Godcore - and until now every one of
    them looked like the same grey auger. The Scanner Array had the same problem
-   and the headlight fixed it; this is the same argument. An upgrade the player
+   and its lamp glow fixed it; this is the same argument. An upgrade the player
    cannot see is an upgrade they buy on trust.
 
    The ramp is deliberate: the first few are metals and stay dull, because
@@ -248,62 +248,40 @@ for (const sx of [-0.19, 0.19]) {
   flames.push({ cone: fl, glow: fg });
 }
 
-/* ---------- headlight ----------
+/* ---------- the lamp's own glow ----------
 
-   A volumetric cone thrown from the drill in whatever direction the ship is
-   facing. It is parented to `rig`, so it swings with the ship for free.
+   This replaces a volumetric cone, and the reason is worth keeping.
 
-   Two things it fixes. The lamp was a point light: it lit the rock but the
-   ship itself showed no sign of being the thing doing the lighting, which at
-   this scale made it read as a glowing object rather than as a machine. And
-   the Scanner Array only ever changed `lamp.distance` - the most invisible
-   upgrade on the shelf. The cone's length now tracks it, so buying a level is
-   something you can see rather than something you take on trust.
+   The cone was a shape drawn where light was SUPPOSED to be. It pointed the
+   way the drill pointed and ended at a hard mouth, so the light in the game
+   was a triangle no matter what the tunnel around it was doing - a beam that
+   went through solid rock as happily as through open air. The propagated field
+   in lightmap.ts now decides where light actually reaches, which leaves the
+   ship exactly one thing to draw: the source itself.
 
-   The fade costs nothing. Under additive blending black IS transparent, so
-   vertex colours running white at the apex to black at the mouth give a soft
-   falloff without a texture, an alpha channel or a second draw call. */
-const CONE_LEN = 2.9;
-const coneGeo = new THREE.ConeGeometry(0.78, CONE_LEN, 14, 1, true);
-/* ConeGeometry already has its apex at +y and its mouth at -y, which is
-   exactly a beam pointing the way the drill points. The first attempt rotated
-   it 180 degrees on the assumption that cones "point up", which put the wide
-   end AT the ship: a funnel rather than a headlight. Only translate, so the
-   apex lands just under the drill. */
-coneGeo.translate(0, -CONE_LEN / 2 - 0.4, 0);
-{
-  const pos = coneGeo.attributes.position;
-  const col = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i++) {
-    /* apex sits at y = -0.4, mouth at -(CONE_LEN + 0.4) */
-    const t = (-pos.getY(i) - 0.4) / CONE_LEN;
-    const v = Math.pow(1 - Math.min(1, Math.max(0, t)), 2.1);
-    col[i * 3] = v; col[i * 3 + 1] = v * 0.94; col[i * 3 + 2] = v * 0.76;
-  }
-  coneGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-}
+   Two additive quads, a tight core and a wide soft one - the same pair the ore
+   haloes use, for the same reason: additive blending sums, so the dim one can
+   be three times the size for nothing, and together they have a far longer
+   tail than one gradient can.
 
-export const headlight = new THREE.Mesh(
-  coneGeo,
-  /* FrontSide, not DoubleSide. Additive blending draws both walls of an
-     open cone on top of each other at the silhouette, which turns the edges
-     into two bright outlines and makes the whole thing read as a solid
-     trapezoid instead of as light. */
-  new THREE.MeshBasicMaterial({
-    vertexColors: true, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide
-  })
-);
-/* In FRONT of the rock face, not level with the ship.
+   The Scanner still has a silhouette. It scales the glow rather than
+   lengthening a cone, which is the honest version of the same signal: a bigger
+   lamp, not a longer triangle. Scaled rather than faded because the sprite
+   material is shared with every other glow of its colour. */
+export const lampGlow = new THREE.Group();
+lampGlow.add(makeGlow(0xffc078, 2.6, 0.13));
+lampGlow.add(makeGlow(0xffd9a0, 0.8, 0.34));
+/* BEHIND the ship, not in front of it.
 
-   At z = 0 the cone sits inside the block volume, so the terrain occludes it -
-   and since the ship spends almost all its time in a one-cell tunnel, that
-   meant a headlight with nowhere to shine. Pushed forward it reads as light
-   falling ON the wall ahead, which is what a beam looks like from this camera
-   anyway. The ore halos have always worked exactly this way. */
-headlight.position.z = 0.62;
-headlight.renderOrder = 1;
-rig.add(headlight);
+   In front, an additive quad centred on the lamp washes straight over the hull
+   and the ship renders as a bright blob with no facets - which is the exact
+   fault the render layers were added to fix, arriving by a different route.
+   Behind, the ship silhouettes against its own light, which is what a lamp on
+   a machine actually looks like. Still forward of z = 0, because the ship
+   spends its life in a one-cell tunnel and at zero the terrain occludes it. */
+lampGlow.position.z = 0.34;
+lampGlow.renderOrder = 2;
+scene.add(lampGlow);
 
 /* Shrunk against the terrain so the world reads as large. The squash animation
    scales `player`, so scaling `rig` here does not interfere with it. */
@@ -415,8 +393,9 @@ const rads = boltRow(radGeo, trimMat, [
 ]);
 /* Cargo: a hold slung behind the body, so a full hold has somewhere to be. */
 const pod = bolt(podGeo, hullMat, 0, -0.14, -0.19);
-/* Scanner: a mast and dish. The Scanner already changes the framing and the
-   headlight cone; this is the third thing one purchase buys. */
+/* Scanner: a mast and dish. The Scanner already changes the framing and how
+   far the propagated light reaches; this is the third thing one purchase
+   buys. */
 const mast = bolt(mastGeo, steelMat, 0.13, 0.3, -0.08);
 const dish = bolt(dishGeo, trimMat, 0.13, 0.42, -0.08, [Math.PI / 2.6, 0, 0]);
 /* Thrust: a second pair of jets outboard of the originals. */

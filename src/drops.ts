@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { DEF } from './config';
 import { g } from './state';
 import { scene } from './scene';
+import { applyLight } from './lightmap';
 import { shardGeo, worldX } from './materials';
 import { key } from './util';
 
@@ -24,9 +25,12 @@ const MAX_DROPS = 90;
 const scratch = new THREE.Object3D();
 const scratchColor = new THREE.Color();
 
-const dropMat = new THREE.MeshLambertMaterial({
+/* Lightmapped like the rock it is lying on. A drop in a side tunnel you have
+   not lit should be as hard to see as the tunnel is - its halo is what finds
+   it, and the halo is additive and therefore untouched by this. */
+const dropMat = applyLight(new THREE.MeshLambertMaterial({
   color: 0xffffff, emissive: 0x666666, flatShading: true, vertexColors: false
-});
+}));
 const mesh = new THREE.InstancedMesh(shardGeo, dropMat, MAX_DROPS);
 mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 mesh.frustumCulled = false;

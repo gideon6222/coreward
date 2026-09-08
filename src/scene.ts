@@ -3,6 +3,7 @@ import { W } from './config';
 import { S } from './state';
 import { LAMP_DECAY, LAMP_INTENSITY } from './feel';
 import { R } from './runtime';
+import { applyLightUnlit, haze } from './lightmap';
 
 export const scene = new THREE.Scene();
 export const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
@@ -39,9 +40,15 @@ scene.add(rim);
 
    Deliberately dark and unlit - fog tints it toward whatever the depth colour
    is, so it goes ember below the heat line along with everything else. */
+/* Lightmapped, and that is what makes a tunnel look FILLED with light rather
+   than merely walled with lit rock. A dug cell has no geometry in it at all,
+   so what the player sees down an open shaft is this plane; unlit it was the
+   same flat grey a metre from the lamp as thirty metres down a side branch.
+   Now the void immediately around the ship glows and the far end of the branch
+   is black, which reads as the light travelling down the tunnel. */
 const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(60, 400),
-  new THREE.MeshBasicMaterial({ color: 0x090a0e })
+  applyLightUnlit(new THREE.MeshBasicMaterial({ color: 0x1a1c22 }))
 );
 /* Moved back from -1.4 to make room for the parallax layers, which have to
    sit BEHIND the drifting dust (z -0.7 to -1.3) and IN FRONT of this. At -1.4
@@ -49,6 +56,11 @@ const backdrop = new THREE.Mesh(
    this plane, which is opaque, and they rendered perfectly into nothing. */
 backdrop.position.set(0, 0.5 - 200, -3.2);
 scene.add(backdrop);
+
+/* Light in the air, between the parallax layers and the terrain. Added here
+   rather than in lightmap.ts so the module that owns the light field stays
+   free of the scene graph. */
+scene.add(haze);
 
 /* Decay 1.75, not 1.25. The pool has a hard edge now instead of trailing off
    across half the frame, which is the whole reason the tight framing reads as

@@ -15,7 +15,7 @@ import {
   CAM_ZOOM_RATE, CAM_Y_OFFSET, CAM_BOOST_DECAY, BANK_INTO_MOVE, BANK_SETTLE,
   FACE_TURN_RATE,
   AMBIENT_SURFACE, AMBIENT_DEEP, LIGHT_FALL_POW, FOG_SURFACE, FOG_GAIN, FOG_COLOR_RUSH,
-  RIM_SURFACE, RIM_DEEP, LAMP_INTENSITY,
+  RIM_SURFACE, RIM_DEEP, LAMP_INTENSITY, LM_RANGE_MULT,
   VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
   LANE_PULL, DIG_ALIGNED,
@@ -25,11 +25,12 @@ import {
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
+import { updateLight } from './lightmap';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
 import { moveAndCollide, thrust, laneVel } from './fly';
-import { player, rig, bit, flames, headlight, drillTint, FACE_ANGLE } from './ship';
+import { player, rig, bit, flames, lampGlow, drillTint, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
@@ -557,20 +558,29 @@ export function tick(raw: number, draw = true) {
   shipKey.position.set(px + 0.35, py + 0.5, 1.5);
   lamp.distance = S.light();
 
-  /* The headlight. Invisible in daylight and mixed in with depth, because a
-     beam that is visible against a bright sky reads as a bug; scaled along its
-     length by the Scanner Array, so the upgrade has a silhouette. The 0.82 rig
-     scale is divided out so the beam reaches the distance the light actually
-     does rather than the distance the model implies. */
+  /* Solve the propagated light before anything is drawn with it.
+
+     Given the ship's exact position, not its cell: the solve itself is on the
+     grid, but the pool's centre is continuous, and that split is what keeps
+     the light gliding rather than stepping a metre at a time. See lightmap.ts.
+
+     Cheap enough not to gate: the field is only re-solved when the ship
+     changes cell or the terrain changes shape, and what runs every frame is
+     one pass over 540 texels. */
+  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, raw);
+
+  /* The lamp's own glow. Invisible in daylight, because a visible light source
+     against a bright sky reads as a bug; grown by the Scanner Array, so the
+     upgrade still has a silhouette now that the cone is gone. Scaled rather
+     than faded - the sprite material is shared. */
   const dark = depthT(g.pd);
-  const beamMat = headlight.material as THREE.MeshBasicMaterial;
-  beamMat.opacity = 0.22 * dark;
-  headlight.visible = beamMat.opacity > 0.004;
-  /* Scanner runs 8 m at level 0 to 29.6 m at level 9. Mapped to a beam between
-     one and two lengths rather than proportionally, because a cone eight cells
-     long stops reading as a beam and starts reading as a wall. */
+  lampGlow.position.set(px, py, 0.34);
+  lampGlow.visible = dark > 0.02;
+  /* Scanner runs 8 m at level 0 to 29.6 m at level 9, mapped to between one
+     and two glow widths. Proportional would put a glow eight cells across on
+     the screen, which stops reading as a lamp and starts reading as fog. */
   const reach = 1 + ((S.light() - 8) / 21.6) * 0.95;
-  headlight.scale.set(0.9 + reach * 0.1, reach, 1);
+  lampGlow.scale.setScalar(reach * (0.35 + 0.65 * dark));
 
   if (g.mode !== 'fly') {
     const target = FACE_ANGLE[g.face];

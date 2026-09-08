@@ -11,6 +11,12 @@ import { zoomForScan } from './feel';
    (x, d, planet), so existing columns generate exactly as before and the new
    ones are simply additional world. */
 export const W = 13;
+
+/* Column index to world X. Lives here rather than beside the renderer because
+   two things that are not the renderer need it - the lighting grid and the
+   collision code - and a shared geometric fact about the world belongs with
+   the constant it is derived from. */
+export const worldX = (x: number) => x - (W - 1) / 2;
 export const SAVE_KEY = 'coreward.v2';
 export const OLD_KEY = 'coreward.v1';
 export const HULL_MAX = 100;

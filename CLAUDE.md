@@ -41,6 +41,9 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/util.ts` | `key`, `clamp`, `mixHex`. Imports nothing |
 | `src/runtime.ts` | `R`, the mutable loop state that crosses modules. Imports nothing |
 | `src/state.ts` | `g`, derived stats `S`, relic perks, save/load |
+| `src/light.ts` | **Pure.** The lighting solver: floods light through open cells, fully unit-tested |
+| `src/lightmap.ts` | The solved field as a texture, the shader injection, and the haze quad |
+| `src/shader.ts` | `chainCompile`, the one way anything patches a stock three shader |
 | `src/feel.ts` | Every number that decides how it *feels*, plus the pure reducers (`tremorTick`, `chargeAfter`, `soakAfter`) |
 | `src/world.ts` | Generation, `blockAt`, `findRoute`, `planCollapse`, `cachePrize` |
 | `src/fly.ts` | **Pure.** Collision and thrust. No renderer, fully unit-tested |
@@ -63,8 +66,8 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/changelog.ts` | Version and the player-facing what's-new list |
 
 **Import direction is one-way and load-bearing:** types → config → util → runtime → state →
-feel/fly/world → renderer modules → ui → actions → loop. `actions.ts` deliberately does *not*
-import from `loop.ts`; `FACE_VEC` is duplicated there instead, because a cycle that only works
+feel/fly/world/light → shader → lightmap → renderer modules → ui → actions → loop. `actions.ts`
+deliberately does *not* import from `loop.ts`; `FACE_VEC` is duplicated there instead, because a cycle that only works
 because of when each binding happens to be read is a trap for whoever moves a call next.
 
 ---
@@ -94,6 +97,22 @@ reshuffling every band. There is a test.
 **Per-cell maps carry no planet in their keys.** `dug`, `rubble`, `damage` and `drops` must all
 be cleared together on a planet change, or the new world inherits the old one's holes.
 
+**Every shader injection goes through `chainCompile`, and never through a bare assignment
+to `onBeforeCompile`.** A material has exactly one of those, so an assignment silently
+discards whatever was already there - and the result renders perfectly, just wrong.
+Relatedly, **`Material.clone()` drops `onBeforeCompile` and `customProgramCacheKey`
+entirely**: the drilled block is the only cloned material in the game and it has to have
+its displacement and its lighting re-applied by hand. There is an e2e test that reads the
+compiled shaders back out of WebGL and fails if any rock program has lost the light.
+
+**The propagated light only ever darkens.** `coreLit()` is clamped to at most 1, so every
+lighting value in `feel.ts` is still the ceiling it was calibrated to be. If the world ever
+needs to be brighter, that is a change to the lights, not to the lightmap.
+
+**Rock is relaxed but never expanded by the solver.** That one line in `light.ts` is what
+stops light passing through a wall into the chamber behind it. Without it every sealed
+pocket glows faintly and tells the player it is there before they have dug to it.
+
 **Bedrock and the planet core are unbreakable by ordnance.** The core is a planet's climax and
 has to be drilled by hand.
 
@@ -116,6 +135,13 @@ null check narrows every node.
 1.5 fading out below the surface; rim 0.5 falling by 0.44; lamp a point light at intensity 30,
 range `S.light()`, **decay 1.75**. Old tutorial values render nearly black under 0.166's
 physically based lighting.
+
+**Propagated light.** Attenuation 0.78 per unit of DETOUR - not per unit of distance;
+distance is the pool, evaluated per pixel from the ship's exact position so it does not step
+as you fly. Rock seeps 0.32 per cell for three cells. Unreached cells settle to 0.06 of the
+light they would otherwise get, which is dark enough to read as unreachable and light enough
+to keep the rock's shape. Daylight gives out between 2 m and 14 m, read from each CELL's own
+depth rather than the ship's, so the top of a shaft still glows from ninety metres down.
 
 **Framing.** 18 rows solved into a camera distance in `resize()`, then multiplied by
 `zoomForScan(g.up.scan)` — 0.82 at Scanner 0 up to 1.22 at 9. The Scanner *is* the framing;

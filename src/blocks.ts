@@ -6,6 +6,7 @@ import { rnd, blockAt } from './world';
 import { scene } from './scene';
 import { crackGeo, crackMat, mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, rockRelief, ROCK_BUMP } from './materials';
+import { applyLight, markLightDirty } from './lightmap';
 import type { Block } from './types';
 
 /* Terrain rendering.
@@ -85,6 +86,7 @@ function poolFor(b: Block): Pool {
   });
   rockRelief(bodyMat);
   displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
+  applyLight(bodyMat);
   const body = new THREE.InstancedMesh(chunkFor(b.id), bodyMat, MAX_CELLS);
   body.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   body.frustumCulled = false;
@@ -104,6 +106,7 @@ function poolFor(b: Block): Pool {
        octahedra and do not */
     vertexColors: !b.ore
   });
+  applyLight(detailMat);
   const detail = new THREE.InstancedMesh(
     b.cache ? crateGeo : b.ore ? shardGeo : pebbleGeo, detailMat,
     b.ore || b.seam ? MAX_DETAILS : MAX_CELLS
@@ -166,6 +169,17 @@ export function pulseHaloes(t: number) {
 export const meshes = new Map<string, THREE.Group>();
 let digCell: string | null = null;
 
+/* three's Material.clone() does NOT copy `onBeforeCompile` or
+   `customProgramCacheKey`. Every shader injection this game does lives in
+   those two, so a cloned material comes back as stock three with none of the
+   displacement, none of the world-space UVs and none of the propagated light -
+   and it renders perfectly, just wrong. The drilled block is the only cloned
+   material in the game, which is why the symptom was one cell in the world
+   lit differently from the rock it was cut out of.
+
+   Anything cloned here has to have its injections re-applied, in order. There
+   is an e2e test that reads the compiled shaders back out of WebGL and fails
+   if any rock program has lost the light. */
 function makeBlock(x: number, d: number, b: Block) {
   /* Tonal spread between neighbouring chunks. Narrow variation makes a rock
      face read as one flat surface at any distance; widening it is what turns it
@@ -173,8 +187,11 @@ function makeBlock(x: number, d: number, b: Block) {
   const jit = 0.76 + rnd(x + 77, d + 31, g.planet) * 0.46;
   if (!b.ore) {
     const grp = new THREE.Group();
+    /* clone() drops onBeforeCompile - see the note above makeBlock - so the
+       light has to be re-applied here, after the displacement. */
     const bodyMat = mat(shade(b.color, jit), b.glow, true, true).clone();
     displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
+    applyLight(bodyMat);
     const m = new THREE.Mesh(chunkFor(b.id), bodyMat);
     grp.add(m);
     if (rnd(x + 61, d + 17, g.planet) > 0.66) {
@@ -189,6 +206,7 @@ function makeBlock(x: number, d: number, b: Block) {
   const grp = new THREE.Group();
   const hostMat = mat(shade(b.host || 0x333038, jit), 0.02, true, true).clone();
   displaceLikeRock(hostMat, ROCK_BUMP[b.id] ?? 0.2);
+  applyLight(hostMat);
   const host = new THREE.Mesh(chunkFor(b.id), hostMat);
   grp.add(host);
   const n = b.shards || 5;
@@ -318,6 +336,12 @@ function placeCell(px: number, py: number) {
 }
 
 function rebuild() {
+  /* The terrain changed shape or the window moved, which are exactly the two
+     things that invalidate a solved light field. One call here rather than one
+     at every dig, tremor and planet change - those all already funnel through
+     this function, and a lighting bug caused by a forgotten call site would
+     look like a lighting bug rather than like a missing call. */
+  markLightDirty();
   for (const p of pools.values()) { p.bodies = 0; p.details = 0; }
   oreGlows.length = 0;
 

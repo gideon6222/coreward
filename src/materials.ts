@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { W } from './config';
+/* Re-exported so the renderer modules keep one import for "geometry of a cell". */
+export { worldX } from './config';
 import { renderer } from './scene';
+import { applyLight } from './lightmap';
+import { chainCompile } from './shader';
 /* Imported rather than referenced out of public/: `base` is './' for Pages
    subpaths, so an absolute /textures/ URL would 404 on the live site. Going
    through the bundler also hashes the filename, which is what lets the service
@@ -141,7 +145,7 @@ const ROCK_NORMAL_SCALE = 0.25;
    position, so lighting follows the displaced surface for free - no normal
    recalculation needed. */
 export function displaceLikeRock(m: THREE.Material, bump: number) {
-  m.onBeforeCompile = (shader) => {
+  chainCompile(m, (shader) => {
     shader.uniforms.uBump = { value: bump };
     shader.vertexShader = shader.vertexShader
       .replace(
@@ -191,9 +195,7 @@ export function displaceLikeRock(m: THREE.Material, bump: number) {
           #endif
         }`
       );
-  };
-  /* materials are cached by three on their program key; this forces a rebuild */
-  m.customProgramCacheKey = () => 'rock' + bump.toFixed(3);
+  }, 'rock' + bump.toFixed(3));
 }
 export const shardGeo = new THREE.OctahedronGeometry(1, 0);
 /* Cache contents. A flat slab rather than a crystal: at thirty pixels the only
@@ -266,6 +268,10 @@ export function mat(color: number, glow?: number, grain = true, vcol = false) {
        relief rides on the same decision. Rock normals on a crystal would read
        as a scuffed, dirty gem for exactly the reason the grain map does. */
     if (grain) rockRelief(m);
+    /* Everything mat() makes is world geometry, and world geometry answers to
+       the lamp. The one exception is handled at the call site: displaceLikeRock
+       has to be applied before this, because the injections chain in order. */
+    applyLight(m);
     matCache.set(k, m);
   }
   return matCache.get(k)!;
@@ -342,4 +348,3 @@ export function asMetal(m: THREE.MeshStandardMaterial, intensity = 1) {
 }
 
 export const shade = (hex: number, f: number) => new THREE.Color(hex).multiplyScalar(f).getHex();
-export const worldX = (x: number) => x - (W - 1) / 2;

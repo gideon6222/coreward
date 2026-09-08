@@ -1214,3 +1214,73 @@ test('hardware bought in the Outfitter is on the ship you undock with', async ({
     .toBe(dockedTanks);
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
+
+/* The propagated light, end to end.
+
+   The solver itself is covered by golden tests - it is pure. What those cannot
+   see is the wiring, and the wiring is where this feature went wrong once
+   already: `displaceLikeRock` used to ASSIGN `onBeforeCompile`, so applying it
+   after the lighting injection silently threw the lighting away. Nothing
+   failed. One block in the world was lit differently from the rock around it,
+   and it was found by eye.
+
+   So this asserts the two halves separately. First that every rock program the
+   renderer actually compiled still contains the call - that is the guard
+   against another injection quietly winning. Then that the field the shader is
+   sampling says what it should: the shaft is lit and rock a few cells into the
+   mass is not, which is the whole promise of the feature. */
+test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  const r = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stopClock();
+    w.R.held = 'down';
+    for (let i = 0; i < 60; i++) w.advance(0.5);
+    w.R.held = null;
+    w.advance(0.5);
+
+    /* Every compiled program that carries the rock displacement must also
+       carry the light. Reading the source back out of WebGL rather than
+       trusting the material: what matters is what was compiled. */
+    const gl = w.renderer.getContext();
+    const progs = Array.from(w.renderer.info.programs || []) as any[];
+    const rock = progs.filter((p) => String(p.cacheKey || '').includes('rock'));
+    const unlit = rock.filter((p) =>
+      !String(gl.getShaderSource(p.fragmentShader) || '').includes('coreLit(vLmPos)'));
+
+    /* And the field itself, read straight off the texture the shader samples.
+       Column index is x + 1, because the grid carries a border column. */
+    const data = w.lmDebug.U.uLmMap.value.image.data;
+    const COLS = 15;
+    /* The window is always centred on the ship, so the ship's row in the grid
+       is a constant - 17 rows down from the top of it. */
+    const ROW = 17, x = Math.round(w.g.px);
+    const at = (dx: number) => data[(ROW * COLS + (x + 1 + dx)) * 4];
+    return {
+      rockPrograms: rock.length, unlit: unlit.length,
+      depth: w.g.pd, shaft: at(0), wall: at(1), two: at(2), four: at(4)
+    };
+  });
+
+  /* Deliberately shallow. Caves start at 26 m, and "four cells into the mass"
+     only means anything while the mass is solid - a cave there would be lit
+     for the right reason and fail this for the wrong one. */
+  expect(r.depth, 'the run has to get underground for any of this to mean anything')
+    .toBeGreaterThan(12);
+  expect(r.depth, 'and has to stay above the cave line for the rock assertions to hold')
+    .toBeLessThan(26);
+  expect(r.rockPrograms, 'no rock programs compiled - the terrain never drew')
+    .toBeGreaterThan(0);
+  expect(r.unlit, r.unlit + ' of ' + r.rockPrograms +
+    ' rock programs lost the light injection - something assigned onBeforeCompile' +
+    ' instead of chaining onto it').toBe(0);
+
+  /* The shaft the ship is sitting in is fully lit; its wall catches the lamp;
+     four cells into untouched rock is nearly nothing. */
+  expect(r.shaft, 'the cell the ship is in').toBeGreaterThan(240);
+  expect(r.wall, 'the wall of the shaft').toBeGreaterThan(120);
+  expect(r.four, 'four cells into solid rock').toBeLessThan(40);
+  expect(r.two, 'two cells in is darker than one').toBeLessThan(r.wall);
+});

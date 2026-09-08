@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { W } from './config';
 import { scene } from './scene';
+import { applyLightUnlit } from './lightmap';
 import { rnd } from './world';
 
 /* Distant rock, behind the tunnels.
@@ -56,7 +57,10 @@ const scratch = new THREE.Object3D();
 const SPAN = 46;
 
 function makeLayer(count: number, z: number, factor: number, color: number, seed: number): Layer {
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+  /* Lightmapped with the rest of the world. These sit behind the tunnels, so
+     a layer the lamp cannot reach has to go dark with everything else or the
+     distance reads as brighter than the foreground. */
+  const mat = applyLightUnlit(new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }));
   const mesh = new THREE.InstancedMesh(slabGeo, mat, count);
   mesh.frustumCulled = false;
   mesh.position.z = z;
