@@ -851,3 +851,87 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
+
+/* The deep game, reached in a fraction of a second.
+
+   Everything past about 60 m had never been covered end to end, for a boring
+   reason: getting there meant holding a d-pad through a real browser for as
+   long as it would actually take to fly it, and a test that costs half a minute
+   of wall clock does not get written. Tremors are the clearest case - they
+   start at 85 m and fire roughly every 27 seconds, so observing even one of
+   them is a minute of real play.
+
+   The ?debug seam makes that 0.4 seconds. advance() runs fixed 1/60 steps as
+   fast as the CPU can and only draws the last one, so this is both far faster
+   than real time and deterministic in a way holding a button never was.
+
+   This is a "does the mechanic actually happen" test, which is the kind
+   CRAFT.md keeps asking for: a mechanic whose condition never comes true fails
+   as absence, and absence is exactly what playtesting cannot see. */
+test('a tremor actually fires in a real run below the tremor line', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  const out = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stopClock();
+    /* Sat well below the tremor line, in a shaft, with the hull and tank
+       upgraded enough that nothing else ends the run first. */
+    w.g.up.tank = 9; w.g.up.cool = 9; w.g.up.drill = 8;
+    w.g.px = 6; w.g.pd = 90;
+    w.g.best.depth = 300;
+    /* THREE columns wide, and that is load-bearing rather than incidental.
+
+       The first version of this dug a one-cell shaft and saw no tremor at all
+       in seventy seconds - which was the game being right. planCollapse()
+       re-runs the pathfinder after choosing cells and reverts the whole
+       collapse if the ship can no longer reach the pad, and in a corridor one
+       cell wide EVERY candidate severs the only route home. Every tremor fired
+       and every one was correctly spent as noise.
+
+       A fixture that cannot reach the behaviour it names reads as coverage and
+       is worse than no test, so the precondition is asserted below rather than
+       assumed. */
+    for (let d = 0; d <= 90; d++) for (let x = 5; x <= 7; x++) w.g.dug.add(x + ',' + d);
+    const before = w.g.rubble.size;
+    /* Two full tremor periods plus the jitter, so "none fired" cannot just
+       mean the window was too short. */
+    w.advance(70);
+    return { before, after: w.g.rubble.size, depth: w.g.pd, hull: w.g.hull,
+             dug: w.g.dug.size };
+  });
+
+  expect(out.dug, 'nothing was dug, so there was nothing a tremor could collapse')
+    .toBeGreaterThan(100);
+  expect(out.depth, 'the ship should still be deep, not towed home').toBeGreaterThan(80);
+  expect(out.after, 'no tremor collapsed anything in 70 s below the tremor line')
+    .toBeGreaterThan(out.before);
+});
+
+/* The seam's own contract. If advance() stops being deterministic or stops
+   being faster than real time, every test built on it silently becomes a
+   different kind of test - so both properties get asserted directly rather
+   than assumed by the tests that rely on them. */
+test('advance is deterministic and far faster than real time', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  const out = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stopClock();
+    const run = () => {
+      w.g.px = 6; w.g.pd = 0; w.g.dug.clear(); w.g.cargo = {}; w.g.weight = 0;
+      w.R.held = 'down'; w.R.vx = 0; w.R.vy = 0; w.R.digging = null;
+      w.advance(12);
+      return w.g.pd.toFixed(6) + '/' + w.g.weight.toFixed(4);
+    };
+    const a = run(), b = run();
+    const t0 = performance.now();
+    run();
+    return { a, b, realMs: performance.now() - t0 };
+  });
+
+  expect(out.b, 'the same run gave two different answers').toBe(out.a);
+  expect(out.realMs, 'twelve simulated seconds should not take real seconds')
+    .toBeLessThan(4000);
+});

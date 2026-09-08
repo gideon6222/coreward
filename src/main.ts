@@ -3,13 +3,14 @@
    top to bottom. */
 import { HULL_MAX } from './config';
 import { g, S, save, load } from './state';
+import { R } from './runtime';
 import { camera, lamp, resize } from './scene';
 import { syncBlocks } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier } from './ship';
 import { el, updateHUD, audioLabels } from './ui';
-import { frame } from './loop';
+import { frame, tick, advance, stopClock } from './loop';
 import { sfx } from './audio';
 import './input';
 
@@ -48,3 +49,23 @@ document.getElementById('boot')!.classList.add('hidden');
 window.addEventListener('visibilitychange', () => { save(); if (document.hidden) sfx.digStop(); });
 setInterval(save, 5000);
 requestAnimationFrame(frame);
+
+/* ============ the headless seam ============
+   Behind ?debug, so nothing here exists in a normal load.
+
+   The loop splits into frame(), which asks what time it is, and tick(), which
+   takes a delta and does the work. Exposing the second one means a whole run
+   compresses into `advance(56)` - deterministically, and far faster than real
+   time, because a fixed step does not depend on how quickly the machine booted
+   the bundle and only the last step renders.
+
+   Without this, every balance number past the shallow game has to be reached by
+   holding a d-pad in a real browser for as long as it would actually take, which
+   is why the deep content is still the least tested part of the game.
+
+   The state objects come too. A test that reads the HUD is asserting on a
+   rounded string in a formatter, which is a different claim from the one it
+   usually means to make: DEPTH 0 m is true at pd 0.0 and at pd 0.49. */
+if (new URLSearchParams(location.search).has('debug')) {
+  (window as unknown as { __cw: unknown }).__cw = { tick, advance, stopClock, g, S, R };
+}

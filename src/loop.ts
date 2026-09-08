@@ -83,10 +83,58 @@ function startDig(tx: number, td: number, dir: Dir) {
 let camZBoost = 0, freeze = 0, thrustLevel = 0, bank = 0;
 let last = performance.now(), skyTick = 0;
 
+/* Seconds of game time since boot, accumulated from the deltas rather than read
+   off the wall clock. Decorative pulses used to read `performance.now()`
+   directly, which is fine at 60 fps and useless the moment the loop is driven
+   by anything other than real time: a run compressed into a hundred
+   milliseconds would have had its haloes pulse for a hundred milliseconds while
+   the ship crossed forty metres. */
+let clock = 0;
+
+/* The rAF half: work out how much time passed and hand it on. Nothing else.
+
+   Everything the game actually does lives in tick(), which takes a delta and
+   never asks what time it is. That split is what makes a whole run drivable
+   from a test in milliseconds instead of in real seconds - see advance().
+
+   The handle is kept so the clock can be stopped. A test that takes over the
+   loop while real frames are still arriving is measuring the two of them
+   interleaved, and how many real frames got in first depends on how fast the
+   machine booted the bundle. */
+let raf = 0;
+
 export function frame(now: number) {
-  requestAnimationFrame(frame);
+  raf = requestAnimationFrame(frame);
   const raw = Math.min(0.05, (now - last) / 1000);
   last = now;
+  tick(raw);
+}
+
+/* Stop the real-time clock so a caller can drive the loop itself. */
+export function stopClock() {
+  if (raf) cancelAnimationFrame(raf);
+  raf = 0;
+}
+
+/* Run `seconds` of game time as fixed steps, as fast as the CPU allows.
+
+   Only the LAST step renders. Nothing in renderer.render() feeds back into game
+   state, so drawing every step buys nothing and costs everything: a headless
+   browser falls back to a software rasteriser, where a draw is milliseconds
+   rather than microseconds, and a minute of simulated play becomes minutes of
+   real time. Drawing the final step keeps draw calls and every instance count
+   honest for whatever the caller asserts next.
+
+   The step is fixed at 1/60 rather than taken from real elapsed time, so the
+   same call produces the same run on any machine. */
+export function advance(seconds: number, step = 1 / 60) {
+  stopClock();
+  const n = Math.max(1, Math.round(seconds / step));
+  for (let i = 0; i < n; i++) tick(step, i === n - 1);
+}
+
+export function tick(raw: number, draw = true) {
+  clock += raw;
   const frozen = freeze > 0;
   if (frozen) freeze -= raw;
   const dt = frozen ? 0 : raw;
@@ -511,7 +559,7 @@ export function frame(now: number) {
       (edge * 0.34).toFixed(2) + ') ' + mid.toFixed(1) + '%, rgba(0,0,0,' + edge.toFixed(2) + ') 100%)';
   }
 
-  const glowT = now / 1000;
+  const glowT = clock;
   pulseHaloes(glowT);
   for (let i = 0; i < padLights.length; i++) {
     const ph = (glowT * 1.6 - i * 0.22) % 2;
@@ -548,5 +596,5 @@ export function frame(now: number) {
   tickToast(raw);
 
   updateHUD();
-  renderer.render(scene, camera);
+  if (draw) renderer.render(scene, camera);
 }

@@ -1571,6 +1571,75 @@ and that nothing else in the repo would notice, so `rock-normal.webp` is in
 `bundle-budget.json` at a 0.5% tolerance - tighter than any code chunk, because
 it only ever changes on purpose.
 
+## The headless tick seam (2026-09-07)
+
+`frame()` asked what time it was and did the work in one function, so the only
+way to reach anything was to fly there in real time. That is most of why the
+deep game went three sessions untested: a test that costs a minute of wall clock
+does not get written, so ordnance, relics, the mineral gate and tremors were all
+shipped on modelling rather than on evidence.
+
+It splits now. `frame(now)` computes a delta and calls rAF; `tick(raw, draw)`
+does everything else and never asks what time it is. Behind `?debug`,
+`window.__cw` exposes `tick`, `advance`, `stopClock` and the state objects.
+
+**Measured, on a real GPU:** 0.239 ms per tick simulating, 0.534 ms drawing.
+Twenty simulated seconds of digging runs in 396 ms - **51x real time** - and
+lands at 58.6 m. Three identical runs from the same state give identical results
+to six decimal places.
+
+Three things that make it work rather than merely exist:
+
+- **Only the last step draws.** Nothing in `renderer.render()` feeds back into
+  game state, so drawing every step buys nothing; the numbers above say it is
+  69% of the cost even with a GPU, and a headless browser on a software
+  rasteriser is far worse. Drawing the final step keeps draw calls and instance
+  counts honest for whatever the caller asserts next.
+- **`stopClock()` first.** Real frames keep arriving otherwise, and the run
+  becomes a mix of real deltas and fixed ones - so how many got in depends on
+  how fast the machine booted the bundle.
+- **The step is fixed at 1/60, not taken from elapsed time.** Same call, same
+  run, any machine.
+
+One thing had to change to make it deterministic: the halo, pad-light and beam
+pulses read `performance.now()` directly. They run off an accumulated `clock`
+now. At 60 fps that is identical; driven headless, the old version pulsed for
+the wall-clock duration of the loop rather than for the game time simulated.
+
+### The first tremor anyone has ever seen fire
+
+Tremors start at 85 m and fire every ~27 s, so proving one happens was a minute
+of held d-pad and had never been done. It is a 2.6 s test now - and writing it
+found something worth keeping.
+
+**The first version dug a shaft one cell wide and saw no tremor at all.** That
+was the game being right: `planCollapse()` re-runs the pathfinder and reverts
+the whole collapse if the ship can no longer reach the pad, and in a one-wide
+corridor *every* candidate cell severs the only route home. Every tremor fired
+and every one was correctly spent as noise.
+
+The fixture now digs three columns and asserts its own precondition, because a
+fixture that cannot reach the behaviour it names reads as coverage and is worse
+than no test at all.
+
+## The e2e port was someone else's game (2026-09-07)
+
+Half the smoke suite started failing with `ERR_CONNECTION_REFUSED`, a different
+half each run, while every test passed in isolation. It was not flake and it was
+not this repo: **Captain Run's suite was running at the same moment on the same
+machine, and both games used Vite's default port 4173.** With Playwright's
+`reuseExistingServer` on locally, Coreward's tests adopted Captain Run's server -
+pointing this game's assertions at another game's build - and then lost it when
+that run finished and tore it down.
+
+Coreward is on **4319** for tests and **4318** for the interactive preview now.
+Two different ports on purpose: opening the game to look at it can no longer
+disturb a test run, which is how the whole thing started.
+
+Worth knowing for next time, because several games run here at once: the
+diagnosis is one command, and it names the repo -
+`Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Select ProcessId, CommandLine`.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

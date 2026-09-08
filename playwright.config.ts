@@ -19,7 +19,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
 
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4319',
     /* a trace on the first retry makes a CI-only failure debuggable without
        reproducing it locally */
     trace: 'on-first-retry',
@@ -53,9 +53,25 @@ export default defineConfig({
   webServer: {
     /* bind explicitly: vite preview defaults to localhost, which resolves to
        ::1 on Windows, and then the 127.0.0.1 health check never succeeds */
-    command: 'npm run preview -- --port 4173 --strictPort --host 127.0.0.1',
-    url: 'http://127.0.0.1:4173',
+    command: 'npm run preview -- --port 4319 --strictPort --host 127.0.0.1',
+    url: 'http://127.0.0.1:4319',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000
   }
+
+  /* 4319, and NOT 4173 or 4200, on purpose.
+
+     Several games are built on this machine at once and sometimes literally at
+     the same moment. Both of those ports are Vite defaults, so the sibling game
+     was serving its own build on 4173 while this suite ran - and because
+     `reuseExistingServer` is true off CI, Playwright adopted that server rather
+     than starting one. The tests then pointed at another game entirely, and
+     when its run finished and tore the server down, half of this suite failed
+     with ERR_CONNECTION_REFUSED partway through.
+
+     The failure looked like flake and was not: it was one repo's tests loading
+     a different repo's app. A per-game port makes reuse safe again, because the
+     only thing that can be listening is this game. The interactive preview in
+     .claude/launch.json deliberately sits on a different port again, so opening
+     the game to look at it can never disturb a test run. */
 });
