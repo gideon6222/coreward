@@ -4,6 +4,7 @@ import { clamp } from './util';
 import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
 import type { Upgrade } from './types';
+import { VERSION, CHANGELOG } from './changelog';
 import { haulValue } from './world';
 import { lamp } from './scene';
 import { setDrillTier } from './ship';
@@ -33,8 +34,23 @@ export const ui = {
   kit: mustEl('kit'), supplies: mustEl('supplies'),
   ordBomb: mustEl('ordBomb'), ordLaser: mustEl('ordLaser'),
   power: mustEl('power'), powerChip: mustEl('powerChip'),
-  shopPlanet: mustEl('shopPlanet')
+  shopPlanet: mustEl('shopPlanet'),
+  verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes')
 };
+
+/* Rendered once, on first open, because a changelog does not change while the
+   game is running and rebuilding it on every pause would be pure churn. */
+let notesBuilt = false;
+export function buildNotes() {
+  ui.verNum.textContent = 'v' + VERSION;
+  if (notesBuilt) return;
+  notesBuilt = true;
+  ui.notes.innerHTML = CHANGELOG.map((r) =>
+    '<div class="rel"><div class="relhead"><span class="v">v' + r.version + '</span>  ' +
+    r.title + '  <span class="d">' + r.date + '</span></div><ul>' +
+    r.notes.map((n) => '<li>' + n + '</li>').join('') + '</ul></div>'
+  ).join('');
+}
 
 /* The three kit buttons, looked up once. Ids are derived from the supply key
    so index.html and SUPPLIES cannot drift apart without mustEl throwing. */

@@ -3,7 +3,7 @@ import { relicDistance } from './relic';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
-import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels } from './ui';
+import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels, buildNotes } from './ui';
 import type { Dir } from './types';
 import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
@@ -61,6 +61,7 @@ mustEl('btnPause').onclick = () => {
   sfx.digStop();
   disarmReset();
   audioLabels();
+  buildNotes();
   ui.pauseStats.innerHTML =
     '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.planet) +
     (traitOf(g.planet).id === 'stable' ? '' : ' <span class="mult">' + traitOf(g.planet).name + '</span>') + '</div>' +
@@ -87,6 +88,12 @@ mustEl('btnPause').onclick = () => {
     '<div class="val">' + g.shards + '</div></div>';
   ui.pause.classList.remove('hidden');
 };
+ui.btnNotes.onclick = () => {
+  sfx.ui();
+  const open = ui.notes.classList.toggle('hidden');
+  ui.btnNotes.textContent = open ? "WHAT'S NEW" : 'HIDE';
+};
+
 mustEl('btnResume').onclick = () => { sfx.ui(); ui.pause.classList.add('hidden'); g.mode = 'play'; };
 ui.btnReset.onclick = () => {
   if (resetArmed === 0) {

@@ -83,8 +83,8 @@ export const CAM_Y_OFFSET = 0.8;    /* look slightly below the ship */
 
    Curved rather than linear: the first two levels are worth the most, which is
    when the player is deciding whether the Scanner is worth buying at all. */
-export const ZOOM_MIN = 0.74;   /* level 0, tight */
-export const ZOOM_MAX = 1.10;   /* level 9, wider than the old fixed framing */
+export const ZOOM_MIN = 0.82;   /* level 0 */
+export const ZOOM_MAX = 1.22;   /* level 9, well wider than the old framing */
 export function zoomForScan(level: number): number {
   const t = clamp01(level / 9);
   return ZOOM_MIN + (ZOOM_MAX - ZOOM_MIN) * (1 - Math.pow(1 - t, 1.7));
@@ -95,9 +95,45 @@ export function zoomForScan(level: number): number {
    atmosphere to a game variable is the cheapest mood in the game. */
 export const DEPTH_RAMP = 72;       /* metres to reach full darkness */
 export const AMBIENT_SURFACE = 1.75;
-export const AMBIENT_FALLOFF = 1.55;
+/* Nearly all of the ambient goes away underground now, up from most of it.
+
+   The framing widened, and a wider frame with the old ambient meant simply
+   seeing more - which defeats the point of the Scanner deciding how far you
+   can see. What the camera shows and what the light reaches have to move
+   together, or one of them is lying. Past the falloff the only things legible
+   at the edge of the frame are the lamp's pool and whatever glows on its own. */
+export const AMBIENT_FALLOFF = 1.62;
 export const FOG_SURFACE = 0.02;
+/* Left where it was, and here is why raising it is a trap.
+
+   FogExp2 measures distance from the CAMERA, and this camera sits twenty-odd
+   units back on Z looking at a flat plane - so every block in the world is
+   almost exactly as far away as every other one. Turning fog up does not fade
+   the far edges of the frame, it puts an even grey wash over the whole
+   picture. Tried it at 0.040 and the entire scene went flat blue.
+
+   The thing that actually falls off with distance in the XY plane is the
+   LAMP, because it is a point light sitting on the ship. That is the lever. */
 export const FOG_GAIN = 0.028;
+
+/* How sharply the lamp's pool ends. Higher is a tighter circle with a faster
+   edge, which is what makes the rock past it read as out of reach rather than
+   as merely dimmer. */
+export const LAMP_DECAY = 1.75;
+/* The cold key light that gives unlit rock its shape. Nearly gone underground:
+   at depth the only blue left in the frame should be something glowing. */
+export const RIM_SURFACE = 0.5;
+export const RIM_FALLOFF = 0.44;
+
+/* ---------- the vignette ----------
+   How much of the frame stays clear, and how black the edge goes. Deep, the
+   clear area is not much more than the lamp's pool and the corners are close
+   to solid - which is what makes the tight framing read as "this is as far as
+   the light reaches" rather than as "the camera is too close". */
+export const VIGNETTE_CLEAR_SURFACE = 44;   /* per cent of the radius */
+export const VIGNETTE_CLEAR_DEEP = 14;
+export const VIGNETTE_EDGE_SURFACE = 0.55;  /* alpha at the corners */
+export const VIGNETTE_EDGE_DEEP = 0.97;
 
 /* Progress from surface (0) to fully deep (1). */
 export const depthT = (pd: number) => clamp01((pd + 2) / DEPTH_RAMP);

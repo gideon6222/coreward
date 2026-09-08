@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { W } from './config';
 import { S } from './state';
+import { LAMP_DECAY } from './feel';
 import { R } from './runtime';
 
 export const scene = new THREE.Scene();
@@ -49,7 +50,10 @@ const backdrop = new THREE.Mesh(
 backdrop.position.set(0, 0.5 - 200, -3.2);
 scene.add(backdrop);
 
-export const lamp = new THREE.PointLight(0xffd9a0, 30, S.light(), 1.25);
+/* Decay 1.75, not 1.25. The pool has a hard edge now instead of trailing off
+   across half the frame, which is the whole reason the tight framing reads as
+   "this is as far as the light reaches" rather than as a close camera. */
+export const lamp = new THREE.PointLight(0xffd9a0, 30, S.light(), LAMP_DECAY);
 scene.add(lamp);
 
 export function resize() {

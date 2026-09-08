@@ -83,7 +83,11 @@ export default defineConfig({
            which Workbox cannot see and which measured 1.31 MB of orphaned
            data on a real upgrade. This script deletes it on activate. */
         importScripts: ['sw-legacy-cleanup.js'],
-        globPatterns: ['**/*.{js,css,html,svg,webmanifest}'],
+        /* woff2 belongs here. The display font is self-hosted precisely so the
+           installed app does not depend on a font CDN, and leaving it out of
+           the precache would have thrown that away: offline, the game would
+           silently fall back to the system face. */
+        globPatterns: ['**/*.{js,css,html,svg,webmanifest,woff2}'],
         /* the sourcemap is ~2 MB and only devtools ever asks for it */
         globIgnores: ['**/*.map'],
         navigateFallback: 'index.html',
