@@ -10,3 +10,4 @@ export * from '../src/util';
 export * from '../src/state';
 export * from '../src/world';
 export * from '../src/feel';
+export * from '../src/fly';

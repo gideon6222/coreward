@@ -174,16 +174,6 @@ export type Dir = 'up' | 'down' | 'left' | 'right';
 /* g.mode gates input and the frame loop. */
 export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly' | 'boom';
 
-/* Sliding between two cells. */
-export interface Move {
-  x: number;
-  d: number;
-  fx: number;
-  fd: number;
-  t: number;
-  total: number;
-}
-
 /* Chewing through one block. */
 export interface Dig {
   x: number;
