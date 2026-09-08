@@ -1640,6 +1640,52 @@ Worth knowing for next time, because several games run here at once: the
 diagnosis is one command, and it names the repo -
 `Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Select ProcessId, CommandLine`.
 
+## Real bloom: measured, built, and reverted (2026-09-07)
+
+Asked for as part of the look-and-feel pass, and it was the clearest item on the
+"skipped because of the old restrictions" list - the original reasons were "a
+library and a pass", two-thirds of which was the no-build-step era rather than
+judgement. It is built, it works, and it is not in the game. Both halves of that
+are worth writing down, because the reason it is out is not the reason anyone
+expected.
+
+**Performance was never the problem.** `EffectComposer` + `UnrealBloomPass` at
+half resolution, measured with the new tick seam by flipping the pass on and off
+inside one page at pixel ratio 2 in a portrait viewport, sat at **0.096 ms per
+frame** - 0.357 ms without, 0.453 ms with. That is 27% of a number that is 2% of
+a 60 fps budget. Bundle cost was 4.4 KB gzipped. Nothing there argues against
+shipping it.
+
+**The blocker is the sky.** The renderer runs `alpha: true` with no scene
+background and a CSS gradient behind the canvas, which is why the sky is free and
+why it can be updated eight times a second by writing one string. A composer
+renders into its own render target, so:
+
+- the sky went **black**, because the target is opaque and there is nothing
+  behind it any more;
+- the palette shifted - brown rock to grey, the cyan pad beam to green.
+
+`OutputPass` is genuinely required and fixes the colour-space half of that (the
+renderer's linear-to-sRGB conversion never happens when a composer owns the
+output). It does nothing for the alpha. `RenderPass.clearAlpha = 0` does not
+rescue it either: the bloom composite is additive and alpha is destroyed inside
+the chain, which was verified rather than assumed.
+
+**So bloom needs the sky moved into the scene first** - a fullscreen gradient
+quad fed the same two colours the CSS gradient gets. That is maybe forty lines,
+but it sits underneath the fog, the ambient falloff and the vignette, all of
+which are calibrated by eye against three.js 0.166 and none of which can be
+checked anywhere but on the phone. That deserves to be its own deliberate change
+with its own screenshot pass, not a side effect of adding a glow.
+
+The code is not kept, because dead code that "just needs one more thing" is how a
+repo fills up. The measurements above are the part worth keeping, and the next
+attempt starts at the sky rather than at the pass.
+
+**Meanwhile the fake bloom stays and is still the right call for this game:** the
+additive halo quads cost one draw call, they are under per-object control, and
+they are what makes an ore vein magnetic across a dark chamber.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
@@ -1659,7 +1705,11 @@ downstream of those three.
   light reaches"; the failure mode is "I cannot see what I am doing", and the
   fix for that is `VIGNETTE_EDGE_DEEP` before anything else.
 - **Ordnance, relics and the mineral gate are all still unplayed**, three
-  sessions on. Everything in the previous two lists still stands.
+  sessions on. Everything in the previous two lists still stands - but the tick
+  seam means they can now at least be *tested* without playing to them, which is
+  the first time that has been true.
+- **Bloom wants the sky in the scene first.** See the section above; the pass is
+  cheap and the sky is the blocker.
 - **Relics have no ending.** The collection never completes, because the perks
   repeat past the eighth. An ending is a promise about how long the game is, so
   it wants saying out loud before it gets built.

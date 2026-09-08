@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.9.2';
+export const VERSION = '0.9.3';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.9.3', date: '2026-09-07', title: 'Under the hood',
+    notes: [
+      'Nothing you can see - the game can now be driven far faster than real time for testing.',
+      'Tremors are proven to actually fire deep down, which had never been checked before.'
+    ]
+  },
   {
     version: '0.9.2', date: '2026-09-07', title: 'Real rock',
     notes: [
