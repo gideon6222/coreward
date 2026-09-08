@@ -5,7 +5,7 @@ import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
 import { crackGeo, crackMat, mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
-         displaceLikeRock, ROCK_BUMP } from './materials';
+         displaceLikeRock, rockRelief, ROCK_BUMP } from './materials';
 import type { Block } from './types';
 
 /* Terrain rendering.
@@ -73,10 +73,17 @@ function poolFor(b: Block): Pool {
     : new THREE.Color(b.color).multiplyScalar(b.glow || 0.02);
   const detailEmissive = new THREE.Color(b.color).multiplyScalar(b.glow || 0.02);
 
-  const bodyMat = new THREE.MeshLambertMaterial({
+  /* This is the material almost the whole screen is made of, so it is the one
+     that decides whether the world reads as rock or as painted plastic.
+     Standard, not Lambert: Lambert has no roughness channel at all, so every
+     surface catches the lamp identically and the eye reads one moulded
+     material however much relief is layered on top. */
+  const bodyMat = new THREE.MeshStandardMaterial({
     color: 0xffffff, emissive: bodyEmissive, flatShading: true,
-    map: mat(0xffffff, 0).map, vertexColors: true
+    map: mat(0xffffff, 0).map, vertexColors: true,
+    metalness: 0, roughness: 1.0
   });
+  rockRelief(bodyMat);
   displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
   const body = new THREE.InstancedMesh(chunkFor(b.id), bodyMat, MAX_CELLS);
   body.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -86,9 +93,13 @@ function poolFor(b: Block): Pool {
 
   /* rock gets scattered pebbles, ore gets crystal shards; the shards are
      ungrained because rock grain on a gemstone reads as dirt */
-  const detailMat = new THREE.MeshLambertMaterial({
+  const detailMat = new THREE.MeshStandardMaterial({
     color: 0xffffff, emissive: detailEmissive, flatShading: true,
     map: b.ore ? null : mat(0xffffff, 0).map,
+    /* Crystal is the one thing down here that is NOT rough: a gemstone that
+       scatters light like gravel stops reading as a gemstone, and the ore being
+       the only smooth thing in frame is most of why it catches the eye. */
+    metalness: 0, roughness: b.ore ? 0.25 : 1.0,
     /* pebbles are chunk geometry and carry vertex colours; crystal shards are
        octahedra and do not */
     vertexColors: !b.ore

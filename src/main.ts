@@ -4,7 +4,7 @@
 import { HULL_MAX } from './config';
 import { g, S, save, load } from './state';
 import { R } from './runtime';
-import { camera, lamp, resize } from './scene';
+import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
@@ -67,5 +67,11 @@ requestAnimationFrame(frame);
    rounded string in a formatter, which is a different claim from the one it
    usually means to make: DEPTH 0 m is true at pd 0.0 and at pd 0.49. */
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as { __cw: unknown }).__cw = { tick, advance, stopClock, g, S, R };
+  (window as unknown as { __cw: unknown }).__cw = {
+    tick, advance, stopClock, g, S, R,
+    /* The renderer's own handles, for tuning an art pass live. Every lighting
+       value in feel.ts was set by eye, and setting one by eye through a
+       rebuild-and-reload cycle is how an afternoon disappears. */
+    scene, camera, lamp, amb, sun, rim, fog, renderer
+  };
 }

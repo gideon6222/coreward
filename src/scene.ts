@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { W } from './config';
 import { S } from './state';
-import { LAMP_DECAY } from './feel';
+import { LAMP_DECAY, LAMP_INTENSITY } from './feel';
 import { R } from './runtime';
 
 export const scene = new THREE.Scene();
@@ -41,7 +41,7 @@ scene.add(rim);
    is, so it goes ember below the heat line along with everything else. */
 const backdrop = new THREE.Mesh(
   new THREE.PlaneGeometry(60, 400),
-  new THREE.MeshBasicMaterial({ color: 0x14161c })
+  new THREE.MeshBasicMaterial({ color: 0x090a0e })
 );
 /* Moved back from -1.4 to make room for the parallax layers, which have to
    sit BEHIND the drifting dust (z -0.7 to -1.3) and IN FRONT of this. At -1.4
@@ -53,7 +53,7 @@ scene.add(backdrop);
 /* Decay 1.75, not 1.25. The pool has a hard edge now instead of trailing off
    across half the frame, which is the whole reason the tight framing reads as
    "this is as far as the light reaches" rather than as a close camera. */
-export const lamp = new THREE.PointLight(0xffd9a0, 30, S.light(), LAMP_DECAY);
+export const lamp = new THREE.PointLight(0xffd9a0, LAMP_INTENSITY, S.light(), LAMP_DECAY);
 scene.add(lamp);
 
 export function resize() {

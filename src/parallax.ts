@@ -86,8 +86,8 @@ function makeLayer(count: number, z: number, factor: number, color: number, seed
    further is darker and slower, which is the only cue that makes two layers
    read as depth rather than as clutter. */
 const layers = [
-  makeLayer(30, -1.55, 0.55, 0x333b4e, 101),
-  makeLayer(22, -2.30, 0.30, 0x212734, 202)
+  makeLayer(30, -1.55, 0.55, 0x1a1f2b, 101),
+  makeLayer(22, -2.30, 0.30, 0x11151d, 202)
 ];
 
 /* Called every frame with the camera's world position. Each slab is wrapped

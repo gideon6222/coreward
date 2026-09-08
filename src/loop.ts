@@ -14,7 +14,8 @@ import {
   CAM_FOLLOW_PLAY, CAM_FOLLOW_PLAY_Y, CAM_FOLLOW_FLY, CAM_FOLLOW_FLY_Y,
   CAM_ZOOM_RATE, CAM_Y_OFFSET, CAM_BOOST_DECAY, BANK_INTO_MOVE, BANK_SETTLE,
   FACE_TURN_RATE,
-  AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN, RIM_SURFACE, RIM_FALLOFF,
+  AMBIENT_SURFACE, AMBIENT_DEEP, LIGHT_FALL_POW, FOG_SURFACE, FOG_GAIN, FOG_COLOR_RUSH,
+  RIM_SURFACE, RIM_DEEP, LAMP_INTENSITY,
   VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
   FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
   LANE_PULL, DIG_ALIGNED,
@@ -574,9 +575,14 @@ export function tick(raw: number, draw = true) {
 
   /* world ambience */
   const tDeep = depthT(g.pd);
-  amb.intensity = AMBIENT_SURFACE - AMBIENT_FALLOFF * tDeep;
+  /* Squared, not linear: see AMBIENT_DEEP in feel.ts. The fill light has to be
+     gone by the time the lamp is the only thing lighting anything, and a linear
+     ramp is still handing out a third of it halfway down. */
+  const fall = Math.pow(1 - tDeep, LIGHT_FALL_POW);
+  amb.intensity = AMBIENT_DEEP + (AMBIENT_SURFACE - AMBIENT_DEEP) * fall;
   sun.intensity = 1.5 * (1 - tDeep);
-  rim.intensity = RIM_SURFACE - RIM_FALLOFF * tDeep;
+  rim.intensity = RIM_DEEP + (RIM_SURFACE - RIM_DEEP) * fall;
+  lamp.intensity = LAMP_INTENSITY;
   fog.density = FOG_SURFACE + tDeep * FOG_GAIN;
   /* Below the heat line the whole world turns ember: sky, fog and the drifting
      dust all warm together. Three coordinated signals so the boundary reads at
@@ -584,7 +590,12 @@ export function tick(raw: number, draw = true) {
   const hot = heatT(g.pd);
   const hi = lerpHex(skyHi(g.planet), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
   const lo = lerpHex(skyLo(g.planet), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
-  fog.color.copy(lo);
+  /* The SKY keeps the gradual ramp; the fog does not. Fog only ever tints what
+     is underground, and underground is not the colour of the horizon - at 40 m
+     the old shared value was still a bright blue and was washing it over every
+     distant surface in the game. */
+  const tFog = clamp(tDeep * FOG_COLOR_RUSH, 0, 1);
+  fog.color.copy(lerpHex(skyLo(g.planet), 0x07080d, tFog).lerp(new THREE.Color(0x4a1305), hot * 0.85));
   /* ambient warms too, so the rock itself is lit hot rather than just fogged */
   amb.color.setHex(0xffffff).lerp(new THREE.Color(0xff8a52), hot * 0.6);
   dustMat.color.setHex(0xc8b89a).lerp(new THREE.Color(0xff6a28), hot);

@@ -47,7 +47,10 @@ test('feel constants are unchanged', () => {
     },
     depth: {
       ramp: H.DEPTH_RAMP, ambientSurface: H.AMBIENT_SURFACE,
-      ambientFalloff: H.AMBIENT_FALLOFF, fogSurface: H.FOG_SURFACE, fogGain: H.FOG_GAIN
+      ambientDeep: H.AMBIENT_DEEP, fallPow: H.LIGHT_FALL_POW,
+      rimSurface: H.RIM_SURFACE, rimDeep: H.RIM_DEEP,
+      lamp: H.LAMP_INTENSITY, lampDecay: H.LAMP_DECAY,
+      fogSurface: H.FOG_SURFACE, fogGain: H.FOG_GAIN, fogRush: H.FOG_COLOR_RUSH
     },
     cost: {
       move: H.FUEL_PER_MOVE, digBase: H.FUEL_DIG_BASE,
@@ -525,6 +528,49 @@ test('the Scanner widens the view, and the early levels are worth the most', () 
     const v = at(l);
     assert.ok(v >= H.ZOOM_MIN - 1e-9 && v <= H.ZOOM_MAX + 1e-9, 'zoom escaped its range at ' + l);
   }
+});
+
+/* Lighting INTENT, which survives a retune where the snapshot above does not.
+
+   These arrived with the move from MeshLambertMaterial to MeshStandardMaterial.
+   Standard adds a specular lobe, so every light contributes a highlight as well
+   as a diffuse term and the old values read as a bright plastic wash. The
+   numbers that fixed it will drift again; what must not drift is the shape. */
+test('the fill light is gone long before the bottom of the ramp', () => {
+  const fall = (t) => H.AMBIENT_DEEP + (H.AMBIENT_SURFACE - H.AMBIENT_DEEP) * Math.pow(1 - t, H.LIGHT_FALL_POW);
+  assert.ok(H.LIGHT_FALL_POW > 1,
+    'a linear ambient falloff is still handing out a third of the fill halfway down');
+  /* Halfway down should already be well under half the surface fill, or the
+     descent does not read as getting darker until it is nearly over. */
+  assert.ok(fall(0.5) < H.AMBIENT_SURFACE * 0.35,
+    'halfway down the ambient is still ' + fall(0.5).toFixed(2) + ' of ' + H.AMBIENT_SURFACE);
+  assert.ok(fall(1) <= H.AMBIENT_SURFACE * 0.12,
+    'the deep floor is not a floor, it is a light');
+  assert.ok(fall(1) > 0, 'pitch black is not the goal - shape still has to read');
+  /* and it only ever gets darker */
+  for (let t = 0; t < 1; t += 0.05) {
+    assert.ok(fall(t + 0.05) <= fall(t) + 1e-12, 'ambient rose with depth at t=' + t);
+  }
+});
+
+test('the lamp is what lights the deep, not the fill', () => {
+  /* The whole point of the darkness pass: at the bottom the only meaningful
+     light is the one attached to the ship. A fill light that still competes
+     with it means the tight framing reads as a close camera rather than as the
+     edge of what the lamp reaches. */
+  const deepFill = H.AMBIENT_DEEP + H.RIM_DEEP;
+  assert.ok(H.LAMP_INTENSITY > deepFill * 100,
+    'the lamp only outguns the deep fill by ' + (H.LAMP_INTENSITY / deepFill).toFixed(0) + 'x');
+});
+
+test('fog reaches its underground colour before the sky does', () => {
+  /* Fog only ever tints what is underground, and underground is not the colour
+     of the horizon. Sharing the sky's ramp painted a bright blue over every
+     distant surface at 40 m. */
+  assert.ok(H.FOG_COLOR_RUSH > 1,
+    'fog colour tracking the sky exactly is what made the deep rock blue');
+  assert.ok(1 / H.FOG_COLOR_RUSH < 0.6,
+    'fog should be fully underground-coloured well before halfway down');
 });
 
 test('the lamp and the framing grow together', () => {

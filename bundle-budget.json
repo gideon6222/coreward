@@ -3,18 +3,28 @@
   "chunks": [
     {
       "name": "three",
-      "bytes": 489240,
+      "bytes": 491147,
       "tolerancePercent": 1
     },
     {
       "name": "index",
-      "bytes": 83641,
+      "bytes": 84249,
       "tolerancePercent": 12
     },
     {
       "name": "rock-normal.webp",
       "bytes": 46516,
       "tolerancePercent": 0.5
+    },
+    {
+      "name": "rock-grit.webp",
+      "bytes": 13626,
+      "tolerancePercent": 10
+    },
+    {
+      "name": "rock-rough.webp",
+      "bytes": 9348,
+      "tolerancePercent": 10
     }
   ]
 }

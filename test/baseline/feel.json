@@ -34,10 +34,16 @@
   },
   "depth": {
     "ramp": 72,
-    "ambientSurface": 1.75,
-    "ambientFalloff": 1.62,
-    "fogSurface": 0.02,
-    "fogGain": 0.028
+    "ambientSurface": 1.3,
+    "ambientDeep": 0.1,
+    "fallPow": 2,
+    "rimSurface": 0.42,
+    "rimDeep": 0.03,
+    "lamp": 44,
+    "lampDecay": 1.75,
+    "fogSurface": 0.016,
+    "fogGain": 0.01,
+    "fogRush": 2.4
   },
   "cost": {
     "move": 0.8,

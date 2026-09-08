@@ -145,16 +145,25 @@ export function zoomForScan(level: number): number {
    One ramp drives ambient light, sun, rim, fog and the CSS sky. Tying
    atmosphere to a game variable is the cheapest mood in the game. */
 export const DEPTH_RAMP = 72;       /* metres to reach full darkness */
-export const AMBIENT_SURFACE = 1.75;
-/* Nearly all of the ambient goes away underground now, up from most of it.
+export const AMBIENT_SURFACE = 1.30;
+/* The floor the ambient settles to deep down, and the exponent that gets it
+   there. Both arrived with the move from Lambert to MeshStandardMaterial.
 
-   The framing widened, and a wider frame with the old ambient meant simply
-   seeing more - which defeats the point of the Scanner deciding how far you
-   can see. What the camera shows and what the light reaches have to move
-   together, or one of them is lying. Past the falloff the only things legible
-   at the edge of the frame are the lamp's pool and whatever glows on its own. */
-export const AMBIENT_FALLOFF = 1.62;
-export const FOG_SURFACE = 0.02;
+   Standard is physically based in a way Lambert is not: it adds a specular
+   lobe, so every light in the scene now contributes a highlight as well as a
+   diffuse term, and the old values read as a bright, flat, plastic wash. The
+   fix is not simply "turn it down" - it is that ambient has to fall away much
+   FASTER than it used to, because ambient is the one light that reaches every
+   surface equally and is therefore the exact opposite of what a lamp in a dark
+   hole should look like.
+
+   Squared rather than linear, so the drop happens in the first third of the
+   descent where the player can feel it, instead of dribbling away over the
+   whole ramp. */
+export const AMBIENT_DEEP = 0.10;
+export const LIGHT_FALL_POW = 2;
+
+export const FOG_SURFACE = 0.016;
 /* Left where it was, and here is why raising it is a trap.
 
    FogExp2 measures distance from the CAMERA, and this camera sits twenty-odd
@@ -165,16 +174,29 @@ export const FOG_SURFACE = 0.02;
 
    The thing that actually falls off with distance in the XY plane is the
    LAMP, because it is a point light sitting on the ship. That is the lever. */
-export const FOG_GAIN = 0.028;
+export const FOG_GAIN = 0.010;
+
+/* How much faster the fog COLOUR reaches its deep value than the sky does.
+
+   The fog colour was the sky's horizon colour, which is correct at the surface
+   and badly wrong ten metres under it: at 40 m it was still #3b7196, a bright
+   blue, and it was painting that blue over every distant surface in the game.
+   The sky can keep its gradual ramp - it is the sky - but fog underground is
+   the colour of unlit rock, and it should get there almost immediately. */
+export const FOG_COLOR_RUSH = 2.4;
 
 /* How sharply the lamp's pool ends. Higher is a tighter circle with a faster
    edge, which is what makes the rock past it read as out of reach rather than
    as merely dimmer. */
 export const LAMP_DECAY = 1.75;
+/* Raised with the ambient drop. The pool has to do more of the work now that
+   there is much less fill light to sit on top of, or the same change reads as
+   "the game got dark" rather than as "the lamp is the light". */
+export const LAMP_INTENSITY = 44;
 /* The cold key light that gives unlit rock its shape. Nearly gone underground:
    at depth the only blue left in the frame should be something glowing. */
-export const RIM_SURFACE = 0.5;
-export const RIM_FALLOFF = 0.44;
+export const RIM_SURFACE = 0.42;
+export const RIM_DEEP = 0.03;
 
 /* ---------- the vignette ----------
    How much of the frame stays clear, and how black the edge goes. Deep, the

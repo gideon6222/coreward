@@ -5,6 +5,8 @@ import { W } from './config';
    through the bundler also hashes the filename, which is what lets the service
    worker cache it forever and still pick up a replacement. */
 import rockNormalUrl from './textures/rock-normal.webp';
+import rockGritUrl from './textures/rock-grit.webp';
+import rockRoughUrl from './textures/rock-rough.webp';
 
 export const lerpHex = (a: number, b: number, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
 
@@ -164,15 +166,27 @@ export function displaceLikeRock(m: THREE.Material, bump: number) {
           #endif
           vec3 wpos = transformed + cell;
           transformed += rockOffset(wpos);
-          /* Point the normal-map lookup at world XY instead of the cube's own
-             UVs, so the surface detail runs continuously across cell borders
-             rather than restarting inside every block. Assigned here because
-             this is where the world position exists; vNormalMapUv is an
-             ordinary varying and three has no further use for it after
-             <uv_vertex> has set it. Guarded because the same displacement is
-             also used on materials that carry no normal map. */
+          /* Point every map lookup at world XY instead of the cube's own UVs,
+             so the surface detail runs continuously across cell borders rather
+             than restarting inside every block. Assigned here because this is
+             where the world position exists; these are ordinary varyings and
+             three has no further use for them after <uv_vertex> has set them.
+
+             All three have to be done, and they have to agree. Grain, relief
+             and roughness are three descriptions of ONE surface: if the grit
+             says pitted here while the normal map says smooth here, the eye
+             reads plastic with a picture of rock printed on it. Each is guarded
+             because the same displacement is used on materials that carry only
+             some of them. */
+          vec2 rockUv = wpos.xy * ${ROCK_NORMAL_SCALE.toFixed(4)};
           #ifdef USE_NORMALMAP
-            vNormalMapUv = wpos.xy * ${ROCK_NORMAL_SCALE.toFixed(4)};
+            vNormalMapUv = rockUv;
+          #endif
+          #ifdef USE_MAP
+            vMapUv = rockUv;
+          #endif
+          #ifdef USE_ROUGHNESSMAP
+            vRoughnessMapUv = rockUv;
           #endif
         }`
       );
@@ -187,76 +201,65 @@ export const crateGeo = new THREE.BoxGeometry(1, 0.62, 0.62);
 export const crackGeo = new THREE.BoxGeometry(1, 0.045, 0.045);
 export const crackMat = new THREE.MeshBasicMaterial({ color: 0x08080c });
 
-/* Procedural rock grain.
+/* The procedural canvas grain that used to live here is gone.
 
-   Generated into a canvas at load rather than shipped as an image: it costs no
-   bytes, no precache entry and no extra request, and it is trivial to retune.
-   The map multiplies the material colour, so it is kept near white - it adds
-   grain and pitting without shifting the palette.
+   It was two octaves of value noise multiplied over the palette, and it was the
+   right call while nothing could be imported: no bytes, no request, trivial to
+   retune. What it could never do is look like a mineral. Noise is uniform by
+   construction - it has no bedding, no fracture, no sense that the surface was
+   ever under pressure - so it reads as speckle on plastic. The greyscale grit
+   map below does the same job (multiply the palette, do not replace it) with a
+   photograph of real stone behind it. */
 
-   Crystal shards deliberately do NOT get this. Rock grain on a gemstone reads
-   as dirt, which is why mat() takes a `grain` flag. */
-const rockTex = (() => {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const x = c.getContext('2d')!;
-  const img = x.createImageData(128, 128);
-  for (let i = 0; i < 128 * 128; i++) {
-    /* two octaves of value noise, cheap and good enough at this size */
-    const px = i % 128, py = (i / 128) | 0;
-    const coarse = Math.sin(px * 0.11) * Math.cos(py * 0.13) * 0.5 + 0.5;
-    const fine = Math.random();
-    let v = 236 - coarse * 16 - fine * 26;
-    /* occasional darker pits so faces are not uniformly speckled */
-    if (fine > 0.985) v -= 55;
-    const o = i * 4;
-    img.data[o] = img.data[o + 1] = img.data[o + 2] = v;
-    img.data[o + 3] = 255;
-  }
-  x.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(c);
+const loader = new THREE.TextureLoader();
+const tiled = (url: string, srgb = false) => {
+  const t = loader.load(url);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  /* Only the colour channel is a colour. A normal map and a roughness map are
+     DATA - vectors and a scalar - and putting them through the sRGB decode
+     three applies to colour textures bends both. This is the single easiest
+     thing to get wrong in a PBR setup and it shows up as "the lighting looks
+     slightly off" rather than as anything obviously broken. */
+  t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   return t;
-})();
+};
 
-/* Real rock relief, sampled on WORLD position.
+const rockNormal = tiled(rockNormalUrl);
+/* Greyscale, and that is the point: it multiplies the palette colour rather
+   than replacing it. The photograph supplies the grain, the pitting and the
+   mineral speckle; the hand-tuned band colour still decides what KIND of rock
+   this is. Importing the colour map instead would have put a photograph of one
+   particular cliff into every band in the game. */
+const rockGrit = tiled(rockGritUrl, true);
+/* Real roughness variation is most of what separates stone from plastic: a
+   uniform roughness reads as one moulded surface however good the normal map
+   is, because every part of it catches the lamp identically. */
+const rockRough = tiled(rockRoughUrl);
 
-   Everything else on the rock is procedural, and the grain map above is the
-   reason why: it costs no bytes and it retunes in a line. What it cannot do is
-   look like rock. Two octaves of value noise is pitting, not geology - no
-   bedding, no fracture, no sense that the surface was ever under pressure.
-
-   This is a photographed cliff face (ambientCG Rock035, CC0) reduced to its
-   NORMAL map alone. That distinction is the whole reason it fits a game that is
-   otherwise hand-palette flat-shaded low-poly: a normal map carries no colour.
-   Every block keeps the exact hue the palette gives it and gains a surface. The
-   colour map from the same download would have dropped a photograph into the
-   middle of a stylised world, which is the failure the notes warn about; the
-   normal map is the half of it that is style-neutral.
-
-   384 x 384 WebP, 45 KB. On an S26 Ultra at a pixel ratio of 2 a cell is about
-   118 physical pixels, so tiling this every four cells puts it at roughly its
-   own resolution - large enough to carry detail, small enough that the repeat
-   is not a pattern you can read.
-
-   Sampled on world XY rather than on the cube's own UVs, for the reason
-   CRAFT.md gives about per-instance data: mapped per cell, the detail would
-   restart at every cell boundary and the wall would read as a stack of
-   identical boxes. Keyed on world position it is one continuous rock face that
-   the tunnels happen to be cut out of, which is the entire point. */
-const rockNormal = new THREE.TextureLoader().load(rockNormalUrl);
-rockNormal.wrapS = rockNormal.wrapT = THREE.RepeatWrapping;
-
-const matCache = new Map<string, THREE.MeshLambertMaterial>();
+const matCache = new Map<string, THREE.MeshStandardMaterial>();
 /* `vcol` must match the geometry: enabling vertex colours on a geometry that
    has no colour attribute renders it black. Only the chunk geometries carry
    one - shards and haloes do not. */
 export function mat(color: number, glow?: number, grain = true, vcol = false) {
   const k = color + '|' + (glow || 0) + '|' + (grain ? 1 : 0) + '|' + (vcol ? 1 : 0);
   if (!matCache.has(k)) {
-    const m = new THREE.MeshLambertMaterial({
+    /* Standard rather than Lambert.
+
+       Lambert has no roughness at all: every surface scatters light identically,
+       which is exactly why the world read as moulded plastic however much relief
+       was added on top. Rock is defined as much by how UNEVENLY it catches a
+       light as by its shape, and that needs a roughness channel.
+
+       The cost is real and was measured rather than assumed - see NOTES.md. It
+       is affordable here because terrain is instanced: the shader runs per
+       pixel, not per block, and the block count never enters into it. */
+    const m = new THREE.MeshStandardMaterial({
       color: color, emissive: new THREE.Color(color).multiplyScalar(glow || 0.02),
-      flatShading: true, map: grain ? rockTex : null, vertexColors: vcol
+      flatShading: true, map: grain ? rockGrit : null, vertexColors: vcol,
+      /* Rock is not metal, and it is rough almost everywhere. The map varies
+         this around the base value; the base is what it settles to where the
+         map is mid-grey. */
+      metalness: 0, roughness: 1.0
     });
     /* The `grain` flag already means "this is rock, not a gemstone", so the
        relief rides on the same decision. Rock normals on a crystal would read
@@ -279,8 +282,9 @@ export function mat(color: number, glow?: number, grain = true, vcol = false) {
    change - everything downstream is stock three. Done in the same injection as
    the displacement, because that is where the world position is already in
    hand and computing it twice invites the two drifting apart. */
-export function rockRelief(m: THREE.MeshLambertMaterial) {
+export function rockRelief(m: THREE.MeshStandardMaterial) {
   m.normalMap = rockNormal;
+  m.roughnessMap = rockRough;
   /* Higher than a normal map usually wants, and measured rather than guessed:
      at 0.45 the effect was invisible against flat shading, and at 3.0 it read
      clearly with the facets still completely intact. The reason it takes so

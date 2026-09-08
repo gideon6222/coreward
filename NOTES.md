@@ -1832,6 +1832,82 @@ Two structural things came out of it:
 - A green local suite says nothing about a machine an order of magnitude slower
   at software WebGL. The seam is the answer to that, not bigger timeouts.
 
+## The realism pass, part one: the rock (2026-09-08)
+
+Playtest: *"the game looks a little cartoonie. can you update the graphics to
+look more realistic and detailed? make the dirt and rocks look more like
+realistic minerals, make the colors and textures more gritty."*
+
+**Lambert to MeshStandardMaterial is the change that mattered**, and it is not
+mainly about the maps. Lambert has no roughness channel at all: every surface
+scatters light identically, so however much relief is layered on top the eye
+reads one moulded material. Rock is defined as much by catching light UNEVENLY
+as by its shape.
+
+Three maps now, all greyscale or data, all sampled on world position so the
+detail runs continuously through a wall instead of restarting in every block:
+
+- **grit** (greyscale colour x AO) multiplies the palette. Greyscale on purpose:
+  the photograph supplies grain and pitting, the hand-tuned band colour still
+  decides what kind of rock it is.
+- **normal**, from the previous session.
+- **roughness**, which is most of what separates stone from plastic.
+
+The procedural canvas grain is gone. It was right while nothing could be
+imported, but noise has no bedding, no fracture and no sense of pressure, so it
+reads as speckle on plastic.
+
+### Two texture bugs that both presented as "the lighting looks wrong"
+
+**The grit map had a mean of 34/255.** It was multiplying the palette down to
+13% and then being sRGB-decoded on top of that, so the rock had almost no
+albedo left and the whole image was lit by specular and ambient - a grey-blue
+wash with the band colours gone. A map that MODULATES has to be centred high;
+it is now mean 164 over a 132-255 range.
+
+**The roughness map had a mean of 176/255**, so with a 0.95 base the effective
+roughness was ~0.65 - glossy enough for the blue rim light to sheen every
+surface in the game. Now mean 210 over 173-255 with the base at 1.0, so the map
+alone governs.
+
+Both were found by measuring the files, not by staring at the render. **Compressing
+each map's range also made them smaller**: grit went 28.6 KB to 13.3 KB and
+roughness 18.8 KB to 9.1 KB, because there is less entropy in a narrow band. The
+whole texture set is 68 KB.
+
+`sharp` applies operations in ITS OWN internal order, not call order - so
+`.normalise().linear()` silently ran the normalise last and undid the remap. The
+fix is a `.raw()` buffer between the two passes.
+
+### Fog was painting the underground with the sky
+
+The fog colour was the sky's horizon colour lerped by depth, which is correct at
+the surface and badly wrong under it: at 40 m it was still **#3b7196**, a bright
+blue, washed over every distant surface. The sky keeps its gradual ramp - it is
+the sky - but fog only ever tints what is underground, so it gets its own
+`FOG_COLOR_RUSH` and is fully underground-coloured before halfway down.
+
+### The lighting is recalibrated, and the SHAPE changed, not just the values
+
+Standard adds a specular lobe, so every light now contributes a highlight as
+well as diffuse. Turning things down is not enough: **the ambient had to fall
+away much faster**, because ambient is the one light that reaches every surface
+equally, which is the exact opposite of a lamp in a dark hole. It is squared
+now rather than linear, so the drop lands in the first third of the descent
+where it can be felt. Surface 1.30, deep floor 0.10, rim 0.42 to 0.03, lamp
+raised 30 to 44 to carry the work the fill light stopped doing.
+
+The snapshot was re-recorded deliberately after reading the diff, and three
+INTENT tests were added alongside it, because the numbers will drift again and
+the shape must not: the fill is gone before the bottom of the ramp, the lamp
+outguns the deep fill by a large factor, and fog reaches its underground colour
+before the sky does.
+
+**Cost, measured at the deep worst case: 0.443 ms/frame against 0.345 for
+Lambert** - about 28% more, and 2.7% of a 60 fps budget. 55 draw calls of a 70
+budget. Affordable with a lot of room, and instancing is why: the shader runs
+per pixel, so the block count never enters into it.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
