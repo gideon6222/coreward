@@ -229,6 +229,57 @@
   #supCell{border-color:#2f6f52;}
   /* ---------- the Outfitter ----------
 
+     A screen, not a panel floating over the game. The game is hidden entirely
+     rather than dimmed behind it: docking is a place you go, and leaving half
+     the world visible underneath makes it a pop-up however it is styled.
+
+     Everything below is drawn with gradients and repeating stripes rather than
+     images - a station interior is mostly flat panels, seams and warning tape,
+     which is exactly what CSS is good at and costs nothing to ship. */
+  .screen{
+    position:fixed; inset:0; z-index:20; display:flex; flex-direction:column;
+    background:
+      linear-gradient(180deg,#0b111b 0%,#0d1420 55%,#090e16 100%);
+    color:var(--ink);
+  }
+  .screen.hidden{display:none;}
+
+  /* the window, and the shutter grille over it */
+  .viewport{
+    position:relative; height:120px; flex:0 0 auto; overflow:hidden;
+    border-bottom:3px solid #1b2534;
+    box-shadow:inset 0 -14px 26px rgba(0,0,0,.65);
+  }
+  .vsky{position:absolute; inset:0; background:linear-gradient(180deg,#0d2b52,#5aa8dd);}
+  /* Bars across the glass. Two passes at different pitches so it reads as a
+     structure rather than as a pattern. */
+  .vgrid{
+    position:absolute; inset:0;
+    background:
+      /* mullions, then one horizontal transom, then a vignette so the glass
+         reads as recessed rather than as a picture hung on the wall */
+      repeating-linear-gradient(90deg, rgba(8,12,20,.8) 0 3px, rgba(8,12,20,0) 3px 62px),
+      linear-gradient(0deg, rgba(8,12,20,0) 0 62px, rgba(8,12,20,.7) 62px 65px, rgba(8,12,20,0) 65px 100%),
+      radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 34%, rgba(0,0,0,.72) 100%);
+  }
+  /* a lit sill under the glass, which is most of what sells "interior" */
+  .viewport::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:7px;
+    background:linear-gradient(180deg, rgba(120,190,255,.16), rgba(0,0,0,.5));
+  }
+
+  /* Enough room under the last row to scroll clear of the fixed UNDOCK
+     button, which was otherwise sitting on top of the final supply. */
+  .shelves{flex:1 1 auto; overflow-y:auto; padding-bottom:26px;}
+  .undock{
+    flex:0 0 auto; padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
+    border-top:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(10,16,24,0),#0a1018 40%);
+  }
+  .undock .wide{margin:0; width:100%;}
+
+  /* ---------- shelf furniture ----------
+
      It was a list with a heading. It is meant to read as somewhere you dock:
      a header band that stays put while the shelves scroll under it, counters
      with names, and stock that is visibly not on the shelf yet. */
@@ -236,22 +287,25 @@
      it. The first attempt gave #upgrades its own overflow, which quietly cut
      the shelves off at the fold - Life Support looked like it contained one
      item and the Ordnance counter did not appear to exist. */
-  .shopsheet{padding:0;}
   .shopbar{
-    position:sticky; top:0; z-index:2;
     display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:14px 16px; background:linear-gradient(180deg,#16202f,#0e1622);
+    padding:12px 16px; flex:0 0 auto;
+    background:linear-gradient(180deg,#18232f,#0f1826);
     border-bottom:1px solid var(--line);
+    /* hazard tape along the bottom edge of the fascia */
+    box-shadow:inset 0 -4px 0 0 rgba(255,200,97,.14);
   }
-  .shopname{font-size:17px; font-weight:800; letter-spacing:.16em;}
+  .shopname{font-size:18px; font-weight:700; letter-spacing:.18em;}
   .shopsub{font-size:10.5px; letter-spacing:.1em; color:var(--dim); margin-top:3px;}
   .shopcred{font-size:15px; font-weight:800; color:var(--amber); white-space:nowrap;}
-  .shopsheet #upgrades, .shopsheet #supplies{padding:0 16px;}
-  .shopsheet .wide{margin:12px 16px 16px; width:calc(100% - 32px);}
+  .screen #upgrades, .screen #supplies{padding:0 16px;}
+  /* A counter reads as a label riveted to the bulkhead: a short bright rule
+     before the name, a long dim one after it. */
   .counter{
-    display:flex; align-items:center; gap:8px;
-    margin:16px 0 2px; font-size:10.5px; font-weight:800; letter-spacing:.16em; color:var(--dim);
+    display:flex; align-items:center; gap:9px;
+    margin:18px 0 2px; font-size:10.5px; font-weight:700; letter-spacing:.18em; color:#93a6c4;
   }
+  .counter::before{content:""; width:14px; height:2px; background:var(--cyan); opacity:.7;}
   .counter::after{content:""; flex:1; height:1px; background:var(--line);}
   /* A sealed row is deliberately still a row: seeing that there IS something
      at 90 m is the whole reason to keep going down. */
@@ -413,19 +467,26 @@
   </div>
 </div>
 
-<div id="shop" class="modal hidden">
-  <div class="sheet shopsheet">
-    <div class="shopbar">
-      <div class="shoptitle">
-        <div class="shopname">OUTFITTER</div>
-        <div class="shopsub">Surface Station · <span id="shopPlanet">—</span></div>
-      </div>
-      <div class="shopcred">◈ <span id="shopCredits">0</span></div>
+<div id="shop" class="screen hidden">
+  <!-- The viewport. It shows the sky of the planet you are actually docked
+       above, which is the one line of set dressing that makes the station a
+       place rather than a menu with a border drawn on it. -->
+  <div class="viewport"><div class="vsky" id="vSky"></div><div class="vgrid"></div></div>
+
+  <div class="shopbar">
+    <div class="shoptitle">
+      <div class="shopname">OUTFITTER</div>
+      <div class="shopsub">DOCK 04 &middot; <span id="shopPlanet">&mdash;</span></div>
     </div>
+    <div class="shopcred">&#9672; <span id="shopCredits">0</span></div>
+  </div>
+
+  <div class="shelves">
     <div id="upgrades"></div>
     <div id="supplies"></div>
-    <button id="shopClose" class="wide">LEAVE THE STATION</button>
   </div>
+
+  <div class="undock"><button id="shopClose" class="wide">UNDOCK</button></div>
 </div>
 
 <div id="manifest" class="modal hidden">

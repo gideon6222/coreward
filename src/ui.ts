@@ -1,5 +1,5 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult, costOf, matCost } from './config';
+         coreDepth, planetName, traitOf, valueMult, costOf, matCost, skyHi, skyLo } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
@@ -35,7 +35,8 @@ export const ui = {
   ordBomb: mustEl('ordBomb'), ordLaser: mustEl('ordLaser'),
   power: mustEl('power'), powerChip: mustEl('powerChip'),
   shopPlanet: mustEl('shopPlanet'),
-  verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes')
+  verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes'),
+  vSky: mustEl('vSky')
 };
 
 /* Rendered once, on first open, because a changelog does not change while the
@@ -230,7 +231,11 @@ const GROUPS: { id: Upgrade['group']; label: string }[] = [
 
 export function buildShop() {
   ui.shopCredits.textContent = Math.floor(g.credits).toLocaleString();
-  ui.shopPlanet.textContent = planetName(g.planet);
+  ui.shopPlanet.textContent = planetName(g.planet).toUpperCase();
+  /* The window looks out on the planet you are actually above. */
+  ui.vSky.style.background = 'linear-gradient(180deg,#' +
+    skyHi(g.planet).toString(16).padStart(6, '0') + ',#' +
+    skyLo(g.planet).toString(16).padStart(6, '0') + ')';
   ui.upgrades.innerHTML = '';
 
   for (const grp of GROUPS) {

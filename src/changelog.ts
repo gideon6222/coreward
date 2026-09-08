@@ -25,7 +25,7 @@ export const CHANGELOG: Release[] = [
       'The ship flies freely instead of hopping cell to cell.',
       'Half-drilled blocks stay half-drilled - come back and finish them off.',
       'The dark is much darker, and the edges of the screen fall away to nothing.',
-      'The Outfitter is a full station screen rather than a pop-up.',
+      'The Outfitter is a station you dock at, with a window onto the planet.',
       'A proper typeface, and this list.'
     ]
   },
