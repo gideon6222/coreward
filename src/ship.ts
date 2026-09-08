@@ -1,48 +1,101 @@
 import * as THREE from 'three';
-import { scene } from './scene';
-import { makeGlow } from './materials';
+import { scene, SHIP_LAYER } from './scene';
+import { makeGlow, asMetal } from './materials';
 
 /* The drill ship.
 
    Small on purpose. With 18 rows framed it occupies maybe thirty pixels, so
    "detail" here means silhouette rather than surface: swept fins read at that
-   size, panel lines do not. The parts that survive shrinking are the tapered
-   nose, the fin sweep, the dark ring separating the canopy from the hull, and
-   the spiral on the auger once it turns. */
+   size, panel lines do not.
+
+   Playtest: *"change the ship to look less bubbly and cartoonish."* Three
+   things were doing that, and none of them was the amount of detail:
+
+   - **A sphere for a canopy.** A sphere is the one shape with no orientation
+     and no facets, so it reads as a bubble at any size. It is a faceted wedge
+     now, which is the single biggest change in here.
+   - **Bright saturated cyan.** Toy colours read as a toy. The livery is
+     gunmetal and worn ochre, with the cyan cut back to running lights, where
+     it earns its place by making the hull legible in the dark.
+   - **Everything was a cylinder.** Six and eight-sided prisms with rounded
+     silhouettes and no hard corners. There are chamfered blocks, exposed
+     struts and a heavy drill collar now - shapes that catch a light on one
+     face and not the next.
+
+   Metal is MeshStandardMaterial, for the same reason the rock is: metalness
+   and roughness are what separate steel from painted plastic, and Lambert has
+   neither. */
 
 export const player = new THREE.Group();
 export const rig = new THREE.Group();
 player.add(rig);
 
-const hullMat = new THREE.MeshLambertMaterial({ color: 0x3aa8d8, emissive: 0x0a2a3a, flatShading: true });
-const trimMat = new THREE.MeshLambertMaterial({ color: 0xe8eef8, emissive: 0x1a2230, flatShading: true });
-export const darkMat = new THREE.MeshLambertMaterial({ color: 0x28303c, flatShading: true });
+/* Worn, not showroom. High metalness with middling roughness is machined metal
+   that has been down a hole; low roughness would be chrome and would read as
+   toy plastic again from the other direction. */
+const hullMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x2b313a, metalness: 0.55, roughness: 0.56, flatShading: true
+}), 0.35);
+/* The one warm accent. Every working machine has a painted part that has taken
+   a beating, and one accent colour is what stops a grey ship reading as a grey
+   smudge at thirty pixels. */
+const trimMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x8a5420, metalness: 0.35, roughness: 0.66, flatShading: true
+}), 0.3);
+export const darkMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x12161c, metalness: 0.5, roughness: 0.6, flatShading: true
+}), 0.3);
+const steelMat = asMetal(new THREE.MeshStandardMaterial({
+  /* The pale steel was most of what still read as white at play scale:
+     bright bare metal on a small object against dark rock is a highlight, not
+     a colour. Kept metallic, taken well down in value. */
+  color: 0x474e57, metalness: 0.8, roughness: 0.42, flatShading: true
+}), 0.45);
 
-/* ---------- body ---------- */
+/* ---------- body ----------
 
-const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, 0.58, 8), hullMat);
+   A chamfered block rather than a cylinder: four-sided prisms rotated 45 give
+   flat faces that take the lamp unevenly, which is what makes a shape read as
+   machined. */
+const hull = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.56, 0.34), hullMat);
 rig.add(hull);
 
-/* tapered cowl, so the ship has a nose instead of ending in a flat disc */
-const cowl = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.21, 0.17, 8), trimMat);
-cowl.position.y = 0.36;
+/* the chamfer - a narrower block sat proud of the main body, so the silhouette
+   has a step in it instead of one unbroken edge */
+const spine = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.26), darkMat);
+spine.position.y = -0.02;
+rig.add(spine);
+
+/* A wedge nose. Four segments, so it is a pyramid rather than a cone: the
+   difference is four hard edges catching light at four different angles. */
+const cowl = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.24, 0.22, 4), hullMat);
+cowl.position.y = 0.37;
+cowl.rotation.y = Math.PI / 4;
 rig.add(cowl);
 
-/* the collar the drill hangs off */
-const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.26, 0.11, 8), trimMat);
+/* The collar the drill hangs off - heavy, and stepped, because this is the part
+   of a mining machine that takes the load. */
+const collar = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.3), steelMat);
 collar.position.y = -0.3;
 rig.add(collar);
+const collarLip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.07, 0.34), trimMat);
+collarLip.position.y = -0.37;
+rig.add(collarLip);
 
-/* Swept fins rather than the old round pods. A cylinder reads as a blob at this
-   scale; an angled blade still reads as a shape. */
+/* Exposed struts down each flank. Two thin bars read as structure at small
+   scale where a panel line reads as nothing at all. */
 for (const sx of [-1, 1]) {
-  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.38, 0.2), darkMat);
-  fin.position.set(sx * 0.25, 0.02, -0.02);
-  fin.rotation.z = sx * 0.22;
+  const strut = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.5, 0.045), steelMat);
+  strut.position.set(sx * 0.25, -0.02, 0.14);
+  rig.add(strut);
+  /* swept blade, kept from the old ship because it was the part that worked */
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.34, 0.22), darkMat);
+  fin.position.set(sx * 0.26, 0.04, -0.04);
+  fin.rotation.z = sx * 0.2;
   rig.add(fin);
-  const tip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.16), hullMat);
-  tip.position.set(sx * 0.31, -0.16, -0.02);
-  tip.rotation.z = sx * 0.22;
+  const tip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.16), trimMat);
+  tip.position.set(sx * 0.31, -0.15, -0.04);
+  tip.rotation.z = sx * 0.2;
   rig.add(tip);
 }
 
@@ -128,28 +181,45 @@ rig.add(bit);
 
 /* ---------- cockpit ---------- */
 
+/* A faceted wedge, not a sphere.
+
+   This is the change that does most of the work. A sphere has no orientation
+   and no facets, so it reads as a bubble stuck on the front at any size, and
+   no amount of hardware elsewhere fixes that. Four segments give a canopy with
+   a ridge and two angled panes, which is what a cockpit looks like and also
+   catches the lamp differently on each side as the ship turns.
+
+   Dark glass with a little emissive rather than a glowing yellow ball: the
+   light should look like it is coming from INSIDE a canopy, not like the
+   canopy is the light. */
 const cab = new THREE.Mesh(
-  new THREE.SphereGeometry(0.145, 12, 10),
-  new THREE.MeshLambertMaterial({ color: 0xffe27a, emissive: 0xa07a10 })
+  new THREE.CylinderGeometry(0.055, 0.13, 0.17, 4),
+  new THREE.MeshStandardMaterial({
+    color: 0x2a3138, emissive: 0x9a6a12, emissiveIntensity: 0.55,
+    metalness: 0.4, roughness: 0.25, flatShading: true
+  })
 );
-cab.position.set(0, 0.08, 0.26);
+cab.position.set(0, 0.1, 0.24);
+cab.rotation.set(Math.PI / 2.35, Math.PI / 4, 0);
 rig.add(cab);
 
-/* A dark ring around the canopy. This is the single highest-value detail at
-   small scale: it separates the lit cockpit from the lit hull, which otherwise
-   merge into one bright smudge. */
-const ring = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.026, 6, 14), darkMat);
-ring.position.set(0, 0.08, 0.27);
+/* The frame around the canopy. Highest-value detail at small scale: it
+   separates the lit cockpit from the lit hull, which otherwise merge into one
+   bright smudge. Square now, to match the wedge. */
+const ring = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.03), steelMat);
+ring.position.set(0, 0.09, 0.2);
 rig.add(ring);
 
-const cabGlow = makeGlow(0xffe9a0, 0.7, 0.4);
-cabGlow.position.set(0, 0.08, 0.4);
+/* Much smaller than it was. The cockpit should be a lit window, not a lantern -
+   an oversized glow sprite here is most of what made the ship read as a toy. */
+const cabGlow = makeGlow(0xffca7a, 0.34, 0.32);
+cabGlow.position.set(0, 0.1, 0.36);
 rig.add(cabGlow);
 
 /* shoulder running lights, so the hull has a readable outline in the dark */
-for (const sx of [-0.3, 0.3]) {
-  const lamp = makeGlow(0x6fe8ff, 0.3, 0.55);
-  lamp.position.set(sx, -0.14, 0.2);
+for (const sx of [-0.28, 0.28]) {
+  const lamp = makeGlow(0x6fe8ff, 0.17, 0.5);
+  lamp.position.set(sx, -0.16, 0.18);
   rig.add(lamp);
 }
 
@@ -157,8 +227,9 @@ for (const sx of [-0.3, 0.3]) {
 
 export const flames: { cone: THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>; glow: THREE.Sprite }[] = [];
 for (const sx of [-0.19, 0.19]) {
-  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.055, 0.1, 6), darkMat);
-  nozzle.position.set(sx, 0.3, 0);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.06, 0.13, 4), steelMat);
+  nozzle.position.set(sx, 0.31, 0);
+  nozzle.rotation.y = Math.PI / 4;
   rig.add(nozzle);
 
   const fl = new THREE.Mesh(
@@ -248,6 +319,114 @@ rig.scale.setScalar(0.82);
    the facing turns the result. It is then a roll about the drill in every
    facing, which is the one thing it was ever meant to be. */
 rig.rotation.order = 'ZYX';
+
+/* ---------- bolt-on hardware ----------
+
+   Playtest: *"make it so upgrades to the ship show visual changes."*
+
+   Every upgrade adds something to the OUTLINE, because at thirty pixels the
+   silhouette is the only thing that reads - the drill-tier repaint proved that
+   the expensive way, being completely correct and completely invisible. Tanks
+   stick out sideways, radiators stick up, the sensor mast breaks the top edge,
+   the cargo pod squares off the back.
+
+   Built once and shown or hidden, rather than created and destroyed: this runs
+   on every purchase and on load, and churning geometry to change a boolean is
+   how a frame hitches on the one screen the player is watching closely. */
+const hardware = new THREE.Group();
+rig.add(hardware);
+
+function bolt(geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number,
+              rot?: [number, number, number]) {
+  const mesh = new THREE.Mesh(geo, m);
+  mesh.position.set(x, y, z);
+  if (rot) mesh.rotation.set(rot[0], rot[1], rot[2]);
+  mesh.visible = false;
+  hardware.add(mesh);
+  return mesh;
+}
+
+const tankGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.3, 6);
+const radGeo = new THREE.BoxGeometry(0.02, 0.13, 0.16);
+const podGeo = new THREE.BoxGeometry(0.34, 0.16, 0.2);
+const mastGeo = new THREE.CylinderGeometry(0.016, 0.022, 0.24, 4);
+const dishGeo = new THREE.CylinderGeometry(0.09, 0.02, 0.05, 7);
+const jetGeo = new THREE.CylinderGeometry(0.05, 0.035, 0.09, 4);
+
+/* Repeated parts are instanced, not one mesh each.
+
+   The first version bolted on thirteen separate meshes and took the worst-case
+   draw count from 55 to 67 against a budget of 70 - three away from failing CI,
+   for hardware that is four copies of two shapes. Instancing is what the
+   terrain already does and it costs one draw call per KIND rather than per
+   part, so the count no longer moves with how upgraded the ship is.
+
+   `count` is the lever: setting it to n draws the first n slots, which is
+   exactly the semantics an upgrade ladder wants. */
+function boltRow(geo: THREE.BufferGeometry, m: THREE.Material,
+                 places: [number, number, number][], rot?: [number, number, number]) {
+  const mesh = new THREE.InstancedMesh(geo, m, places.length);
+  const o = new THREE.Object3D();
+  places.forEach((p, i) => {
+    o.position.set(p[0], p[1], p[2]);
+    if (rot) o.rotation.set(rot[0], rot[1], rot[2]);
+    o.updateMatrix();
+    mesh.setMatrixAt(i, o.matrix);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.count = 0;
+  mesh.frustumCulled = false;
+  hardware.add(mesh);
+  return mesh;
+}
+
+/* Fuel: paired tanks down the flanks, one pair per two levels. */
+const tanks = boltRow(tankGeo, steelMat, [
+  [-0.29, -0.02, -0.1], [0.29, -0.02, -0.1],
+  [-0.29, -0.02, 0.12], [0.29, -0.02, 0.12]
+]);
+/* Cooling: radiator fins along the top, which is where heat would actually be
+   thrown from and also the only edge of the ship nothing else uses. */
+const rads = boltRow(radGeo, trimMat, [
+  [-0.15, 0.22, -0.13], [-0.075, 0.22, -0.13], [0.075, 0.22, -0.13], [0.15, 0.22, -0.13]
+]);
+/* Cargo: a hold slung behind the body, so a full hold has somewhere to be. */
+const pod = bolt(podGeo, hullMat, 0, -0.14, -0.19);
+/* Scanner: a mast and dish. The Scanner already changes the framing and the
+   headlight cone; this is the third thing one purchase buys. */
+const mast = bolt(mastGeo, steelMat, 0.13, 0.3, -0.08);
+const dish = bolt(dishGeo, trimMat, 0.13, 0.42, -0.08, [Math.PI / 2.6, 0, 0]);
+/* Thrust: a second pair of jets outboard of the originals. */
+const jets = boltRow(jetGeo, steelMat, [[-0.3, 0.26, 0], [0.3, 0.26, 0]]);
+
+export function setUpgradeHardware(up: Record<string, number>) {
+  const on = (m: THREE.Mesh, yes: boolean) => { m.visible = yes; };
+  /* Thresholds are spread across each ladder rather than bunched at the top, so
+     that early purchases - the ones actually being made in the first hour -
+     are the ones that visibly change the ship. */
+  const upto = (lvl: number, steps: number[]) => steps.filter((n) => lvl >= n).length;
+  tanks.count = upto(up.tank || 0, [2, 4, 6, 8]);
+  rads.count = upto(up.cool || 0, [2, 4, 6, 8]);
+  jets.count = (up.thrust || 0) >= 4 ? 2 : 0;
+  on(pod, (up.cargo || 0) >= 3);
+  on(mast, (up.scan || 0) >= 2);
+  on(dish, (up.scan || 0) >= 5);
+  /* The drill itself grows. This is the one upgrade whose hardware already
+     existed, and scaling it is what makes the tier legible next to the colour
+     change that on its own was not. */
+  const d = 1 + Math.min(9, up.drill || 0) * 0.055;
+  bit.scale.set(d, 1 + (d - 1) * 0.6, d);
+  shipToLayer();
+}
+
+/* Put every part of the ship on its own layer, so the lamp does not light it.
+   Called again by setUpgradeHardware(), because bolt-on parts appear later and
+   a part left on layer 0 would be the one thing on the ship the lamp blows
+   out. */
+export function shipToLayer() {
+  player.traverse((o) => o.layers.set(SHIP_LAYER));
+}
+shipToLayer();
 
 scene.add(player);
 export const FACE_ANGLE = { down: 0, right: Math.PI / 2, left: -Math.PI / 2, up: Math.PI };

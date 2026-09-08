@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { W } from './config';
+import { renderer } from './scene';
 /* Imported rather than referenced out of public/: `base` is './' for Pages
    subpaths, so an absolute /textures/ URL would 404 on the live site. Going
    through the bundler also hashes the filename, which is what lets the service
@@ -298,5 +299,47 @@ export function rockRelief(m: THREE.MeshStandardMaterial) {
      screenshot of a static frame understates. */
   m.normalScale = new THREE.Vector2(2.6, 2.6);
 }
+/* Something for metal to reflect.
+
+   A MeshStandardMaterial with high metalness has NO diffuse term at all - a
+   metal's colour comes entirely from what it reflects. With no environment
+   that is nothing, so the ship came out as blown-out specular hotspots where
+   the lamp caught it and near-black everywhere else: a white blob at play
+   scale, which is the opposite of the gunmetal it was asking for.
+
+   This is the cheapest possible fix and it is the correct one rather than a
+   workaround: a tiny gradient standing in for "dark rock below, faint warm
+   light above", run through PMREM so roughness blurs it properly. 64x64, built
+   once at load, no bytes shipped.
+
+   Applied per material rather than as scene.environment on purpose. As a scene
+   environment it would light the terrain too, adding exactly the flat fill the
+   darkness pass just spent an afternoon removing. */
+const metalEnv = (() => {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const x = c.getContext('2d')!;
+  const grad = x.createLinearGradient(0, 0, 0, 64);
+  grad.addColorStop(0, '#4a4436');     /* warm bounce from above */
+  grad.addColorStop(0.5, '#20242c');
+  grad.addColorStop(1, '#0a0b0e');     /* dark rock underfoot */
+  x.fillStyle = grad;
+  x.fillRect(0, 0, 64, 64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const env = pmrem.fromEquirectangular(tex).texture;
+  pmrem.dispose();
+  tex.dispose();
+  return env;
+})();
+
+/* Give a material an environment so its metalness means something. */
+export function asMetal(m: THREE.MeshStandardMaterial, intensity = 1) {
+  m.envMap = metalEnv;
+  m.envMapIntensity = intensity;
+  return m;
+}
+
 export const shade = (hex: number, f: number) => new THREE.Color(hex).multiplyScalar(f).getHex();
 export const worldX = (x: number) => x - (W - 1) / 2;

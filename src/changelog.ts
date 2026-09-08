@@ -16,9 +16,19 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.9.4';
+export const VERSION = '0.10.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.10.0', date: '2026-09-08', title: 'Real rock, real ship',
+    notes: [
+      'The rock is photographed stone now - grain, cracks and roughness, lit properly.',
+      'It is much darker down there, and the lamp is what you see by.',
+      'The ship is a machine instead of a bubble: hard edges, gunmetal, a proper canopy.',
+      'Upgrades bolt visible hardware onto the ship - tanks, radiators, a cargo pod, a sensor dish.',
+      'A bigger drill for every drill tier, so the tier is something you can see.'
+    ]
+  },
   {
     version: '0.9.4', date: '2026-09-07', title: 'Smoother stop',
     notes: [

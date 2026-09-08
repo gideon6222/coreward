@@ -7,7 +7,7 @@ import type { Upgrade } from './types';
 import { VERSION, CHANGELOG } from './changelog';
 import { haulValue } from './world';
 import { lamp } from './scene';
-import { setDrillTier } from './ship';
+import { setDrillTier, setUpgradeHardware } from './ship';
 import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './telemetry';
 import { R } from './runtime';
@@ -327,6 +327,8 @@ function buildUpgradeRow(u: Upgrade) {
     if (u.key === 'tank') g.fuel = S.fuelCap();
     if (u.key === 'scan') lamp.distance = S.light();
     if (u.key === 'drill') setDrillTier(g.up.drill);
+    /* Every upgrade may bolt something on, not just the drill. */
+    setUpgradeHardware(g.up);
     sfx.buy();
     save(); buildShop(); updateHUD();
     flash('rgba(120,255,200,.25)', 160);

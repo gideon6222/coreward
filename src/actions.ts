@@ -14,7 +14,7 @@ import { spray } from './particles';
 import { takeDrop, syncDrops, leaveDrop } from './drops';
 import { fireBeam } from './beam';
 import { setMark } from './mark';
-import { setDrillTier } from './ship';
+import { setDrillTier, setUpgradeHardware } from './ship';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX } from './feel';
@@ -381,6 +381,7 @@ export function hardReset() {
   resetBlockCache();
   lamp.distance = S.light();
   setDrillTier(0);
+  setUpgradeHardware(g.up);
   goSurface();
   g.mode = 'play';
   ui.pause.classList.add('hidden');

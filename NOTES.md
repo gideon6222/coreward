@@ -1908,6 +1908,60 @@ Lambert** - about 28% more, and 2.7% of a 60 fps budget. 55 draw calls of a 70
 budget. Affordable with a lot of room, and instancing is why: the shader runs
 per pixel, so the block count never enters into it.
 
+## The realism pass, part two: the ship (2026-09-08)
+
+Playtest: *"change the ship to look less bubbly and cartoonish... make it so
+upgrades to the ship show visual changes."*
+
+Three things were doing the "bubbly", and none of them was the amount of detail:
+a **sphere** for a canopy (a sphere has no orientation and no facets, so it
+reads as a bubble at any size), **bright saturated cyan**, and the fact that
+every part was a cylinder. It is a faceted wedge canopy, gunmetal with one worn
+ochre accent, and chamfered blocks with exposed struts now.
+
+### The ship has its own lighting layer, and that is the load-bearing part
+
+The ship rendered as a **white blob** whatever colour its hull was painted, and
+it took an embarrassing number of passes to find out why: the lamp is a point
+light sitting ON the ship, so the ship was about four times closer to it than
+the rock it was lighting. Every albedo arrived saturated.
+
+Worse than the look: the ship's brightness moved with `S.light()`, so **buying a
+Scanner level changed how the ship looked** - a gameplay upgrade reaching into
+art direction by accident.
+
+The ship is on layer 1 now. Ambient and rim reach it, the lamp and the sun do
+not, and it carries one small warm key light of its own. It therefore looks the
+same at ten metres and at ninety, which is what lets its material read as metal
+at all.
+
+**Two dead ends worth recording, because both looked like the answer.** Lowering
+metalness did nothing on its own - a metal with no environment has no diffuse
+term either, so it is specular hotspots and black. And the procedural env map
+that fixed *that* then needed its own colour space set, or the reflection comes
+back about four times too bright. Both are in CRAFT.
+
+The diagnosis was only settled by measuring: hiding the ship entirely, then
+reading back actual pixels with `gl.readPixels` and recolouring materials one at
+a time. The mesh everything had been blamed on turned out to be a small cap at
+the top; the pale mass was the *steel* parts, and their values were warm
+mid-greys - "white" was mostly the contrast against very dark rock.
+
+### Upgrades bolt on hardware
+
+Every upgrade adds something to the OUTLINE, because at thirty pixels the
+silhouette is the only thing that reads - the drill-tier repaint already proved
+that the expensive way. Tanks stick out sideways, radiators break the top edge,
+the sensor mast and dish break it again, the cargo pod squares off the back, and
+the drill itself grows with its tier. Thresholds are spread across each ladder
+rather than bunched at the top, so the early purchases are the visible ones.
+
+**They are instanced.** The first version bolted on thirteen separate meshes and
+took the worst case from 55 to **67 draw calls against a budget of 70** - three
+from failing CI, for what is four copies of two shapes. One InstancedMesh per
+KIND, with `count` as the upgrade lever, brought it to 60 and made the count
+stop moving with how upgraded the ship is.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

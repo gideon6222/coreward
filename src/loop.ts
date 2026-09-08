@@ -22,7 +22,7 @@ import {
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
 } from './feel';
-import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog } from './scene';
+import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
@@ -539,6 +539,8 @@ export function tick(raw: number, draw = true) {
   player.scale.set(1 / sq, sq, 1);
   rig.rotation.y = bank;
   lamp.position.set(px, py, 1.7);
+  /* the ship's own key travels with it, slightly in front and above */
+  shipKey.position.set(px + 0.35, py + 0.5, 1.5);
   lamp.distance = S.light();
 
   /* The headlight. Invisible in daylight and mixed in with depth, because a

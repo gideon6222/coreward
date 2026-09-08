@@ -53,8 +53,35 @@ scene.add(backdrop);
 /* Decay 1.75, not 1.25. The pool has a hard edge now instead of trailing off
    across half the frame, which is the whole reason the tight framing reads as
    "this is as far as the light reaches" rather than as a close camera. */
+/* The ship renders on its own layer, and the point of that is which light does
+   NOT reach it.
+
+   The lamp is a point light sitting on the ship, so the ship was roughly four
+   times closer to it than the rock it was lighting. Whatever colour its hull
+   was painted, it arrived saturated: a dark gunmetal body rendered as a white
+   blob. Worse, its brightness moved with `S.light()` - buying a Scanner level
+   changed how the SHIP looked, which is a gameplay upgrade reaching into art
+   direction by accident.
+
+   The ship is lit by the world's ambient, sun and rim, plus one small key light
+   of its own that travels with it. It therefore looks the same at ten metres
+   and at ninety, which is what lets its material read as metal at all. */
+export const SHIP_LAYER = 1;
+
 export const lamp = new THREE.PointLight(0xffd9a0, LAMP_INTENSITY, S.light(), LAMP_DECAY);
 scene.add(lamp);
+/* Everything except the lamp also lights the ship. */
+amb.layers.enable(SHIP_LAYER);
+sun.layers.enable(SHIP_LAYER);
+rim.layers.enable(SHIP_LAYER);
+camera.layers.enable(SHIP_LAYER);
+
+/* The ship's own key. Warm, short-range and weak, so it models the hull's
+   facets without ever washing them out - and constant, so the ship does not
+   change appearance when the lamp is upgraded. */
+export const shipKey = new THREE.PointLight(0xffe4cc, 1.15, 4, 1.4);
+shipKey.layers.set(SHIP_LAYER);
+scene.add(shipKey);
 
 export function resize() {
   const w = window.innerWidth, h = window.innerHeight;

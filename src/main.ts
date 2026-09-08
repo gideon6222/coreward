@@ -8,7 +8,7 @@ import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './sce
 import { syncBlocks } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
-import { setDrillTier } from './ship';
+import { setDrillTier, setUpgradeHardware } from './ship';
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock } from './loop';
 import { sfx } from './audio';
@@ -42,6 +42,7 @@ syncBlocks(true);
 setMark(g.best.depth);
 syncDrops();
 setDrillTier(g.up.drill);
+setUpgradeHardware(g.up);
 audioLabels();
 updateHUD();
 stampBuild();
@@ -72,6 +73,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* The renderer's own handles, for tuning an art pass live. Every lighting
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
-    scene, camera, lamp, amb, sun, rim, fog, renderer
+    scene, camera, lamp, amb, sun, rim, fog, renderer,
+    setDrillTier, setUpgradeHardware
   };
 }
