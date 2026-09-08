@@ -11,3 +11,11 @@ interface Window {
      on sound entirely. */
   webkitAudioContext?: typeof AudioContext;
 }
+
+/* Vite rewrites an asset import to the hashed, base-relative URL of the emitted
+   file. Declared here rather than by pulling in `vite/client`, which would also
+   drag in every other ambient Vite type for the sake of one module shape. */
+declare module '*.webp' {
+  const src: string;
+  export default src;
+}

@@ -1517,6 +1517,60 @@ Verified by reintroducing the bug rather than by trusting it: with `LANE_PULL`
 set to 0, five of the seven new golden tests fail and the e2e test fails on
 "the ship never got past its own shaft".
 
+## Real rock: the first texture (2026-09-07)
+
+Playtest: *"I also want you to use premade assets to improve the game. Use them
+to add more dimension to the game, better textures, better look and feel
+overall."*
+
+Asked once before and answered with a font and a reasoned no on 3D models. The
+no was about *models*, and it still holds - the ship is thirty pixels tall. It
+was never an argument against **textures**, which the rule at the top of
+`ASSETS.md` has always put on the import side, and this is the game's biggest
+surface by a wide margin.
+
+**ambientCG Rock035, CC0, normal map only, 384 x 384 WebP, 46 KB.** The colour
+map from the same download stayed on disk deliberately: a normal map carries no
+colour, so every block keeps the exact palette hue it had and gains a surface.
+Importing the colour would have dropped a photograph into a hand-palette
+flat-shaded world.
+
+**Sampled on world XY, not the cube's UVs.** Per cell, the detail restarts at
+every boundary and the wall reads as a stack of identical boxes - the same
+lesson the seams and the glow both taught. `vNormalMapUv` is an ordinary
+varying, so it is reassigned in the existing displacement injection, where the
+world position is already in hand. Everything downstream is stock three:
+`perturbNormal2Arb` builds its frame from screen-space derivatives, so flat
+shading needs no tangent attribute.
+
+**One tile per four cells, and the size follows from that.** A cell is about 118
+physical pixels on an S26 Ultra at the pixel ratio cap of 2, so four cells is
+~470 px and 384 is native. 1K would have been three quarters of a megabyte to
+display at a third of its resolution.
+
+**`normalScale` is 2.6, which is measured and looks wrong.** At 0.45 the effect
+was invisible; at 3.0 it read clearly with the facets entirely intact. Spreading
+one tile over four cells means only the map's low-frequency component survives,
+so it takes a large multiplier to see anything. Verified by building with the
+map off and comparing the same seeded frame at 40 m. **This is the number to
+change**, and it wants judging on the phone - the whole effect is in how the
+lamp rakes across the surface as the ship moves, which a static desktop
+screenshot understates.
+
+**Costs, measured.** 46 KB on the wire against 161 KB of gzipped code and HTML,
+so a 29% bigger download - and it is cached like three.js is, because Vite
+hashes it and Workbox precaches it. `webp` had to be added to the Workbox glob,
+exactly as `woff2` did. Draw calls are unchanged at 50: a normal map is a
+texture on a material that already existed. The three.js chunk grew 0.51%,
+which is real - enabling `normalMap` pulls its shader chunks past tree-shaking.
+
+**The size guard now watches assets too.** It only looked at `.js`, and the game
+had just gained its first shipped binary. A texture regenerated at the wrong
+resolution is a one-character mistake that lands on every player's mobile data
+and that nothing else in the repo would notice, so `rock-normal.webp` is in
+`bundle-budget.json` at a 0.5% tolerance - tighter than any code chunk, because
+it only ever changes on purpose.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

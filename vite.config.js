@@ -87,7 +87,7 @@ export default defineConfig({
            installed app does not depend on a font CDN, and leaving it out of
            the precache would have thrown that away: offline, the game would
            silently fall back to the system face. */
-        globPatterns: ['**/*.{js,css,html,svg,webmanifest,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,webmanifest,woff2,webp}'],
         /* the sourcemap is ~2 MB and only devtools ever asks for it */
         globIgnores: ['**/*.map'],
         navigateFallback: 'index.html',

@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.9.1';
+export const VERSION = '0.9.2';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.9.2', date: '2026-09-07', title: 'Real rock',
+    notes: [
+      'The rock is photographed stone now, not flat panels - the lamp catches the surface as you fly.',
+      'The detail runs continuously through the walls instead of restarting at every block.'
+    ]
+  },
   {
     version: '0.9.1', date: '2026-09-07', title: 'Flying straight',
     notes: [

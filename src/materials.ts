@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 import { W } from './config';
+/* Imported rather than referenced out of public/: `base` is './' for Pages
+   subpaths, so an absolute /textures/ URL would 404 on the live site. Going
+   through the bundler also hashes the filename, which is what lets the service
+   worker cache it forever and still pick up a replacement. */
+import rockNormalUrl from './textures/rock-normal.webp';
 
 export const lerpHex = (a: number, b: number, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
 
@@ -117,6 +122,12 @@ export const ROCK_BUMP: Record<string, number> = {
   rubble: 0.40
 };
 
+/* How many world units of rock one tile of the normal map covers, as a
+   multiplier on world position: 0.25 is one tile per four cells. Declared here
+   rather than beside the texture because the vertex shader below bakes it in as
+   a literal, and a constant a shader reads should be visible above it. */
+const ROCK_NORMAL_SCALE = 0.25;
+
 /* Inject the displacement into a standard material.
 
    Vertices sit on a 0.5 grid in world space, so `floor(w * 2 + 0.5)` is a stable
@@ -151,7 +162,18 @@ export function displaceLikeRock(m: THREE.Material, bump: number) {
           #else
             vec3 cell = vec3(modelMatrix[3][0], modelMatrix[3][1], modelMatrix[3][2]);
           #endif
-          transformed += rockOffset(transformed + cell);
+          vec3 wpos = transformed + cell;
+          transformed += rockOffset(wpos);
+          /* Point the normal-map lookup at world XY instead of the cube's own
+             UVs, so the surface detail runs continuously across cell borders
+             rather than restarting inside every block. Assigned here because
+             this is where the world position exists; vNormalMapUv is an
+             ordinary varying and three has no further use for it after
+             <uv_vertex> has set it. Guarded because the same displacement is
+             also used on materials that carry no normal map. */
+          #ifdef USE_NORMALMAP
+            vNormalMapUv = wpos.xy * ${ROCK_NORMAL_SCALE.toFixed(4)};
+          #endif
         }`
       );
   };
@@ -197,6 +219,34 @@ const rockTex = (() => {
   return t;
 })();
 
+/* Real rock relief, sampled on WORLD position.
+
+   Everything else on the rock is procedural, and the grain map above is the
+   reason why: it costs no bytes and it retunes in a line. What it cannot do is
+   look like rock. Two octaves of value noise is pitting, not geology - no
+   bedding, no fracture, no sense that the surface was ever under pressure.
+
+   This is a photographed cliff face (ambientCG Rock035, CC0) reduced to its
+   NORMAL map alone. That distinction is the whole reason it fits a game that is
+   otherwise hand-palette flat-shaded low-poly: a normal map carries no colour.
+   Every block keeps the exact hue the palette gives it and gains a surface. The
+   colour map from the same download would have dropped a photograph into the
+   middle of a stylised world, which is the failure the notes warn about; the
+   normal map is the half of it that is style-neutral.
+
+   384 x 384 WebP, 45 KB. On an S26 Ultra at a pixel ratio of 2 a cell is about
+   118 physical pixels, so tiling this every four cells puts it at roughly its
+   own resolution - large enough to carry detail, small enough that the repeat
+   is not a pattern you can read.
+
+   Sampled on world XY rather than on the cube's own UVs, for the reason
+   CRAFT.md gives about per-instance data: mapped per cell, the detail would
+   restart at every cell boundary and the wall would read as a stack of
+   identical boxes. Keyed on world position it is one continuous rock face that
+   the tunnels happen to be cut out of, which is the entire point. */
+const rockNormal = new THREE.TextureLoader().load(rockNormalUrl);
+rockNormal.wrapS = rockNormal.wrapT = THREE.RepeatWrapping;
+
 const matCache = new Map<string, THREE.MeshLambertMaterial>();
 /* `vcol` must match the geometry: enabling vertex colours on a geometry that
    has no colour attribute renders it black. Only the chunk geometries carry
@@ -204,12 +254,45 @@ const matCache = new Map<string, THREE.MeshLambertMaterial>();
 export function mat(color: number, glow?: number, grain = true, vcol = false) {
   const k = color + '|' + (glow || 0) + '|' + (grain ? 1 : 0) + '|' + (vcol ? 1 : 0);
   if (!matCache.has(k)) {
-    matCache.set(k, new THREE.MeshLambertMaterial({
+    const m = new THREE.MeshLambertMaterial({
       color: color, emissive: new THREE.Color(color).multiplyScalar(glow || 0.02),
       flatShading: true, map: grain ? rockTex : null, vertexColors: vcol
-    }));
+    });
+    /* The `grain` flag already means "this is rock, not a gemstone", so the
+       relief rides on the same decision. Rock normals on a crystal would read
+       as a scuffed, dirty gem for exactly the reason the grain map does. */
+    if (grain) rockRelief(m);
+    matCache.set(k, m);
   }
   return matCache.get(k)!;
+}
+
+/* Give a material the rock's surface, keyed on world position.
+
+   three already knows how to apply a tangent-space normal map to a flat-shaded
+   surface - `perturbNormal2Arb` builds the frame from screen-space derivatives,
+   so no tangent attribute is needed. The only thing it does wrong here is the
+   lookup: it samples at the cube's own UVs, which restart at every cell.
+
+   `vNormalMapUv` is a varying, so it can simply be reassigned in the vertex
+   shader after three has set it. Overwriting it with world XY is the entire
+   change - everything downstream is stock three. Done in the same injection as
+   the displacement, because that is where the world position is already in
+   hand and computing it twice invites the two drifting apart. */
+export function rockRelief(m: THREE.MeshLambertMaterial) {
+  m.normalMap = rockNormal;
+  /* Higher than a normal map usually wants, and measured rather than guessed:
+     at 0.45 the effect was invisible against flat shading, and at 3.0 it read
+     clearly with the facets still completely intact. The reason it takes so
+     much is that the map is spread over four cells, so what survives is its
+     low-frequency component - broad swells rather than grain.
+
+     2.6 is a step back from the strongest value verified by eye, to leave
+     headroom on brightly lit ore. This is the number to change if the rock ever
+     looks either flat or mushy, and it wants checking on the phone: the effect
+     lives entirely in how the lamp rakes across a surface, which a desktop
+     screenshot of a static frame understates. */
+  m.normalScale = new THREE.Vector2(2.6, 2.6);
 }
 export const shade = (hex: number, f: number) => new THREE.Color(hex).multiplyScalar(f).getHex();
 export const worldX = (x: number) => x - (W - 1) / 2;
