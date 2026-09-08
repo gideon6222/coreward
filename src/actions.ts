@@ -19,6 +19,7 @@ import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX } from './feel';
 import type { Dir, SupplyKey } from './types';
+import { mergeLog, blankLog } from './telemetry';
 
 /* Stop drilling, and remember how far through the block you were.
 
@@ -43,7 +44,14 @@ export function stopDigging() {
 export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
-  g.credits += Math.round(v * S.saleBonus());
+  const paid = Math.round(v * S.saleBonus());
+  g.credits += paid;
+  /* A run ends when it is banked. Fold it into the all-time totals and start a
+     fresh one, so "this run" in the log means what a player means by it. */
+  R.run.earned += paid;
+  R.run.runs++;
+  mergeLog(g.log, R.run);
+  R.run = blankLog();
   /* A best haul is worth calling out because it is the only feedback that
      says a RUN went well, as opposed to a block being valuable. The first
      sale of a save is not a record, it is just the first sale. */
@@ -118,6 +126,7 @@ export function useSupply(k: SupplyKey) {
   }
 
   g.kit[k]--;
+  R.run.supUsed++;
   R.shake = Math.max(R.shake, 0.22);
   sfx.supply();
   updateKit();
@@ -210,6 +219,7 @@ export function grantCache(x: number, d: number) {
   if (p.kind === 'supply') {
     const sup = SUPPLY_OF[p.id];
     g.kit[p.id] = Math.min(sup.max, g.kit[p.id] + 1);
+    R.run.supBought++;
     toast('Supply cache \u00b7 ' + sup.name);
   } else if (p.kind === 'mineral') {
     g.stock[p.id] = (g.stock[p.id] || 0) + p.n;
@@ -247,6 +257,7 @@ export function fireBomb() {
       if (Math.abs(dx) + Math.abs(dy) <= r) cells.push([t.x + dx, t.d + dy]);
 
   const out = breakCells(cells);
+  R.run.bombFired++; R.run.ordBlocks += out.taken; R.run.powerSpent += BOMB_CHARGE;
   R.shake = Math.max(R.shake, 1.0);
   flash('rgba(255,190,90,.30)', 420);
   sfx.bomb();
@@ -262,6 +273,7 @@ export function fireLaser() {
   for (let i = 1; i <= S.laserLen(); i++) cells.push([sx + v[0] * i, sd + v[1] * i]);
 
   const out = breakCells(cells);
+  R.run.laserFired++; R.run.ordBlocks += out.taken; R.run.powerSpent += LASER_CHARGE;
   R.shake = Math.max(R.shake, 0.45);
   flash('rgba(120,230,255,.22)', 300);
   sfx.laser();
@@ -276,6 +288,7 @@ export function autopilot() {
   const route = findRoute();
   if (!route) { toast('No clear tunnel back to the pad'); return; }
   g.fuel -= cost;
+  R.run.autoUsed++;
   const pts3 = route.map((p) => new THREE.Vector3(worldX(p[0]), -p[1], 0));
   const curve = new THREE.CatmullRomCurve3(pts3, false, 'catmullrom', 0.35);
   const len = curve.getLength();
@@ -289,6 +302,11 @@ export function autopilot() {
 }
 
 export function tow(reason: string) {
+  /* A tow ends the run too, and it is the outcome most worth counting: the
+     share of runs that end this way is the clearest read there is on whether
+     fuel and hull are priced right. Counted here rather than in sell(), which
+     is called afterwards on whatever the tow left aboard. */
+  R.run.towed++;
   const cut = S.towCut();
   const taken = Math.round(haulValue() * cut);
   for (const k in g.cargo) g.cargo[k] = Math.floor(g.cargo[k] * (1 - cut));

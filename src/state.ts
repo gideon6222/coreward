@@ -2,6 +2,7 @@ import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
          bombRadius, laserRange } from './config';
 import { CHARGE_MAX } from './feel';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
+import { blankLog, loadLog, type Log } from './telemetry';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
 export const g: {
@@ -33,6 +34,8 @@ export const g: {
      planet from the ninth onward and quietly stopped generating relics for the
      rest of the game. The perk is what you own; this is what you have done. */
   relicsTaken: number[];
+  /* balance telemetry: all time in the save, this run in memory only */
+  log: Log;
   /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
      so a cell can only ever hold one - which it can, because breaking a block
      empties the cell it was in. */
@@ -56,6 +59,7 @@ export const g: {
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
   cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [],
+  log: blankLog(),
   best: { depth: 0, haul: 0 },
   mode: 'play'
 };
@@ -113,7 +117,7 @@ export function save() {
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
-      relics: g.relics, relicsTaken: g.relicsTaken
+      relics: g.relics, relicsTaken: g.relicsTaken, log: g.log
     }));
   } catch (e) { /* ignore */ }
 }
@@ -134,6 +138,9 @@ export function load() {
       if (typeof s.charge === 'number') g.charge = s.charge;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
       g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];
+      /* loadLog defaults every field, so a save from before the log existed
+         comes back zeroed rather than full of undefined that render as NaN. */
+      g.log = loadLog(s.log);
       g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;

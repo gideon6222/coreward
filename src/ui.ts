@@ -9,6 +9,8 @@ import { haulValue } from './world';
 import { lamp } from './scene';
 import { setDrillTier } from './ship';
 import { sfx, audioState } from './audio';
+import { summarise, mergeLog, loadLog, type Row } from './telemetry';
+import { R } from './runtime';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
    ones the game cannot run without: throwing here reaches the on-screen
@@ -36,8 +38,31 @@ export const ui = {
   power: mustEl('power'), powerChip: mustEl('powerChip'),
   shopPlanet: mustEl('shopPlanet'),
   verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes'),
+  runlog: mustEl('runlog'), btnLog: mustEl('btnLog'),
   vSky: mustEl('vSky')
 };
+
+/* The run log, built on open and never in the loop.
+
+   This is the half of the telemetry that costs anything, and it only runs when
+   a finger lands on the button. Two columns of the same numbers: what this run
+   has done, and what every run has done. All time is what a balance decision
+   should be made on - one run is a mood - but this run is what makes the panel
+   worth opening while playing.
+
+   All-time is merged into a throwaway copy rather than written back, because
+   the run is not over: folding it into the saved totals here would count it
+   twice when the ship actually docks. */
+export function buildRunLog() {
+  const allNow = loadLog(g.log);
+  mergeLog(allNow, R.run);
+  const table = (rows: Row[]) => rows.map((r) =>
+    '<div class="lg"><div class="l">' + r.label + '</div><div class="v">' + r.value +
+    '</div><div class="n">' + r.note + '</div></div>').join('');
+  ui.runlog.innerHTML =
+    '<div class="lgh">THIS RUN</div>' + table(summarise(R.run, S.fuelCap(), HULL_MAX)) +
+    '<div class="lgh">ALL TIME</div>' + table(summarise(allNow, S.fuelCap(), HULL_MAX));
+}
 
 /* Rendered once, on first open, because a changelog does not change while the
    game is running and rebuilding it on every pause would be pure churn. */

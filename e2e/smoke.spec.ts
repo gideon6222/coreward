@@ -935,3 +935,59 @@ test('advance is deterministic and far faster than real time', async ({ page }) 
   expect(out.realMs, 'twelve simulated seconds should not take real seconds')
     .toBeLessThan(4000);
 });
+
+/* Drilling must not push the ship into the rock it is drilling.
+
+   DIG_ALIGN holds the ship on the centre line of the cut so a tunnel stays on
+   the grid, and it does that by writing g.px/g.pd directly - which means the
+   collision never sees it and nothing else can catch it being wrong. It aligned
+   whichever axis did not already match, and for a dig that is always the wrong
+   one: the target cell is a step AHEAD, so the mismatched axis IS the direction
+   of the cut. Drilling down from 49 walked the ship to 49.58, well inside the
+   cell at 50.
+
+   It went unnoticed because the old lane pull ran while coasting and the
+   collision ejected the ship back out of the wall on release - so the bug
+   presented as a jerk after every block rather than as a ship inside a rock.
+
+   Asserted on position rather than on the depth readout, because the readout
+   rounds: 49.58 displays as "50 m", which is how this first showed up. */
+test('drilling holds the ship against the rock, never inside it', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  const out = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stopClock();
+    const probe = (dir: string, px: number, pd: number) => {
+      w.g.dug.clear();
+      for (let d = 0; d <= 49; d++) w.g.dug.add('6,' + d);
+      w.g.up.drill = 0; w.g.px = px; w.g.pd = pd; w.g.damage = {};
+      w.R.digging = null; w.R.vx = 0; w.R.vy = 0;
+      w.R.held = dir;
+      /* Sampled every tenth of a second through the cut: the drift was gradual,
+         so only looking at the end would miss a smaller version of it. */
+      let worstX = px, worstY = pd;
+      for (let i = 0; i < 8; i++) {
+        w.advance(0.1);
+        worstX = Math.max(worstX, w.g.px);
+        worstY = Math.max(worstY, w.g.pd);
+      }
+      w.R.held = null;
+      return { worstX, worstY, dug: w.g.dug.has('6,50') };
+    };
+    return { down: probe('down', 6, 49), right: probe('right', 6, 40) };
+  });
+
+  /* A cell spans [n-0.5, n+0.5] and the ship's half-width is 0.34, so resting
+     against the face of the cell at 50 puts its centre at 49.16. Anything past
+     49.5 has the ship's middle inside the rock. A small margin over 49.16 for
+     the skin the collision leaves. */
+  expect(out.down.worstY,
+    'drilling down drove the ship into the cell it was cutting').toBeLessThan(49.2);
+  expect(out.right.worstX,
+    'drilling sideways drove the ship into the cell it was cutting').toBeLessThan(6.2);
+  /* and the perpendicular axis is still held on the line, which is what
+     DIG_ALIGN is actually for */
+  expect(out.down.worstX).toBeCloseTo(6, 2);
+});

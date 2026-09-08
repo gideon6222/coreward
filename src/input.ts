@@ -3,7 +3,7 @@ import { relicDistance } from './relic';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
-import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels, buildNotes } from './ui';
+import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
 import type { Dir } from './types';
 import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
@@ -90,8 +90,24 @@ mustEl('btnPause').onclick = () => {
 };
 ui.btnNotes.onclick = () => {
   sfx.ui();
+  ui.runlog.classList.add('hidden');
+  ui.btnLog.textContent = 'RUN LOG';
   const open = ui.notes.classList.toggle('hidden');
   ui.btnNotes.textContent = open ? "WHAT'S NEW" : 'HIDE';
+};
+
+/* Built on the click, never while the game is running. The two panels close
+   each other because the pause sheet is already the tallest thing in the game
+   and two open lists inside one scroll region is how the shop's shelves got
+   clipped at the fold. */
+ui.btnLog.onclick = () => {
+  sfx.ui();
+  ui.notes.classList.add('hidden');
+  ui.btnNotes.textContent = "WHAT'S NEW";
+  const closed = ui.runlog.classList.contains('hidden');
+  if (closed) buildRunLog();
+  ui.runlog.classList.toggle('hidden', !closed);
+  ui.btnLog.textContent = closed ? 'HIDE' : 'RUN LOG';
 };
 
 mustEl('btnResume').onclick = () => { sfx.ui(); ui.pause.classList.add('hidden'); g.mode = 'play'; };

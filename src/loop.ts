@@ -171,6 +171,9 @@ export function tick(raw: number, draw = true) {
       flash('rgba(110,220,255,.22)', 240);
     }
   } else if (g.mode === 'play') {
+    /* The only clock the run log keeps. It runs in play and nowhere else, so
+       time spent paused, shopping or reading the manifest never dilutes a rate. */
+    R.run.sec += dt;
     camZBoost = approach(camZBoost, 0, CAM_BOOST_DECAY, raw);
     /* Let go and the drill stops. It used to run to completion no matter what,
        which meant the only way to change your mind about a block was to have
@@ -190,13 +193,30 @@ export function tick(raw: number, draw = true) {
     if (R.digging) {
       const b = R.digging.block;
       R.digging.t += dt;
-      /* Held against the rock and pulled onto the block's centre line. Without
-         the alignment a tunnel dug while drifting wanders off the grid and the
-         drill visibly misses the cell it is cutting. */
+      /* Held against the rock and pulled onto the block's centre line - ACROSS
+         the cut, never along it. Without the alignment a tunnel dug while
+         drifting wanders off the grid and the drill visibly misses the cell it
+         is cutting.
+
+         The old version aligned whichever axis did not already match, which for
+         a dig is always the wrong one: the target cell is one step AHEAD, so the
+         mismatched axis is the direction of the cut, and "aligning" it drove the
+         ship into the rock it was drilling - by writing g.px/g.pd directly, so
+         the collision never saw it happen. Drilling down from 49 sank the ship
+         to 49.58, inside the cell at 50.
+
+         It was invisible because the old lane pull ran while coasting and the
+         collision ejected the ship back out of the wall on release, so it
+         presented as a jerk after every block rather than as a ship inside a
+         rock. Removing that pull to fix the bouncy stop is what exposed it.
+
+         Keyed off the direction the cut started in, which the dig now stores. */
       R.vx = 0; R.vy = 0;
-      if (R.digging.x !== Math.round(g.px)) g.px = approach(g.px, R.digging.x, DIG_ALIGN, raw);
-      else if (R.digging.d !== Math.round(g.pd)) g.pd = approach(g.pd, R.digging.d, DIG_ALIGN, raw);
-      g.fuel -= digFuelPerSecond(b.hard) * dt;
+      if (FACE_VEC[R.digging.dir][0] === 0) g.px = approach(g.px, R.digging.x, DIG_ALIGN, raw);
+      else g.pd = approach(g.pd, R.digging.d, DIG_ALIGN, raw);
+      const df = digFuelPerSecond(b.hard) * dt;
+      g.fuel -= df;
+      R.run.secDig += dt; R.run.fuelDig += df;
       const k = key(R.digging.x, R.digging.d);
       const o = meshes.get(k);
       const prog = clamp(R.digging.t / R.digging.total, 0, 1);
@@ -237,6 +257,12 @@ export function tick(raw: number, draw = true) {
       }
 
       if (R.digging.t >= R.digging.total) {
+        /* Against DROP_MIN_VALUE, not against zero. Since plain dirt started
+           paying a token amount, `value > 0` is true of nearly everything and
+           the ratio read 98.5% - accurate, and saying nothing. DROP_MIN_VALUE is
+           the game's own existing line for "worth coming back for", which is the
+           question this row is actually asking. */
+        R.run.blocks++; if (b.value >= DROP_MIN_VALUE) R.run.oreBlocks++;
         g.dug.add(k);
         delete g.damage[k];
         dropBlock(k);
@@ -265,6 +291,7 @@ export function tick(raw: number, draw = true) {
              heat. The soak spike is what actually bites, because it multiplies
              every bit of heat damage for the rest of the trip. */
           const dmg = Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1) * S.gasTake());
+          R.run.hullGas += dmg;
           g.hull -= dmg;
           R.hullCause = 'gas';
           g.soak = Math.min(1, g.soak + GAS_SOAK);
@@ -342,23 +369,50 @@ export function tick(raw: number, draw = true) {
       R.vy = thrust(R.vy, v[1], top, FLY_ACCEL, FLY_DRAG, raw);
 
       /* Lanes. Travel freely along the axis being pushed on; be drawn onto the
-         centre line of the other one. With nothing held, both - so letting go
-         parks the ship in a cell rather than wherever the drag ran out.
+         centre line of the other one, and ONLY while something is held.
 
-         Added to the velocity rather than written onto the position, so the
+         Playtest: *"The ship looks very bouncy when you change direction or
+         stop... or not make it align until you change direction? I want it to
+         ease into a stop."* Both halves of that were the same two mistakes:
+
+         **It assigns, it does not add.** `+=` stacked a correction on top of a
+         velocity that was often already carrying the ship toward the lane, so
+         the pair overshot, got corrected back, and overshot again. That
+         oscillation is the bounce. Assigned, the perpendicular velocity IS the
+         exponential approach - it cannot overshoot, because the value is
+         exactly the speed that lands on the line and no more. Discarding
+         whatever the axis was doing is not a loss either: while you are
+         thrusting one way, drift the other way is the thing being removed.
+
+         **Nothing held means no pull at all.** The old version aligned both
+         axes while coasting, which is worse than untidy: the nearest lane is as
+         often behind the ship as ahead of it, so a release near a cell edge
+         hauled the ship BACKWARDS against its own coast. Letting go is now drag
+         and nothing else - a clean ease-out that never reverses. The ship comes
+         to rest wherever it rests, which costs nothing, because the next
+         direction you press aligns it on the way.
+
+         Applied as a velocity rather than written onto the position, so the
          correction goes through the same collision as everything else and can
          never seat the ship inside rock. */
-      if (v[0] !== 0)      R.vy += laneVel(g.pd, LANE_PULL, raw);
-      else if (v[1] !== 0) R.vx += laneVel(g.px, LANE_PULL, raw);
-      else { R.vx += laneVel(g.px, LANE_PULL, raw); R.vy += laneVel(g.pd, LANE_PULL, raw); }
+      if (v[0] !== 0)      R.vy = laneVel(g.pd, LANE_PULL, raw);
+      else if (v[1] !== 0) R.vx = laneVel(g.px, LANE_PULL, raw);
 
+      const beforeX = g.px, beforeY = g.pd;
       const hit = moveAndCollide(g.px, g.pd, R.vx, R.vy, raw, SHIP_R, solidAt);
       g.px = hit.x; g.pd = hit.y;
       R.vx = hit.vx; R.vy = hit.vy;
 
+      /* Distance actually covered, taken from the positions the collision
+         returned rather than from the velocity, so a frame spent pressed
+         against rock counts as the nothing it was. */
+      R.run.metres += Math.abs(hit.x - beforeX) + Math.abs(hit.y - beforeY);
+
       if (R.held) {
         g.face = R.held;
-        g.fuel -= FUEL_PER_MOVE * S.fuelUse() * dt;
+        const ff = FUEL_PER_MOVE * S.fuelUse() * dt;
+        g.fuel -= ff;
+        R.run.secFly += dt; R.run.fuelFly += ff;
         thrustLevel = 0.75;
         /* Only the axis being pushed on can start a dig. Scraping along a
            ceiling while flying sideways must not begin drilling the ceiling.
@@ -404,7 +458,9 @@ export function tick(raw: number, draw = true) {
     g.soak = soakAfter(g.soak, g.pd, dt, traitOf(g.planet).soak || 1);
     if (g.pd > HEAT_DEPTH) {
       /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
-      g.hull -= heatDamagePerSecond(g.pd, S.shield(), g.soak) * S.heatTake() * dt;
+      const hd = heatDamagePerSecond(g.pd, S.shield(), g.soak) * S.heatTake() * dt;
+      g.hull -= hd;
+      R.run.hullHeat += hd;
       R.hullCause = 'heat';
       /* Say it once, at the metre it starts. The HUD carries it from here. */
       if (!R.wasHot) {

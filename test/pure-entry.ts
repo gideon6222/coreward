@@ -11,3 +11,4 @@ export * from '../src/state';
 export * from '../src/world';
 export * from '../src/feel';
 export * from '../src/fly';
+export * from '../src/telemetry';

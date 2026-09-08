@@ -52,6 +52,17 @@
     --ink:#e8f0ff; --dim:#8b9ab5; --panel:#0d131f; --line:#1e2a40;
     --cyan:#3fe0ff; --amber:#ffc861; --red:#ff5c6b; --green:#4be08a;
     --safe-b: env(safe-area-inset-bottom, 0px);
+    /* How far the whole bottom thumb cluster sits above the safe area: the
+       d-pad, the supply column mirroring it, and the ordnance row stacked on
+       top of the d-pad. ONE number on purpose - the ordnance row is positioned
+       relative to the d-pad's height, so moving the d-pad alone drops the two
+       on top of each other, and moving the right side alone leaves the left
+       side visibly lower.
+
+       48 rather than the original 14: on a tall phone with gesture navigation
+       the last few millimetres of the screen belong to the system, and a key
+       sitting in them is both a hard target and a swipe waiting to happen. */
+    --ctrl-b: calc(var(--safe-b) + 48px);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{
@@ -147,7 +158,7 @@
 
   /* Bottom right, where a thumb naturally sits. */
   #ctrl{
-    position:fixed; right:18px; bottom:calc(var(--safe-b) + 14px); z-index:9;
+    position:fixed; right:18px; bottom:var(--ctrl-b); z-index:9;
     display:flex; align-items:flex-end;
   }
   #dpad{display:grid; grid-template-columns:repeat(3,60px); grid-template-rows:repeat(3,60px); gap:5px;}
@@ -178,7 +189,7 @@
      are the left, so spending one never fights with steering. Deliberately
      the same 60 px module as a d-pad key. */
   #kit{
-    position:fixed; left:18px; bottom:calc(var(--safe-b) + 14px); z-index:9;
+    position:fixed; left:18px; bottom:var(--ctrl-b); z-index:9;
     display:flex; flex-direction:column-reverse; gap:5px;
   }
   /* Ordnance sits on the RIGHT, directly above the d-pad, because unlike a
@@ -187,7 +198,7 @@
      with the rest of the things that only happen to you. */
   #ord{
     position:fixed; right:18px; z-index:9;
-    bottom:calc(var(--safe-b) + 14px + 190px + 8px);
+    bottom:calc(var(--ctrl-b) + 190px + 8px);
     display:flex; gap:5px;
   }
   .sup.ord{width:87px; height:44px;}
@@ -398,6 +409,17 @@
   .relhead .v{color:var(--amber);}
   .relhead .d{color:#4a5570; font-weight:500; letter-spacing:.02em;}
   .rel ul{margin:5px 0 0; padding-left:15px; color:var(--dim); font-size:11px; line-height:1.6;}
+  /* Run log. Same shell as the changelog so the pause sheet keeps one grammar;
+     the value column is the number a balance decision hangs on, so it is the
+     only thing in here at full contrast. */
+  .lg{padding:8px 0; border-top:1px solid var(--line); display:flex; gap:10px; align-items:baseline;}
+  .lg:first-child{border-top:none;}
+  .lg .l{flex:1 1 auto; font-size:11.5px; font-weight:700; letter-spacing:.05em;}
+  .lg .v{flex:0 0 auto; font-size:12.5px; font-weight:800; color:var(--amber); letter-spacing:.02em;}
+  .lg .n{flex-basis:100%; color:var(--dim); font-size:10.5px; line-height:1.55; margin-top:2px;}
+  .lgh{font-size:10.5px; font-weight:700; letter-spacing:.12em; color:var(--cyan);
+    margin:12px 0 2px; padding-top:10px; border-top:1px solid var(--line);}
+  .lgh:first-child{margin-top:0; padding-top:0; border-top:none;}
   /* build stamp: dim, monospace, easy to read off a phone screen at a glance */
   .fine.build{margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
     font:10.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#48546b; letter-spacing:.02em;}
@@ -515,8 +537,10 @@
     <div class="fine">Restarting wipes credits, upgrades, core shards and every tunnel you have dug. It cannot be undone.</div>
     <div class="verline">
       <span id="verNum">v0.0.0</span>
+      <button id="btnLog" class="notesbtn">RUN LOG</button>
       <button id="btnNotes" class="notesbtn">WHAT&apos;S NEW</button>
     </div>
+    <div id="runlog" class="notes hidden"></div>
     <div id="notes" class="notes hidden"></div>
     <div class="fine build" id="build"></div>
   </div>

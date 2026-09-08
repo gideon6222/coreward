@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.9.3';
+export const VERSION = '0.9.4';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.9.4', date: '2026-09-07', title: 'Smoother stop',
+    notes: [
+      'The ship eases to a stop instead of bouncing, and only lines up when you change direction.',
+      'Fixed the drill nosing into the rock it was cutting, which was the jerk after every block.',
+      'A RUN LOG in the pause menu: what drains how fast, what you earn, and what you never use.',
+      'The d-pad and the supply buttons sit a little higher, clear of the system gesture bar.'
+    ]
+  },
   {
     version: '0.9.3', date: '2026-09-07', title: 'Under the hood',
     notes: [

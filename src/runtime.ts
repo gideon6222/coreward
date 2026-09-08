@@ -11,6 +11,7 @@
    resetArmed) stay with their module. */
 
 import type { Dir, Dig, Flight } from './types';
+import { blankLog } from './telemetry';
 
 export const R = {
   /* input -> loop */
@@ -26,6 +27,10 @@ export const R = {
      landing in a cell and there are no cell arrivals any more. */
   wasAtSurface: true,
   digging: null as Dig | null,
+  /* This run's telemetry. Lives here rather than in `g` because it is reset at
+     the pad and folded into the all-time totals there; only the totals are
+     worth saving. */
+  run: blankLog(),
   flight: null as Flight | null,
 
   /* actions -> loop: what is currently eating the hull, so the tow screen

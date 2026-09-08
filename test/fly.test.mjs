@@ -251,21 +251,56 @@ test('a blocked lane ejects the ship rather than pulling it into rock', () => {
     'should have settled in the open lane, ended at ' + y);
 });
 
-test('letting go parks the ship on a cell', () => {
-  /* Coasting with nothing held pulls both axes, so releasing leaves the ship
-     in a cell rather than wherever the drag happened to run out. That is what
-     stops a tunnel dug on the drift from wandering off the grid. */
+test('letting go eases to a stop and never reverses', () => {
+  /* Playtest: "very bouncy when you change direction or stop... I want it to
+     ease into a stop."
+
+     The bounce was a lane pull applied while COASTING. The nearest lane is as
+     often behind the ship as in front of it, so releasing near a cell edge
+     hauled the ship backwards against its own momentum - which is the one thing
+     a coast must never do. Releasing is now drag alone.
+
+     Asserted as monotonic travel rather than as a final position, because that
+     is the actual complaint: not where it ends up, but that it stops going
+     forwards and comes back. Started at .42 and .61 of a cell, either side of a
+     boundary, so a pull would be pulling opposite ways on the two axes. */
   let x = 3.42, y = 5.61, vx = 6, vy = 2;
+  let px = x, py = y;
   for (let i = 0; i < 180; i++) {
     vx = H.thrust(vx, 0, 8, 18, 9, 1 / 60);
     vy = H.thrust(vy, 0, 8, 18, 9, 1 / 60);
-    vx += H.laneVel(x, LANE, 1 / 60);
-    vy += H.laneVel(y, LANE, 1 / 60);
     const o = H.moveAndCollide(x, y, vx, vy, 1 / 60, R, OPEN);
     x = o.x; y = o.y; vx = o.vx; vy = o.vy;
+    assert.ok(x >= px - 1e-12, 'reversed on x at frame ' + i + ': ' + px + ' -> ' + x);
+    assert.ok(y >= py - 1e-12, 'reversed on y at frame ' + i + ': ' + py + ' -> ' + y);
+    px = x; py = y;
   }
-  assert.ok(Math.abs(x - Math.round(x)) < 1e-3, 'came to rest off-lane at x=' + x);
-  assert.ok(Math.abs(y - Math.round(y)) < 1e-3, 'came to rest off-lane at y=' + y);
+  /* and it did actually come to rest rather than still drifting */
+  assert.ok(Math.abs(vx) < 0.01 && Math.abs(vy) < 0.01, 'never settled');
+});
+
+test('the lane pull is assigned, not added, so it cannot overshoot', () => {
+  /* The other half of the bounce. `vy += laneVel(...)` stacks a correction on
+     top of a velocity already carrying the ship toward the line, so the pair
+     overshoots and gets corrected back - an oscillation across the lane for as
+     long as you hold a direction.
+
+     Assigned, the perpendicular velocity IS the exponential approach, so the
+     ship can only ever converge. Asserted as "never crosses the line it is
+     approaching", which is what overshoot means and what a player sees. */
+  for (const start of [5.49, 5.3, 4.7, 4.51]) {
+    let y = start, vy = start > 5 ? -3 : 3;   /* already moving toward lane 5 */
+    const side = Math.sign(start - 5);
+    for (let i = 0; i < 240; i++) {
+      vy = H.laneVel(y, LANE, 1 / 60);
+      const o = H.moveAndCollide(3, y, 0, vy, 1 / 60, R, OPEN);
+      y = o.y; vy = o.vy;
+      const nowSide = Math.sign(y - 5);
+      assert.ok(nowSide === side || nowSide === 0,
+        'from ' + start + ': overshot the lane to ' + y);
+    }
+    assert.ok(Math.abs(y - 5) < 1e-4, 'from ' + start + ': never settled, at ' + y);
+  }
 });
 
 test('lanes do not cost the coast that makes flight feel like flight', () => {

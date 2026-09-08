@@ -1686,6 +1686,97 @@ attempt starts at the sky rather than at the pass.
 additive halo quads cost one draw call, they are under per-object control, and
 they are what makes an ore vein magnetic across a dark chamber.
 
+## The bouncy stop, and the bug it was hiding (2026-09-07)
+
+Playtest: *"The ship looks very bouncy when you change direction or stop. Can
+you find a smoother way to have it align with the grid, or not make it align
+until you change direction? I want it to ease into a stop."*
+
+Two faults in the lane pull added the session before, and a third underneath
+them that it had been masking.
+
+**It added instead of assigning.** `R.vy += laneVel(...)` stacked a correction
+on top of a velocity that was frequently already carrying the ship toward the
+line, so the two together overshot, got corrected, and overshot again. That is a
+spring with no damping term, and ringing is what "bouncy" means. Assigned, the
+perpendicular velocity *is* the exponential approach and cannot overshoot: the
+value is exactly the speed that lands on the line.
+
+**It ran while coasting.** With nothing held, both axes were pulled to their
+nearest lane. The nearest lane is as often *behind* the ship as ahead of it, so
+letting go near a cell boundary hauled the ship backwards against its own
+momentum. Releasing is now drag and nothing else. The ship rests wherever it
+rests, and the next direction pressed aligns it on the way - which is exactly
+the "don't align until you change direction" he asked for, and costs nothing,
+because alignment only has to be true by the time the drill fires.
+
+### The third fault, which two sessions of tests could not see
+
+`DIG_ALIGN` holds the ship on the centre line of the cut. It did that by writing
+`g.px`/`g.pd` **directly** - so the collision never sees it - and it aligned
+whichever axis did not already match. For a dig that is always the wrong axis:
+the target cell is one step *ahead*, so the mismatched axis is the direction of
+the cut. Drilling down from 49 walked the ship to 49.58, well inside the cell at
+50.
+
+It was invisible because the coasting lane pull aimed the ship at the nearest
+lane on release and the collision ejected it back out of the wall. So the
+symptom was not "the ship is inside a rock", it was **a jerk out of the wall
+after every single block** - part of what "bouncy" was describing.
+
+Now keyed off `R.digging.dir`, the direction the cut started in, which the dig
+already stores for the stop test. There is an e2e test asserting the ship never
+gets past 49.2 while drilling down, verified by putting the bug back.
+
+**The general lesson: two bugs can hide each other, so when a fix makes a
+different test fail, suspect a mask before a regression.** The interruption test
+started failing on the depth readout - because 49.58 rounds to "50 m" - which
+looked like the fix breaking digging and was the fix revealing a defect.
+
+## The run log (2026-09-07)
+
+Playtest: *"is there a way for you to add some kind of log to see how fast
+certain things drain, if the cost is worth the benefit, or if certain abilities
+don't really seem to be necessary? ... I would only want to do it if it has very
+little impact on the game running and is actually helpful."*
+
+He set both acceptance criteria, and the second is the harder one.
+
+**Very little impact: measured, not asserted.** Every counter is a `+=` on a
+flat object of numbers - no arrays, no strings, nothing allocated per frame,
+nothing that grows. `summarise()` runs on the button press and never in the
+loop. Measured with the tick seam at the deep worst case: **0.345 ms/frame with
+it against a 0.357 ms baseline without**, samples 0.338-0.350. The cost is below
+the noise floor of the measurement.
+
+**Actually helpful: rates and ratios, not counters.** Nobody balances a game
+against "fuel burned". The three questions he asked map to three answers:
+
+- *how fast things drain* - fuel/s split by what spent it, hull/s split by what
+  took it, and how long a full tank or hull lasts at that rate. The tank figure
+  divides by the DRILLING burn rate specifically, not the run average, because
+  drilling is the job that empties it.
+- *is a cost worth it* - credits per minute and per metre, and where the time in
+  a run actually goes.
+- *is an ability necessary* - an unused one reads **"never used"** with a note
+  saying what that implies. A zero the eye skips past is the most valuable
+  reading in the panel: it means the thing does not need tuning.
+
+Two columns, this run and all time. All time is what balance is decided on; this
+run is what makes the panel worth opening mid-game. The all-time column merges
+the live run into a throwaway copy rather than writing it back, or docking would
+count it twice.
+
+**One metric had to be rewritten immediately.** It reported "98.5% of blocks
+paid", which was accurate and worthless: since plain dirt started paying a token
+amount, `value > 0` is true of almost everything. It counts against
+`DROP_MIN_VALUE` now - the game's own existing line for "worth coming back for".
+A ratio that is always ~100% is measuring the wrong set.
+
+`npm test` also now discovers `test/**/*.test.mjs` rather than listing files by
+name. The telemetry suite was written, passed, and was not being run at all,
+because adding a file to `test/` joined nothing.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
