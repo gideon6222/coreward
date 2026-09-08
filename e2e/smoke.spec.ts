@@ -254,8 +254,36 @@ test('the score layers respond to depth and to danger', async ({ page }) => {
    straight back. It costs nothing on a desktop and shows up on the phone.
 
    Counted by wrapping the GL context rather than reading renderer.info, which
-   is module-scoped and not reachable from here. */
-const DRAW_CALL_BUDGET = 70;
+   is module-scoped and not reachable from here.
+
+   ---
+
+   **150, and it is a regression detector, not a ceiling.** The old value of 70
+   came from a "roughly 50 to 100 on mobile" rule of thumb, which turns out to
+   be off by more than an order of magnitude for what this game actually does.
+
+   Measured on 2026-09-08 by adding sub-pixel meshes to the real scene at the
+   worst case and timing whole frames through the tick seam - so this is draw
+   CALL overhead, isolated from fill rate and vertex work:
+
+       79 calls   0.64 ms      819 calls   3.66 ms
+      119 calls   0.75 ms     1519 calls   7.27 ms
+      219 calls   1.19 ms     2519 calls  12.88 ms
+      419 calls   1.88 ms
+
+   Dead linear at **5.0 us per draw call**. The game's 60 calls cost 0.64 ms,
+   which is 3.8% of a 60 fps frame, and it would take about **3,200 calls** to
+   miss 60 fps on this machine. A phone's driver overhead is worse - call it a
+   few times - which still leaves the real ceiling in the high hundreds at
+   minimum, ten to twenty times what the game uses.
+
+   So the number here exists to catch ONE thing: instancing silently breaking
+   and every block becoming its own mesh again, which measured 207 back when
+   the world was much smaller and would be far higher now. 150 catches that
+   decisively while leaving room for ordinary feature work to land without a
+   budget edit. Raise it deliberately if a feature genuinely needs it; the
+   thing to be alarmed by is a jump, not a number. */
+const DRAW_CALL_BUDGET = 150;
 
 test('stays inside the draw-call budget while underground', async ({ page }) => {
   await page.addInitScript(() => {

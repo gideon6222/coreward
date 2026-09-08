@@ -145,9 +145,10 @@ in it, so the body and the shards need **different** emissive. Giving the host
 the ore's glow lit the whole cube like a lamp and the amethyst came out as flat
 purple squares. Caught by looking at a screenshot, not by a test.
 
-The smoke test now enforces a draw-call budget of 70, counted by wrapping the GL
+The smoke test now enforces a draw-call budget, counted by wrapping the GL
 context. Mutation-tested: reverting to per-block meshes fails it and nothing
-else.
+else. (It was 70 at the time; see the budgets section for why it is 150 now and
+what a draw call actually costs.)
 
 ## A bigger-feeling world (2026-09-06)
 
@@ -1420,9 +1421,24 @@ one I set, and they are drift detectors rather than ceilings:
   size guard with 1% and 12% tolerances. It exists because a module split once
   silently dropped a line and the only evidence was a 7 KB shrink. Re-record it
   deliberately with `npm run size:update` whenever a commit adds a system.
-- The **draw-call budget of 70** comes from a mobile rule of thumb of roughly
-  fifty to a hundred, not from anything enforced. Measured at the worst case it
-  currently sits at 50.
+- **The draw-call budget is 150, and the rule of thumb it used to come from was
+  wrong.** Measured 2026-09-08 by adding sub-pixel meshes to the real worst-case
+  scene and timing whole frames through the tick seam, which isolates call
+  overhead from fill rate: **5.0 us per draw call**, linear from 79 to 2,519
+  calls (0.64 / 0.75 / 1.19 / 1.88 / 3.66 / 7.27 / 12.88 ms). The game's 60
+  calls cost 0.64 ms - under 4% of a 60 fps frame - and it would take about
+  **3,200** to miss 60 fps on this desktop, the high hundreds at worst on a
+  phone.
+
+  The old 70 was roughly 2% of the real ceiling. The budget exists to catch
+  instancing silently breaking, which measured 207 back when the world was much
+  smaller, so 150 catches that decisively while leaving room for features to
+  land without a budget edit. **The thing to be alarmed by is a jump, not a
+  number.**
+
+  What actually costs something on a phone is fill rate: the move to PBR terrain
+  was 0.098 ms/frame at an unchanged draw count, which is more than a hundred
+  extra draw calls would have been.
 - `MAX_DROPS`, `MAX_CELLS`, `MAX_HALOS` and friends size instanced buffers,
   which have to be allocated up front. They bound memory, not a quota.
 
