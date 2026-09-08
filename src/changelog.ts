@@ -16,9 +16,19 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.12.0';
+export const VERSION = '0.12.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.12.1', date: '2026-09-08', title: 'The lamp points somewhere',
+    notes: [
+      'The lamp shines out of the front of the ship. Whichever way you are drilling is the way you can see.',
+      'Behind you stays dim rather than dark, so the way back up is always readable.',
+      'Corners throw real shadows now. A tunnel crossing your path is in shadow except where the light can actually reach it.',
+      'That shadow closes over the crossing tunnel as you move away from it, and opens up as you come level with it.',
+      'Fixed rock poking through the glow in a tunnel.'
+    ]
+  },
   {
     version: '0.12.0', date: '2026-09-08', title: 'Light travels',
     notes: [

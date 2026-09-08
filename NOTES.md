@@ -2196,6 +2196,85 @@ is the first thing to raise if unopened rock reads as a black rectangle rather
 than as rock; `LM_ATT` is the first thing to lower if turning a corner is
 disorienting rather than atmospheric.
 
+## The lamp gets a direction, and corners get an edge (2026-09-08)
+
+Gideon, on the first version: *"I want the light to be coming from the front of
+the ship, so if I am facing down, the whole tunnel down is lit up but dims
+behind me. I also want sharp shadows to show for crossing tunnels ... a
+realistic feeling angled shadow that fills more and more of the tunnel as I get
+further away."*
+
+Both were things the flood could not express, and for the same reason: a flood
+that turns a corner arrives from that corner in every direction at once. It has
+no notion of a straight line, so it has no notion of an edge.
+
+**A second solver, in the same pure module.** `castShadows()` fans 512 rays out
+from the lamp by grid DDA and records, per angle, how far light gets before
+something stops it. That one-dimensional map goes to the shader as a 512-texel
+texture; a fragment is in shadow if it is further from the lamp than the
+occluder on its own bearing. Sharp by construction, and the wedge behind a
+corner widens with distance for free, because that is what a fan of rays does.
+
+It runs **every frame**, not on cell changes, because the entire point is that
+the shadow moves as the ship does. A few thousand grid steps: it does not show
+up in a measurement.
+
+The one thing it has to get right is which side of a wall it records. The FAR
+side, not the near side - a rock face is the surface the lamp is falling on and
+has to stay lit, and shadow starts behind it. Recording the near side puts every
+rock face in the game into its own shadow.
+
+**The lobe is per-pixel, from the ship's smoothed facing.** Local forward is -Y
+and `FACE_ANGLE.down` is zero, so grid-space forward is `(sin, cos)` of
+`rig.rotation.z`. Taken after the facing update in the frame rather than before,
+or the beam trails the ship round every corner. Omnidirectional within about
+three cells, because a real lamp lights its own surroundings whichever way it is
+aimed - without that the ship sits in a hard-edged half-disc of its own shadow.
+
+**Beam and bounce, combined with max().** The first attempt multiplied a
+"how much survives behind the ship" floor by a "how much survives in shadow"
+floor, and anywhere that was both came out at the product - four per cent of
+four per cent, which is black. That erases the shaft you came down, which is the
+way home. Now there is one omnidirectional, unshadowed bounce term at 0.22 of
+the beam, and the answer is whichever of the two is larger. Both are still gated
+by the flood, so it lights tunnels you have opened and never solid rock.
+
+**The grey wash, and why it was not what it looked like.** After all of the
+above the world still read as a flat grey rather than as dark, and the obvious
+suspects - the lamp's intensity, ambient, the fog, the parallax, the backdrop -
+were all measured and all innocent. Two real causes:
+
+- **Gamma.** The multiplier scales LINEAR light and the result is then
+  sRGB-encoded, so six per cent of the lamp displays at about a third of full
+  brightness. `LM_CONTRAST` squares the multiplier before it is applied, which
+  puts the falloff back where the eye expects it.
+- **A uniform that was declared and never supplied.** `inject()` listed the
+  uniforms it passed through by hand, and the shadow fan's three were added to
+  the DECL and to the haze but not to that list. GLSL gives a missing sampler
+  texture unit zero and a missing vector all zeroes, so the terrain compiled,
+  ran, and ignored every shadow in the game - while the haze, which listed its
+  uniforms in a different place, worked perfectly. Half the feature working is
+  the worst possible symptom, because it looks like a tuning problem.
+
+  `inject()` now loops over the uniform object instead of naming keys, the haze
+  spreads the same object, and there is an e2e test that pulls the `uniform ...
+  uLmX;` declarations out of the compiled fragment shader and fails on any the
+  material does not supply. Mutation-tested by dropping one.
+
+**Rock was cutting through the glow in the tunnels**, which Gideon spotted and
+which had a boring cause: the displacement shader pushes rock vertices a fifth
+of a cell forward, so tunnel walls bulge to z 0.7 and drew over a haze quad that
+was sitting behind the terrain at -0.55. The haze moved in front of everything
+instead - it adds nothing on rock anyway, because its channel is zero there -
+and the ship moved with it, because an additive quad centred on the lamp washes
+the hull flat if the ship is behind it. The stack is now rock 0.7, haze 0.74,
+glow 0.80, ship 0.95, and it is written down in CLAUDE.md because the next thing
+that wants a z will have to fit into it.
+
+**Cost:** 48 draw calls of 150 and 0.73 ms a tick, measured at 20 m in a
+crossing corridor. The fan and the extra texture fetch are not measurable
+against the rest.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

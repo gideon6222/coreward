@@ -244,3 +244,100 @@ test('every column of a shifted row moves together', () => {
   H.shiftField(a, 3, 3, 1);
   assert.deepEqual(Array.from(a), [4, 5, 6, 7, 8, 9, 0, 0, 0]);
 });
+
+/* ---------- hard shadows ----------
+
+   The flood answers "can light get here at all". These answer "is anything in
+   the way", which is a different question and the one that produces an edge.
+
+   `lit()` below mirrors what the shader does with the fan - look up the
+   occluder on this point's bearing, and compare distances. Duplicating that in
+   the test is deliberate: what is being asserted is the geometry, and the
+   geometry is the part that has to be right whichever way it is sampled. */
+
+const RANGE = 12;
+
+function fan(rows, li, lj, rays = 512, range = RANGE) {
+  const { solid, w, h } = grid(rows);
+  const out = new Float32Array(rays);
+  H.castShadows(solid, w, h, li, lj, range, out);
+  return out;
+}
+
+function lit(out, li, lj, x, y) {
+  const dx = x - li, dy = y - lj;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 1e-6) return true;
+  let u = Math.atan2(dy, dx) / (Math.PI * 2);
+  if (u < 0) u += 1;
+  const k = Math.min(out.length - 1, Math.max(0, Math.round(u * out.length - 0.5)));
+  return dist <= out[k];
+}
+
+test('nothing in the way means nothing is in shadow', () => {
+  const open = Array.from({ length: 15 }, () => '.'.repeat(15));
+  const out = fan(open, 7, 7, 512, 4);
+  for (let k = 0; k < out.length; k++) assert.equal(out[k], 4, `ray ${k}`);
+});
+
+test('a wall is lit on its face and shadows everything behind it', () => {
+  /* Column 9 is solid. From the lamp at column 4, the wall itself has to stay
+     lit - it is the surface the lamp is falling ON - and the cell behind it
+     must not be. Recording the near side of the wall instead of the far side
+     puts every rock face in the game into its own shadow. */
+  const rows = Array.from({ length: 9 }, () =>
+    '.'.repeat(9) + '#' + '.'.repeat(5));
+  const out = fan(rows, 4, 4);
+  assert.ok(lit(out, 4, 4, 8, 4), 'the open cell in front of the wall');
+  assert.ok(lit(out, 4, 4, 9, 4), 'the face of the wall');
+  assert.ok(!lit(out, 4, 4, 10, 4), 'the cell behind the wall');
+  assert.ok(!lit(out, 4, 4, 12, 4), 'well behind the wall');
+});
+
+test('the world edge stops a ray', () => {
+  const rows = Array.from({ length: 5 }, () => '.'.repeat(5));
+  const out = fan(rows, 2, 2, 512, 20);
+  /* Straight right leaves the grid at x = 4.5, which is 2.5 from the lamp. */
+  assert.ok(out[0] < 3, 'a ray out of the grid does not run to full range: ' + out[0]);
+});
+
+/* A shaft with a tunnel crossing it, which is the case the playtest was about:
+   "tunnels that are perpendicular to me create a realistic feeling angled
+   shadow that fills more and more of the tunnel as I get further away." */
+function crossing(depthOfLamp) {
+  const W = 10, H = 10, CROSS = 7, SHAFT = 1;
+  const rows = [];
+  for (let j = 0; j < H; j++) {
+    if (j === CROSS) { rows.push('.'.repeat(W)); continue; }
+    rows.push(Array.from({ length: W }, (_, i) => (i === SHAFT ? '.' : '#')).join(''));
+  }
+  const out = fan(rows, SHAFT, depthOfLamp);
+  let n = 0;
+  for (let m = 0; m < W - SHAFT; m++) if (lit(out, SHAFT, depthOfLamp, SHAFT + m, CROSS)) n++;
+  return n;
+}
+
+test('a crossing tunnel opens up as you come level with it', () => {
+  const level = crossing(7), near = crossing(6), far = crossing(4);
+  assert.ok(level > near, `level with it (${level}) must beat one above (${near})`);
+  assert.ok(near > far, `one above (${near}) must beat three above (${far})`);
+  assert.ok(far >= 1, 'the junction cell itself is always visible straight down');
+});
+
+test('the shadow in a crossing tunnel is thrown by the corner, not by distance', () => {
+  /* A shaft with a tunnel crossing under it. The cell four along the tunnel is
+     dark - and the point of the second half is that it is dark because
+     something is in the way, not because it is far. The same bearing and the
+     same distance in an empty world reaches, so falloff is not what did it. */
+  const walled = [
+    '#.###',
+    '#.###',
+    '#.###',
+    '.....',
+    '#####'
+  ];
+  assert.ok(!lit(fan(walled, 1, 1), 1, 1, 4, 3), 'shadowed by the corner of the shaft');
+
+  const open = Array.from({ length: 5 }, () => '.'.repeat(9));
+  assert.ok(lit(fan(open, 1, 1), 1, 1, 4, 3), 'the same bearing and distance, unobstructed');
+});

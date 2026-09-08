@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { W, worldX } from './config';
 import { blockAt } from './world';
-import { solveVis, shiftField } from './light';
+import { solveVis, shiftField, castShadows } from './light';
 import { chainCompile } from './shader';
 import { LM_ATT, LM_PINCH, LM_SEEP, LM_SEEP_STEPS, LM_SMOOTH, LM_FLOOR_DEEP,
-         LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN,
-         LM_HAZE, LM_HAZE_COLOR } from './feel';
+         LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN, LM_CONTRAST,
+         LM_HAZE, LM_HAZE_COLOR, LM_INDIRECT, LM_FOCUS, LM_OMNI_NEAR, LM_OMNI_FAR,
+         LM_SHADOW_SOFT, LM_RAYS } from './feel';
 
 /* The grid the solver works on, and the bridge from it to every shader.
 
@@ -45,6 +46,26 @@ lmTex.wrapS = lmTex.wrapT = THREE.ClampToEdgeWrapping;
 lmTex.generateMipmaps = false;
 lmTex.needsUpdate = true;
 
+/* The shadow fan: one texel per angle, holding how far light gets that way
+   before something stops it, as a fraction of the lamp's reach.
+
+   One dimensional, so it is 512 texels - two kilobytes - and it is rebuilt
+   every frame rather than on cell changes, because the entire point of it is
+   that the shadow moves as the ship does.
+
+   Wrapped rather than clamped, and filtered rather than nearest: angle is
+   circular, so the seam at the back of the ship has to interpolate across
+   itself like any other pair of rays, and the interpolation between adjacent
+   rays is what keeps a shadow edge from stair-stepping as the ship moves. */
+const shadowRays = new Float32Array(LM_RAYS);
+const shadowData = new Uint8Array(LM_RAYS * 4);
+const shTex = new THREE.DataTexture(shadowData, LM_RAYS, 1, THREE.RGBAFormat);
+shTex.minFilter = shTex.magFilter = THREE.LinearFilter;
+shTex.wrapS = THREE.RepeatWrapping;
+shTex.wrapT = THREE.ClampToEdgeWrapping;
+shTex.generateMipmaps = false;
+shTex.needsUpdate = true;
+
 /* One set of uniform objects, shared by reference into every material that
    takes the injection. Writing `.value` here therefore updates all of them,
    which is the only reason a per-frame position can drive thirty materials
@@ -58,7 +79,14 @@ const U = {
   uLmLamp: { value: new THREE.Vector4(0, 0, 1 / 8, LM_GAIN) },
   /* the floor a cell the lamp never reaches settles to, and where daylight
      gives out - in metres, read from the CELL rather than from the ship */
-  uLmDark: { value: new THREE.Vector3(LM_FLOOR_DEEP, LM_DARK_START, 1 / LM_DARK_RAMP) }
+  uLmDark: { value: new THREE.Vector3(LM_FLOOR_DEEP, LM_DARK_START, 1 / LM_DARK_RAMP) },
+  uLmShadow: { value: shTex },
+  /* which way the lamp points, in GRID space where +y is deeper, then the
+     bounce fraction and how tightly the beam narrows to the front */
+  uLmDir: { value: new THREE.Vector4(0, 1, LM_INDIRECT, LM_FOCUS) },
+  /* how far the shadow edge is smeared, and the reach the fan's distances are
+     stored as a fraction of */
+  uLmShade: { value: new THREE.Vector2(LM_SHADOW_SOFT, 8) }
 };
 
 const OPTS = { att: LM_ATT, pinch: LM_PINCH, seep: LM_SEEP, seepSteps: LM_SEEP_STEPS };
@@ -90,7 +118,12 @@ function fillSolid() {
   }
 }
 
-export function updateLight(px: number, pd: number, range: number, dt: number) {
+/* `dirX`/`dirD` are the way the ship is pointing, in grid space: +D is deeper.
+   Taken from the ship's SMOOTHED facing rather than from `g.face`, so the beam
+   swings round with the model instead of snapping a quarter turn ahead of it. */
+export function updateLight(
+  px: number, pd: number, range: number, dirX: number, dirD: number, dt: number
+) {
   const want = Math.round(pd) - LM_ABOVE;
   /* Scroll the smoothed field with the window, or descending drags every
      cell's old value one row along with it and the field smears. */
@@ -119,10 +152,125 @@ export function updateLight(px: number, pd: number, range: number, dt: number) {
   }
   lmTex.needsUpdate = true;
 
+  /* The shadow fan, every frame and from the ship's EXACT position - the whole
+     point of it is that the wedge behind a corner grows as you pull away, and
+     a fan re-cast only on cell changes would step a metre at a time.
+
+     Cast against the same `solid` grid the flood used, so the two can never
+     disagree about where a wall is. */
+  const reach = Math.max(0.5, range);
+  castShadows(solid, LM_COLS, LM_ROWS, px + 1, pd - row0, reach, shadowRays);
+  for (let n = 0; n < LM_RAYS; n++) {
+    const f = shadowRays[n] / reach;
+    shadowData[n * 4] = f >= 1 ? 255 : f <= 0 ? 0 : (f * 255 + 0.5) | 0;
+  }
+  shTex.needsUpdate = true;
+
   U.uLmFrame.value.set(worldX(-1) - 0.5, row0 - 0.5, 1 / LM_COLS, 1 / LM_ROWS);
-  U.uLmLamp.value.set(worldX(px), -pd, 1 / Math.max(0.5, range), LM_GAIN);
+  U.uLmLamp.value.set(worldX(px), -pd, 1 / reach, LM_GAIN);
+  U.uLmDir.value.set(dirX, dirD, LM_INDIRECT, LM_FOCUS);
+  U.uLmShade.value.set(LM_SHADOW_SOFT, reach);
   haze.position.set(0, -pd, HAZE_Z);
 }
+
+/* The whole lighting model, in one function that everything shares.
+
+   Surfaces, the air in the tunnels and anything else that ever wants to know
+   how lit a point is all call `coreReach`, so they cannot drift apart. The one
+   thing that differs between them is what they do with the answer. */
+const DECL = `
+  varying vec2 vLmPos;
+  uniform sampler2D uLmMap;
+  uniform sampler2D uLmShadow;
+  uniform vec4 uLmFrame;
+  uniform vec4 uLmLamp;
+  uniform vec4 uLmDir;
+  uniform vec3 uLmDark;
+  uniform vec2 uLmShade;
+
+  /* Where p sits in the light grid. */
+  vec2 coreUv(vec2 p) {
+    return vec2((p.x - uLmFrame.x) * uLmFrame.z, (-p.y - uLmFrame.y) * uLmFrame.w);
+  }
+
+  /* How much of the lamp arrives at p, before any surface is considered.
+
+     Four terms, and they answer four different questions:
+
+       vis    - can light get here through the tunnels at all (the flood)
+       pool   - how far away is it (continuous, from the ship's exact position)
+       lobe   - is the lamp pointing this way
+       shadow - is anything directly in the way (the ray fan)
+
+     The last two are what a flood alone cannot express. A flood that turns a
+     corner arrives from that corner in every direction at once; the fan knows
+     the corner is a straight edge and throws a wedge behind it that widens
+     with distance, which is what a shadow actually looks like. */
+  float coreReach(vec2 p) {
+    float vis = texture2D(uLmMap, coreUv(p)).r;
+
+    /* Grid space: x across, y DEEPER, which is the frame the shadow fan and
+       the ship's facing are both expressed in. */
+    vec2 dg = vec2(p.x - uLmLamp.x, uLmLamp.y - p.y);
+    float dist = length(dg);
+    float r = min(1.0, dist * uLmLamp.z);
+    float pool = clamp(1.0 - pow(r, ${LM_POOL_POW.toFixed(1)}), 0.0, 1.0);
+
+    /* The lamp points where the drill points. Omnidirectional close in - a
+       real lamp lights its own surroundings whichever way it is aimed, and
+       without this the ship sits in a hard-edged half-disc of its own
+       shadow. */
+    float ax = dist > 0.0001 ? dot(dg / dist, uLmDir.xy) : 1.0;
+    float lobe = pow(max(0.0, ax * 0.5 + 0.5), uLmDir.w);
+    lobe = mix(1.0, lobe, smoothstep(${LM_OMNI_NEAR.toFixed(2)}, ${LM_OMNI_FAR.toFixed(2)}, dist));
+
+    /* The fan is indexed by angle and holds distance as a fraction of reach.
+       Anything further from the lamp than the occluder on its own bearing is
+       behind something. Sharp, because that is what was asked for; the smear
+       is one twentieth of a cell, purely so the edge does not alias into
+       stair steps as the ship moves. */
+    float occ = texture2D(uLmShadow, vec2(atan(dg.y, dg.x) * 0.15915494, 0.5)).r * uLmShade.y;
+    float clear = 1.0 - smoothstep(occ - uLmShade.x, occ + uLmShade.x, dist);
+
+    /* The beam, and the bounce. Combined with max() rather than multiplied:
+       somewhere both behind the ship and in shadow would otherwise land on the
+       product of two floors, which is black. Both are still gated by the
+       flood, so this lights tunnels you have opened and never solid rock. */
+    float direct = pool * lobe * clear;
+    float indirect = pool * uLmDir.z;
+    return vis * max(direct, indirect);
+  }
+
+  /* Daylight, read from the CELL's own depth rather than the ship's, so the
+     top of a shaft still glows when you are ninety metres under it. */
+  float coreFloor(vec2 p) {
+    return mix(1.0, uLmDark.x, clamp((-p.y - uLmDark.y) * uLmDark.z, 0.0, 1.0));
+  }
+
+  /* coreReach put through the gamma curve - see LM_CONTRAST in feel.ts. The
+     one place it happens, so surfaces and the air in the tunnels cannot end up
+     on different curves. */
+  float coreShade(vec2 p) {
+    return pow(min(1.0, coreReach(p) * uLmLamp.w), ${LM_CONTRAST.toFixed(2)});
+  }
+
+  float coreLit(vec2 p) {
+    float fl = coreFloor(p);
+    return fl + (1.0 - fl) * coreShade(p);
+  }
+`;
+
+/* Both start with a newline of their own, because they are appended straight
+   after an `#include` line and GLSL preprocessor directives own their line. */
+const VERT_DECL = `
+  varying vec2 vLmPos;`;
+const VERT_BODY = `
+  #ifdef USE_INSTANCING
+    vLmPos = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xy;
+  #else
+    vLmPos = (modelMatrix * vec4(position, 1.0)).xy;
+  #endif
+`;
 
 /* ---------- light in the air ----------
 
@@ -141,12 +289,33 @@ export function updateLight(px: number, pd: number, range: number, dt: number) {
 
    One draw call and a trivial fragment. The cost is fill rate, and fill rate
    is the one thing this phone has in abundance. */
-const HAZE_Z = -0.55;
+/* IN FRONT of the terrain, not behind it.
+
+   Behind was the obvious place - the haze belongs in the empty volume of the
+   tunnel, and depth-testing against the rock meant it could only ever show
+   through a hole. What that missed is that a rock face is not flat: the
+   displacement shader pushes vertices up to a fifth of a cell forward, so the
+   walls of a tunnel bulge INTO it, and every one of those bulges drew over the
+   haze as an angular chip of lit rock floating in the fog.
+
+   In front, none of that can happen, and nothing is lost: the open channel is
+   zero on rock, so the quad adds nothing there anyway. The half-texel of
+   bilinear bleed at the edge of a tunnel is a bonus - light spilling onto the
+   lip of the wall, which is what it should do.
+
+   That puts it forward of the ship's old z, so the ship moved forward too. See
+   SHIP_Z in ship.ts: the ship has to stay in front of its own light or the
+   additive quad washes the hull flat. */
+const HAZE_Z = 0.74;
 export const haze = new THREE.Mesh(
   new THREE.PlaneGeometry(W + 10, 46),
   new THREE.ShaderMaterial({
+    /* Spread, not listed. This material used to name its uniforms by hand and
+       the injection named them by hand somewhere else, which is how the two
+       came to disagree: the haze had the shadow fan and the terrain did not.
+       One source of truth, and adding a uniform to U reaches both. */
     uniforms: {
-      uLmMap: U.uLmMap, uLmFrame: U.uLmFrame, uLmLamp: U.uLmLamp, uLmDark: U.uLmDark,
+      ...U,
       uHaze: { value: new THREE.Color(LM_HAZE_COLOR) },
       uHazeGain: { value: LM_HAZE }
     },
@@ -157,24 +326,22 @@ export const haze = new THREE.Mesh(
         vLmPos = w.xy;
         gl_Position = projectionMatrix * viewMatrix * w;
       }`,
+    /* Shares coreReach with every surface in the world, so the air in a tunnel
+       goes dark for exactly the same reasons its walls do - out of the beam,
+       round a corner, behind an edge. Written twice, they would drift. */
     fragmentShader: `
-      varying vec2 vLmPos;
-      uniform sampler2D uLmMap;
-      uniform vec4 uLmFrame;
-      uniform vec4 uLmLamp;
-      uniform vec3 uLmDark;
       uniform vec3 uHaze;
       uniform float uHazeGain;
+      ${DECL}
       void main() {
-        vec2 luv = vec2((vLmPos.x - uLmFrame.x) * uLmFrame.z,
-                        (-vLmPos.y - uLmFrame.y) * uLmFrame.w);
-        float air = texture2D(uLmMap, luv).g;
-        float r = min(1.0, length(vLmPos - uLmLamp.xy) * uLmLamp.z);
-        float pool = clamp(1.0 - pow(r, ${LM_POOL_POW.toFixed(1)}), 0.0, 1.0);
+        /* The open channel: non-zero only where the solver says a cell has air
+           in it, which is what makes this light in the tunnel rather than a
+           wash over the whole frame. */
+        float air = texture2D(uLmMap, coreUv(vLmPos)).g;
         /* Fades out at the surface with everything else - haze in daylight
            reads as a smudge on the screen. */
         float dep = clamp((-vLmPos.y - uLmDark.y) * uLmDark.z, 0.0, 1.0);
-        gl_FragColor = vec4(uHaze * (air * pool * pool * dep * uHazeGain), 1.0);
+        gl_FragColor = vec4(uHaze * (air * coreShade(vLmPos) * dep * uHazeGain), 1.0);
       }`,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -194,40 +361,6 @@ export const lmDebug = { U, OPTS, resolve: markLightDirty };
 
 /* ---------- the injection ---------- */
 
-const DECL = `
-  varying vec2 vLmPos;
-  uniform sampler2D uLmMap;
-  uniform vec4 uLmFrame;
-  uniform vec4 uLmLamp;
-  uniform vec3 uLmDark;
-  float coreLit(vec2 p) {
-    vec2 luv = vec2((p.x - uLmFrame.x) * uLmFrame.z, (-p.y - uLmFrame.y) * uLmFrame.w);
-    /* How much of the lamp survived getting here through the tunnels. */
-    float vis = texture2D(uLmMap, luv).r;
-    /* How far away it is, from the ship exact position rather than its cell.
-       This is the half that has to be continuous, and it is the reason the
-       pool glides with the ship instead of stepping a metre at a time. */
-    float r = min(1.0, length(p - uLmLamp.xy) * uLmLamp.z);
-    float pool = clamp(1.0 - pow(r, ${LM_POOL_POW.toFixed(1)}), 0.0, 1.0);
-    /* Daylight, by the cell own depth: the top of a shaft still glows when
-       you are twenty metres under it. */
-    float fl = mix(1.0, uLmDark.x, clamp((-p.y - uLmDark.y) * uLmDark.z, 0.0, 1.0));
-    return fl + (1.0 - fl) * min(1.0, vis * pool * uLmLamp.w);
-  }
-`;
-
-/* Both start with a newline of their own, because they are appended straight
-   after an `#include` line and GLSL preprocessor directives own their line. */
-const VERT_DECL = `
-  varying vec2 vLmPos;`;
-const VERT_BODY = `
-  #ifdef USE_INSTANCING
-    vLmPos = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xy;
-  #else
-    vLmPos = (modelMatrix * vec4(position, 1.0)).xy;
-  #endif
-`;
-
 /* Both injections below go through chainCompile, so they stack onto the
    displacement a rock material already carries instead of replacing it. */
 
@@ -237,10 +370,18 @@ function inject(
   tag: string
 ) {
   return chainCompile(m, (shader) => {
-    shader.uniforms.uLmMap = U.uLmMap;
-    shader.uniforms.uLmFrame = U.uLmFrame;
-    shader.uniforms.uLmLamp = U.uLmLamp;
-    shader.uniforms.uLmDark = U.uLmDark;
+    /* Every key in U, by iteration rather than by hand.
+
+       Written out one line per uniform, this silently lost the shadow fan the
+       day it was added: the DECL declared `uLmShadow`, `uLmDir` and `uLmShade`
+       and nothing here supplied them, so the sampler fell back to texture unit
+       zero and the vectors to zero. The terrain compiled, rendered, and simply
+       ignored every shadow in the game - while the haze, which lists its
+       uniforms explicitly, worked. Which is exactly the shape of bug that
+       costs an afternoon: half the feature works.
+
+       A loop cannot forget. */
+    for (const k of Object.keys(U)) shader.uniforms[k] = U[k as keyof typeof U];
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + VERT_DECL)
       .replace('#include <begin_vertex>', '#include <begin_vertex>' + VERT_BODY);
@@ -263,7 +404,7 @@ export function applyLight<T extends THREE.Material>(m: T): T {
           reflectedLight.indirectDiffuse *= lit;
           reflectedLight.directSpecular *= lit;
           reflectedLight.indirectSpecular *= lit;
-        }`);
+        }`)
   }, 'lm');
   return m;
 }

@@ -1250,6 +1250,31 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
     const unlit = rock.filter((p) =>
       !String(gl.getShaderSource(p.fragmentShader) || '').includes('coreLit(vLmPos)'));
 
+    /* And every uniform the lighting DECLARES has to actually be supplied.
+
+       Declaring one and forgetting to hand it over is not a compile error and
+       not a warning: GLSL happily gives a missing sampler texture unit zero and
+       a missing vector all zeroes, so the shader runs and quietly ignores that
+       part of the model. It cost an afternoon exactly once - the shadow fan was
+       declared, never bound, and the terrain rendered with no shadows at all
+       while the haze, which lists its uniforms by hand, worked perfectly. */
+    const props = w.renderer.properties;
+    const missing: string[] = [];
+    const seen = new Set<any>();
+    w.scene.traverse((o: any) => {
+      const m = o.material;
+      if (!m || seen.has(m) || !o.isInstancedMesh || m.type !== 'MeshStandardMaterial') return;
+      seen.add(m);
+      const stored = props.get(m).uniforms;
+      if (!stored || !stored.uLmMap) return;          /* not a lightmapped material */
+      const prog = props.get(m).currentProgram;
+      if (!prog) return;
+      const src = String(gl.getShaderSource(prog.fragmentShader) || '');
+      const declared = (src.match(/uniform\s+\w+\s+(uLm\w+)\s*;/g) || [])
+        .map((d: string) => d.replace(/.*\s(uLm\w+)\s*;/, '$1'));
+      for (const name of declared) if (!stored[name]) missing.push(name);
+    });
+
     /* And the field itself, read straight off the texture the shader samples.
        Column index is x + 1, because the grid carries a border column. */
     const data = w.lmDebug.U.uLmMap.value.image.data;
@@ -1260,6 +1285,7 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
     const at = (dx: number) => data[(ROW * COLS + (x + 1 + dx)) * 4];
     return {
       rockPrograms: rock.length, unlit: unlit.length,
+      missing: Array.from(new Set(missing)),
       depth: w.g.pd, shaft: at(0), wall: at(1), two: at(2), four: at(4)
     };
   });
@@ -1276,6 +1302,10 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
   expect(r.unlit, r.unlit + ' of ' + r.rockPrograms +
     ' rock programs lost the light injection - something assigned onBeforeCompile' +
     ' instead of chaining onto it').toBe(0);
+
+  expect(r.missing, 'the lighting shader declares ' + r.missing.join(', ') +
+    ' and nothing supplies them, so that part of the model is silently inert')
+    .toEqual([]);
 
   /* The shaft the ship is sitting in is fully lit; its wall catches the lamp;
      four cells into untouched rock is nearly nothing. */

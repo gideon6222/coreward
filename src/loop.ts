@@ -30,7 +30,7 @@ import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './parti
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
 import { moveAndCollide, thrust, laneVel } from './fly';
-import { player, rig, bit, flames, lampGlow, drillTint, FACE_ANGLE } from './ship';
+import { player, rig, bit, flames, lampGlow, drillTint, FACE_ANGLE, SHIP_Z, GLOW_Z } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
@@ -548,7 +548,7 @@ export function tick(raw: number, draw = true) {
 
   /* ship transform */
   const px = worldX(g.px), py = -g.pd;
-  player.position.set(px, py, 0.62);
+  player.position.set(px, py, SHIP_Z);
   R.squash *= SQUASH_DECAY;
   const sq = 1 + R.squash * SQUASH_SCALE;
   player.scale.set(1 / sq, sq, 1);
@@ -558,23 +558,12 @@ export function tick(raw: number, draw = true) {
   shipKey.position.set(px + 0.35, py + 0.5, 1.5);
   lamp.distance = S.light();
 
-  /* Solve the propagated light before anything is drawn with it.
-
-     Given the ship's exact position, not its cell: the solve itself is on the
-     grid, but the pool's centre is continuous, and that split is what keeps
-     the light gliding rather than stepping a metre at a time. See lightmap.ts.
-
-     Cheap enough not to gate: the field is only re-solved when the ship
-     changes cell or the terrain changes shape, and what runs every frame is
-     one pass over 540 texels. */
-  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, raw);
-
   /* The lamp's own glow. Invisible in daylight, because a visible light source
      against a bright sky reads as a bug; grown by the Scanner Array, so the
      upgrade still has a silhouette now that the cone is gone. Scaled rather
      than faded - the sprite material is shared. */
   const dark = depthT(g.pd);
-  lampGlow.position.set(px, py, 0.34);
+  lampGlow.position.set(px, py, GLOW_Z);
   lampGlow.visible = dark > 0.02;
   /* Scanner runs 8 m at level 0 to 29.6 m at level 9, mapped to between one
      and two glow widths. Proportional would put a glow eight cells across on
@@ -591,6 +580,21 @@ export function tick(raw: number, draw = true) {
        ship still turns the short way round. */
     rig.rotation.z += diff * (1 - Math.exp(-FACE_TURN_RATE * raw));
   }
+
+  /* Solve the propagated light. After the facing above, because the lamp now
+     points where the drill points and reading last frame's angle would leave
+     the beam trailing the ship round every corner.
+
+     Given the ship's exact position rather than its cell: the flood is on the
+     grid, but the pool's centre and the shadow fan's origin are continuous,
+     and that split is what keeps the light gliding rather than stepping a
+     metre at a time. See lightmap.ts.
+
+     Local forward is -Y and FACE_ANGLE has `down` at zero, so rotating (0,-1)
+     by the smoothed facing gives world (sin, -cos) - which in the grid's
+     frame, where +y is deeper, is (sin, cos). */
+  const fz = rig.rotation.z;
+  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw);
 
   const fscale = 0.25 + thrustLevel * 1.15;
   for (const f of flames) {

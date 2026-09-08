@@ -41,7 +41,7 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/util.ts` | `key`, `clamp`, `mixHex`. Imports nothing |
 | `src/runtime.ts` | `R`, the mutable loop state that crosses modules. Imports nothing |
 | `src/state.ts` | `g`, derived stats `S`, relic perks, save/load |
-| `src/light.ts` | **Pure.** The lighting solver: floods light through open cells, fully unit-tested |
+| `src/light.ts` | **Pure.** The lighting solvers: the flood through open cells and the shadow ray fan |
 | `src/lightmap.ts` | The solved field as a texture, the shader injection, and the haze quad |
 | `src/shader.ts` | `chainCompile`, the one way anything patches a stock three shader |
 | `src/feel.ts` | Every number that decides how it *feels*, plus the pure reducers (`tremorTick`, `chargeAfter`, `soakAfter`) |
@@ -105,9 +105,21 @@ entirely**: the drilled block is the only cloned material in the game and it has
 its displacement and its lighting re-applied by hand. There is an e2e test that reads the
 compiled shaders back out of WebGL and fails if any rock program has lost the light.
 
+**Every uniform the lighting shader declares must be supplied by `inject()`, which is why
+that loops over `U` rather than listing names.** GLSL gives a missing sampler texture unit
+zero and a missing vector all zeroes, so the shader compiles, runs, and silently ignores that
+part of the model - the shadow fan shipped inert on the terrain for exactly this reason while
+the haze, which listed its uniforms by hand, worked. The haze now spreads `U` too. There is an
+e2e test that reads the declarations out of the compiled shader and fails on any that nothing
+supplies.
+
 **The propagated light only ever darkens.** `coreLit()` is clamped to at most 1, so every
 lighting value in `feel.ts` is still the ceiling it was calibrated to be. If the world ever
 needs to be brighter, that is a change to the lights, not to the lightmap.
+
+**The shadow fan records the FAR side of the first wall it hits, not the near side.** A rock
+face is the surface the lamp is falling on and has to stay lit; shadow starts behind it.
+Recording the near side puts every rock face in the game into its own shadow.
 
 **Rock is relaxed but never expanded by the solver.** That one line in `light.ts` is what
 stops light passing through a wall into the chamber behind it. Without it every sealed
@@ -136,12 +148,27 @@ null check narrows every node.
 range `S.light()`, **decay 1.75**. Old tutorial values render nearly black under 0.166's
 physically based lighting.
 
+**The z stack: rock to 0.7, haze 0.74, lamp glow 0.80, ship 0.95.** The displacement shader
+pushes rock vertices a fifth of a cell forward, so a tunnel wall bulges to z 0.7; the haze has
+to clear that or those bulges draw over it as chips of lit rock floating in the fog. The ship
+in turn has to clear the haze, or an additive quad centred on its own lamp washes the hull
+flat.
+
 **Propagated light.** Attenuation 0.78 per unit of DETOUR - not per unit of distance;
 distance is the pool, evaluated per pixel from the ship's exact position so it does not step
 as you fly. Rock seeps 0.32 per cell for three cells. Unreached cells settle to 0.06 of the
 light they would otherwise get, which is dark enough to read as unreachable and light enough
 to keep the rock's shape. Daylight gives out between 2 m and 14 m, read from each CELL's own
 depth rather than the ship's, so the top of a shaft still glows from ninety metres down.
+The multiplier is then SQUARED (`LM_CONTRAST`) before it is applied, because it multiplies
+linear light that is about to be sRGB-encoded: six per cent of the lamp displays as roughly a
+third of full brightness, which is how an early version came out as a grey wash over a field
+that was numerically correct.
+
+**Beam and bounce, combined with max() and never multiplied.** Direct light is the lobe times
+the shadow; the bounce is a flat 0.22, omnidirectional and unshadowed, and both are gated by
+the flood. Multiplied, somewhere both behind the ship and in shadow lands on the product of
+two floors and goes black - which erases the shaft you came down.
 
 **Framing.** 18 rows solved into a camera distance in `resize()`, then multiplied by
 `zoomForScan(g.up.scan)` — 0.82 at Scanner 0 up to 1.22 at 9. The Scanner *is* the framing;

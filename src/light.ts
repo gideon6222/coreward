@@ -219,3 +219,77 @@ export function shiftField(a: Float32Array, cols: number, rows: number, n: numbe
   }
   return a;
 }
+
+/* ---------- hard shadows ----------
+
+   The flood above answers "can light get here at all", and it answers it
+   softly: a cell reached by a longer path is dimmer. What it cannot produce is
+   an EDGE. Light that turns a corner in the flood arrives from the corner in
+   every direction at once, so a tunnel crossing your path lights up along its
+   whole length, gently, when what should happen is that the corner throws a
+   shadow into it that grows the further away you are.
+
+   That is a different question - a question about straight lines from a point -
+   and it gets its own solver.
+
+   This is the classic 2D lighting answer: cast a fan of rays from the lamp and
+   record, per angle, how far light gets before something stops it. The result
+   is a one-dimensional map of the world as the lamp sees it, and a fragment is
+   in shadow if it is further from the lamp than the occluder at its own angle.
+   Sharp by construction, exact for any geometry, and the wedge behind a corner
+   widens with distance for free, because that is what a fan of rays does.
+
+   Costs nothing worth measuring: a few hundred rays of grid DDA per frame, and
+   one texture fetch per pixel. It has to run every frame rather than on cell
+   changes, because the whole point is that the shadow moves as the ship does.
+
+   Recorded distance is to the FAR side of the first wall hit, not the near
+   side. The face of a wall is the surface the lamp is falling on and has to
+   stay lit; shadow starts behind it. Getting that wrong puts every rock face
+   in the game in its own shadow. */
+
+const TAU = Math.PI * 2;
+
+function rayHit(
+  solid: Uint8Array, cols: number, rows: number,
+  li: number, lj: number, dx: number, dy: number, maxDist: number
+): number {
+  let ix = Math.floor(li + 0.5), iy = Math.floor(lj + 0.5);
+  if (ix < 0 || ix >= cols || iy < 0 || iy >= rows) return 0;
+
+  const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1;
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  const dtx = adx > 1e-9 ? 1 / adx : Infinity;
+  const dty = ady > 1e-9 ? 1 / ady : Infinity;
+  /* how far along the ray the first cell boundary is, per axis */
+  let tx = adx > 1e-9 ? (ix + sx * 0.5 - li) / dx : Infinity;
+  let ty = ady > 1e-9 ? (iy + sy * 0.5 - lj) / dy : Infinity;
+
+  for (;;) {
+    const enter = tx < ty ? tx : ty;
+    if (enter > maxDist) return maxDist;
+    if (tx < ty) { ix += sx; tx += dtx; } else { iy += sy; ty += dty; }
+    /* outside the grid entirely: nothing out there to light */
+    if (ix < 0 || ix >= cols || iy < 0 || iy >= rows) return enter;
+    if (solid[iy * cols + ix]) {
+      const exit = tx < ty ? tx : ty;
+      return exit < maxDist ? exit : maxDist;
+    }
+  }
+}
+
+/* Fill `out` with one occluder distance per angle, evenly around the lamp.
+   Ray k covers angle (k + 0.5) / out.length of a full turn, which is the
+   convention the shader's texture lookup assumes. */
+export function castShadows(
+  solid: Uint8Array, cols: number, rows: number,
+  li: number, lj: number, maxDist: number,
+  out: Float32Array
+): Float32Array {
+  const n = out.length;
+  for (let k = 0; k < n; k++) {
+    const a = ((k + 0.5) / n) * TAU;
+    out[k] = rayHit(solid, cols, rows, li, lj, Math.cos(a), Math.sin(a), maxDist);
+  }
+  return out;
+}

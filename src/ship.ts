@@ -279,7 +279,23 @@ lampGlow.add(makeGlow(0xffd9a0, 0.8, 0.34));
    Behind, the ship silhouettes against its own light, which is what a lamp on
    a machine actually looks like. Still forward of z = 0, because the ship
    spends its life in a one-cell tunnel and at zero the terrain occludes it. */
-lampGlow.position.z = 0.34;
+/* The z stack, and why these numbers are what they are.
+
+   Rock cells are unit cubes at z 0, and the displacement shader pushes their
+   vertices up to a fifth of a cell either way, so a rock FACE can reach 0.7.
+   The haze quad has to sit in front of all of that or bulges in a tunnel wall
+   draw over it as chips of lit rock floating in the fog; it is at 0.74. And
+   the ship has to sit in front of the haze, because an additive quad drawn
+   over the hull washes it flat - the exact fault the render layers were added
+   to fix, arriving by another route.
+
+   So: rock to 0.7, haze at 0.74, the lamp's glow just behind the ship, the
+   ship in front of everything. Moving the ship forward a third of a unit
+   against a camera twenty units away is a one per cent scale change, which is
+   the whole cost of getting the order right. */
+export const SHIP_Z = 0.95;
+export const GLOW_Z = 0.80;
+lampGlow.position.z = GLOW_Z;
 lampGlow.renderOrder = 2;
 scene.add(lampGlow);
 

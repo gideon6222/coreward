@@ -238,7 +238,13 @@ export const LM_SMOOTH = asExpRate(11);
 /* What a cell the lamp never reaches is multiplied by. Not zero: at zero the
    unopened rock is a black rectangle with no shape in it at all, and the
    player loses the ability to read the band they are digging through. */
-export const LM_FLOOR_DEEP = 0.04;
+/* Two per cent, not four, and the difference is not subtle: this multiplies
+   the light three has ALREADY computed, and the lamp is a point light at
+   intensity 44. Four per cent of that reads as mid-grey rock a few cells from
+   the ship, which is how "unreachable" came out looking like "slightly dim".
+   Anything reachable is carried by the bounce above; this is only what a cell
+   with no path to it at all keeps, and it wants to be nearly nothing. */
+export const LM_FLOOR_DEEP = 0.02;
 /* Where daylight stops and the lamp is all there is, in metres. Read from the
    CELL's depth rather than the ship's, so the top of a shaft still glows when
    you are twenty metres below it. */
@@ -256,6 +262,67 @@ export const LM_POOL_POW = 3;
 export const LM_RANGE_MULT = 1.1;
 /* Headroom so the middle of the pool saturates instead of asymptoting. */
 export const LM_GAIN = 1.15;
+
+/* The curve the whole multiplier is put through before it is applied, and the
+   reason it exists is gamma.
+
+   `coreReach` is a linear fraction of the lamp, and it multiplies light that
+   is still linear - but what the player sees is that number sRGB-encoded,
+   which lifts the dark end enormously. Six per cent of the lamp is not six per
+   cent of a pixel: it comes out at roughly a third of full brightness, which
+   is why an early version of this looked like a grey wash over everything even
+   though the field underneath it was correct.
+
+   Squaring it puts the falloff back where the eye expects. Not a fudge - the
+   alternative is to keep every constant here honest and then hand the result
+   to a display that disagrees. */
+export const LM_CONTRAST = 2.0;
+
+/* ---------- the lamp as a direction, and its shadows ----------
+
+   Playtest: *"I want the light to be coming from the front of the ship, so if
+   I am facing down, the whole tunnel down is lit up but dims behind me. I also
+   want sharp shadows to show for crossing tunnels."*
+
+   Two separate things, and they are separate in the shader too. The lobe below
+   is about where the lamp POINTS. The shadow map in light.ts is about what is
+   in the way. */
+
+/* The bounce.
+
+   Direct light is the beam: pointed, and stopped dead by anything in the way.
+   On its own that is unplayable - the shaft behind you is the way home, and a
+   game that erases the way home is punishing rather than atmospheric. So there
+   is a second, omnidirectional, unshadowed term at this fraction of the beam,
+   standing in for light bouncing off the tunnel around you.
+
+   The two are combined with max(), not multiplied. Multiplying is what the
+   first attempt did, and a cell that was both behind the ship and in shadow
+   came out at the product of two floors - four per cent of four per cent -
+   which is black. Whichever of "the beam reaches here" and "some light bounces
+   here" is larger is the honest answer.
+
+   Crucially it is still multiplied by the flood, so this brightens tunnels you
+   have opened and never the solid rock you have not. */
+export const LM_INDIRECT = 0.22;
+/* How tightly the beam narrows to the front. Higher is a spotlight, lower is a
+   bare bulb with a reflector behind it. */
+export const LM_FOCUS = 1.7;
+/* Within this many cells the lamp is omnidirectional, because a real lamp
+   lights its own surroundings whichever way it is aimed - and because the ship
+   would otherwise sit in a hard-edged half-disc of its own shadow. */
+export const LM_OMNI_NEAR = 0.7;
+export const LM_OMNI_FAR = 2.8;
+
+/* How far the shadow edge is smeared, in cells. Small on purpose - Gideon
+   asked for sharp - but not zero, or the edge aliases into stair steps as the
+   ship moves. */
+export const LM_SHADOW_SOFT = 0.07;
+/* Rays in the shadow fan. 512 over a full turn is one ray every 0.7 degrees,
+   which at the far edge of the biggest lamp in the game is about a third of a
+   cell - finer than the shadow needs to be, and still only a few thousand grid
+   steps a frame. */
+export const LM_RAYS = 512;
 
 /* Light in the air of an open tunnel - see the haze in lightmap.ts. Warm,
    because the lamp is, and weak: this is the glow around a light source in
