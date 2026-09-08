@@ -38,6 +38,7 @@ import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent,
          stopDigging } from './actions';
 import { sfx, setDepth, setMood } from './audio';
+import { isDocked, stepStation, renderStation } from './station';
 
 export const FACE_VEC: Record<Dir, number[]> =
   { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -530,6 +531,19 @@ export function tick(raw: number, draw = true) {
     g.pd > TREMOR_DEPTH && g.mode === 'play' ? 1 : 0,
     Math.max(clamp((45 - g.hull) / 45, 0, 1), clamp((g.soak - 0.6) / 0.4, 0, 1))
   );
+
+  /* Docked: the station is its own scene with its own lights, and the ship has
+     been reparented into it. Everything below here - the ship transform, the
+     lamp, the world ambience, the vignette - is about being underground, and
+     running it against a ship that is no longer in that world would fight the
+     station's own framing. So the loop stops here and draws the room. */
+  if (isDocked()) {
+    stepStation(clock, raw);
+    tickToast(raw);
+    updateHUD();
+    if (draw) renderStation();
+    return;
+  }
 
   /* ship transform */
   const px = worldX(g.px), py = -g.pd;

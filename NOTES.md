@@ -1978,6 +1978,75 @@ from failing CI, for what is four copies of two shapes. One InstancedMesh per
 KIND, with `count` as the upgrade lever, brought it to 60 and made the count
 stop moving with how upgraded the ship is.
 
+## The Outfitter is a room (2026-09-08)
+
+Playtest: *"can you rearrange how the shop is layed out? make it look like a
+full room where upgrades have a physical model associated with it instead of a
+list of upgrades"* and *"when you upgrade thrusters and it starts to change the
+way they look, it also changes the way that they look when you're actually
+playing."*
+
+`src/station.ts` is a second three.js scene: a hangar bay with the ship parked
+on a deck and the upgrades racked around it in lit display cases. Tap a case,
+get a card with the level, effect, price and mineral gate; buy from there. The
+scrolling shelf list is gone, along with the painted CSS window it sat under.
+
+**Two decisions carry the whole thing, and both are about there being ONE set of
+objects rather than two.**
+
+*The ship in the room is the ship.* `player` is reparented out of the game scene
+into the station scene - three removes an object from its old parent when it is
+added to a new one, so that is the entire mechanism. The machine on the deck is
+wearing exactly the hardware it will undock with, and buying something changes
+the thing you are looking at. A copy would be a second source of truth and would
+drift inside a single session.
+
+*The parts in the cases are the parts.* `HW` is exported from ship.ts and used by
+both, so the model on the pedestal is not a picture of the upgrade - it is the
+upgrade. That is what makes the answer to his question structural rather than a
+promise: there is no second set of art that CAN disagree.
+
+There is an e2e test on exactly that guarantee: buy tanks in the room, undock,
+and count the instances the ship is drawing underground.
+
+### The room is tall because the phone is
+
+Portrait is ~0.46 aspect, so at a 46 degree vertical field the horizontal one is
+only ~22 degrees: eight units back shows 6.8 units of height and barely 3.1 of
+width. The first version was a hangar laid out sideways - the obvious shape -
+and most of it was off the edges of the screen. The cases are in two vertical
+columns flanking the ship now, which is both what fits and what a parts wall in
+a workshop actually looks like.
+
+### Four bugs, and the third is the one that would have shipped
+
+- **`mustEl` caught the dead `#vSky`** the moment the old markup went. The error
+  overlay did its job.
+- **The ship was invisible in the room.** It is on its own layer so the game's
+  lamp cannot blow it out, and that decision follows it: without enabling
+  `SHIP_LAYER` on the station camera and lights, the camera does not render it
+  and the lights do not reach it. It presented as an empty docking clamp.
+- **A tap in the same tick the room opened did nothing.** A raycast reads world
+  matrices, and those are only refreshed by a render - so before the first frame
+  every bay was still at the identity matrix and the ray missed everything. It
+  worked the instant one frame had gone by, which is exactly the kind of bug
+  that reproduces on a fast tap and nowhere else. `pickBay` calls
+  `updateMatrixWorld(true)` first now. **Found by a test, not by playing.**
+- **The parked ship kept burning its engines**, because the thruster animation
+  is downstream of the branch that returns for a docked ship, so whatever the
+  flames were doing on the way in is what they kept doing.
+
+### Smaller things worth keeping
+
+The station gets `scene.background`; the game deliberately has none so its CSS
+sky shows through, which in the room showed as a band of planet-coloured sky
+above the back wall. A scene background is per-scene, so setting one here does
+not disturb that.
+
+Supplies became three chips on one line. As a stacked list they were a third of
+the screen, and they are consumables with a count and a price and nothing else
+to say - the room should keep the space.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

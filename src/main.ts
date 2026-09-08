@@ -9,6 +9,7 @@ import { syncBlocks } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware } from './ship';
+import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station';
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock } from './loop';
 import { sfx } from './audio';
@@ -74,6 +75,7 @@ if (new URLSearchParams(location.search).has('debug')) {
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
     scene, camera, lamp, amb, sun, rim, fog, renderer,
-    setDrillTier, setUpgradeHardware
+    setDrillTier, setUpgradeHardware,
+    pickBay, selectBay, selectedBay, bays, stationCamera
   };
 }

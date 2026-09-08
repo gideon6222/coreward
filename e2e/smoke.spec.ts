@@ -45,6 +45,40 @@ async function holdUntil(page: Page, dir: string, settled: () => Promise<void>) 
   }
 }
 
+/* Tap a display case in the Outfitter, the way a thumb would.
+
+   The shop is a 3D room now, so there is no row to click: the case has to be
+   found in the scene, projected to screen, and hit with a real pointer event at
+   those coordinates. That is more work than clicking a list item and it is
+   worth it - it exercises the actual path, raycast and all, which is the part
+   that can break.
+
+   Needs ?debug for the scene handles. */
+async function tapBay(page: Page, key: string) {
+  /* A tap only means anything while docked; without this a shop that failed to
+     open shows up as "the card is empty", which points at the wrong thing. */
+  await expect(page.locator('#shop'), 'the Outfitter is not open').not.toHaveClass(/hidden/);
+  const r = await page.evaluate((k) => {
+    const w = (window as any).__cw;
+    const bay = w.bays.find((b: any) => b.key === k);
+    if (!bay) return { err: 'no case for ' + k };
+    const p = bay.group.getWorldPosition(new w.camera.position.constructor());
+    p.project(w.stationCamera);
+    const x = Math.round((p.x * 0.5 + 0.5) * window.innerWidth);
+    const y = Math.round((-p.y * 0.5 + 0.5) * window.innerHeight);
+    const el = document.elementFromPoint(x, y);
+    if (!el) return { err: 'nothing at ' + x + ',' + y };
+    const before = { mode: w.g.mode, sel: w.selectedBay() };
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+    w.advance(0.3);
+    return { at: x + ',' + y, on: el.id || el.className, picked: w.pickBay(x, y),
+             selected: w.selectedBay(), before };
+  }, key);
+  expect(r.err, String(r.err)).toBeUndefined();
+  expect(r.selected, 'tapped "' + key + '" at ' + r.at + ' over "' + r.on +
+    '"; raycast said "' + r.picked + '"; before=' + JSON.stringify(r.before)).toBe(key);
+}
+
 const num = async (loc: Locator) =>
   Number((await loc.innerText()).replace(/[^0-9.]/g, ''));
 
@@ -110,16 +144,28 @@ test('digging fills the hold and selling at the pad pays out', async ({ page }) 
    missing id. Opening each panel is therefore also a check that index.html and
    ui.ts still agree with each other. */
 test('the shop, manifest and pause menu all open', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   await page.locator('#btnShop').dispatchEvent('click');
   await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#upgrades .up')).toHaveCount(10);
-  /* Four named counters, and on a fresh save some stock is visibly sealed -
-     seeing that there IS an Ordnance counter is most of the reason to keep
-     going down, so its absence would be a real regression rather than a
-     cosmetic one. */
-  await expect(page.locator('#upgrades .counter')).toHaveCount(4);
-  await expect(page.locator('#upgrades .up.sealed').first()).toContainText('Sealed until');
-  /* supplies are a separate section under their own counter */
+
+  /* The Outfitter is a room: one display case per upgrade, and the ship itself
+     reparented onto the deck. Asserting the case COUNT is the equivalent of the
+     old row count - it catches an upgrade that stops being reachable. */
+  const bays = await page.evaluate(() => (window as any).__cw.bays.length);
+  expect(bays, 'every upgrade needs a case to stand in').toBe(10);
+  /* Nothing picked yet, so the card is empty and the hint is showing. */
+  await expect(page.locator('#shopHint')).not.toHaveClass(/gone/);
+
+  /* Tapping a case fills the card - and a sealed one still says why. */
+  await tapBay(page, 'drill');
+  await expect(page.locator('#shopCard')).toContainText('Drill Bit');
+  await expect(page.locator('#shopHint')).toHaveClass(/gone/);
+  await tapBay(page, 'auto');
+  await expect(page.locator('#shopCard'), 'a sealed case must say what unlocks it')
+    .toContainText('Sealed until');
+
+  /* supplies stay as their own row of chips */
   await expect(page.locator('#supplies .up')).toHaveCount(3);
   await page.locator('#shopClose').dispatchEvent('click');
 
@@ -735,24 +781,28 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
       return set.call(this, k, v);
     };
   });
-  await page.reload();
+  /* ?debug: the shop is a 3D room, and tapping a case needs the scene handles */
+  await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
 
   await page.locator('#btnShop').dispatchEvent('click');
-  const cool = page.locator('#upgrades .up').filter({ hasText: 'Cooling Rig' });
-  const buy = cool.locator('button');
+  await tapBay(page, 'cool');
+  const card = page.locator('#shopCard');
+  const buy = card.locator('button');
 
   /* half a million credits and it is still refused */
+  await expect(card).toContainText('Cooling Rig');
   await expect(buy).toBeDisabled();
-  await expect(cool.locator('.upmat')).toHaveClass(/short/);
-  await expect(cool.locator('.upmat')).toContainText('2 Emerald');
-  await expect(cool.locator('.upmat'), 'a requirement you cannot meet must say where to go')
+  await expect(card.locator('.upmat')).toHaveClass(/short/);
+  await expect(card.locator('.upmat')).toContainText('2 Emerald');
+  await expect(card.locator('.upmat'), 'a requirement you cannot meet must say where to go')
     .toContainText('from 78 m');
 
   /* levels inside the free tier are still pure credits */
-  const drill = page.locator('#upgrades .up').filter({ hasText: 'Drill Bit' });
-  await expect(drill.locator('.upmat')).toHaveCount(0);
-  await expect(drill.locator('button')).toBeEnabled();
+  await tapBay(page, 'drill');
+  await expect(card).toContainText('Drill Bit');
+  await expect(card.locator('.upmat')).toHaveCount(0);
+  await expect(buy).toBeEnabled();
 
   /* bank the emerald and the same row unlocks */
   await page.evaluate(() => {
@@ -770,15 +820,17 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   await page.locator('#btnShop').dispatchEvent('click');
+  await tapBay(page, 'cool');
+  await expect(card, 'the tap should have selected the Cooling Rig case')
+    .toContainText('Cooling Rig');
 
-  const cool2 = page.locator('#upgrades .up').filter({ hasText: 'Cooling Rig' });
-  await expect(cool2.locator('.upmat')).not.toHaveClass(/short/);
-  await expect(cool2.locator('button')).toBeEnabled();
-  await cool2.locator('button').click();
+  await expect(card.locator('.upmat')).not.toHaveClass(/short/);
+  await expect(card.locator('button')).toBeEnabled();
+  await card.locator('button').click();
 
   /* bought: the level went up and the minerals were actually spent */
-  await expect(cool2).toContainText('Lv 4/9');
-  await expect(cool2.locator('.upmat')).toContainText('you have 1');
+  await expect(card).toContainText('Lv 4/9');
+  await expect(card.locator('.upmat')).toContainText('you have 1');
 
   /* and the vault reflects it */
   await page.locator('#shopClose').dispatchEvent('click');
@@ -1078,4 +1130,87 @@ test('drilling holds the ship against the rock, never inside it', async ({ page 
   /* and the perpendicular axis is still held on the line, which is what
      DIG_ALIGN is actually for */
   expect(out.down.worstX).toBeCloseTo(6, 2);
+});
+
+/* The shop and the ship are the same object.
+
+   Playtest: "when you upgrade thrusters and it starts to change the way they
+   look, it also changes the way that they look when you're actually playing."
+
+   The station does not draw a preview of the ship, it reparents the REAL one
+   onto the deck, and the parts in the display cases are the same geometry the
+   hull gets. This test is the guarantee that stays true: buy in the room, and
+   the thing flying around underground has changed.
+
+   Asserted on the instance COUNT of the bolt-on hardware, because that is the
+   model rather than the picture of it - a screenshot comparison would pass on
+   a shop that showed the right thing and bolted on nothing. */
+test('hardware bought in the Outfitter is on the ship you undock with', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('coreward.v2', JSON.stringify({
+      planet: 0, credits: 400000, shards: 0,
+      up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
+      kit: { coolant: 0, patch: 0, cell: 0 },
+      stock: { iron: 99, copper: 99, silver: 99, gold: 99, amethyst: 99, emerald: 99 },
+      best: { depth: 300, haul: 0 }, dug: [], rubble: [], cargo: {}, weight: 0,
+      px: 6, pd: -1
+    }));
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  /* Counts the tank instances the ship is actually drawing. Instanced, so this
+     is one mesh whose `count` is the number of tanks bolted on. */
+  const tanksOn = () => page.evaluate(() => {
+    const w = (window as any).__cw;
+    let n = -1;
+    w.scene.traverse((o: any) => {
+      if (o.isInstancedMesh && o.geometry.type === 'CylinderGeometry' &&
+          o.instanceMatrix.count === 4) n = o.count;
+    });
+    return n;
+  });
+
+  expect(await tanksOn(), 'a stock ship carries no tanks').toBe(0);
+
+  await page.locator('#btnShop').dispatchEvent('click');
+  await tapBay(page, 'tank');
+  await expect(page.locator('#shopCard')).toContainText('Fuel Tank');
+
+  /* Buy up to the level where the first pair appears. */
+  for (let i = 0; i < 4; i++) {
+    const btn = page.locator('#shopCard button');
+    if (await btn.isDisabled()) break;
+    await btn.click();
+    await page.evaluate(() => (window as any).__cw.advance(0.2));
+  }
+  const level = await page.evaluate(() => (window as any).__cw.g.up.tank);
+  expect(level, 'the purchases did not go through').toBeGreaterThanOrEqual(2);
+
+  /* Still docked: the ship on the deck already wears them, because it IS the
+     ship - it is just parented to the station scene right now. */
+  const dockedTanks = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    let found = -1;
+    /* bays[0].group.parent IS the station scene, which is where the ship is
+       parented while docked */
+    w.bays[0].group.parent.traverse((o: any) => {
+      if (o.isInstancedMesh && o.geometry.type === 'CylinderGeometry' &&
+          o.instanceMatrix.count === 4) found = o.count;
+    });
+    return found;
+  });
+  expect(dockedTanks, 'the ship on the deck should already be wearing them').toBeGreaterThan(0);
+
+  await page.locator('#shopClose').dispatchEvent('click');
+  await page.evaluate(() => (window as any).__cw.advance(0.3));
+
+  expect(await tanksOn(), 'the tanks bought in the room must be on the ship in play')
+    .toBe(dockedTanks);
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
 });

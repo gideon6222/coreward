@@ -1,5 +1,5 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult, costOf, matCost, skyHi, skyLo } from './config';
+         coreDepth, planetName, traitOf, valueMult, costOf, matCost } from './config';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
@@ -11,6 +11,7 @@ import { setDrillTier, setUpgradeHardware } from './ship';
 import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './telemetry';
 import { R } from './runtime';
+import { selectedBay } from './station';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
    ones the game cannot run without: throwing here reaches the on-screen
@@ -24,7 +25,8 @@ export const mustEl = (id: string): HTMLElement => {
 export const ui = {
   planet: mustEl('planet'), credits: mustEl('credits'), haul: mustEl('haul'), depth: mustEl('depth'),
   fuel: mustEl('fuelBar'), hull: mustEl('hullBar'), cargoBar: mustEl('cargoBar'), cargoTxt: mustEl('cargoTxt'),
-  toast: mustEl('toast'), shop: mustEl('shop'), shopCredits: mustEl('shopCredits'), upgrades: mustEl('upgrades'),
+  toast: mustEl('toast'), shop: mustEl('shop'), shopCredits: mustEl('shopCredits'),
+  shopCard: mustEl('shopCard'), shopHint: mustEl('shopHint'),
   event: mustEl('event'), evTitle: mustEl('evTitle'), evBody: mustEl('evBody'), evBtn: mustEl('evBtn'),
   manifest: mustEl('manifest'), manifestRows: mustEl('manifestRows'), manifestTotal: mustEl('manifestTotal'),
   vault: mustEl('vault'),
@@ -38,8 +40,7 @@ export const ui = {
   power: mustEl('power'), powerChip: mustEl('powerChip'),
   shopPlanet: mustEl('shopPlanet'),
   verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes'),
-  runlog: mustEl('runlog'), btnLog: mustEl('btnLog'),
-  vSky: mustEl('vSky')
+  runlog: mustEl('runlog'), btnLog: mustEl('btnLog')
 };
 
 /* The run log, built on open and never in the loop.
@@ -247,35 +248,32 @@ export function buildVault() {
   }
 }
 
-const GROUPS: { id: Upgrade['group']; label: string }[] = [
-  { id: 'rig', label: 'DRILLING RIG' },
-  { id: 'survival', label: 'LIFE SUPPORT' },
-  { id: 'instruments', label: 'INSTRUMENTS' },
-  { id: 'ordnance', label: 'ORDNANCE' }
-];
+/* The shop is a room now, so this builds the HEADER and the card for whatever
+   case is currently picked - not a list. The room itself is station.ts.
 
+   Everything underneath is unchanged: costs, level caps, the mineral gate and
+   the depth seals all still come from config, and the buy path is the same one
+   the list used. Only the presentation moved. */
 export function buildShop() {
   ui.shopCredits.textContent = Math.floor(g.credits).toLocaleString();
   ui.shopPlanet.textContent = planetName(g.planet).toUpperCase();
-  /* The window looks out on the planet you are actually above. */
-  ui.vSky.style.background = 'linear-gradient(180deg,#' +
-    skyHi(g.planet).toString(16).padStart(6, '0') + ',#' +
-    skyLo(g.planet).toString(16).padStart(6, '0') + ')';
-  ui.upgrades.innerHTML = '';
-
-  for (const grp of GROUPS) {
-    const items = UPGRADES.filter((u) => u.group === grp.id);
-    if (!items.length) continue;
-    /* Every counter shows from the first visit, sealed stock and all. Hiding
-       a whole counter until it unlocks would hide the fact that there IS an
-       ordnance counter, which is most of the reason to keep going down. */
-    const head = document.createElement('div');
-    head.className = 'counter';
-    head.textContent = grp.label;
-    ui.upgrades.appendChild(head);
-    for (const u of items) buildUpgradeRow(u);
-  }
+  buildCard();
   buildSupplies();
+}
+
+export function buildCard() {
+  const key = selectedBay();
+  ui.shopHint.classList.toggle('gone', !!key);
+  ui.shopCard.innerHTML = '';
+  if (!key) {
+    /* Deliberately empty: the hint line floating over the room already says
+       what to do, and saying it twice on one screen reads as a bug. */
+    ui.shopCard.innerHTML = '<div class="cempty">&nbsp;</div>';
+    return;
+  }
+  const u = UPGRADES.find((x) => x.key === key);
+  if (!u) return;
+  buildUpgradeRow(u);
 }
 
 function buildUpgradeRow(u: Upgrade) {
@@ -289,7 +287,7 @@ function buildUpgradeRow(u: Upgrade) {
       '<div class="upinfo"><div class="upname">' + u.name + '</div>' +
       '<div class="upeff">Sealed until you have reached ' + u.unlock + ' m</div></div>' +
       '<div class="seal">' + u.unlock + ' m</div>';
-    ui.upgrades.appendChild(row);
+    ui.shopCard.appendChild(row);
     return;
   }
 
@@ -334,7 +332,7 @@ function buildUpgradeRow(u: Upgrade) {
     flash('rgba(120,255,200,.25)', 160);
   };
   row.appendChild(btn);
-  ui.upgrades.appendChild(row);
+  ui.shopCard.appendChild(row);
 }
 
 export function buildSupplies() {

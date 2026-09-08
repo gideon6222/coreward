@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.10.0';
+export const VERSION = '0.11.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.11.0', date: '2026-09-08', title: 'The Outfitter is a place',
+    notes: [
+      'The shop is a hangar bay you dock in, not a list - your ship is parked in the middle of it.',
+      'Every upgrade sits in its own display case. Tap one to inspect it, and buy from there.',
+      'The part in the case is the part that gets bolted on, so what you see is what you fly out with.',
+      'The ship on the deck is the real one: buy something and it changes in front of you.'
+    ]
+  },
   {
     version: '0.10.0', date: '2026-09-08', title: 'Real rock, real ship',
     notes: [

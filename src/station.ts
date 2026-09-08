@@ -1,0 +1,318 @@
+import * as THREE from 'three';
+import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
+import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat } from './ship';
+import { asMetal } from './materials';
+import { UPGRADES } from './config';
+import type { UpgradeKey } from './types';
+
+/* The Outfitter, as a room you are standing in.
+
+   Playtest: "can you rearrange how the shop is layed out? make it look like a
+   full room where upgrades have a physical model associated with it instead of
+   a list of upgrades."
+
+   It was a scrolling list on a styled background, and a list is a list however
+   it is dressed. This is a second three.js scene: a hangar bay with the ship
+   parked on a deck and the upgrades racked around it in lit display cases.
+
+   Two decisions carry most of the value.
+
+   THE SHIP IN HERE IS THE SHIP. `player` is reparented out of the game scene
+   into this one, not copied. The machine on the deck is wearing exactly the
+   hardware it will wear when you undock, and buying something changes the thing
+   you are looking at. A copy would be a second source of truth and would drift
+   inside a single session.
+
+   THE PARTS IN THE CASES ARE THE PARTS. Same geometry, same materials,
+   exported from ship.ts as HW. The model on the pedestal is not a picture of
+   the upgrade, it is the upgrade - so "what changes in the shop" and "what
+   changes in play" cannot disagree, because there is only one set of art.
+
+   Its own scene rather than a corner of the game world, because the lighting
+   here wants to be a lit workshop and the game's wants to be a dark hole, and
+   one set of lights cannot be both. */
+
+export const stationScene = new THREE.Scene();
+/* The station gets a real background, unlike the game.
+
+   The renderer runs `alpha: true` with no scene background so the game's CSS
+   sky can show through - which is right underground and wrong in here, where it
+   showed as a band of planet-coloured sky above the back wall. A scene
+   background is per-scene, so setting one here does not disturb that. */
+stationScene.background = new THREE.Color(0x090c12);
+export const stationCamera = new THREE.PerspectiveCamera(46, 1, 0.1, 60);
+stationCamera.position.set(0, 0.05, 8);
+stationCamera.lookAt(0, 0.2, -1);
+/* The ship lives on its own layer so the game's lamp cannot blow it out. That
+   decision follows it in here: without this the station camera does not RENDER
+   it and the station's lights do not reach it, which presented as an empty
+   docking clamp and took a moment to recognise. */
+stationCamera.layers.enable(SHIP_LAYER);
+
+/* ---------- the room ---------- */
+
+const deckMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x2c313a, metalness: 0.55, roughness: 0.62, flatShading: true
+}), 0.5);
+const wallMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x1a1f27, metalness: 0.4, roughness: 0.78, flatShading: true
+}), 0.35);
+const hazardMat = new THREE.MeshStandardMaterial({
+  color: 0xb8862c, metalness: 0.3, roughness: 0.7, flatShading: true
+});
+
+/* The bay is TALL, not wide, and that is forced by the screen.
+
+   Portrait is about 0.46 aspect, so at a 46 degree vertical field the
+   horizontal one is only ~22 degrees: at eight units back you can see 6.8 units
+   of height and barely 3.1 of width. A hangar laid out sideways - the obvious
+   shape for a hangar - puts most of itself off the edges of a phone. So the
+   cases are racked in two vertical columns flanking the ship, which is both
+   what fits and what a parts wall in a workshop actually looks like. */
+const floor = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, 6), deckMat);
+floor.position.set(0, -3.3, -1);
+stationScene.add(floor);
+const ceiling = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, 6), wallMat);
+ceiling.position.set(0, 4.8, -1);
+stationScene.add(ceiling);
+
+/* Back wall and two returns, so the room has corners. One plane behind
+   everything reads as a backdrop; three read as somewhere you are standing. */
+const back = new THREE.Mesh(new THREE.BoxGeometry(6, 7.5, 0.3), wallMat);
+back.position.set(0, 0.3, -3.4);
+stationScene.add(back);
+for (const sx of [-1, 1]) {
+  const side = new THREE.Mesh(new THREE.BoxGeometry(0.3, 7.5, 6), wallMat);
+  side.position.set(sx * 2.85, 0.3, -1);
+  stationScene.add(side);
+}
+/* Ribs across the back wall - the cheapest thing that makes a flat panel read
+   as built structure, and they catch the work lights at different angles. */
+for (let i = -3; i <= 3; i++) {
+  const rib = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.14, 0.18), deckMat);
+  rib.position.set(0, i * 1.1 + 0.3, -3.2);
+  stationScene.add(rib);
+}
+/* Hazard stripe along the deck edge: what the front of a real bay has, and what
+   tells you where the floor stops. */
+const stripe = new THREE.Mesh(new THREE.BoxGeometry(6, 0.06, 0.3), hazardMat);
+stripe.position.set(0, -3.13, 1.85);
+stationScene.add(stripe);
+
+/* The docking clamp the ship hangs in. */
+const collar = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.05, 6, 20), hazardMat);
+collar.position.set(0, -0.75, 0.2);
+collar.rotation.x = Math.PI / 2.15;
+stationScene.add(collar);
+for (const sx of [-1, 1]) {
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 1.2), deckMat);
+  arm.position.set(sx * 0.58, -0.78, -0.35);
+  stationScene.add(arm);
+}
+
+/* ---------- lights ----------
+
+   A workshop. Strong key from above and in front so the ship's facets read, a
+   cool fill from behind so it is not sitting in a void, and a warm bounce off
+   the deck. None of it changes with depth: the point of the room is that it is
+   the one place in the game that is properly lit. */
+const ambLight = new THREE.AmbientLight(0xbfd0e8, 1.15);
+ambLight.layers.enable(SHIP_LAYER);
+stationScene.add(ambLight);
+const keyLight = new THREE.DirectionalLight(0xfff0dc, 3.4);
+keyLight.position.set(2.2, 3, 5);
+keyLight.layers.enable(SHIP_LAYER);
+stationScene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0x6f9ad8, 1.2);
+fillLight.position.set(-3, 0.5, -2);
+fillLight.layers.enable(SHIP_LAYER);
+stationScene.add(fillLight);
+const bounce = new THREE.PointLight(0xffb870, 9, 10, 1.5);
+bounce.position.set(0, -1.6, 1.8);
+bounce.layers.enable(SHIP_LAYER);
+stationScene.add(bounce);
+
+/* ---------- display cases ---------- */
+
+export interface Bay {
+  key: UpgradeKey;
+  group: THREE.Group;
+  part: THREE.Object3D;
+  glow: THREE.Mesh;
+}
+export const bays: Bay[] = [];
+
+const caseMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x39414d, metalness: 0.6, roughness: 0.5, flatShading: true
+}), 0.5);
+const glowMat = new THREE.MeshBasicMaterial({
+  color: 0x3fe0ff, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false
+});
+
+/* One case per upgrade, and the part inside it is built from HW - the same
+   geometry and materials the hull gets. */
+function makePart(key: UpgradeKey): THREE.Object3D {
+  const g = new THREE.Group();
+  const add = (geo: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0,
+               rot?: [number, number, number], s = 1) => {
+    const mesh = new THREE.Mesh(geo, m);
+    mesh.position.set(x, y, z);
+    if (rot) mesh.rotation.set(rot[0], rot[1], rot[2]);
+    mesh.scale.setScalar(s);
+    g.add(mesh);
+  };
+  switch (key) {
+    case 'tank':
+      add(HW.tank, HW_MAT.steel, -0.09, 0, 0); add(HW.tank, HW_MAT.steel, 0.09, 0, 0); break;
+    case 'cool':
+      for (let i = -1; i <= 1; i++) add(HW.rad, HW_MAT.trim, i * 0.09, 0, 0, undefined, 1.5); break;
+    case 'cargo':
+      add(HW.pod, HW_MAT.hull); break;
+    case 'scan':
+      add(HW.mast, HW_MAT.steel, 0, -0.08, 0);
+      add(HW.dish, HW_MAT.trim, 0, 0.1, 0, [Math.PI / 2.6, 0, 0]); break;
+    case 'thrust':
+      add(HW.jet, HW_MAT.steel, -0.08, 0, 0, undefined, 1.6);
+      add(HW.jet, HW_MAT.steel, 0.08, 0, 0, undefined, 1.6); break;
+    case 'drill':
+      add(augerGeo, augerMat, 0, -0.02, 0, undefined, 0.72); break;
+    /* The four with no bolt-on part still get something that says what they
+       are. An empty case reads as a bug, not as "this one is abstract". */
+    case 'tow':
+      add(new THREE.TorusGeometry(0.13, 0.035, 6, 14), HW_MAT.trim, 0, 0, 0, [Math.PI / 2.4, 0, 0]); break;
+    case 'auto':
+      add(new THREE.OctahedronGeometry(0.15, 0), HW_MAT.trim); break;
+    case 'bomb':
+      add(new THREE.CylinderGeometry(0.1, 0.12, 0.24, 8), HW_MAT.trim); break;
+    case 'laser':
+      add(new THREE.CylinderGeometry(0.05, 0.07, 0.3, 6), HW_MAT.steel, 0, 0, 0, [Math.PI / 2.2, 0, 0]); break;
+    default:
+      add(new THREE.BoxGeometry(0.2, 0.2, 0.2), HW_MAT.steel);
+  }
+  return g;
+}
+
+/* Two columns flanking the ship, five high, plus one over the top. Every slot
+   sits inside what a portrait frame can actually show at this camera distance -
+   see the note on the room above. Angled inward so the wall reads as facing
+   the middle rather than as shelves that happen to be in shot. */
+const SLOTS: [number, number, number, number][] = [
+  [-1.18, 2.05, -1.2, 0.5], [-1.18, 1.29, -1.2, 0.5], [-1.18, 0.53, -1.2, 0.5],
+  [-1.18, -0.22, -1.2, 0.5], [-1.18, -0.98, -1.2, 0.5],
+  [1.18, 2.05, -1.2, -0.5], [1.18, 1.29, -1.2, -0.5], [1.18, 0.53, -1.2, -0.5],
+  [1.18, -0.22, -1.2, -0.5], [1.18, -0.98, -1.2, -0.5],
+  [0, 2.85, -2.2, 0]
+];
+
+UPGRADES.forEach((u, i) => {
+  const slot = SLOTS[i % SLOTS.length];
+  const grp = new THREE.Group();
+  grp.position.set(slot[0], slot[1], slot[2]);
+  grp.rotation.y = slot[3];
+
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.34, 0.42), caseMat);
+  plinth.position.y = -0.26;
+  grp.add(plinth);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.05, 0.48), deckMat);
+  top.position.y = -0.07;
+  grp.add(top);
+
+  const part = makePart(u.key);
+  /* Scaled up from hull size. On the hull these are read at thirty pixels as
+     part of a silhouette; in a display case they are the subject, and a
+     faithful 1:1 tank is a speck on a plinth. */
+  part.scale.setScalar(1.45);
+  part.position.y = 0.15;
+  grp.add(part);
+
+  /* Selection light: a panel behind the part, near-off until it is picked. */
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.66), glowMat.clone());
+  glow.position.set(0, 0.16, -0.22);
+  grp.add(glow);
+
+  stationScene.add(grp);
+  bays.push({ key: u.key, group: grp, part, glow });
+});
+
+/* ---------- docking ---------- */
+
+let docked = false;
+export function isDocked() { return docked; }
+
+/* Reparenting, not copying. three removes an object from its old parent when
+   it is added to a new one, so this is the whole mechanism - and it is what
+   guarantees the ship on the deck is the ship you fly out. */
+export function dockShip() {
+  if (docked) return;
+  docked = true;
+  stationScene.add(player);
+  player.position.set(0, 0.35, 0.9);
+  player.scale.setScalar(1.05);
+  rig.rotation.set(0, 0, 0);
+  /* Engines off. The frame loop's thruster animation is downstream of the
+     branch that returns for a docked ship, so whatever the flames were doing on
+     the way in is what they would keep doing forever - a parked ship burning
+     its engines inside a hangar. */
+  for (const f of flames) { f.cone.visible = false; f.glow.visible = false; }
+}
+export function undockShip() {
+  if (!docked) return;
+  docked = false;
+  gameScene.add(player);
+  player.scale.setScalar(1);
+  rig.rotation.set(0, 0, 0);
+  for (const f of flames) { f.cone.visible = true; f.glow.visible = true; }
+}
+
+let selected: UpgradeKey | null = null;
+export function selectedBay() { return selected; }
+export function selectBay(k: UpgradeKey | null) { selected = k; }
+
+/* Slow turntable on the ship, a turn on each part, and the picked case lit.
+   Driven from the frame loop so it runs on the same delta as everything else -
+   and so it keeps moving while the shop is open, which is most of what makes
+   the room feel like a place rather than a screenshot. */
+export function stepStation(t: number, dt: number) {
+  rig.rotation.y = Math.sin(t * 0.32) * 0.6;
+  for (const b of bays) {
+    b.part.rotation.y += dt * 0.65;
+    const on = b.key === selected;
+    const m = b.glow.material as THREE.MeshBasicMaterial;
+    m.opacity += ((on ? 0.45 : 0.08) - m.opacity) * Math.min(1, dt * 8);
+    const lift = on ? 0.27 : 0.15;
+    b.part.position.y += (lift - b.part.position.y) * Math.min(1, dt * 8);
+    b.part.scale.setScalar(b.part.scale.x + ((on ? 1.8 : 1.45) - b.part.scale.x) * Math.min(1, dt * 8));
+  }
+}
+
+export function resizeStation() {
+  stationCamera.aspect = window.innerWidth / window.innerHeight;
+  stationCamera.updateProjectionMatrix();
+}
+
+/* Which case did that tap land on? Null for a tap on the floor or a wall,
+   which deselects - a room you cannot tap out of is a menu again. */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+export function pickBay(clientX: number, clientY: number): UpgradeKey | null {
+  /* Bring the world matrices up to date first.
+
+     A raycast reads world matrices, and those are only refreshed as part of a
+     render. Tap a case in the same tick the room opened - before it has ever
+     been drawn - and every bay is still sitting at the identity matrix, so the
+     ray misses everything and the tap silently does nothing. It works the
+     instant one frame has gone by, which is exactly the kind of bug that
+     reproduces on a fast tap and nowhere else. */
+  stationScene.updateMatrixWorld(true);
+  ndc.x = (clientX / window.innerWidth) * 2 - 1;
+  ndc.y = -(clientY / window.innerHeight) * 2 + 1;
+  ray.setFromCamera(ndc, stationCamera);
+  for (const b of bays) {
+    if (ray.intersectObject(b.group, true).length) return b.key;
+  }
+  return null;
+}
+
+export function renderStation() {
+  renderer.render(stationScene, stationCamera);
+}

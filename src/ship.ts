@@ -107,7 +107,7 @@ export const bit = new THREE.Group();
    Y in proportion to height, so the flutes spiral. One mesh, one draw call, and
    the spiral is the only reason the rotation is visible at all - a smooth cone
    looks identical at every angle. */
-const augerGeo = (() => {
+export const augerGeo = (() => {
   const g = new THREE.CylinderGeometry(0.23, 0.03, 0.5, 6, 6, false);
   const pos = g.attributes.position;
   const TWIST = 7.8;
@@ -124,7 +124,11 @@ const augerGeo = (() => {
 
 /* steel, not the white trim: a near-white auger blows out under the cockpit
    glow and the spiral disappears */
-const augerMat = new THREE.MeshLambertMaterial({ color: 0x9fb0c4, emissive: 0x121a24, flatShading: true });
+/* Standard like the rest of the ship: an auger left on Lambert next to
+   machined metal reads as a plastic screw glued to a machine. */
+export const augerMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x9fb0c4, emissive: 0x121a24, metalness: 0.85, roughness: 0.34, flatShading: true
+}), 0.5);
 
 /* One look per drill tier.
 
@@ -346,12 +350,31 @@ function bolt(geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number
   return mesh;
 }
 
-const tankGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.3, 6);
-const radGeo = new THREE.BoxGeometry(0.02, 0.13, 0.16);
-const podGeo = new THREE.BoxGeometry(0.34, 0.16, 0.2);
-const mastGeo = new THREE.CylinderGeometry(0.016, 0.022, 0.24, 4);
-const dishGeo = new THREE.CylinderGeometry(0.09, 0.02, 0.05, 7);
-const jetGeo = new THREE.CylinderGeometry(0.05, 0.035, 0.09, 4);
+/* Exported, because the shop shows THESE.
+
+   Playtest: *"when you upgrade thrusters and it starts to change the way they
+   look, it also changes the way that they look when you're actually playing."*
+
+   The station's display cases are built from the same geometry and the same
+   materials as the parts that get bolted to the hull, so the part on the
+   pedestal is not a picture of the upgrade - it is the upgrade. There is no
+   second set of art that can drift out of step with the first, because there is
+   no second set. */
+export const HW = {
+  tank: new THREE.CylinderGeometry(0.055, 0.055, 0.3, 6),
+  rad: new THREE.BoxGeometry(0.02, 0.13, 0.16),
+  pod: new THREE.BoxGeometry(0.34, 0.16, 0.2),
+  mast: new THREE.CylinderGeometry(0.016, 0.022, 0.24, 4),
+  dish: new THREE.CylinderGeometry(0.09, 0.02, 0.05, 7),
+  jet: new THREE.CylinderGeometry(0.05, 0.035, 0.09, 4)
+};
+export const HW_MAT = { hull: hullMat, trim: trimMat, dark: darkMat, steel: steelMat };
+const tankGeo = HW.tank;
+const radGeo = HW.rad;
+const podGeo = HW.pod;
+const mastGeo = HW.mast;
+const dishGeo = HW.dish;
+const jetGeo = HW.jet;
 
 /* Repeated parts are instanced, not one mesh each.
 

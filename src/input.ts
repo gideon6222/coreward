@@ -3,7 +3,8 @@ import { relicDistance } from './relic';
 import { g } from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
-import { mustEl, ui, atSurface, buildShop, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
+import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
+import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation } from './station';
 import type { Dir } from './types';
 import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
@@ -39,8 +40,47 @@ mustEl('ordBomb').addEventListener('pointerdown', (e) => { e.preventDefault(); f
 mustEl('ordLaser').addEventListener('pointerdown', (e) => { e.preventDefault(); fireLaser(); });
 
 ui.btnAuto.onclick = autopilot;
-ui.btnShop.onclick = () => { if (!atSurface() || g.mode !== 'play') return; sfx.ui(); g.mode = 'shop'; buildShop(); ui.shop.classList.remove('hidden'); };
-mustEl('shopClose').onclick = () => { sfx.ui(); ui.shop.classList.add('hidden'); g.mode = 'play'; };
+ui.btnShop.onclick = () => {
+  if (!atSurface() || g.mode !== 'play') return;
+  sfx.ui();
+  g.mode = 'shop';
+  /* Move the real ship into the station scene. Nothing is copied, so the
+     machine on the deck is wearing exactly the hardware it will undock with. */
+  dockShip();
+  document.body.classList.add('docked');
+  selectBay(null);
+  resizeStation();
+  buildShop();
+  ui.shop.classList.remove('hidden');
+};
+mustEl('shopClose').onclick = () => {
+  sfx.ui();
+  undockShip();
+  document.body.classList.remove('docked');
+  ui.shop.classList.add('hidden');
+  g.mode = 'play';
+};
+
+/* Taps fall through the shop's transparent stage onto the bay behind it, so
+   this is a raycast into the station scene rather than a click handler on a
+   row. Tapping the floor deselects, because a room you cannot tap out of has
+   quietly become a menu again.
+
+   On `document` rather than on the shop element. It was on #shop and relied on
+   the event bubbling up from the stage, which worked and then did not - the
+   kind of thing that costs an hour and buys nothing. The id check below is what
+   actually scopes this, so where it is listening does not need to be clever. */
+document.addEventListener('pointerdown', (e) => {
+  if (g.mode !== 'shop') return;
+  const t = e.target as HTMLElement;
+  /* only taps that landed on the stage itself, not on the tray or the header */
+  if (t.id !== 'shop' && t.id !== 'shopStage' && t.id !== 'shopHint') return;
+  const hit = pickBay(e.clientX, e.clientY);
+  if (hit === selectedBay()) return;
+  selectBay(hit);
+  if (hit) sfx.ui();
+  buildCard();
+});
 mustEl('btnManifest').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); g.mode = 'manifest'; buildManifest(); ui.manifest.classList.remove('hidden'); };
 mustEl('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('hidden'); g.mode = 'play'; };
 
@@ -123,3 +163,8 @@ ui.btnReset.onclick = () => {
   disarmReset();
 };
 document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+/* The station has its own camera, so it needs its own aspect update. Hooked
+   here rather than inside scene.ts's resize(), because scene.ts is imported BY
+   station.ts and the reverse import would be a cycle. */
+window.addEventListener('resize', resizeStation);
