@@ -16,7 +16,20 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
    loop clamps its delta to 50 ms, so on a machine without a GPU the game
    advances in slow motion under load and any fixed sleep becomes a flake. */
 
-const DEEP_ENOUGH = 30_000;
+/* The budget for anything still waiting on real time.
+
+   45 s, under the 60 s suite timeout, so a poll can actually run out and report
+   what it was waiting for instead of dying inside a test timeout.
+
+   Raised from 30 s because the move to PBR shaders made every remaining
+   wall-clock test more marginal at once: CI has no GPU, falls back to a
+   software rasteriser, and a heavier fragment shader there costs real time that
+   the game then advances in slow motion to pay for. Two tests tipped over.
+
+   This is headroom, not a fix. The fix is the tick seam - anything that
+   accumulates over GAME time belongs on advance(), where a slow machine costs
+   nothing. Tests still using this are ones that only need a second or two. */
+const DEEP_ENOUGH = 45_000;
 
 /* Hold a d-pad direction until `settled` passes, then release. The game reads
    pointer events, and holding is what drives the loop - a click can land
@@ -607,10 +620,19 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
       return set.call(this, k, v);
     };
   });
-  await page.reload();
+  /* Driven through the tick seam, for the same reason the heat test is: this
+     digs 25 m, which is a lot of GAME time, and a GPU-less CI runner advances
+     the game in slow motion. It reached 22 m in the full thirty seconds and
+     failed - and it got there by degrees, because the move to PBR shaders made
+     an already-marginal test tip over.
+
+     Waiting on real time for something measured in game time is the bug rather
+     than the timeout, so this drills in a fraction of a second and identically
+     on every machine. */
+  await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
 
-  /* Counted after the reload, not before it: the reload wipes the page's
+  /* Counted after the navigation, not before it: a reload wipes the page's
      globals, and an increment on an undefined counter is NaN rather than an
      error - which reads as a failed assertion about the game. */
   await page.evaluate(() => {
@@ -621,11 +643,31 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
     }).observe(el, { childList: true, characterData: true, subtree: true });
   });
 
-  /* dig well past the 14 m record */
-  await holdUntil(page, 'down', async () => {
-    await expect(page.locator('#depth'))
-      .toContainText(/DEPTH (2[5-9]|[3-9][0-9]) m/, { timeout: DEEP_ENOUGH });
+  /* dig well past the 14 m record, holding down the whole way */
+  await page.evaluate(async () => {
+    const w = (window as any).__cw;
+    w.stopClock();
+    w.R.held = 'down';
+    /* Advanced in slices with a yield between them, and that is not cosmetic.
+
+       A MutationObserver fires its callback as a microtask AFTER the current
+       synchronous block, so running all forty seconds in one go means the
+       observer wakes up once, at the end, when the toast has long since been
+       cleared - and the callback reads textContent as it is NOW, not as it was
+       when the record was queued. The counter came back 0 for a toast that had
+       genuinely fired.
+
+       Yielding between slices lets the observer run while the toast is still on
+       screen. The simulation is still fixed 1/60 steps, so nothing about the
+       determinism changes. */
+    for (let i = 0; i < 80; i++) {
+      w.advance(0.5);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    w.R.held = null;
+    w.advance(0.3);
   });
+  await expect(page.locator('#depth')).toContainText(/DEPTH (2[5-9]|[3-9][0-9]) m/);
 
   expect(await page.evaluate(() => (window as any).__records),
     'the record announcement must fire once, not on every frame past the line')
