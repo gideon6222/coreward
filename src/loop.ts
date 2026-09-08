@@ -16,7 +16,7 @@ import {
   FACE_TURN_RATE,
   AMBIENT_SURFACE, AMBIENT_FALLOFF, FOG_SURFACE, FOG_GAIN, RIM_SURFACE, RIM_FALLOFF,
   VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
-  FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH,
+  FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
 } from './feel';
@@ -26,6 +26,7 @@ import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
+import { moveAndCollide, thrust } from './fly';
 import { player, rig, bit, flames, headlight, drillTint, FACE_ANGLE } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
@@ -36,19 +37,33 @@ import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showE
          stopDigging } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 
+export const FACE_VEC: Record<Dir, number[]> =
+  { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
 export function step(dir: Dir) {
-  const v: number[] = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[dir];
-  return { x: g.px + v[0], d: Math.round(g.pd) + v[1] };
+  const v = FACE_VEC[dir];
+  return { x: Math.round(g.px) + v[0], d: Math.round(g.pd) + v[1] };
 }
 
-export function startAction() {
-  if (!R.held || R.moving || R.digging) return;
-  const t = step(R.held);
-  g.face = R.held;
-  if (t.x < 0 || t.x >= W || t.d < -3 || t.d > coreDepth(g.planet)) return;
-  const b = blockAt(t.x, t.d);
-  if (b) {
-    if (b.hard === Infinity) return;
+/* Is this cell something the ship cannot fly through?
+
+   The world edges and the roof above the pad are solid too. Without them the
+   ship would drift out of the world sideways, or up into a sky that has no
+   floor and no way back. */
+export function solidAt(cx: number, cy: number) {
+  if (cx < 0 || cx >= W) return true;
+  if (cy < -1) return true;
+  if (cy > coreDepth(g.planet)) return true;
+  return blockAt(cx, cy) !== null;
+}
+
+/* Begin drilling a cell the ship has flown into. */
+function startDig(tx: number, td: number) {
+  if (R.digging) return;
+  const b = blockAt(tx, td);
+  if (!b || b.hard === Infinity) return;
+  {
+    const t = { x: tx, d: td };
     /* lift this cell out of the instanced terrain into a real mesh, so the
        dig animation has something to scale, jitter and hang cracks on */
     /* Pick up where the last attempt stopped. The stored value is a fraction,
@@ -61,8 +76,6 @@ export function startAction() {
                   stage: Math.floor(done * 5), spark: 0 };
     sfx.digStart(b.hard);
     R.squash = SQUASH_DIG;
-  } else {
-    R.moving = { x: t.x, d: t.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
   }
 }
 
@@ -113,14 +126,24 @@ export function frame(now: number) {
     /* Let go and the drill stops. It used to run to completion no matter what,
        which meant the only way to change your mind about a block was to have
        not started it. */
-    if (R.digging && (!R.held || step(R.held).x !== R.digging.x || step(R.held).d !== R.digging.d)) {
+    /* Let go, or turn away, and the drill stops - the block keeps its damage.
+       Compared against the direction rather than the cell, because the ship is
+       no longer guaranteed to be exactly one cell away from what it is
+       cutting. */
+    if (R.digging && (!R.held || FACE_VEC[R.held][0] !== Math.sign(R.digging.x - Math.round(g.px)) ||
+                      FACE_VEC[R.held][1] !== Math.sign(R.digging.d - Math.round(g.pd)))) {
       stopDigging();
     }
-    startAction();
 
     if (R.digging) {
       const b = R.digging.block;
       R.digging.t += dt;
+      /* Held against the rock and pulled onto the block's centre line. Without
+         the alignment a tunnel dug while drifting wanders off the grid and the
+         drill visibly misses the cell it is cutting. */
+      R.vx = 0; R.vy = 0;
+      if (R.digging.x !== Math.round(g.px)) g.px = approach(g.px, R.digging.x, DIG_ALIGN, raw);
+      else if (R.digging.d !== Math.round(g.pd)) g.pd = approach(g.pd, R.digging.d, DIG_ALIGN, raw);
       g.fuel -= digFuelPerSecond(b.hard) * dt;
       const k = key(R.digging.x, R.digging.d);
       const o = meshes.get(k);
@@ -170,6 +193,17 @@ export function frame(now: number) {
         freeze = b.ore ? FREEZE_ORE : FREEZE_ROCK;
         R.shake = Math.max(R.shake, b.ore ? SHAKE_ORE : SHAKE_ROCK);
         R.squash = SQUASH_BREAK;
+        /* Carry the ship straight into the cell it just opened.
+
+           Velocity is held at zero while drilling, so without this the ship
+           would restart from a standstill after every block - and at nearly a
+           fifth of a second to top speed, digging a shaft would be a stutter
+           of accelerate, stop, accelerate. This is what the old cell-to-cell
+           step did for free, and it is the one thing about the grid worth
+           keeping. */
+        const fv = FACE_VEC[g.face];
+        R.vx = fv[0] * S.speed();
+        R.vy = fv[1] * S.speed();
         if (b.core) { R.digging = null; breakCore(); }
         else if (b.hazard) {
           /* A gas pocket pays nothing and costs you. It breaks faster than the
@@ -187,7 +221,6 @@ export function frame(now: number) {
           spray(worldX(R.digging.x), -R.digging.d, b.color, 90, 9, 1.5);
           sfx.gas();
           toast('Gas pocket! Hull -' + dmg);
-          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
         }
@@ -204,7 +237,6 @@ export function frame(now: number) {
           sfx.relic();
           showEvent('RELIC RECOVERED', rel.name + '. ' + rel.blurb +
             '  Relics found: ' + g.relics.length + '.', 'STOW IT', () => {});
-          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
         }
@@ -215,7 +247,6 @@ export function frame(now: number) {
           grantCache(R.digging.x, R.digging.d);
           spray(worldX(R.digging.x), -R.digging.d, b.color, 70, 7, 1.2);
           flash('rgba(255,150,215,.22)', 340);
-          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
         }
@@ -232,7 +263,6 @@ export function frame(now: number) {
             R.warnedFull = true;
             toast(kept ? 'Hold full · ore left where it falls' : 'Hold full at ' + S.cargoCap() + ' kg');
           }
-          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
         }
@@ -241,28 +271,50 @@ export function frame(now: number) {
           g.weight += b.wt;
           if (b.ore) sfx.collect(b.tone);
           if (b.value >= 400) toast(b.name + '  +◈ ' + Math.round(b.value * valueMult(g.planet)).toLocaleString());
-          R.moving = { x: R.digging.x, d: R.digging.d, fx: g.px, fd: g.pd, t: 0, total: 1 / S.speed() };
           R.digging = null;
           save();
         }
       }
-    } else if (R.moving) {
-      R.moving.t += dt;
-      g.fuel -= FUEL_PER_MOVE * S.fuelUse() * dt;
-      thrustLevel = 0.75;
-      const a = clamp(R.moving.t / R.moving.total, 0, 1);
-      g.px = R.moving.fx + (R.moving.x - R.moving.fx) * a;
-      g.pd = R.moving.fd + (R.moving.d - R.moving.fd) * a;
-      bank = approach(bank, (R.moving.x - R.moving.fx) * 0.45, BANK_INTO_MOVE, raw);
-      bit.rotation.y += raw * 9;
-      if (a >= 1) {
-        g.px = R.moving.x; g.pd = R.moving.d; R.moving = null;
-        syncBlocks();
-        collectHere();
-        if (atSurface()) { sell(); g.fuel = S.fuelCap(); g.hull = HULL_MAX; }
-      }
     } else {
-      bank = approach(bank, 0, BANK_SETTLE, raw);
+      /* ---------- flight ----------
+
+         Thrust toward whatever is held, coast when nothing is, then push out
+         of anything solid. The collision returns the cell that stopped the
+         ship on each axis, and that cell is how digging starts: you fly into a
+         wall, the wall stops you, and the wall is what the drill points at.
+         There is no separate "is there a block in front of me" test, which is
+         what stops the two from ever disagreeing. */
+      const v = R.held ? FACE_VEC[R.held] : [0, 0];
+      const top = S.speed();
+      R.vx = thrust(R.vx, v[0], top, FLY_ACCEL, FLY_DRAG, raw);
+      R.vy = thrust(R.vy, v[1], top, FLY_ACCEL, FLY_DRAG, raw);
+
+      const hit = moveAndCollide(g.px, g.pd, R.vx, R.vy, raw, SHIP_R, solidAt);
+      g.px = hit.x; g.pd = hit.y;
+      R.vx = hit.vx; R.vy = hit.vy;
+
+      if (R.held) {
+        g.face = R.held;
+        g.fuel -= FUEL_PER_MOVE * S.fuelUse() * dt;
+        thrustLevel = 0.75;
+        /* Only the axis being pushed on can start a dig. Scraping along a
+           ceiling while flying sideways must not begin drilling the ceiling. */
+        const blocker = v[0] !== 0 ? hit.hitX : hit.hitY;
+        if (blocker) startDig(blocker.x, blocker.y);
+      }
+
+      bank = approach(bank, clamp(R.vx / Math.max(1, top), -1, 1) * 0.45, BANK_INTO_MOVE, raw);
+      bit.rotation.y += raw * (3 + Math.abs(R.vx) + Math.abs(R.vy));
+      syncBlocks();
+      collectHere();
+
+      /* Selling used to happen on arriving in the pad's cell. There are no
+         cell arrivals any more, so it is an edge trigger on being at the
+         surface at all - which also means it fires once however slowly the
+         ship drifts up onto the pad. */
+      const now = atSurface();
+      if (now && !R.wasAtSurface) { sell(); g.fuel = S.fuelCap(); g.hull = HULL_MAX; }
+      R.wasAtSurface = now;
     }
 
     /* Power cells trickle back underground and fill at the pad; see

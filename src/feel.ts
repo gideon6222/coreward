@@ -46,6 +46,34 @@ export const SQUASH_SCALE = 0.16;   /* how much squash distorts the ship */
    number the reader sees is still the one that was tuned by eye. */
 export const asExpRate = (tunedAt60: number) => -60 * Math.log(1 - tunedAt60 / 60);
 
+/* ---------- flight ----------
+
+   The ship used to hop cell to cell on a fixed timer, which made every metre a
+   discrete decision and the world read like a spreadsheet. It flies now.
+
+   The two numbers that decide how it feels are how fast thrust reaches top
+   speed and how fast the ship coasts to a stop. Both are exponential, so
+   neither depends on frame rate, and both are deliberately fast: this is a
+   game played with a thumb on a d-pad, and anything that reads as momentum
+   also reads as the controls being late.
+
+   FLY_ACCEL 18 means roughly a fifth of a second to top speed. FLY_DRAG 9
+   means letting go coasts about three quarters of a cell - enough to feel like
+   a ship rather than a cursor, short enough that stopping in a one-cell
+   corridor is never a struggle. There is a test on that distance. */
+export const FLY_ACCEL = 18;
+export const FLY_DRAG = 9;
+
+/* Half-width of the ship for collision, in cells. Comfortably under half a
+   cell so a one-cell tunnel is roomy rather than a squeeze, and so the corner
+   of a diagonal opening is passable without a wall-slide system. */
+export const SHIP_R = 0.34;
+
+/* How hard the ship is pulled onto the centre line of the block it is
+   drilling. Without it a tunnel dug on the wobble drifts off the grid, and the
+   drill visibly misses the rock it is cutting. */
+export const DIG_ALIGN = 14;
+
 /* ---------- camera ----------
    Exponential smoothing. The numbers inside asExpRate() are the originals,
    tuned by eye at 60 fps; see the note on asExpRate above. Vertical follow is

@@ -10,14 +10,21 @@
    skyTick) stay local to loop.ts, and per-module caches (lastRow, pHead,
    resetArmed) stay with their module. */
 
-import type { Dir, Move, Dig, Flight } from './types';
+import type { Dir, Dig, Flight } from './types';
 
 export const R = {
   /* input -> loop */
   held: null as Dir | null,
 
   /* actions <-> loop */
-  moving: null as Move | null,
+  /* Velocity, in cells per second. Replaced the cell-to-cell `moving` lerp:
+     the ship has a position and a speed now, and the frame loop integrates
+     them like anything else. */
+  vx: 0,
+  vy: 0,
+  /* Edge trigger for arriving at the pad, since selling used to happen on
+     landing in a cell and there are no cell arrivals any more. */
+  wasAtSurface: true,
   digging: null as Dig | null,
   flight: null as Flight | null,
 

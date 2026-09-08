@@ -74,7 +74,9 @@ export function goSurface() {
   setMark(g.best.depth);
   g.px = START_X; g.pd = -1; g.face = 'down';
   R.warnedFull = false;
-  R.moving = null; R.flight = null;
+  R.vx = 0; R.vy = 0; R.flight = null;
+  /* landing on the pad must not re-trigger the sale that just happened */
+  R.wasAtSurface = true;
   g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0; g.charge = CHARGE_MAX;
   R.hullCause = 'heat';
   R.wasHot = false;
@@ -280,7 +282,7 @@ export function autopilot() {
   const cruise = clamp(len / 4.2, 8, 26);
   R.flight = { curve: curve, len: len, u: 0, dur: len / cruise, t: 0, last: pts3[0].clone() };
   stopDigging();
-  R.moving = null; R.held = null;
+  R.vx = 0; R.vy = 0; R.held = null;
   sfx.thrust();
   g.mode = 'fly';
   toast('Autopilot engaged · ' + route.length + ' m of tunnel');
