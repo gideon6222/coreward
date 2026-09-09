@@ -49,8 +49,24 @@
     src:url(./fonts/chakrapetch-700.woff2) format('woff2');
   }
   :root{
-    --ink:#e8f0ff; --dim:#8b9ab5; --panel:#0d131f; --line:#1e2a40;
+    /* Warm gunmetal, not blue-black glass.
+
+       The world is photographed rock and the controls on top of it had no
+       material at all - flat translucent fills with soft corners, which is a
+       clean sci-fi overlay and the wrong one for this game. Everything below
+       shares one plate: a rolled-steel gradient, a hard 3 px corner, a bright
+       top edge and a dark bottom one, and the generated grain from grain.ts
+       over the top. The accent colours are untouched, because they carry
+       meaning - cyan is haul, amber is credits, green is fuel, red is hull -
+       and re-teaching those to save a palette would be a bad trade. */
+    --ink:#e6e3dc; --dim:#8d8880; --panel:#15161a; --line:#3a3d45;
     --cyan:#3fe0ff; --amber:#ffc861; --red:#ff5c6b; --green:#4be08a;
+    /* One plate, one bevel, one grain. */
+    --plate:linear-gradient(178deg,#32353d 0%,#23262c 42%,#191b20 100%);
+    --bevel:inset 0 1px 0 rgba(255,255,255,.13), inset 0 -1px 0 rgba(0,0,0,.6),
+            inset 1px 0 0 rgba(255,255,255,.04), inset -1px 0 0 rgba(0,0,0,.35);
+    --lift:0 2px 9px rgba(0,0,0,.55);
+    --grain:none;
     --safe-b: env(safe-area-inset-bottom, 0px);
     /* How far the whole bottom thumb cluster sits above the safe area: the
        d-pad, the supply column mirroring it, and the ordnance row stacked on
@@ -95,19 +111,33 @@
   #hud{position:fixed; inset:0; pointer-events:none; z-index:8; padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;}
   .row{display:flex; gap:6px; align-items:center;}
   .top{justify-content:space-between;}
+  /* Every panel in the HUD is this: grain over steel, a hard corner, a bevel.
+     The grain sits FIRST in the background stack so it lies on top of the
+     plate gradient, and it is a repeating 64 px tile, so a wide chip and a
+     square key share a surface without either stretching it. */
   .chip{
-    background:rgba(6,10,18,.6); border:1px solid var(--line); border-radius:9px;
-    padding:5px 10px; font-size:12.5px; font-weight:600; letter-spacing:.03em; backdrop-filter:blur(8px);
-    white-space:nowrap; box-shadow:0 2px 10px rgba(0,0,0,.35);
+    background:var(--grain) repeat 0 0 / 44px 44px, var(--plate);
+    border:1px solid var(--line); border-radius:3px;
+    padding:5px 10px; font-size:12.5px; font-weight:600; letter-spacing:.03em;
+    white-space:nowrap; box-shadow:var(--bevel), var(--lift);
   }
   .chip.gold{color:var(--amber);}
   .chip.haul{color:var(--cyan);}
   .chip.power{color:#ffc861; border-color:#5a4520;}
   .chip.hidden{display:none;}
   .bars{margin-top:8px; gap:6px;}
+  /* A gauge is a recessed slot in the plate, not a floating pill: the inset
+     shadow is what makes the fill look like it is sitting IN something. The
+     repeating hairline is a scale - it costs one gradient and it is most of
+     what separates an instrument from a progress bar. */
   .bar{
-    position:relative; flex:1; height:19px; border-radius:6px; overflow:hidden;
-    background:rgba(6,10,18,.6); border:1px solid var(--line); box-shadow:0 2px 10px rgba(0,0,0,.35);
+    position:relative; flex:1; height:19px; border-radius:2px; overflow:hidden;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, rgba(255,255,255,0) 1px 12px),
+      var(--grain) repeat 0 0 / 44px 44px,
+      linear-gradient(180deg,#101115,#191b20);
+    border:1px solid var(--line);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.75), inset 0 -1px 0 rgba(255,255,255,.06), var(--lift);
   }
   .bar i{position:absolute; inset:0 auto 0 0; width:0%; display:block; transition:width .12s linear;}
   .bar b{
@@ -163,12 +193,23 @@
   }
   #dpad{display:grid; grid-template-columns:repeat(3,60px); grid-template-rows:repeat(3,60px); gap:5px;}
   .k{
-    border:1px solid var(--line); background:rgba(10,16,26,.74); color:var(--ink);
-    border-radius:13px; font-size:21px; line-height:1; touch-action:none;
-    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);
-    box-shadow:0 3px 12px rgba(0,0,0,.4); transition:transform .06s, background .06s;
+    border:1px solid var(--line); color:var(--ink);
+    background:var(--grain) repeat 0 0 / 44px 44px, var(--plate);
+    border-radius:4px; font-size:21px; line-height:1; touch-action:none;
+    display:flex; align-items:center; justify-content:center;
+    text-shadow:0 1px 2px rgba(0,0,0,.8);
+    box-shadow:var(--bevel), var(--lift);
+    transition:transform .06s, box-shadow .06s, filter .06s;
   }
-  .k.on{background:rgba(63,224,255,.32); border-color:var(--cyan); transform:scale(.94);}
+  /* Pressed reads as PUSHED IN rather than as lit up: the bevel inverts, the
+     lift goes, and the key drops a pixel. A physical control does not glow
+     when you touch it, and the cyan flood it used to do was the loudest thing
+     on the screen at exactly the moment your thumb was covering it. */
+  .k.on{
+    transform:translateY(1px) scale(.985); filter:brightness(1.22);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.7), inset 0 -1px 0 rgba(255,255,255,.07);
+    border-color:#5c6068;
+  }
   .k[data-dir=up]{grid-area:1/2;} .k[data-dir=left]{grid-area:2/1;}
   .k[data-dir=right]{grid-area:2/3;} .k[data-dir=down]{grid-area:3/2;}
 
@@ -181,9 +222,15 @@
     display:flex; flex-direction:column; gap:8px; align-items:flex-start;
   }
   #actions button{
-    border:1px solid var(--line); background:rgba(10,16,26,.74); color:var(--ink);
-    border-radius:12px; padding:12px 14px; font-size:11px; font-weight:700; letter-spacing:.09em;
-    backdrop-filter:blur(8px); white-space:nowrap; box-shadow:0 3px 12px rgba(0,0,0,.4);
+    border:1px solid var(--line); color:var(--ink);
+    background:var(--grain) repeat 0 0 / 44px 44px, var(--plate);
+    border-radius:3px; padding:12px 14px; font-size:11px; font-weight:700; letter-spacing:.09em;
+    white-space:nowrap; box-shadow:var(--bevel), var(--lift);
+    text-shadow:0 1px 2px rgba(0,0,0,.8);
+  }
+  #actions button:active{
+    transform:translateY(1px); filter:brightness(1.2);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.7);
   }
   /* Bottom LEFT, mirroring the d-pad. Movement is the right thumb, supplies
      are the left, so spending one never fights with steering. Deliberately
@@ -214,12 +261,14 @@
      which looked like a bug. Four letters at 60 px are unambiguous, need no
      learning, and match the shop rows. */
   .sup{
-    position:relative; width:60px; height:60px; border-radius:13px;
-    border:1px solid var(--line); background:rgba(10,16,26,.74); color:var(--ink);
+    position:relative; width:60px; height:60px; border-radius:4px;
+    border:1px solid var(--line); color:var(--ink);
+    background:var(--grain) repeat 0 0 / 44px 44px, var(--plate);
     font-size:11px; font-weight:700; letter-spacing:.07em; line-height:1;
-    backdrop-filter:blur(8px);
-    box-shadow:0 3px 12px rgba(0,0,0,.4); transition:transform .06s, opacity .12s;
+    text-shadow:0 1px 2px rgba(0,0,0,.8);
+    box-shadow:var(--bevel), var(--lift); transition:transform .06s, opacity .12s;
   }
+  .sup:active{transform:translateY(1px); filter:brightness(1.2);}
   /* Owning none hides it entirely rather than greying it: an empty slot is
      clutter, and the shop is where you learn these exist. */
   .sup.none{display:none;}

@@ -2445,6 +2445,87 @@ note that survives a correct fix is a note about a different thing** - and the
 fourth message, where he said he was explaining it wrong, was him doing my job
 for me.
 
+## The ship was never on its own lighting layer (2026-09-08)
+
+Gideon: *"the ship is very bright. I want it to look more like light is coming
+from the ship, rather than being shined on the ship."*
+
+The hull is dark gunmetal and it was rendering at 255,255,246. I darkened it
+three times, took the ship off the sun, and cut its key light to a seventh, and
+the render did not move. **That is the signature of a constant term drowning the
+one you are adjusting**, and it took far too long to stop tuning and go looking
+for it.
+
+Two constants, as it turned out.
+
+**Object3D.layers does not stop a light reaching an object.** Layers decide what
+a CAMERA draws. three collects a scene lights once and hands all of them to
+every lit material; there is no per-object light filtering in the forward
+renderer. The comment in scene.ts had been claiming otherwise since the realism
+pass and it was simply false. The lamp is a point light of intensity 44 sitting
+ON the ship, and it had been lighting it all along.
+
+Measured, once I thought to: mean ship brightness 199 of 255 with the lamp on,
+72 with it off, everything else identical. That is the whole complaint.
+
+The fix is two passes - the world without the ship, then the ship alone with the
+lamp momentarily at zero, autoClear off so the depth buffer survives. It costs
+no extra draw calls, because the same objects are drawn either way. It does cost
+about 0.4 ms in this browser, and it needed renderer.info.autoReset = false with
+a manual reset, or the draw-call guard would have been measuring the ship pass
+alone - thirty of a hundred and fifty - and passing for the wrong reason.
+
+**The metal environment map was decoding two and a half times too bright**,
+because a CanvasTexture defaults to NoColorSpace and the gradient is sRGB. That
+matters more than it sounds: a metal has almost no diffuse term, so with a dark
+albedo the environment IS the visible brightness. It is why the hull ignored
+being repainted even after the lamp was dealt with. **If a metal will not
+respond to its own colour, look at the environment first.**
+
+**What the ship looks like now.** Nearly black hull, a lit canopy, two cyan
+running lights, and - new - two headlamp housings on the nose with fully
+emissive lenses. That last one was an oversight from the lighting work: the glow
+that stands in for the lamp had to move BEHIND the hull to stop washing it flat,
+which left the machine lighting the entire cave with nothing on it that looked
+like a lamp. Emissive answers to no light in the scene, so they are as bright at
+ninety metres as at one, which is exactly what makes them read as the source.
+
+## Panels that are made of something (2026-09-08)
+
+Same note, second half: *"can you see what you can do to make the buttons,
+gauges, ship, and landing pad match the more gritty and realistic look?"*
+
+The HUD was translucent blue-black glass with 9-13 px corners - a clean sci-fi
+overlay, which is a good look and the wrong one when the world underneath it is
+photographed rock. The controls were the only part of the screen with no
+material at all.
+
+One plate does all of it: a rolled-steel gradient, a 3-4 px corner, a bright top
+edge and a dark bottom one, and a generated grain over the top. grain.ts draws
+64 px of fine speckle plus a coarse mottle plus a horizontal streak - the streak
+is what gives it a rolling direction, without which noise reads as television
+static rather than as metal. Deterministic hash rather than Math.random, so two
+screenshots a day apart are comparable. Zero bytes on the wire.
+
+First attempt had the grain at alpha 74 and it looked like static. **The tell is
+that you notice the texture before you notice the panel**; it wants to be felt
+and not seen. 26 is right.
+
+The other change worth keeping is the pressed state. It used to flood cyan,
+which was the loudest thing on screen at exactly the moment a thumb was covering
+it. It now inverts its bevel and drops a pixel: a physical control does not glow
+when you touch it.
+
+The pad went from Lambert to Standard with the terrain own grit map, the metal
+environment, and generated hazard striping - diagonal bars scuffed with
+scratches and dirt, drawn for the same reason the pad is built from primitives
+rather than imported: a downloaded decal arrives with its own resolution and its
+own idea of how worn "worn" is, and the join to hand-tuned flat-shaded geometry
+shows in the first frame. It also takes the propagated light now, so it goes
+dark as you drop below it instead of staying lit in a hole.
+
+68 draw calls of 150, and that number is honest again.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

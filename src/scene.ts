@@ -82,16 +82,83 @@ export const SHIP_LAYER = 1;
 
 export const lamp = new THREE.PointLight(0xffd9a0, LAMP_INTENSITY, S.light(), LAMP_DECAY);
 scene.add(lamp);
-/* Everything except the lamp also lights the ship. */
+/* Draw the world, then draw the ship with the lamp switched off.
+
+   THE LAYER ON ITS OWN DOES NOTHING, and that was wrong in this file for three
+   versions. `Object3D.layers` decides what a CAMERA draws. It does not decide
+   which lights reach which object - three collects the scene's lights once and
+   every lit material gets all of them - so putting the ship on its own layer
+   and leaving the lamp off that layer excluded exactly nothing. The lamp is a
+   point light of intensity 44 sitting on the ship, and it had been lighting it
+   the whole time.
+
+   Measured rather than argued: the ship's mean pixel brightness is 199 of 255
+   with the lamp on and 72 with it off, at the same depth, with everything else
+   unchanged. That is the entire reason the hull rendered white no matter what
+   colour it was painted - and why darkening it three times in a row did
+   nothing at all.
+
+   Two passes is what actually excludes it. The world pass draws everything but
+   the ship; the ship pass draws only the ship, with the lamp momentarily at
+   zero. `autoClear` is off for the second so the depth buffer survives and the
+   ship still sorts against the terrain correctly. It costs no extra draw calls
+   - the same objects are drawn, just split across two passes - and it makes
+   the comment above finally true. */
+/* Two render calls, one frame's worth of statistics.
+
+   `renderer.info` resets itself at the start of every render() by default, so
+   with two passes the draw-call count left behind is the SHIP pass - about
+   thirty of a hundred and fifty. The e2e budget guard reads exactly that
+   number, so it would have gone on passing while measuring a fifth of the
+   frame: a safety net that reports success is worse than no safety net. Reset
+   once, by hand, at the top of the frame instead. */
+renderer.info.autoReset = false;
+
+export function renderWorld() {
+  renderer.info.reset();
+  camera.layers.disable(SHIP_LAYER);
+  renderer.render(scene, camera);
+
+  const held = lamp.intensity;
+  lamp.intensity = 0;
+  camera.layers.set(SHIP_LAYER);
+  renderer.autoClear = false;
+  renderer.render(scene, camera);
+  renderer.autoClear = true;
+  lamp.intensity = held;
+
+  camera.layers.set(0);
+  camera.layers.enable(SHIP_LAYER);
+}
+
+/* Ambient and rim reach the ship. The SUN deliberately does not.
+
+   A directional light at intensity 1.0 is what daylight is, and the ship spends
+   its life in a hole. Leaving it on the ship layer meant that at twenty metres
+   - where the sun has barely started to fade - the hull was being lit by a
+   light source that is not physically anywhere near it, and it flattened into
+   a bright card against dark rock. Underground there is no sun; above ground
+   the ambient is 1.30 and carries the ship on its own. */
 amb.layers.enable(SHIP_LAYER);
-sun.layers.enable(SHIP_LAYER);
 rim.layers.enable(SHIP_LAYER);
 camera.layers.enable(SHIP_LAYER);
 
-/* The ship's own key. Warm, short-range and weak, so it models the hull's
-   facets without ever washing them out - and constant, so the ship does not
-   change appearance when the lamp is upgraded. */
-export const shipKey = new THREE.PointLight(0xffe4cc, 1.15, 4, 1.4);
+/* The ship's own key, and it is now a tenth of what it was.
+
+   Playtest: *"the ship is very bright. I want it to look more like light is
+   coming from the ship, rather than being shined on the ship."* Exactly right,
+   and measurable: the hull is dark gunmetal and it was rendering at 255,255,246
+   - pure white. Not diffuse, which the maths puts at about 0.13; SPECULAR. A
+   point light sitting half a unit off a metal panel with middling roughness
+   puts the whole face inside one highlight, and the ship became a lamp-shaped
+   hole in the picture regardless of what colour it was painted.
+
+   So the key is now barely a key - just enough that the facets are not flat -
+   and the ship's brightness comes from its own emissive fittings instead: the
+   canopy, the running lights and the lamp housings in ship.ts. Those do not
+   answer to any light in the scene, which is the whole point. A machine in the
+   dark is a dark shape with lit windows. */
+export const shipKey = new THREE.PointLight(0xffd7b0, 0.85, 3.4, 1.1);
 shipKey.layers.set(SHIP_LAYER);
 scene.add(shipKey);
 

@@ -234,6 +234,9 @@ const rockNormal = tiled(rockNormalUrl);
    this is. Importing the colour map instead would have put a photograph of one
    particular cliff into every band in the game. */
 const rockGrit = tiled(rockGritUrl, true);
+/* The same grain the terrain uses, exported for anything else that wants a
+   surface that has been down a hole - the landing pad, chiefly. */
+export const gritTex = rockGrit;
 /* Real roughness variation is most of what separates stone from plastic: a
    uniform roughness reads as one moulded surface however good the normal map
    is, because every part of it catches the lamp identically. */
@@ -332,12 +335,65 @@ const metalEnv = (() => {
   x.fillStyle = grad;
   x.fillRect(0, 0, 64, 64);
   const tex = new THREE.CanvasTexture(c);
+  /* A canvas holds sRGB values and a texture defaults to NoColorSpace, so
+     without this the gradient is read as though it were already linear and
+     comes back about two and a half times too bright.
+
+     That matters more here than anywhere else in the game, and it took a while
+     to see why: this environment is the ONLY light a metal has. Give the hull a
+     nearly black colour - which is what "dark gunmetal" is in linear terms -
+     and the albedo contributes almost nothing, so whatever the environment
+     supplies is the entire visible brightness of the ship. Painting the hull
+     darker did nothing at all until this was fixed, which is exactly the
+     signature of a constant term drowning the one you are adjusting. */
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.mapping = THREE.EquirectangularReflectionMapping;
   const pmrem = new THREE.PMREMGenerator(renderer);
   const env = pmrem.fromEquirectangular(tex).texture;
   pmrem.dispose();
   tex.dispose();
   return env;
+})();
+
+/* Hazard striping, generated. Forty-five degree bars in the classic yellow and
+   near-black, with the yellow scuffed by the same rock grain the terrain uses -
+   painted metal on a mining platform has been walked on.
+
+   Drawn rather than imported for the reason the pad itself is built from
+   primitives: an imported decal arrives with its own resolution and its own
+   idea of how worn "worn" is, and the join to hand-tuned flat-shaded geometry
+   shows immediately. */
+export const hazardTex = (() => {
+  const n = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = n;
+  const x = c.getContext('2d')!;
+  x.fillStyle = '#c8952f';
+  x.fillRect(0, 0, n, n);
+  x.strokeStyle = '#1a1712';
+  x.lineWidth = n / 6;
+  /* Drawn past both edges so the diagonal tiles seamlessly. */
+  for (let k = -n; k < n * 2; k += n / 3) {
+    x.beginPath(); x.moveTo(k, 0); x.lineTo(k + n, n); x.stroke();
+  }
+  /* Wear: scratches along the traffic direction, then a dirt wash. */
+  x.globalAlpha = 0.18;
+  x.strokeStyle = '#000';
+  x.lineWidth = 1;
+  for (let i = 0; i < 40; i++) {
+    const y = (i * 37) % n;
+    x.beginPath(); x.moveTo(0, y); x.lineTo(n, y + ((i * 13) % 5) - 2); x.stroke();
+  }
+  x.globalAlpha = 0.12;
+  x.fillStyle = '#2b2419';
+  for (let i = 0; i < 60; i++) {
+    const r = 3 + ((i * 29) % 11);
+    x.beginPath(); x.arc((i * 53) % n, (i * 89) % n, r, 0, 6.3); x.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
 })();
 
 /* Give a material an environment so its metalness means something. */

@@ -16,9 +16,19 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.13.0';
+export const VERSION = '0.14.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.14.0', date: '2026-09-08', title: 'Machined',
+    notes: [
+      'The ship is a dark machine with its own lamps on it, instead of a bright shape with light shining on it.',
+      'Two headlamp housings on the nose - the thing that has been lighting the whole cave finally looks like it.',
+      'Every button, gauge and panel is stamped steel now: grain, hard corners, a bevelled edge.',
+      'Pressing a control reads as pushing it in rather than lighting it up.',
+      'The landing pad has worn metal and proper hazard striping, and it goes dark as you drop below it.'
+    ]
+  },
   {
     version: '0.13.0', date: '2026-09-08', title: 'Two lights',
     notes: [

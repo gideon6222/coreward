@@ -33,15 +33,20 @@ player.add(rig);
 /* Worn, not showroom. High metalness with middling roughness is machined metal
    that has been down a hole; low roughness would be chrome and would read as
    toy plastic again from the other direction. */
+/* Rougher and less metallic than it was, and the reason is the same one that
+   took the key light down: at metalness 0.55 and roughness 0.56 a single close
+   light put the entire face inside one specular highlight and the hull
+   rendered white. Roughness spreads that energy out instead of concentrating
+   it, which is what lets a dark colour actually read as dark. */
 const hullMat = asMetal(new THREE.MeshStandardMaterial({
-  color: 0x2b313a, metalness: 0.55, roughness: 0.56, flatShading: true
-}), 0.35);
+  color: 0x232932, metalness: 0.42, roughness: 0.78, flatShading: true
+}), 0.30);
 /* The one warm accent. Every working machine has a painted part that has taken
    a beating, and one accent colour is what stops a grey ship reading as a grey
    smudge at thirty pixels. */
 const trimMat = asMetal(new THREE.MeshStandardMaterial({
-  color: 0x8a5420, metalness: 0.35, roughness: 0.66, flatShading: true
-}), 0.3);
+  color: 0x5e3814, metalness: 0.22, roughness: 0.86, flatShading: true
+}), 0.18);
 export const darkMat = asMetal(new THREE.MeshStandardMaterial({
   color: 0x12161c, metalness: 0.5, roughness: 0.6, flatShading: true
 }), 0.3);
@@ -49,8 +54,8 @@ const steelMat = asMetal(new THREE.MeshStandardMaterial({
   /* The pale steel was most of what still read as white at play scale:
      bright bare metal on a small object against dark rock is a highlight, not
      a colour. Kept metallic, taken well down in value. */
-  color: 0x474e57, metalness: 0.8, roughness: 0.42, flatShading: true
-}), 0.45);
+  color: 0x2b3038, metalness: 0.62, roughness: 0.66, flatShading: true
+}), 0.26);
 
 /* ---------- body ----------
 
@@ -225,6 +230,39 @@ for (const sx of [-0.28, 0.28]) {
   const lamp = makeGlow(0x6fe8ff, 0.17, 0.5);
   lamp.position.set(sx, -0.16, 0.18);
   rig.add(lamp);
+}
+
+/* ---------- the lamp housings ----------
+
+   The ship had no visible light source on it at all. The glow that stands in
+   for the lamp sits BEHIND the hull - it has to, or it washes the whole thing
+   flat - so from the front the machine that lights the entire cave had nothing
+   on it that looked like a lamp.
+
+   Two housings at the leading edge, pointing the way the drill points: a dark
+   metal shroud with a fully emissive lens in it. Emissive answers to no light
+   in the scene, so these stay exactly as bright at ninety metres as at one,
+   which is what makes them read as the source rather than as something catching
+   a highlight. They are the brightest thing on the ship by a wide margin now,
+   and the hull around them is nearly black - which is what "light coming from
+   the ship" looks like. */
+const lensMat = new THREE.MeshStandardMaterial({
+  color: 0xffdca8, emissive: 0xffc879, emissiveIntensity: 1.9,
+  metalness: 0, roughness: 1, flatShading: true
+});
+for (const sx of [-0.15, 0.15]) {
+  const shroud = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.09, 0.1), darkMat);
+  shroud.position.set(sx, -0.26, 0.12);
+  rig.add(shroud);
+  const lens = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.045, 0.11), lensMat);
+  lens.position.set(sx, -0.29, 0.13);
+  rig.add(lens);
+  /* A tight halo so the lens blooms rather than reading as a painted rectangle.
+     Small on purpose: anything wide enough to cover the hull is the mistake the
+     big glow made. */
+  const flare = makeGlow(0xffc87a, 0.3, 0.55);
+  flare.position.set(sx, -0.3, 0.3);
+  rig.add(flare);
 }
 
 /* ---------- thrusters ---------- */

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { START_X } from './config';
 import { scene } from './scene';
-import { makeGlow, worldX } from './materials';
+import { makeGlow, worldX, asMetal, gritTex, hazardTex } from './materials';
+import { applyLight } from './lightmap';
 
 const pad = new THREE.Group();
 
@@ -18,9 +19,27 @@ const pad = new THREE.Group();
    palette; the join would be visible from the first frame. What it would buy
    is detail at a distance nobody views this from. */
 
-const steelDark = new THREE.MeshLambertMaterial({ color: 0x39424e, emissive: 0x0a0e14, flatShading: true });
-const steelLit = new THREE.MeshLambertMaterial({ color: 0x67727f, emissive: 0x141b23, flatShading: true });
-const hazard = new THREE.MeshLambertMaterial({ color: 0xd8a33a, emissive: 0x2a1c05, flatShading: true });
+/* Standard, not Lambert, and for the reason the rock is: Lambert has no
+   roughness channel, so painted steel and bare steel catch a light identically
+   and the whole structure reads as one moulded piece. These carry the same grit
+   map the terrain uses - a landing pad in a mine is dirty, and the grain is
+   what says so - plus the metal environment, which is the only thing that gives
+   a metal its colour where no light is falling on it.
+
+   They also take the propagated light, so the pad goes dark with everything
+   else as you drop below it rather than staying lit in a hole. */
+const steelDark = applyLight(asMetal(new THREE.MeshStandardMaterial({
+  color: 0x333a44, map: gritTex, metalness: 0.62, roughness: 0.72, flatShading: true
+}), 0.35));
+const steelLit = applyLight(asMetal(new THREE.MeshStandardMaterial({
+  color: 0x5c6672, map: gritTex, metalness: 0.7, roughness: 0.55, flatShading: true
+}), 0.4));
+/* Painted, so barely metallic and rough - and striped rather than plain amber,
+   which is the single detail that makes a platform read as industrial rather
+   than as a yellow box. */
+const hazard = applyLight(new THREE.MeshStandardMaterial({
+  map: hazardTex, metalness: 0.12, roughness: 0.82, flatShading: true
+}));
 
 /* deck, with a lip so it reads as a platform rather than a slab */
 const slab = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.2, 1.5), steelDark);

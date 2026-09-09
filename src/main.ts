@@ -12,6 +12,7 @@ import { setDrillTier, setUpgradeHardware } from './ship';
 import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station';
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock } from './loop';
+import { installPanelGrain } from './grain';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
 import './input';
@@ -48,6 +49,8 @@ setUpgradeHardware(g.up);
 audioLabels();
 updateHUD();
 stampBuild();
+/* Before the boot overlay lifts, so no frame is ever drawn with bare panels. */
+installPanelGrain();
 document.getElementById('boot')!.classList.add('hidden');
 window.addEventListener('visibilitychange', () => { save(); if (document.hidden) sfx.digStop(); });
 setInterval(save, 5000);

@@ -22,7 +22,7 @@ import {
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
 } from './feel';
-import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey } from './scene';
+import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, renderWorld } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { updateLight } from './lightmap';
@@ -693,5 +693,5 @@ export function tick(raw: number, draw = true) {
   tickToast(raw);
 
   updateHUD();
-  if (draw) renderer.render(scene, camera);
+  if (draw) renderWorld();
 }

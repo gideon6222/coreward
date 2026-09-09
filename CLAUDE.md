@@ -113,6 +113,15 @@ the haze, which listed its uniforms by hand, worked. The haze now spreads `U` to
 e2e test that reads the declarations out of the compiled shader and fails on any that nothing
 supplies.
 
+**`Object3D.layers` does NOT stop a light reaching an object, and the world is drawn in two
+passes because of it.** Layers decide what a CAMERA draws; three collects a scene's lights once
+and every lit material gets all of them. Putting the ship on `SHIP_LAYER` and leaving the lamp
+off that layer excluded exactly nothing for three versions - the intensity-44 lamp sitting on
+the ship was lighting it the whole time, which is why the hull rendered white however dark it
+was painted. `renderWorld()` in scene.ts draws the world without the ship, then the ship alone
+with the lamp momentarily at zero. `renderer.info.autoReset` is off and reset by hand there, or
+the draw-call guard measures only the second pass.
+
 **There are TWO lights and they must not be fused.** `coreReach()` lights rock faces:
 flood x pool x lobe, and **never the shadow fan**. `coreReachAir()` lights the air in a tunnel:
 the same terms plus the fan, over a much higher ambient. A rock face is lit by being near a lit
@@ -157,6 +166,12 @@ breaking an import.
 null check narrows every node.
 
 ---
+
+**Anything given `asMetal()` gets its colour almost entirely from the environment map.** A
+metal has no diffuse term to speak of, so with a dark albedo the env IS the visible brightness -
+painting the hull darker three times running changed nothing until the env's missing
+`colorSpace` was fixed. If a metal object will not respond to its own colour, look at the
+environment before anything else.
 
 ## Numbers that are calibrated, not chosen
 

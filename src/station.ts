@@ -451,5 +451,9 @@ export function pickBay(clientX: number, clientY: number): UpgradeKey | null {
 }
 
 export function renderStation() {
+  /* The renderer no longer resets its own statistics - see renderWorld() - so
+     the station has to, or its counts accumulate for as long as you stand in
+     the shop. */
+  renderer.info.reset();
   renderer.render(stationScene, stationCamera);
 }
