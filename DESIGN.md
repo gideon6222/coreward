@@ -288,6 +288,152 @@ draws it in the crossing.
 
 ---
 
+## Round two: the way in, the shop, and how to actually see this stuff
+
+The ask, in his words:
+
+> "for the intro can you make it less like a slide show and more like the ship is flying past
+> planets. when the intro ends, have it fly to the planet. if you hit continue, have the ship
+> take off and fly to the planet the player is currently at. If there is no saved game, make
+> sure the continue button is greyed out. Also dont explain the whole story of the game. Make
+> it feel more mysterious."
+>
+> "can you also revamp the shop? some of the words are cut off and it feels a bit cluttered. I
+> want future upgrades that dont unlock until later to be hidden."
+>
+> "I want you to find a good way to play test and trouble shoot the game ... if there are any
+> rules keeping you from doing something that could be beneficial, make sure the rule is
+> actually needed ... use pre-made assets whenever you can."
+
+---
+
+### 0. First, a way to SEE motion - because I currently cannot
+
+This comes first because everything else depends on it. "Less like a slide show" is a
+judgement about **movement**, and every tool I have produces **stills**. I have been approving
+animation by looking at single frames and reasoning about the code in between, which is
+exactly the habit that cost four rounds on the lighting artefact.
+
+**The filmstrip harness** (`scripts/filmstrip.mjs`): drive the built game under Playwright,
+advance GAME time deterministically through `advance()`, screenshot at fixed intervals, and
+composite the frames into **one contact-sheet PNG**. A whole sequence then becomes a single
+image I can actually look at.
+
+- Deterministic, because it runs on the tick seam - a slow machine changes nothing.
+- Named scenarios (`intro`, `continue`, `crossing`, `shop`) so a repro is a command rather
+  than a paragraph of set-up.
+- Console errors collected and printed with the sheet. Three separate bugs this session were
+  sitting in the console and were found by eye instead.
+
+*Challenges.* Compositing without a new dependency - `sharp` is not in the repo and ASSETS.md
+says to install it in a scratch directory rather than depend on it. The answer is to composite
+**in the browser**: hand the screenshot buffers back into the page as data URLs, draw them into
+a canvas grid, read one PNG out. No dependency, and the page is already open.
+
+The second challenge is the one that keeps biting: under the dev server a dynamic `import()`
+resolves to a **different module instance** than the one the loop is running, so the harness
+drives everything through the `?debug` seam and never through an import.
+
+---
+
+### 1. The intro: a flight, not a slide show
+
+It is currently six discrete *shots*, each easing its planet in from nothing. That is a slide
+show with a dissolve, and it is a fair description of what is wrong with it.
+
+**The rework:** one continuous flight. Planets sit along a line ahead of the ship, the ship
+moves forward at a constant rate, and each world approaches, passes to one side and falls
+behind. Captions fade over the top, **decoupled from the visuals**, so text changes without
+anything cutting.
+
+**The landing.** The intro and CONTINUE end on the same shared sequence: the destination grows
+until it fills the frame, the ship pitches toward it, atmosphere washes the screen out, and the
+game is there. Shared deliberately - "fly to the planet" is the same event either way, and two
+copies would drift.
+
+- **Intro** = flythrough, then land on Verdax.
+- **CONTINUE** = take off, then land on the world you are actually on.
+- **No save** = CONTINUE greyed and inert, not hidden. He asked for greyed and he is right: an
+  absent button tells a new player nothing, a greyed one says "this is where your game will be".
+
+**Mysterious, not explanatory.** One of the six beats explains the core loop, which the player
+is about to be taught by playing it. Cutting to five, shorter, and dropping that beat. What
+must survive is the *objective* - five pieces, one per kind of world - because it is the thing
+the game otherwise never says. Mystery is withholding the explanation, not the goal.
+
+*Challenges.* The existing test asserts the intro names the jump drive, five, the Heart, and
+where the pieces are. A shorter script may drop a word, and the test has to be re-aimed at
+*the objective survives* rather than *these four strings appear* - the literal-versus-property
+mistake, which I have already made twice this session.
+
+---
+
+### 2. The shop: fewer things, bigger, nothing cut off
+
+Three faults, and only one of them is layout.
+
+**Words cut off** has an exact cause: `drawPlate()` calls `fillText` at a fixed 62 px with no
+width limit on a 512 px plate, and "SALVAGE MAGNET" does not fit. Measure and shrink to fit,
+rather than shortening the names.
+
+**Cluttered** is the count. The shop went from ten cases to fifteen without the room changing,
+and five of the fifteen are things you cannot buy yet.
+
+**Hiding locked upgrades** runs straight into a rule:
+
+> `CRAFT.md`: *"Locking shop stock behind 'deepest ever reached' is the cheapest structural
+> progression available, and it should be shown, not hidden: a row that says 'Sealed until
+> 90 m' is a reason to go deeper. A hidden row is nothing at all."*
+
+**That rule is right about the next gate and wrong about all of them.** A case reading "Sealed
+until 90 m" when your best is 78 m is a reason to go deeper. The same case when your best is
+12 m is furniture: it cannot be planned toward, it is five rungs away, and it is one of five
+crowding a phone screen. The rule was written at ten upgrades and two gates; at fifteen and six
+it stopped being true and nobody noticed, because it was being applied rather than measured.
+
+**Correction: show the NEXT sealed upgrade, hide the rest.** That keeps everything the rule was
+defending and removes the clutter. `CRAFT.md` gets updated rather than worked around.
+
+**Layout.** With the far cases gone the count is dynamic - about eight early, fifteen late - so
+the room lays out from the count rather than from a fixed table: two columns while eight or
+fewer fit, the back rack added above that. Fewer cases also means each can be bigger, which is
+most of what makes a plate readable.
+
+---
+
+### 3. Pre-made assets, where the rule says to use them
+
+ASSETS.md's rule is a **measurement**, not a preference: *"Import what the player reads at its
+real size. Model in code anything that is thirty pixels tall and judged on silhouette"* - and,
+added later, *"over about two hundred pixels and permanently on screen, import."*
+
+Applying it rather than skipping it: **the planets in the intro and the crossing are two to six
+hundred pixels tall and on screen for the whole sequence.** They are untextured spheres, which
+is a large part of why the intro reads as coloured balls sliding about. That is squarely on the
+import side of a rule I have been half-reading.
+
+**One rock normal map from ambientCG**, about 45 KB, on the planet sphere - and, per the rule
+that lets a photographed texture into a stylised game at all, **the normal only, never the
+colour map.** Each world keeps its palette colour and gains relief and a real terminator.
+
+*Challenges.* The download is a 9 MB zip for one 45 KB file and `sharp` is not a dependency -
+both already solved in ASSETS.md, via a scratch directory and `npx`.
+
+**Audio stays synthesised**, and not out of habit: ASSETS.md records that both CC0 audio
+libraries need a browser session or an API key and are unavailable unattended, and this score
+mixes by depth, danger and zone off one scheduler, which a recording cannot do.
+
+---
+
+### 4. Rules that were wrong, and are being corrected
+
+- **`CRAFT.md`, sealed shop rows.** Show the next one, not all of them.
+- **`CLAUDE.md`, "the only binary assets are two woff2 font files".** Stale - there are three
+  WebP textures in `src/textures/`, imported through the bundler. A rule that misdescribes the
+  repo teaches the next session something false about what is allowed.
+
+---
+
 ## Order of work
 
 Each slice ships on its own: typecheck, golden tests, build, size guard, e2e, CI, deploy.
