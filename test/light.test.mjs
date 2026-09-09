@@ -435,3 +435,30 @@ test('a ray that finds nothing must not read as a wall at the lamp\'s reach', ()
       `open air ${d} cells out on bearing ${k} is in shadow`);
   }
 });
+
+test('the air in a tunnel cannot be as bright everywhere as the beam makes it', () => {
+  /* Five playtest rounds of "there is a circle of light around the ship" ended
+     here, and nothing in any suite would have caught any of them: the haze is
+     the one part of the lighting that had no assertion on it at all.
+
+     The haze is an additive quad in front of the terrain, stencilled by a hard
+     per-cell air mask. That is fine while the value varies across the mask, and
+     is a flat coloured card the moment it does not. LM_AIR_AMBIENT is the
+     bounce's share of it, and the bounce is omnidirectional with a long reach
+     and a gentle curve - so if it is set high enough, every open cell in the
+     connected tunnel network lands on nearly the same value and the tunnels
+     become cards with cell-aligned edges and 45-degree corners.
+
+     What this asserts is the property, not the number: the light the bounce
+     alone puts in the air has to stay clearly below what the beam puts there,
+     or a branch the beam has passed and the shaft the beam is down cannot be
+     told apart. Measured by eye, the cards come back at about 0.28. */
+  const beam = 1;
+  assert.ok(H.LM_AIR_AMBIENT < beam * 0.5,
+    `air keeps ${H.LM_AIR_AMBIENT} of the bounce against a beam of ${beam}: ` +
+    'a branch and the shaft will read the same and the haze becomes flat cards');
+
+  /* And it cannot go to zero either, or the thing it exists for is gone. */
+  assert.ok(H.LM_AIR_AMBIENT > 0.05,
+    'a branch the beam has passed must still be lit air, not a hole');
+});

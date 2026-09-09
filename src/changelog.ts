@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.5';
+export const VERSION = '0.15.6';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.6', date: '2026-09-08', title: 'The tunnels stop being cards',
+    notes: [
+      'The flat orange shapes that appeared as you came up on a side tunnel are gone.',
+      'A branch the beam has already passed is dim lit air again, not a panel of colour.',
+      'The glow in the air now sits where the drill is pointing instead of filling every tunnel evenly.'
+    ]
+  },
   {
     version: '0.15.5', date: '2026-09-08', title: 'A smoother fade into the rock',
     notes: [

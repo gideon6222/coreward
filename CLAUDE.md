@@ -211,6 +211,21 @@ falloff, 1.7x the beam's reach on a much gentler curve: sharing the beam's pool 
 behind the ship end exactly where the beam did, with the same hard edge, which is the one thing
 the soft half must not do.
 
+**The haze is an additive quad through a HARD per-cell mask, so its value must vary across
+that mask or it draws flat cards.** This is the single most expensive thing in the file: five
+playtest rounds of *"there is a circle of light around the ship"*, four correct fixes to things
+that were not the cause. `LM_AIR_AMBIENT` is the bounce's share of the light in air, and the
+bounce is omnidirectional with a long reach and a gentle curve - at 0.62 every open cell in the
+connected tunnel network landed on nearly the same number, and a near-constant value through a
+hard stencil does not read as fog. It reads as flat orange cards, one per cell, with
+cell-aligned edges and 45-degree corners where they meet. It showed *approaching* a branch and
+not at one because level with the branch you are inside its card; four cells above you see it
+edge-on beside the shaft's, as a trapezoid. It is 0.20; above about 0.28 the cards return,
+below about 0.05 a branch the beam has passed becomes a hole again. **Anything that raises the
+floor under the air - a new ambient term, a bigger bounce, a wider glow - has to be checked for
+this, and checked by hiding the haze quad rather than by reasoning about the shader.** There is
+a test on the property, and there was none on any haze constant for the whole five rounds.
+
 **Glow is dimmed on its own curve, not the surface one.** Ore glowing through unlit rock is the
 find-the-vein mechanic and must not switch off, so emissive and the ore haloes go through
 `coreGlow()` - a square-root curve over a small floor - rather than `coreLit()`. `LM_GLOW_FLOOR`
