@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.16.0';
+export const VERSION = '0.17.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.17.0', date: '2026-09-09', title: 'Twelve worlds, twelve palettes',
+    notes: [
+      'Every planet now has its own rock, fog, haze, dust and skyline instead of the same cave with the horizon repainted.',
+      'Rustmoor is rust, Cryon is blue ice, Ashvault is violet ash - you can tell where you are before you dig a metre.',
+      'Ore keeps its own colour everywhere, so what a vein is worth still reads at a glance.'
+    ]
+  },
   {
     version: '0.16.0', date: '2026-09-08', title: 'Dust in the beam',
     notes: [

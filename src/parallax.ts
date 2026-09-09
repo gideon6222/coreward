@@ -3,6 +3,7 @@ import { W } from './config';
 import { scene } from './scene';
 import { applyLightUnlit } from './lightmap';
 import { rnd } from './world';
+import { mixHex } from './util';
 
 /* Distant rock, behind the tunnels.
 
@@ -129,4 +130,11 @@ export function fadeParallax(pd: number) {
     m.opacity = 0.92 * k;
     L.mesh.visible = k > 0.01;
   }
+}
+
+/* The silhouettes take the world's colour too, the far layer darker than the
+   near one so the depth cue survives the tint. See Palette in config.ts. */
+export function setParallaxTint(hex: number) {
+  (layers[0].mesh.material as THREE.MeshBasicMaterial).color.setHex(hex);
+  (layers[1].mesh.material as THREE.MeshBasicMaterial).color.setHex(mixHex(hex, 0x000000, 0.42));
 }

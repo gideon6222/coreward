@@ -4,7 +4,7 @@ import { key } from './util';
 import { g } from './state';
 import { rnd, blockAt } from './world';
 import { scene } from './scene';
-import { crackGeo, crackMat, mat, shade, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
+import { crackGeo, crackMat, mat, shade, tintRock, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, rockRelief, ROCK_BUMP } from './materials';
 import { applyLight, applyGlow, markLightDirty } from './lightmap';
 import type { Block } from './types';
@@ -194,13 +194,13 @@ function makeBlock(x: number, d: number, b: Block) {
     const grp = new THREE.Group();
     /* clone() drops onBeforeCompile - see the note above makeBlock - so the
        light has to be re-applied here, after the displacement. */
-    const bodyMat = mat(shade(b.color, jit), b.glow, true, true).clone();
+    const bodyMat = mat(shade(tintRock(b.color, g.planet), jit), b.glow, true, true).clone();
     displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
     applyLight(bodyMat);
     const m = new THREE.Mesh(chunkFor(b.id), bodyMat);
     grp.add(m);
     if (rnd(x + 61, d + 17, g.planet) > 0.66) {
-      const p = new THREE.Mesh(pebbleGeo, mat(shade(b.color, jit * 1.22), b.glow, true, true));
+      const p = new THREE.Mesh(pebbleGeo, mat(shade(tintRock(b.color, g.planet), jit * 1.22), b.glow, true, true));
       const r1 = rnd(x + 12, d + 44, g.planet), r2 = rnd(x + 31, d + 6, g.planet);
       p.position.set((r1 - 0.5) * 0.6, (r2 - 0.5) * 0.6, 0.44);
       p.rotation.set(r1 * 3, r2 * 3, r1 * 2);
@@ -209,7 +209,7 @@ function makeBlock(x: number, d: number, b: Block) {
     return grp;
   }
   const grp = new THREE.Group();
-  const hostMat = mat(shade(b.host || 0x333038, jit), 0.02, true, true).clone();
+  const hostMat = mat(shade(tintRock(b.host || 0x333038, g.planet), jit), 0.02, true, true).clone();
   displaceLikeRock(hostMat, ROCK_BUMP[b.id] ?? 0.2);
   applyLight(hostMat);
   const host = new THREE.Mesh(chunkFor(b.id), hostMat);
@@ -370,7 +370,7 @@ function rebuild() {
         placeCell(px, py);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.color, jit * ao)));
+        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.color, g.planet), jit * ao)));
         pool.bodies++;
 
         /* Flecks belong to seams and only to seams now.
@@ -391,7 +391,7 @@ function rebuild() {
             scratch.scale.set(sc, sc, sc);
             scratch.updateMatrix();
             pool.detail.setMatrixAt(pool.details, scratch.matrix);
-            pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(0xd9c898, jit * 1.15 * ao)));
+            pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(tintRock(0xd9c898, g.planet), jit * 1.15 * ao)));
             pool.details++;
           }
         }
@@ -403,7 +403,7 @@ function rebuild() {
       placeCell(px, py);
       scratch.updateMatrix();
       pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-      pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(b.host || 0x333038, jit * ao)));
+      pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.host || 0x333038, g.planet), jit * ao)));
       pool.bodies++;
 
       const n = b.shards || 5;

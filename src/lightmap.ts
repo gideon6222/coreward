@@ -569,6 +569,12 @@ export const haze = new THREE.Mesh(
 haze.frustumCulled = false;
 haze.renderOrder = -0.5;
 
+/* The haze takes the world's colour - see Palette in config.ts. A setter
+   rather than an exported uniform, so the one place that owns the material
+   stays the one place that writes it. */
+const hazeCol = (haze.material as THREE.ShaderMaterial).uniforms.uHaze.value as THREE.Color;
+export function setHazeColor(hex: number) { hazeCol.setHex(hex); }
+
 /* Live handles for tuning by eye, behind ?debug in main.ts.
 
    Every number in the propagated light was set by looking at it, and looking

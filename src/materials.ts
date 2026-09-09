@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { W } from './config';
+import { W, paletteOf } from './config';
+import { mixHex } from './util';
 /* Re-exported so the renderer modules keep one import for "geometry of a cell". */
 export { worldX } from './config';
 import { renderer } from './scene';
@@ -14,6 +15,17 @@ import rockGritUrl from './textures/rock-grit.webp';
 import rockRoughUrl from './textures/rock-rough.webp';
 
 export const lerpHex = (a: number, b: number, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
+
+/* Rock, in the colour of the world it belongs to. See Palette in config.ts.
+
+   Rock only. Ore keeps its own colour on every planet, because ore colour is
+   the fastest-read piece of information in the game and a world that shifted
+   it would make the player's quickest judgement the least reliable one. The
+   HOST a crystal sits in is rock, so that does tint. */
+export const tintRock = (hex: number, planet: number) => {
+  const pal = paletteOf(planet);
+  return mixHex(hex, pal.rock, pal.mix);
+};
 
 /* soft additive halo sprite, the cheap stand-in for bloom */
 export const glowTex = (() => {

@@ -149,7 +149,8 @@ let t = 0;
    other side. Wrapping by the box width keeps a mote's offset within the box,
    so the field stays evenly spread however far the ship has flown, and no mote
    ever pops in the middle of the screen. */
-export function stepDust(px: number, py: number, depth: number, raw: number, hot: number) {
+export function stepDust(px: number, py: number, depth: number, raw: number, hot: number,
+                         tint = 0xd8c4a2) {
   t += raw;
   mat.uniforms.uTime.value = t;
 
@@ -165,7 +166,7 @@ export function stepDust(px: number, py: number, depth: number, raw: number, hot
   mat.uniforms.uDustGain.value = DUST_GAIN * dens * day;
   /* Warm with the rock at the heat line, with everything else that changes
      there - see the band comment in loop.ts. */
-  (mat.uniforms.uTint.value as THREE.Color).setHex(0xd8c4a2)
+  (mat.uniforms.uTint.value as THREE.Color).setHex(tint)
     .lerp(new THREE.Color(0xff7a34), hot);
 
   const hw = DUST_BOX_W / 2, hh = DUST_BOX_H / 2;

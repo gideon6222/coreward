@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo,
-         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH } from './config';
-import { clamp, key } from './util';
+         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH, paletteOf } from './config';
+import { clamp, key, mixHex } from './util';
 import { g, S, save } from './state';
 import { blockAt } from './world';
 import { R } from './runtime';
@@ -25,7 +25,7 @@ import {
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, renderWorld } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
-import { updateLight } from './lightmap';
+import { updateLight, setHazeColor } from './lightmap';
 import { spray, stepParticles, starMat, sunSprite } from './particles';
 import { stepDust } from './dust';
 import { leaveDrop, stepDrops } from './drops';
@@ -35,7 +35,7 @@ import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } f
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
-import { stepParallax, fadeParallax } from './parallax';
+import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { stepGauges } from './gauges';
 import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent,
@@ -644,13 +644,22 @@ export function tick(raw: number, draw = true) {
      the old shared value was still a bright blue and was washing it over every
      distant surface in the game. */
   const tFog = clamp(tDeep * FOG_COLOR_RUSH, 0, 1);
-  fog.color.copy(lerpHex(skyLo(g.planet), 0x07080d, tFog).lerp(new THREE.Color(0x4a1305), hot * 0.85));
+  /* The deep fog target is the WORLD'S, not one shared near-black. It is most
+     of what makes Cryon read as ice and Ashvault as ash from the surface down,
+     because fog tints every distant surface in the frame at once. */
+  const pal = paletteOf(g.planet);
+  fog.color.copy(lerpHex(skyLo(g.planet), pal.fog, tFog).lerp(new THREE.Color(0x4a1305), hot * 0.85));
+  /* The tunnel haze and the silhouettes behind it take the same palette. Heat
+     still overrides all of it at the bottom - the heat line has to read the
+     same on every world or it stops being a threshold the player can learn. */
+  setHazeColor(mixHex(pal.haze, 0xff6a28, hot * 0.8));
+  setParallaxTint(pal.para);
   /* ambient warms too, so the rock itself is lit hot rather than just fogged */
   amb.color.setHex(0xffffff).lerp(new THREE.Color(0xff8a52), hot * 0.6);
 /* The mote field. World-anchored and wrapped around the ship rather than
      parented to it - see dust.ts for why that is the whole difference between
      dust and a texture on the camera. */
-  stepDust(px, py, g.pd, raw, hot);
+  stepDust(px, py, g.pd, raw, hot, pal.dust);
 
   skyTick += raw;
   if (skyTick > 0.12) {

@@ -32,6 +32,70 @@ const SKY_HI = [0x0d2b52, 0x4a1d10, 0x0c3a44, 0x2a0f36, 0x101440, 0x0c331f,
 const SKY_LO = [0x5aa8dd, 0xe08a45, 0x54d4d8, 0xa055b8, 0x5560c8, 0x4fbf78,
                 0xe86fb0, 0x7fd8c4, 0xffa356, 0x6f9ae8, 0xd8c94a, 0xa878c8];
 
+/* ---------- the palette of a world ----------
+
+   A planet used to BE two sky colours. Everything underground - the rock, the
+   fog, the haze in the tunnels, the dust in the beam, the silhouettes behind
+   it - was identical on every world in the game, so a new planet was the same
+   cave with the horizon repainted, and the traits were weather that happened
+   to you rather than anywhere you had been.
+
+   A palette is applied everywhere at once, which is the whole point. The same
+   argument as the heat line: one signal is missable, four coordinated ones are
+   not. You should know you are somewhere else before you have dug a metre.
+
+   `rock` and `mix` tint the ROCK ONLY, and never the ore. Ore colour is how
+   value is read at a glance - amethyst has to look like amethyst on every
+   world or the one piece of information the player reads fastest becomes
+   unreliable. The host a crystal sits in is rock, so that tints with the rest.
+
+   Nothing here touches generation. Every id in every cell is unchanged; this
+   is what colour those cells are drawn. That distinction is what keeps the
+   frozen baseline in test/baseline/blocks-preadditive.json meaningful. */
+export interface Palette {
+  /* what the rock is tinted toward, and how far */
+  rock: number; mix: number;
+  /* the colour the fog settles to underground */
+  fog: number;
+  /* the tunnel haze, and the dust hanging in the beam */
+  haze: number; dust: number;
+  /* the silhouettes behind the tunnels */
+  para: number;
+}
+
+/* Twelve, cycling with the names. Verdax is first and is deliberately the
+   least tinted: it is the world the game teaches you on, and everything after
+   it should read as a departure from it. */
+const PALETTES: Palette[] = [
+  /* Verdax - the baseline. Warm neutral stone under a blue sky. */
+  { rock: 0x8a7f6a, mix: 0.10, fog: 0x07080d, haze: 0xffb46a, dust: 0xd8c4a2, para: 0x1a1f2b },
+  /* Rustmoor - oxidised iron, everything the colour of old blood. */
+  { rock: 0xa8542a, mix: 0.44, fog: 0x1a0805, haze: 0xff9048, dust: 0xe0a070, para: 0x2a1410 },
+  /* Cryon - blue ice, and the coldest air in the game. */
+  { rock: 0x7fc6d8, mix: 0.41, fog: 0x04121a, haze: 0x9fe0ff, dust: 0xcce8f4, para: 0x162630 },
+  /* Ashvault - burnt violet rock, ash in the air. */
+  { rock: 0x6a4a78, mix: 0.43, fog: 0x0c0612, haze: 0xd8a0ff, dust: 0xc0a8cc, para: 0x201828 },
+  /* Kryllon - deep indigo, lit like a storm. */
+  { rock: 0x4a58b0, mix: 0.41, fog: 0x040720, haze: 0x8ea8ff, dust: 0xa8b4e8, para: 0x161c34 },
+  /* Tessivar - green stone, the one world that feels alive. */
+  { rock: 0x4f8a52, mix: 0.41, fog: 0x05120a, haze: 0xa8e88a, dust: 0xc0d8a0, para: 0x18261a },
+  /* Obrinth - rose quartz and hot pink light. */
+  { rock: 0xb05880, mix: 0.43, fog: 0x160610, haze: 0xff9ad0, dust: 0xe8b4cc, para: 0x2a1622 },
+  /* Palewell - bone and pale teal. Bleached. */
+  { rock: 0xa8b4a8, mix: 0.39, fog: 0x0a1210, haze: 0xc8f0e0, dust: 0xe0e8dc, para: 0x1c2624 },
+  /* Serrik - amber and ochre, a desert underground. */
+  { rock: 0xc08a3a, mix: 0.43, fog: 0x140c04, haze: 0xffc878, dust: 0xf0d4a0, para: 0x282014 },
+  /* Vantomir - slate and steel, the bleakest of them. */
+  { rock: 0x6a7a90, mix: 0.41, fog: 0x060a10, haze: 0xa8c4e8, dust: 0xc4d0dc, para: 0x1a2028 },
+  /* Halcyne - olive and old gold. */
+  { rock: 0x8aa030, mix: 0.41, fog: 0x0c1004, haze: 0xd8e888, dust: 0xd0dca0, para: 0x1e240f },
+  /* Dross - almost black, lit violet. The last name before the list cycles,
+     and the darkest place in the game. */
+  { rock: 0x3a3040, mix: 0.44, fog: 0x050308, haze: 0xb088e0, dust: 0xa898b8, para: 0x14101a }
+];
+
+export const paletteOf = (i: number): Palette => PALETTES[i % PALETTES.length];
+
 export const planetName = (i: number) => {
   const base = PLANET_NAMES[i % PLANET_NAMES.length];
   const cyc = Math.floor(i / PLANET_NAMES.length);
