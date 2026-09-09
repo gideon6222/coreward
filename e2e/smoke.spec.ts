@@ -1423,9 +1423,15 @@ test('breaking a core opens the chart, and the crossing lands you somewhere else
   expect(crossing.body).toContain('crossing');
   expect(crossing.hud, 'the HUD is still up during the crossing').toBe('none');
 
-  /* Run it out on the tick seam rather than in wall-clock: the crossing is
-     nine seconds of game time and CI has no GPU to spend on them. */
-  await page.evaluate(() => (window as any).__cw.advance(11));
+  /* The crossing is skippable, and it has to be: a cutscene you cannot skip is
+     a tax on every planet after the first one. Skipping is also how this test
+     finishes it, which means the skip path is exercised on every run rather
+     than being the one route nobody checks. */
+  await expect(page.locator('#skipCross')).not.toHaveClass(/hidden/);
+  await page.locator('#skipCross').dispatchEvent('click');
+  await page.evaluate(() => (window as any).__cw.advance(1));
+  await expect(page.locator('#skipCross'), 'the skip button outlived the crossing')
+    .toHaveClass(/hidden/);
 
   const after = await page.evaluate(() => {
     const w = (window as any).__cw;

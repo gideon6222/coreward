@@ -100,6 +100,9 @@ export function travelTo(d: Destination, leg: number) {
   g.mode = 'transit';
   R.transit = { t: 0, dur: TRANSIT_SECS, dest: d, leg };
   document.body.classList.add('crossing');
+  const skip = chartEl('skipCross');
+  skip.classList.remove('hidden');
+  skip.onclick = () => { sfx.ui(); skipTransit(); };
   beginTransit(fromWorld, d.world);
   sfx.thrust();
 }
@@ -113,6 +116,7 @@ export function arrive() {
   if (!tr) return;
   R.transit = null;
   document.body.classList.remove('crossing');
+  chartEl('skipCross').classList.add('hidden');
   endTransit();
 
   setWorld(tr.leg);
@@ -139,6 +143,9 @@ export function arrive() {
 /* The whole crossing is skippable, and it has to be: a cutscene you cannot
    skip is a tax on every planet after the first one. */
 export function skipTransit() {
+  /* Jumps the clock rather than calling arrive() directly, so the crossing
+     ends through exactly one path. Two ways to finish it is two places for the
+     next person to forget to clear the old world's tunnels. */
   if (R.transit) R.transit.t = R.transit.dur;
 }
 

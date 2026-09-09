@@ -25,7 +25,8 @@ export const CHANGELOG: Release[] = [
       'Volatile worlds vent gas out of the rock. Searing worlds send embers up from the deep.',
       'Crystalline worlds glint in the lamp; Hollow ones drop grit from a ceiling you cannot see.',
       'Stable worlds stay completely still - which is how you notice all the others.',
-      'The deeper you go, the busier the air gets.'
+      'The deeper you go, the busier the air gets.',
+      'And the crossing between planets can be skipped now.'
     ]
   },
   {

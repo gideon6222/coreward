@@ -202,6 +202,12 @@ bottleneck you are actually in.
 **Still open:** caches that sometimes hand you a temporary effect instead of goods, aimed at
 whatever bottleneck the player is actually in.
 
+**Wanting a playtest before anything else is built on them:** the chart's shallow/poor against
+deep/rich balance, which is the central new decision and was tuned by one person looking at it;
+the nine-second crossing, which may be four seconds too long by the twentieth planet; and
+whether the per-trait ambience is dense enough to tell a Volatile world from a Stable one while
+flying past.
+
 Two things changed shape while building, both worth recording:
 
 **The leg and the world had to be split.** `g.planet` was doing two jobs — difficulty ladder

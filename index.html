@@ -487,6 +487,18 @@
   .dest.short .dfuel{color:var(--amber);}
   .chartfoot{font-size:11.5px; margin-top:14px;}
 
+  /* Bottom right, out of the way of the ship and well clear of where the
+     d-pad sits in play - a skip control under the thumb that was flying is a
+     skip you press by accident on the first crossing you actually wanted to
+     watch. */
+  #skipCross{
+    position:fixed; right:16px; bottom:calc(var(--ctrl-b) + 8px); z-index:12;
+    padding:11px 16px; border-radius:10px; letter-spacing:.10em; font-size:12px; font-weight:700;
+    background:rgba(10,14,20,.72); color:var(--dim); border:1px solid var(--line);
+    backdrop-filter:blur(3px);
+  }
+  #skipCross.hidden{display:none;}
+
   .modal{
     position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
     display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px);
@@ -775,6 +787,11 @@
 
 <!-- The navigation chart. Three worlds, and the choice between them is the
      only decision in the game made above the level of a single run. -->
+<!-- Shown only during the crossing. A cutscene you cannot skip is a tax on
+     every planet after the first one, and this game expects to be played for
+     a long time. -->
+<button id="skipCross" class="hidden">SKIP &rsaquo;&rsaquo;</button>
+
 <div id="chart" class="modal hidden">
   <div class="sheet">
     <h2>NAVIGATION CHART</h2>
