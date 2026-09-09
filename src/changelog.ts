@@ -16,9 +16,21 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.21.0';
+export const VERSION = '0.22.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.22.0', date: '2026-09-09', title: 'Flying in',
+    notes: [
+      'The intro is a flight now, not a slide show - worlds come up out of the dark, pass you, and fall behind.',
+      'It says less. You are told what to look for and nothing else.',
+      'Both the intro and CONTINUE end by flying down to a planet - CONTINUE takes you to the world you are actually on.',
+      'CONTINUE is greyed out until you have a game to continue.',
+      'The Outfitter only stocks what you can buy plus the next thing you cannot, so it starts at six cases instead of fifteen.',
+      'Nothing on a display plate is cut off any more, and the supply chips have room for their names.',
+      'Planets have real surface relief instead of being coloured spheres.'
+    ]
+  },
   {
     version: '0.21.0', date: '2026-09-09', title: 'A way in',
     notes: [

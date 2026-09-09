@@ -711,3 +711,54 @@ test('the timed consumables are windows, not permanent power', () => {
   assert.ok(H.OVERDRIVE_MULT < perLevel,
     'Overdrive at ' + H.OVERDRIVE_MULT + 'x is worth more than a level of ' + drill.name);
 });
+
+test('the shelf shows everything you can buy and exactly one thing you cannot', () => {
+  /* The corrected form of a CRAFT.md rule rather than an exception to it.
+
+     The rule said sealed rows should be SHOWN and not hidden, because "Sealed
+     until 90 m" is a reason to go deeper. That is true of the next gate and
+     false of all of them: at fifteen upgrades and six gates, a first-hour
+     player was looking at five cases they could not plan toward. Showing
+     exactly one keeps the entire benefit - there is always one visible reason
+     to go deeper - and removes the clutter that came with the other four. */
+  for (const depth of [0, 8, 25, 46, 61, 91, 300]) {
+    const stock = H.shelfStock(depth);
+    const sealed = stock.filter((u) => depth < u.unlock);
+    const open = H.UPGRADES.filter((u) => depth >= u.unlock);
+
+    for (const u of open) {
+      assert.ok(stock.includes(u),
+        'at ' + depth + ' m, ' + u.key + ' is unlocked but not on the shelf');
+    }
+    assert.ok(sealed.length <= 1,
+      'at ' + depth + ' m the shelf shows ' + sealed.length + ' sealed cases: ' +
+      sealed.map((u) => u.key).join(', '));
+
+    /* And the one shown is the NEXT one, not any of them - a teaser you reach
+       last is not a reason to go anywhere. */
+    if (sealed.length === 1) {
+      const shallowest = H.UPGRADES
+        .filter((u) => depth < u.unlock)
+        .reduce((a, b) => (a.unlock <= b.unlock ? a : b));
+      assert.equal(sealed[0].key, shallowest.key,
+        'at ' + depth + ' m the teaser is ' + sealed[0].key + ' at ' + sealed[0].unlock +
+        ' m, but ' + shallowest.key + ' at ' + shallowest.unlock + ' m comes first');
+    }
+  }
+});
+
+test('there is always a reason to go deeper, until there is nothing left to buy', () => {
+  /* The half of the rule that must not be lost. If the shelf ever shows only
+     what you already have while something is still gated, the shop has stopped
+     pointing anywhere. */
+  const deepest = Math.max(...H.UPGRADES.map((u) => u.unlock));
+  for (let d = 0; d < deepest; d += 7) {
+    const stock = H.shelfStock(d);
+    assert.ok(stock.some((u) => d < u.unlock),
+      'at ' + d + ' m nothing on the shelf is sealed, but ' + deepest + ' m is still gated');
+  }
+  /* Past the last gate everything is open and nothing is teased. */
+  const all = H.shelfStock(deepest + 1);
+  assert.equal(all.length, H.UPGRADES.length, 'the full shelf is missing something');
+  assert.ok(!all.some((u) => deepest + 1 < u.unlock), 'a teaser survived past the last gate');
+});

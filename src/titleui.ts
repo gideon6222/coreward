@@ -2,10 +2,10 @@ import { g, save, hasSave } from './state';
 import { R } from './runtime';
 import { sfx } from './audio';
 import { hardReset } from './actions';
-import { beginShowcase, endShowcase, setShot } from './transit';
-import { BEATS, newIntro, skip as skipIntro, advance as stepBeat } from './intro';
-import { planetName, coreDepth } from './config';
-import { buildNotes, updateHUD } from './ui';
+import { beginShowcase, endShowcase, beginLanding, isLanding } from './transit';
+import { BEATS, newIntro, skip as skipIntro, advance as stepBeat, LANDING_SECS } from './intro';
+import { planetName, coreDepth, skyLo } from './config';
+import { buildNotes, updateHUD, flash } from './ui';
 
 /* The title screen and the intro, wired up.
 
@@ -34,19 +34,27 @@ export function showTitle() {
   el('pauseSub').textContent = 'Everything is frozen until you resume';
   el('btnResume').textContent = 'RESUME';
   g.mode = 'title';
+  /* The intro and the title are alternatives, and only one of them used to say
+     so: showIntro hid the title but not the other way round, so reaching the
+     title while the intro was up drew both at once - wordmark, buttons,
+     caption and skip button stacked on one screen. */
+  el('intro').classList.add('hidden');
   beginShowcase();
-  /* A world behind the wordmark, and it is the world you are actually on -
-     a returning player's title screen showing somewhere they have never been
-     would be a picture rather than their game. */
-  setShot({ world: g.world, size: 0.5, ship: true, breaking: false });
 
-  const cont = el('btnContinue');
+  /* GREYED, not hidden, and he was specific about it: *"If there is no saved
+     game, make sure the continue button is greyed out."* He is right. A button
+     that is absent tells a new player nothing; a greyed one says "this is
+     where your game will be", which is the only thing a first-time title
+     screen can usefully say about it. `disabled` rather than a class alone, so
+     it cannot be tapped either. */
+  const cont = el('btnContinue') as HTMLButtonElement;
   const has = hasSave();
-  cont.classList.toggle('hidden', !has);
+  cont.disabled = !has;
+  cont.classList.toggle('off', !has);
   el('titleFine').textContent = has
     ? planetName(g.world) + ' · ' + Math.max(0, Math.round(g.best.depth)) + ' m deepest · core at ' +
       coreDepth(g.planet) + ' m'
-    : '';
+    : 'No saved run yet';
   el('title').classList.remove('hidden');
   document.body.classList.add('crossing');
 }
@@ -85,26 +93,66 @@ export function paintBeat() {
     txt.textContent = b.text;
     txt.classList.add('on');
   });
-  setShot(b.shot);
   const dots = el('introDots').children;
   for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i <= st.i);
 }
 
+/* The captions are done; hide them and let the ship come down. The intro is
+   not over until it has landed - arriving somewhere is not the cutscene, it is
+   how the game starts. */
+export function beginIntroLanding() {
+  el('intro').classList.add('hidden');
+  beginLanding(0, LANDING_SECS);
+}
+
 export function endIntro() {
   el('intro').classList.add('hidden');
-  document.body.classList.remove('crossing');
-  endShowcase();
+  arrive(0);
   R.intro = null;
   onStart(true);
 }
 
+/* The last handful of frames of a descent are the world's surface filling the
+   screen, and the first frame of the game is a ship on a pad. Cutting straight
+   between them reads as the scene failing rather than as arriving, so the
+   world's own sky takes the screen for a moment and pulls back in-game. One
+   call, and it is the difference between a transition and a jump. */
+function arrive(world: number) {
+  document.body.classList.remove('crossing');
+  endShowcase();
+  const sky = skyLo(world).toString(16).padStart(6, '0');
+  flash('#' + sky, 620);
+}
+
 /* ---------- leaving ---------- */
 
+/* CONTINUE does not cut into the game. Playtest: *"if you hit continue, have
+   the ship take off and fly to the planet the player is currently at."*
+
+   The same landing the intro ends on, because it is the same event - and
+   sharing it means the arrival cannot be good in one place and stale in the
+   other. The title's buttons go, the showcase stays up, and the frame loop
+   flies it down. */
+let landingInto: boolean | null = null;
+
 function startGame(fresh: boolean) {
-  hideTitle();
-  endShowcase();
+  el('title').classList.add('hidden');
+  landingInto = fresh;
+  beginLanding(g.world, LANDING_SECS);
+}
+
+/* Called by the frame loop when a CONTINUE landing finishes. */
+export function finishLanding() {
+  if (landingInto === null) return;
+  const fresh = landingInto;
+  landingInto = null;
+  arrive(g.world);
   onStart(fresh);
 }
+
+/* Is a title-screen landing in flight? The intro has its own clock and its own
+   end, so the loop has to be able to tell the two apart. */
+export function titleLanding() { return landingInto !== null && isLanding(); }
 
 export function wireTitle() {
   el('btnContinue').onclick = () => { sfx.ui(); startGame(false); };
@@ -134,11 +182,12 @@ export function wireTitle() {
      do with a caption you have finished is touch the screen, and a reader
      faster than the timer should never be waiting for it. */
   el('intro').onclick = () => {
-    if (st.done) return;
-    const wasLast = st.i === BEATS.length - 1;
-    stepBeat(st);
-    if (wasLast || st.done) endIntro();
-    else { sfx.ui(); paintBeat(); }
+    if (st.done || st.landing) return;
+    /* stepBeat returns false when it runs out of captions and enters the
+       descent, which is not a caption change - the loop watches `landing` for
+       that and starts the flight down. A tap here never ends the intro; only
+       the landing does. */
+    if (stepBeat(st)) { sfx.ui(); paintBeat(); }
   };
 }
 

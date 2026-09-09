@@ -1,7 +1,7 @@
 /* Boot. Every imported module's top-level setup runs before this file's
    body, which is what the single-file version got for free by being written
    top to bottom. */
-import { HULL_MAX, UPGRADES, SUPPLIES } from './config';
+import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './config';
 import { g, S, save, load, hasSave } from './state';
 import { R } from './runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
@@ -143,6 +143,13 @@ if (new URLSearchParams(location.search).has('debug')) {
     pickBay, selectBay, selectedBay, bays, stationCamera,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
-    upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length
+    upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,
+    /* What is actually on the shelf right now, so a test can ask for "the
+       sealed case" rather than naming one that may not be stocked. */
+    shelfKeys: () => shelfStock(g.best.depth).map((u) => u.key),
+    sealedKey: () => {
+      const s = shelfStock(g.best.depth).filter((u) => g.best.depth < u.unlock);
+      return s.length ? s[0].key : null;
+    }
   };
 }

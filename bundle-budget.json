@@ -8,8 +8,13 @@
     },
     {
       "name": "index",
-      "bytes": 138800,
+      "bytes": 147875,
       "tolerancePercent": 12
+    },
+    {
+      "name": "planet-normal.webp",
+      "bytes": 47974,
+      "tolerancePercent": 10
     },
     {
       "name": "rock-normal.webp",

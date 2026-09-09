@@ -25,9 +25,24 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 - **Audio is 100% synthesised at runtime.** Kept that way because it is genuinely better
   here, not because of any restriction — the score has layers that mix by depth, danger and
   zone off one scheduler, which a recording cannot do.
-- **The only binary assets are two `woff2` font files** in `public/fonts/`. The old "no
-  binaries, ever" rule was a limitation of a tool that is no longer used. `woff2` is in the
-  Workbox glob so the installed app does not fall back to a system face offline.
+- **Binary assets are imported when the rule in `ASSETS.md` says to, and that rule is a
+  MEASUREMENT: import what the player reads at its real size.** This line used to claim the
+  only binaries were two `woff2` fonts, which stopped being true the day the rock textures
+  landed and was still being repeated afterwards - a rule that misdescribes the repo teaches
+  the next session something false about what is allowed.
+
+  What is actually here: two `woff2` faces in `public/fonts/` (in the Workbox glob, or the
+  installed app falls back to a system face offline), and four WebP maps in `src/textures/`
+  imported through the bundler so they are hashed and precached - three rock maps for the
+  terrain and one normal map for the planets in the intro and the crossing. Every one is a
+  **normal or roughness map and never a colour map**, which is what lets a photographed
+  texture into a flat-shaded game at all: the palette keeps deciding colour and the import
+  only adds relief.
+
+  The one thing still synthesised on principle is **audio**, and it is a reason rather than a
+  habit - both CC0 libraries need a browser session or an API key and cannot be fetched
+  unattended, and this score mixes by depth, danger and zone off one scheduler in a way a
+  recording cannot.
 
 ### Files
 

@@ -673,6 +673,41 @@ export function shelfState(
   return { state: credits < cost ? 'short' : 'ready', line: price };
 }
 
+/* Which upgrades belong on the shelf at all.
+
+   Playtest: *"I want future upgrades that dont unlock until later to be
+   hidden."* That runs straight into a rule in CRAFT.md, and the rule needed
+   correcting rather than working around:
+
+     "Locking shop stock behind deepest-ever-reached is the cheapest structural
+      progression available, and it should be SHOWN, not hidden: a row that
+      says 'Sealed until 90 m' is a reason to go deeper. A hidden row is
+      nothing at all."
+
+   That is right about the NEXT gate and wrong about all of them. A case
+   reading "Sealed until 90 m" when your best is 78 m is a reason to go deeper.
+   The same case when your best is 12 m cannot be planned toward, is five rungs
+   away, and is one of five crowding a phone screen. The rule was written when
+   there were ten upgrades and two gates; at fifteen and six it stopped being
+   true, and it stopped being true quietly because it was being applied rather
+   than measured.
+
+   So: everything already unlocked, plus the ONE next thing you have not
+   reached. That keeps the whole benefit the rule was defending - there is
+   always exactly one visible reason to go deeper - and removes the clutter.
+
+   Returned in shelf order rather than filtered at the call site, because the
+   room lays itself out from this list and two places deciding what is on the
+   shelf is two places to disagree. */
+export function shelfStock(bestDepth: number): Upgrade[] {
+  const open = UPGRADES.filter((u) => bestDepth >= u.unlock);
+  const sealed = UPGRADES.filter((u) => bestDepth < u.unlock)
+    .sort((a, b) => a.unlock - b.unlock);
+  /* Exactly one teaser, and it is the shallowest thing still out of reach -
+     which is also the next one you will actually get. */
+  return sealed.length ? open.concat(sealed[0]) : open;
+}
+
 export const matCost = (u: Upgrade, lvl: number): MatCost => {
   const buying = lvl + 1;
   if (buying < MAT_FROM_LEVEL) return null;

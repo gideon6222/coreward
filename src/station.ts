@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
 import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat } from './ship';
 import { asMetal } from './materials';
-import { UPGRADES, shelfState } from './config';
+import { UPGRADES, shelfState, shelfStock } from './config';
 import { g } from './state';
 import type { UpgradeKey } from './types';
 
@@ -238,6 +238,15 @@ function makePlate() {
   return { mesh, tex, ctx };
 }
 
+/* The largest size at or below `want` that fits `max` pixels wide. */
+function fitPx(x: CanvasRenderingContext2D, text: string, want: number, max: number): number {
+  for (let px = want; px > 22; px -= 2) {
+    x.font = '700 ' + px + 'px "Chakra Petch", system-ui, sans-serif';
+    if (x.measureText(text).width <= max) return px;
+  }
+  return 22;
+}
+
 /* Redrawn whenever the shop opens or something is bought - never per frame. */
 function drawPlate(b: Bay, name: string, line: string, tone: string, dim: boolean) {
   const x = b.plateCtx;
@@ -248,11 +257,17 @@ function drawPlate(b: Bay, name: string, line: string, tone: string, dim: boolea
   x.fillStyle = dim ? 'rgba(70,80,96,0.5)' : 'rgba(120,140,170,0.55)';
   x.fillRect(0, 0, PLATE_W, 5);
   x.textAlign = 'center';
-  x.font = '700 62px "Chakra Petch", system-ui, sans-serif';
+  /* Measured, not assumed. This drew at a fixed 62px with no width limit, and
+     "SALVAGE MAGNET" wants about 490px of a 512px plate before the margins -
+     so the longest names in the game ran off both ends. `fillText`'s maxWidth
+     argument would squash the glyphs instead; shrinking the size keeps the
+     letterforms and just makes a long name smaller, which is what a real
+     engraved plate does too. */
   x.fillStyle = dim ? '#5d6779' : '#e8f0ff';
+  x.font = '700 ' + fitPx(x, name, 62, PLATE_W - 44) + 'px "Chakra Petch", system-ui, sans-serif';
   x.fillText(name, PLATE_W / 2, 70);
-  x.font = '700 46px "Chakra Petch", system-ui, sans-serif';
   x.fillStyle = tone;
+  x.font = '700 ' + fitPx(x, line, 46, PLATE_W - 44) + 'px "Chakra Petch", system-ui, sans-serif';
   x.fillText(line, PLATE_W / 2, 132);
   b.plateTex.needsUpdate = true;
 }
@@ -261,32 +276,55 @@ function drawPlate(b: Bay, name: string, line: string, tone: string, dim: boolea
    sits inside what a portrait frame can actually show at this camera distance -
    see the note on the room above. Angled inward so the wall reads as facing
    the middle rather than as shelves that happen to be in shot. */
-const SLOTS: [number, number, number, number][] = [
-  [-1.18, 2.05, -1.2, 0.5], [-1.18, 1.29, -1.2, 0.5], [-1.18, 0.53, -1.2, 0.5],
-  [-1.18, -0.22, -1.2, 0.5], [-1.18, -0.98, -1.2, 0.5],
-  [1.18, 2.05, -1.2, -0.5], [1.18, 1.29, -1.2, -0.5], [1.18, 0.53, -1.2, -0.5],
-  [1.18, -0.22, -1.2, -0.5], [1.18, -0.98, -1.2, -0.5],
-  /* A rack across the back wall, above the ship. The second wave of upgrades
-     took the count from ten to fifteen and the two columns only ever held
-     eleven; the wrap below put four cases inside four others, where they were
-     invisible and could not be tapped. Flat-on rather than angled, because
-     they are read straight down the barrel of the camera from here. */
-  [-1.52, 2.88, -2.3, 0], [-0.76, 2.88, -2.3, 0], [0, 2.88, -2.3, 0],
-  [0.76, 2.88, -2.3, 0], [1.52, 2.88, -2.3, 0]
-];
+/* Where the cases go, worked out from HOW MANY there are.
 
-/* Every upgrade needs its own case. The wrap that used to hide this is gone,
-   but the shape of the mistake is not: adding an upgrade is a one-line change
-   in config.ts and this file is nowhere near it. Throwing at module load puts
-   the failure in the error overlay on the first boot after the change, which
-   is the cheapest possible place to find it. */
-if (UPGRADES.length > SLOTS.length) {
-  throw new Error('station: ' + UPGRADES.length + ' upgrades but only ' +
-    SLOTS.length + ' display cases - add a slot or cases will overlap');
+   It used to be a hand-written table of fifteen positions, and every case
+   stood in its own fixed spot whether the shop had eight things in it or
+   fifteen. That is most of what "it feels a bit cluttered" was: a first-hour
+   player was looking at a wall built for a late-game one, five of whose cases
+   were things they could not buy.
+
+   Now the room is built for the shelf it actually has. Two columns while ten
+   or fewer fit - which is the whole early game - and the back rack only
+   appears when there is something to put on it. Fewer cases also means each
+   one can be bigger, which is most of what makes a plate readable. */
+type Slot = [number, number, number, number];
+
+function layout(n: number): { slots: Slot[]; scale: number } {
+  const slots: Slot[] = [];
+  /* Split as evenly as the two columns allow, capped at six a side. */
+  const perCol = Math.min(6, Math.ceil(Math.min(n, 12) / 2));
+  const inCols = Math.min(n, perCol * 2);
+  /* CENTRED on the deck, not hung from the top. Hanging from a fixed top meant
+     a short shelf ran off the bottom of a portrait frame - three rows of the
+     bigger cases put the last one under the deck. Centring keeps whatever
+     number there is inside the same band the camera can actually show.
+
+     The step is capped so a long shelf uses the full span and a short one does
+     not spread until the cases stop reading as a column. */
+  const SPAN = 3.1, MID = 0.5;
+  const step = perCol > 1 ? Math.min(0.76, SPAN / (perCol - 1)) : 0;
+  const top = MID + ((perCol - 1) * step) / 2;
+  for (let i = 0; i < inCols; i++) {
+    const col = i % 2 === 0 ? -1 : 1;
+    const row = Math.floor(i / 2);
+    slots.push([col * 1.18, top - row * step, -1.2, col * -0.5]);
+  }
+  /* Anything left goes on the back wall, spread to fit whatever the count is. */
+  const rest = n - inCols;
+  for (let i = 0; i < rest; i++) {
+    const t = rest === 1 ? 0.5 : i / (rest - 1);
+    slots.push([-1.52 + t * 3.04, 2.88, -2.3, 0]);
+  }
+  /* Bigger when there are fewer of them. Four cases at the size fifteen need
+     is a wall of empty shelf. */
+  const scale = n <= 8 ? 1.18 : n <= 11 ? 1.06 : 1;
+  return { slots, scale };
 }
 
+/* Built once per upgrade; only the POSITIONS change when the shelf does. */
 UPGRADES.forEach((u, i) => {
-  const slot = SLOTS[i];
+  const slot: Slot = [0, 0, -1.2, 0];
   const grp = new THREE.Group();
   grp.position.set(slot[0], slot[1], slot[2]);
   grp.rotation.y = slot[3];
@@ -363,9 +401,32 @@ UPGRADES.forEach((u, i) => {
 
    Runs on opening the shop and after every purchase; never per frame. */
 export function refreshBays() {
+  /* What is on the shelf, and therefore where everything stands.
+
+     Re-laid every time rather than once at boot, because the shelf grows: a
+     case appears the run after you first reach its depth, and the room has to
+     make space for it. `shelfStock` is the single source of what is stocked -
+     see the note on it in config.ts about the CRAFT.md rule this corrects. */
+  const stock = shelfStock(g.best.depth);
+  const shown = new Set(stock.map((u) => u.key));
+  const { slots, scale } = layout(stock.length);
+  stock.forEach((u, i) => {
+    const bay = bays.find((b) => b.key === u.key);
+    if (!bay) return;
+    const sl = slots[i];
+    bay.group.position.set(sl[0], sl[1], sl[2]);
+    bay.group.rotation.y = sl[3];
+    bay.group.scale.setScalar(scale);
+  });
+
   for (const b of bays) {
     const u = UPGRADES.find((x) => x.key === b.key);
     if (!u) continue;
+    /* Not stocked yet: gone from the room entirely rather than dimmed in it.
+       `visible` also takes it out of the raycast, so a case you cannot see is
+       a case you cannot tap by accident. */
+    b.group.visible = shown.has(u.key);
+    if (!b.group.visible) continue;
     const sh = shelfState(u, g.up[u.key], g.credits, g.stock, g.best.depth);
 
     /* One row per state, so adding a fifth is a line rather than an edit to a

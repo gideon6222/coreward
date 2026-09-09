@@ -44,9 +44,10 @@ import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showE
          stopDigging , absorb} from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
-import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase } from './transit';
+import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
+         landingT } from './transit';
 import { introTick, beatT } from './intro';
-import { endIntro, paintBeat } from './titleui';
+import { endIntro, paintBeat, beginIntroLanding, titleLanding, finishLanding } from './titleui';
 import { arrive } from './chartui';
 
 export const FACE_VEC: Record<Dir, number[]> =
@@ -616,17 +617,22 @@ export function tick(raw: number, draw = true) {
   if (isShowcase()) {
     if (g.mode === 'intro' && R.intro) {
       const st = R.intro;
-      if (introTick(st, raw)) {
-        if (st.done) endIntro();
-        else paintBeat();
-      }
-      /* Held in a local, because endIntro() clears R.intro and the very next
-         line reads it. The intro's last beat therefore threw on the frame it
-         finished on - every single time, and only then, which is exactly the
-         shape of bug that survives a demo. */
-      stepShowcase(clock, beatT(st));
+      const wasLanding = st.landing;
+      if (introTick(st, raw)) paintBeat();
+      /* Entering the landing is a transition, not a caption change, so it is
+         watched for rather than returned. */
+      if (!wasLanding && st.landing) beginIntroLanding();
+      stepShowcase(raw, clock);
+      /* Ordered AFTER the step so the last frame of the descent is drawn.
+         Held in a local first, because endIntro clears R.intro and reading it
+         back on the same frame is how the old version threw every single time
+         the intro finished. */
+      if (st.done) endIntro();
     } else {
-      stepShowcase(clock, 1);
+      stepShowcase(raw, clock);
+      /* A CONTINUE landing has no caption clock of its own - it is over when
+         the flight says it is. */
+      if (titleLanding() && landingT() >= 1) finishLanding();
     }
     tickToast(raw);
     if (draw) renderTransit();

@@ -160,9 +160,36 @@ async function enterGame(page: Page) {
   }
   await expect(intro, 'the intro never closed').toHaveClass(/hidden/);
   await expect(title, 'the title never closed').toHaveClass(/hidden/);
+
+  /* Both routes in now end by FLYING DOWN to the world, which is four and a
+     half seconds of game time before play starts. Waiting for that on the wall
+     clock is the mistake that put CI red the last time - the runner has no GPU,
+     so game seconds cost more real ones there than here. Run it out on the
+     seam where it is available. */
+  await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    if (cw && cw.advance) cw.advance(7);
+  });
+
+  /* Waited for on a DOM signal, not on the debug seam.
+
+     `body.crossing` is set while any of this is on screen and removed when the
+     game actually starts, and it is there on every page. The seam is not: half
+     these specs load plain '/', where `__cw` is undefined - and the first
+     version of this polled `__cw?.g?.mode ?? 'play'`, which on those pages is
+     the string 'play' before anything has happened. It returned instantly
+     while the ship was still four seconds from the ground, and the click that
+     followed went into a game that had not started yet.
+
+     A fallback that makes an assertion vacuously true is worse than no
+     assertion: it reports success for the state it cannot see. */
+  await expect
+    .poll(() => page.evaluate(() => document.body.classList.contains('crossing')),
+          { timeout: 25_000 })
+    .toBe(false);
   await expect
     .poll(() => page.evaluate(() => (window as any).__cw?.g?.mode ?? 'play'),
-          { timeout: 5_000 })
+          { timeout: 10_000 })
     .toBe('play');
 }
 
@@ -247,7 +274,15 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
   await tapBay(page, 'drill');
   await expect(page.locator('#shopCard')).toContainText('Drill Bit');
   await expect(page.locator('#shopHint')).toHaveClass(/gone/);
-  await tapBay(page, 'auto');
+  /* THE sealed case, not a named one. The shelf only stocks what you can buy
+     plus the single next thing you cannot - so 'auto' at 65 m is simply not in
+     the room on a fresh save, and naming it here asserted a layout rather than
+     the property. The property is that whatever teaser IS shown explains
+     itself, because that one case is the entire reason to go deeper. */
+  const sealed = await page.evaluate(() => (window as any).__cw.sealedKey());
+  expect(sealed, 'nothing on the shelf is sealed, so there is no reason to go deeper')
+    .toBeTruthy();
+  await tapBay(page, sealed as string);
   await expect(page.locator('#shopCard'), 'a sealed case must say what unlocks it')
     .toContainText('Sealed until');
 

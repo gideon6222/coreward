@@ -3,6 +3,31 @@ import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
 import { player, rig, flames } from './ship';
 import { paletteOf, skyHi, skyLo } from './config';
 import { glowTex } from './materials';
+import planetNormalUrl from './textures/planet-normal.webp';
+
+/* One sphere and one normal map for every world in this scene.
+
+   The import is the rule in ASSETS.md applied rather than skipped: *"over
+   about two hundred pixels and permanently on screen, import - and modelling
+   it is what now needs justifying."* A world here is two to six hundred pixels
+   tall and in frame for the entire intro and the entire crossing, which is as
+   far onto the import side of that line as anything in this game gets. Before
+   this they were flat-shaded spheres, and a flat-shaded sphere at that size is
+   a billiard ball.
+
+   NORMAL ONLY, never the colour map. That is what lets a photographed texture
+   into a stylised game at all: a normal carries no colour, so all twelve
+   palettes keep deciding exactly what colour a world is and only gain relief
+   and a terminator with something in it. The colour map from the same download
+   would drop a photograph of a rock into the middle of a low-poly scene.
+
+   384px at q68, 48 KB - sized from what it is displayed at rather than from
+   what the download offered. 1K was three quarters of a megabyte thrown away.
+   Source: ambientCG Rock030, CC0. */
+const planetGeo = new THREE.SphereGeometry(1, 48, 32);
+const planetNormal = new THREE.TextureLoader().load(planetNormalUrl);
+planetNormal.wrapS = planetNormal.wrapT = THREE.RepeatWrapping;
+planetNormal.colorSpace = THREE.NoColorSpace;
 
 /* The crossing between worlds.
 
@@ -88,9 +113,9 @@ for (let L = 0; L < 3; L++) {
    two worlds on the chart. The destination's colour arriving before you land
    is most of what makes the crossing feel like it goes somewhere. */
 function makeWorld() {
-  const g2 = new THREE.SphereGeometry(1, 40, 28);
-  const body = new THREE.Mesh(g2, new THREE.MeshStandardMaterial({
-    color: 0x888888, roughness: 0.92, metalness: 0, flatShading: false
+  const body = new THREE.Mesh(planetGeo, new THREE.MeshStandardMaterial({
+    color: 0x888888, roughness: 0.92, metalness: 0, flatShading: false,
+    normalMap: planetNormal, normalScale: new THREE.Vector2(1.5, 1.5)
   }));
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({
     map: glowTex, color: 0x8899ff, transparent: true, opacity: 0.55,
@@ -229,33 +254,120 @@ export function stepTransit(t: number, clock: number) {
   key.color.setHex(t > 0.7 ? toPal.haze : 0xfff0dd);
 }
 
-/* ---------- the showcase ----------
+/* ---------- the flythrough ----------
 
-   The title screen and the intro run on this same scene rather than on one of
-   their own. Everything they need already exists here and is already correct:
-   a starfield at three depths, a planet painted from a real palette, the ship,
-   and a world coming apart in pieces. A second scene would be a second place
-   for a world to be drawn, and the two would drift.
+   The title screen and the intro run on this same scene rather than one of
+   their own: it already has a starfield at three depths, palette-painted
+   worlds and the ship, and a second scene would be a second place for a world
+   to be drawn.
 
-   What a beat can ask for is deliberately small - which world, is the ship in
-   frame, is it breaking - because the intro is a sequence of pictures and not
-   a second renderer. */
-export interface Shot {
-  /* which world's palette the planet is painted in, or -1 for no planet */
+   This replaced a set of discrete SHOTS, and the reason is worth keeping. Each
+   beat used to ease a planet in from nothing, hold it, and cut to the next -
+   which is a slide show with a dissolve, and a filmstrip of it says so at a
+   glance: tiny planet, big planet, cut, tiny planet. The playtest note was
+   *"make it less like a slide show and more like the ship is flying past
+   planets."*
+
+   So there are no shots. There is a LINE of worlds ahead of the ship and one
+   distance that only ever increases. A world comes up out of the dark, swells,
+   passes to one side and falls behind, and when it is behind it is recycled to
+   the far end of the line as somewhere else. Nothing cuts, and the captions
+   fade over the top on their own clock - so the text can change without the
+   picture changing, which is the whole difference.
+
+   The landing at the end is a separate mode on the same scene: the flight
+   decelerates, one world comes head-on instead of to the side, and the
+   atmosphere takes the screen. It is shared with CONTINUE, because "fly to the
+   planet" is the same event whether you just watched the intro or tapped a
+   button, and two copies of it would drift apart. */
+
+const FLY_SPEED = 26;        /* world units per second of travel */
+const FLY_NEAR = 14;         /* past the camera; anything beyond is recycled */
+const FLY_FAR = -760;        /* where a recycled world reappears */
+
+interface FlyWorld {
+  grp: THREE.Group;
+  body: THREE.Mesh;
+  halo: THREE.Sprite;
   world: number;
-  /* how big it sits in frame, 0..1 */
-  size: number;
-  ship: boolean;
-  breaking: boolean;
+  z: number;
+  x: number; y: number; r: number;
+  spin: number;
 }
 
-let shot: Shot = { world: -1, size: 0, ship: false, breaking: false };
+const flyPool: FlyWorld[] = [];
+let flyDist = 0;
+let flyRoll = 0;
 let showing = false;
+
+/* The landing. -1 while flying past; a world id while coming down on one. */
+let landWorld = -1;
+let landT = 0;
+let landDur = 1;
+
 export function isShowcase() { return showing; }
+export function isLanding() { return landWorld >= 0; }
+/* 0..1 through the landing, for the caller that has to know when it is over. */
+export function landingT() { return landDur <= 0 ? 1 : Math.min(1, landT / landDur); }
+
+function makeFlyWorld(): FlyWorld {
+  const body = new THREE.Mesh(planetGeo, new THREE.MeshStandardMaterial({
+    color: 0x888888, roughness: 0.95, metalness: 0,
+    /* The one imported thing in this scene, and the rule says import it: a
+       world here is two to six hundred pixels tall and on screen for the whole
+       sequence. NORMAL ONLY, never the colour map - see ASSETS.md. The palette
+       keeps deciding what colour a world is, and this only gives it relief and
+       a terminator that is not a smooth gradient. */
+    normalMap: planetNormal,
+    normalScale: new THREE.Vector2(1.5, 1.5)
+  }));
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, color: 0x8899ff, transparent: true, opacity: 0.5,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  }));
+  halo.scale.setScalar(3.2);
+  const grp = new THREE.Group();
+  grp.add(body); grp.add(halo);
+  grp.visible = false;
+  transitScene.add(grp);
+  return { grp, body, halo, world: 0, z: 0, x: 0, y: 0, r: 10, spin: 0 };
+}
+
+/* Put one world somewhere on the line, with its own size, offset and colour. */
+function placeFly(f: FlyWorld, z: number, i: number) {
+  f.z = z;
+  /* Alternating sides so the ship threads between them rather than watching a
+     procession down one edge. The offset scales with the radius, so a big
+     world passes wide and a small one passes close. */
+  f.r = 8 + (flyRoll % 3) * 6;
+  const side = (i % 2 === 0) ? -1 : 1;
+  f.x = side * (f.r * 0.9 + 6);
+  f.y = ((flyRoll % 5) - 2) * 3.5;
+  f.world = FLY_WORLDS[flyRoll % FLY_WORLDS.length];
+  f.spin = 0.04 + (flyRoll % 4) * 0.015;
+  flyRoll++;
+
+  /* Darkened well below the palette's own value. These are unlit worlds seen
+     from outside, and at full palette brightness they came out as sweets in a
+     jar - the colour still identifies them, it just is not the loudest thing
+     in the frame. */
+  const pal = paletteOf(f.world);
+  (f.body.material as THREE.MeshStandardMaterial).color.setHex(pal.rock).multiplyScalar(0.5);
+  (f.halo.material as THREE.SpriteMaterial).color.setHex(skyLo(f.world));
+  (f.halo.material as THREE.SpriteMaterial).opacity = 0.32;
+  f.grp.visible = true;
+}
+
+/* Which worlds the flight passes. Chosen for contrast rather than for order -
+   the point of flying past them is that they are visibly different places. */
+const FLY_WORLDS = [1, 4, 8, 2, 10, 6, 3];
 
 export function beginShowcase() {
   if (showing) return;
   showing = true;
+  landWorld = -1;
+  flyDist = 0;
+  flyRoll = 0;
   transitScene.add(player);
   player.scale.setScalar(1.35);
   rig.rotation.set(0, 0, 0);
@@ -264,79 +376,109 @@ export function beginShowcase() {
   from.grp.visible = false;
   to.grp.visible = false;
   debris.visible = false;
+
+  while (flyPool.length < 4) flyPool.push(makeFlyWorld());
+  /* Four, spread wide. Five at half this spacing put four or five worlds on
+     screen at once, which reads as a busy solar system - and the Drift is
+     supposed to be somewhere you would leave if you could. Sparse is the
+     mood; the filmstrip is what showed it was not. */
+  flyPool.forEach((f, i) => placeFly(f, -120 - i * 185, i));
 }
 
 export function endShowcase() {
   if (!showing) return;
   showing = false;
+  landWorld = -1;
   gameScene.add(player);
   player.scale.setScalar(1);
   rig.rotation.set(0, 0, 0);
   player.visible = true;
+  for (const f of flyPool) f.grp.visible = false;
   from.grp.visible = false;
   to.grp.visible = false;
   debris.visible = false;
 }
 
-export function setShot(next: Shot) { shot = next; }
+/* Stop flying past and come down on one. Used by the end of the intro and by
+   CONTINUE, which is the same event from two places. */
+export function beginLanding(world: number, secs = 4.5) {
+  landWorld = world;
+  landT = 0;
+  landDur = secs;
+  for (const f of flyPool) f.grp.visible = false;
+  const l = flyPool[0];
+  l.world = world;
+  l.grp.visible = true;
+  const pal = paletteOf(world);
+  (l.body.material as THREE.MeshStandardMaterial).color.setHex(pal.rock);
+  (l.halo.material as THREE.SpriteMaterial).color.setHex(skyLo(world));
+}
 
-/* `t` is how far into the current beat, 0..1, so a beat eases its planet in
-   rather than cutting to it. */
-export function stepShowcase(clock: number, t: number) {
-  const ease = t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
-
-  player.visible = shot.ship;
-  if (shot.ship) {
-    /* Nose up and drifting, the same orientation the crossing uses - a ship
-       pointed at the floor in open space reads as falling. */
-    player.position.set(-0.9 + Math.sin(clock * 0.5) * 0.12,
-                        -0.5 + Math.sin(clock * 0.8) * 0.12, 0);
-    rig.rotation.z = Math.PI + Math.sin(clock * 0.45) * 0.10;
-    rig.rotation.y = Math.sin(clock * 0.33) * 0.16;
-    rig.rotation.x = -0.28;
-    for (const f of flames) {
-      f.cone.scale.set(1.0, 1.25 + Math.sin(clock * 8) * 0.2, 1.0);
-      f.glow.scale.setScalar(1.1 + Math.sin(clock * 6) * 0.18);
-    }
+export function stepShowcase(dt: number, clock: number) {
+  /* The ship: nose forward, holding a course. Underground "forward" is down,
+     so rotation PI points it the way it is going - a ship crossing open space
+     with its drill at the deck reads as falling. */
+  player.visible = true;
+  player.position.set(-0.75 + Math.sin(clock * 0.5) * 0.10,
+                      -0.55 + Math.sin(clock * 0.8) * 0.09, 0);
+  rig.rotation.z = Math.PI + Math.sin(clock * 0.45) * 0.08;
+  rig.rotation.y = Math.sin(clock * 0.33) * 0.14;
+  rig.rotation.x = -0.26;
+  for (const f of flames) {
+    f.cone.scale.set(1.0, 1.25 + Math.sin(clock * 8) * 0.2, 1.0);
+    f.glow.scale.setScalar(1.1 + Math.sin(clock * 6) * 0.18);
   }
 
-  const on = shot.world >= 0;
-  to.grp.visible = on;
-  if (on) {
-    const pal = paletteOf(shot.world);
-    (to.body.material as THREE.MeshStandardMaterial).color.setHex(pal.rock);
-    (to.halo.material as THREE.SpriteMaterial).color.setHex(skyLo(shot.world));
-    chunkMat.color.setHex(pal.rock);
-    const near = 90 - ease * shot.size * 78;
-    to.grp.position.set(0.16 * near, -0.06 * near, -near);
-    let sc = 3 + ease * shot.size * 22;
-    to.body.rotation.y = clock * 0.09;
+  if (landWorld >= 0) { stepLanding(dt, clock); return; }
 
-    /* A core breaking, on the same instanced debris the crossing throws. The
-       world shrinks as it goes, so the pieces read as having BEEN it rather
-       than as rocks flying past it. */
-    debris.visible = shot.breaking;
-    if (shot.breaking) {
-      sc *= 1 - ease * 0.45;
-      const spread = ease * 7;
-      for (let i = 0; i < CHUNKS; i++) {
-        scratch.position.copy(to.grp.position).addScaledVector(dDir[i], spread * sc * 0.55);
-        scratch.rotation.set(dSpin[i].x * clock, dSpin[i].y * clock, dSpin[i].z * clock);
-        scratch.scale.setScalar(sc * 0.5 * (1 - ease * 0.3));
-        scratch.updateMatrix();
-        debris.setMatrixAt(i, scratch.matrix);
-      }
-      debris.instanceMatrix.needsUpdate = true;
+  flyDist += FLY_SPEED * dt;
+  for (let i = 0; i < flyPool.length; i++) {
+    const f = flyPool[i];
+    const z = f.z + flyDist;
+    if (z > FLY_NEAR) {
+      /* Behind the ship. Send it back to the far end as somewhere else - which
+         is what makes the flight endless without ever cutting. */
+      placeFly(f, FLY_FAR - flyDist, i);
+      continue;
     }
-    to.grp.scale.setScalar(sc);
-  } else {
-    debris.visible = false;
+    f.grp.position.set(f.x, f.y, z);
+    f.grp.scale.setScalar(f.r);
+    f.body.rotation.y = clock * f.spin;
   }
 
+  streamStars(clock, 1);
+}
+
+function stepLanding(dt: number, clock: number) {
+  landT += dt;
+  const t = landingT();
+  const e = t * t;
+
+  const l = flyPool[0];
+  /* Head-on, and closing. Off to one side at the start so it reads as the
+     ship turning toward it rather than as a planet appearing in front. */
+  const z = -230 + e * 218;
+  l.grp.position.set((1 - e) * 26, (1 - e) * -8, z);
+  l.grp.scale.setScalar(16 + e * 26);
+  l.body.rotation.y = clock * 0.05;
+
+  /* The ship pitches over into the descent and the drive lights up. */
+  rig.rotation.x = -0.26 + e * 0.5;
+  player.position.y = -0.55 + e * 0.5;
+
+  /* Atmosphere: the world's own sky takes the frame over the last stretch. */
+  const glow = Math.max(0, (t - 0.62) / 0.38);
+  const sky = new THREE.Color(skyLo(landWorld)).multiplyScalar(0.05 + glow * 0.95);
+  (transitScene.background as THREE.Color).lerp(sky, Math.min(1, dt * 4));
+
+  streamStars(clock, 1 - glow);
+}
+
+function streamStars(clock: number, alpha: number) {
   for (let L = 0; L < starLayers.length; L++) {
-    const sp = (3 - L) * 7;
+    const sp = (3 - L) * 16;
     starLayers[L].position.z = (clock * sp) % 90;
-    (starLayers[L].material as THREE.PointsMaterial).opacity = 0.9 - L * 0.22;
+    (starLayers[L].material as THREE.PointsMaterial).opacity = (0.9 - L * 0.22) * alpha;
   }
 }
 

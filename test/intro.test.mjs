@@ -1,11 +1,9 @@
 /* The first-run intro.
 
-   The beats and their timing are pure so they can be walked here, which
-   matters for the usual reason - the preview browser stops
-   requestAnimationFrame when its pane is hidden, so anything on a timer is
-   untestable by eye there - and for one specific to an intro: it is the single
-   screen every new player sees, and the one nobody on the team ever sees again
-   after the first day of building it. */
+   Pure so it can be walked here, which matters for the usual reason - the
+   preview browser stops requestAnimationFrame when its pane is hidden - and
+   for one specific to an intro: it is the single screen every new player sees,
+   and the one nobody who builds it ever looks at again. */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,91 +11,117 @@ import { loadPure } from './harness.mjs';
 
 const H = await loadPure();
 
-test('the intro states the objective, not just the mood', () => {
-  /* The reason it exists. Until the Jump Drive shipped there was nothing to
-     explain; now a player who is never told about it finds out an hour in,
-     when their first core breaks. If a rewrite ever drops that sentence the
-     intro becomes atmosphere and the game goes back to having a secret goal. */
+test('the intro still says what you are looking for', () => {
+  /* Rewritten from four literal string checks to the property behind them.
+
+     The old version asserted the words "jump drive", "five", "heart" and
+     "buried" all appeared - which is a different claim from "a player learns
+     the objective", and it broke the moment the script was rewritten to be
+     shorter and less explanatory. That is the literal-versus-property mistake
+     twice over: it failed for the wrong reason, and the obvious repair would
+     have been to paste the missing words back in.
+
+     What actually has to survive is that a new player leaves the intro knowing
+     there is a fixed number of things to find, that WHERE they are is tied to
+     the kind of world, and that finding them opens something. Mystery is
+     withholding the explanation, not the goal. */
   const all = H.BEATS.map((b) => b.text).join(' ').toLowerCase();
-  assert.ok(all.includes('jump drive'), 'the intro never mentions the jump drive');
-  assert.ok(all.includes('five'), 'the intro never says how many components there are');
-  assert.ok(all.includes('heart'), 'the intro never mentions the Heart');
-  assert.ok(/buried|each kind of world/.test(all),
-    'the intro never says WHERE the components are, which is the part that changes what a player does');
+
+  assert.ok(/\b(five|5)\b/.test(all),
+    'the intro never says how many pieces there are, so the goal has no shape');
+  assert.ok(/each kind of world|under each|one on each/.test(all),
+    'the intro never says where to look, which is the part that changes what a player does');
+  assert.ok(/route|opens|way out|leave/.test(all),
+    'the intro never says that finding them leads anywhere');
 });
 
-test('the intro is short enough to sit through and every beat readable', () => {
+test('the intro is short, mysterious, and every line readable', () => {
   /* He plays the opening - CRAFT.md - so this is the most-played screen in the
-     game, and it is also the one standing between a player and the thing they
-     opened the app to do. */
-  assert.ok(H.INTRO_SECS < 45,
+     game, and it stands between a player and the thing they opened the app to
+     do. And *"dont explain the whole story"*: a cap on the words is the
+     cheapest guard there is against the next rewrite explaining everything
+     again. */
+  assert.ok(H.BEATS.length <= 6, 'the intro has grown to ' + H.BEATS.length + ' beats');
+
+  const words = H.BEATS.map((b) => b.text.split(/\s+/).length).reduce((a, b) => a + b, 0);
+  assert.ok(words < 70, 'the intro is ' + words + ' words - it is explaining, not suggesting');
+
+  assert.ok(H.INTRO_SECS < 40,
     'the intro runs ' + H.INTRO_SECS + ' s before the player can touch anything');
+
   for (const b of H.BEATS) {
-    /* Roughly: a beat has to hold long enough to read its own line. Two and a
-       half words a second is a slow reader on a phone in one hand. */
-    const words = b.text.split(/\s+/).length;
-    assert.ok(b.secs >= words / 4,
-      'beat "' + b.text.slice(0, 30) + '..." shows ' + words + ' words for ' + b.secs + ' s');
+    /* Long enough to read its own line: two and a half words a second is a
+       slow reader on a phone held in one hand. */
+    const n = b.text.split(/\s+/).length;
+    assert.ok(b.secs >= n / 4, 'beat "' + b.text.slice(0, 30) + '" shows ' + n + ' words in ' + b.secs + ' s');
     assert.ok(b.secs <= 8, 'a beat holding ' + b.secs + ' s is a pause, not a beat');
   }
 });
 
-test('it runs to the end on its own, and lands exactly once', () => {
+test('a beat carries text and timing and nothing else', () => {
+  /* This is what stops it being a slide show, and it is a structural claim
+     rather than a visual one so it can actually be tested.
+
+     Beats used to carry a `shot` - which world, how big, is it breaking - and
+     the renderer cut to it when the caption changed. Text driving pictures IS
+     the slide show: every line began with a hard cut. The flight in transit.ts
+     is now continuous and knows nothing about these lines, and the way to keep
+     it that way is to make sure a beat has nothing a renderer could read. */
+  for (const b of H.BEATS) {
+    assert.deepEqual(Object.keys(b).sort(), ['secs', 'text'],
+      'a beat carries ' + Object.keys(b).join(', ') + ' - anything beyond text and timing ' +
+      'is the caption driving the picture again');
+  }
+});
+
+test('it runs to the landing on its own, then ends', () => {
   const st = H.newIntro();
   let changes = 0;
-  for (let i = 0; i < 60 * 60; i++) {
+  for (let i = 0; i < 60 * 90 && !st.done; i++) {
     if (H.introTick(st, 1 / 60)) changes++;
-    if (st.done) break;
   }
   assert.ok(st.done, 'the intro never finished on its own');
-  assert.equal(changes, H.BEATS.length, 'a beat was skipped or repeated');
+  assert.equal(changes, H.BEATS.length - 1,
+    'expected one caption change per beat after the first, got ' + changes);
 
-  /* And it stays finished. A tick after the end that reported another change
-     would run endIntro twice - which starts the game twice. */
+  /* And it stays finished: a tick after the end reporting another change would
+     run endIntro twice, which starts the game twice. */
   assert.equal(H.introTick(st, 10), false, 'the intro kept going after it ended');
 });
 
-test('a tap moves it on, and a tap on the last beat ends it', () => {
-  const st = H.newIntro();
-  for (let i = 0; i < H.BEATS.length - 1; i++) {
-    assert.equal(H.advance(st), true);
-    assert.equal(st.i, i + 1, 'a tap did not advance one beat');
-    assert.equal(st.done, false, 'the intro ended early, on beat ' + st.i);
-  }
-  H.advance(st);
-  assert.equal(st.done, true, 'a tap on the last beat did not end the intro');
-  /* Never off the end of the array: the renderer reads BEATS[st.i] on the same
-     frame it is told the intro is over. */
-  assert.ok(st.i < H.BEATS.length, 'the beat index ran off the end of the list');
-});
+test('the captions always hand off to the landing, never straight to the game', () => {
+  /* Arriving somewhere is not the cutscene, it is how the game starts. Every
+     route out of the captions - running out, tapping through, skipping - has
+     to go through the descent, or the ship teleports onto the pad. */
+  const byTimer = H.newIntro();
+  for (let i = 0; i < 60 * 90 && !byTimer.landing; i++) H.introTick(byTimer, 1 / 60);
+  assert.ok(byTimer.landing, 'letting it run never reached the landing');
 
-test('skip ends it from anywhere, including the first frame', () => {
-  /* A cutscene you cannot skip is a tax on every replay, and this one plays
-     again on every New Game. */
+  const byTap = H.newIntro();
+  for (let i = 0; i < H.BEATS.length; i++) H.advance(byTap);
+  assert.ok(byTap.landing, 'tapping through never reached the landing');
+  assert.equal(byTap.done, false, 'tapping through skipped the landing entirely');
+
   for (const at of [0, 2, H.BEATS.length - 1]) {
     const st = H.newIntro();
     st.i = at;
     H.skip(st);
-    assert.equal(st.done, true, 'skip did not end the intro from beat ' + at);
-    assert.ok(st.i < H.BEATS.length, 'skip left the index off the end');
+    assert.ok(st.landing, 'skip from beat ' + at + ' did not reach the landing');
+    assert.equal(st.done, false, 'skip from beat ' + at + ' skipped the arrival too');
   }
+
+  /* Skipping again, during the descent, does end it - a player who has seen it
+     twice must be able to get out. */
+  const twice = H.newIntro();
+  H.skip(twice);
+  H.skip(twice);
+  assert.equal(twice.done, true, 'skipping during the landing did not end it');
 });
 
-test('every beat is a picture, and the pictures change', () => {
-  /* CRAFT.md: do not invent a symbol for something you can show. An intro
-     whose every beat is the same shot is text over a wallpaper, which is the
-     thing this was built instead of. */
-  const shots = H.BEATS.map((b) => JSON.stringify(b.shot));
-  assert.ok(new Set(shots).size >= 5,
-    'only ' + new Set(shots).size + ' distinct shots across ' + H.BEATS.length + ' beats');
-
-  /* The ship has to appear - it is the thing the player will BE - and a world
-     has to come apart, because that is the loop's whole climax. */
-  assert.ok(H.BEATS.some((b) => b.shot.ship), 'the ship is never on screen');
-  assert.ok(H.BEATS.some((b) => b.shot.breaking), 'no world ever breaks');
-  assert.ok(H.BEATS.some((b) => b.shot.world === -1), 'the intro never opens on empty space');
-
-  /* And the last beat is the Heart, because that is where it is sending you. */
-  const last = H.BEATS[H.BEATS.length - 1];
-  assert.equal(last.shot.world, 9999, 'the intro does not end on the Heart');
+test('the beat index never runs off the end of the list', () => {
+  /* The renderer reads BEATS[st.i] on the same frame it is told the captions
+     are over. */
+  const st = H.newIntro();
+  for (let i = 0; i < 40; i++) H.advance(st);
+  assert.ok(st.i >= 0 && st.i < H.BEATS.length, 'beat index is ' + st.i);
 });

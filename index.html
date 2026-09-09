@@ -387,14 +387,19 @@
   /* Supplies were a third of the screen as a stacked list. In here they are
      three chips on one line: they are consumables with a count and a price and
      nothing else to say, and the room should keep the space. */
-  .tray #supplies{display:flex; gap:6px; margin-bottom:8px;}
+  /* A GRID, not a row. This was a flex row when there were three supplies and
+     it stayed one when there were six, so every label ellipsised to
+     "Coola...", "Overd...", "Bulwa..." - the same "words are cut off" fault as
+     the display plates, in a different place. Three across and two down gives
+     each chip twice the width and no ellipsis. */
+  .tray #supplies{display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:8px;}
   .tray #supplies .counter{display:none;}
   .tray #supplies .up{
     flex:1 1 0; display:block; text-align:center; padding:7px 4px; min-width:0;
     border:1px solid var(--line); background:rgba(255,255,255,.03); border-radius:10px;
   }
   .tray #supplies .upinfo{display:block; min-width:0;}
-  .tray #supplies .upname{font-size:10px; font-weight:700; letter-spacing:.04em; white-space:nowrap;
+  .tray #supplies .upname{font-size:11px; font-weight:700; letter-spacing:.03em; white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis;}
   .tray #supplies .upeff{display:none;}
   .tray #supplies .buy{margin:4px auto 0; padding:4px 8px; font-size:10.5px;}
@@ -514,7 +519,11 @@
   #title.hidden, #intro.hidden{display:none;}
   #title .tspacer{flex:0 0 6vh;}
   #title h1{
-    margin:0; font-size:min(15vw,58px); letter-spacing:.13em; font-weight:800;
+    /* Sized so COREWARD actually FITS. Nine characters at 58px with .13em of
+       tracking wants about 378px and the frame offers 331 - the D was off the
+       right edge on the phone this is built for, which a filmstrip showed in
+       one frame and no amount of looking at the code would have. */
+    margin:0; font-size:min(12.5vw,48px); letter-spacing:.10em; font-weight:800;
     color:#f2f6ff; text-shadow:0 0 26px rgba(120,190,255,.42), 0 3px 0 rgba(0,0,0,.5);
   }
   #title .ttag{margin-top:8px; font-size:12.5px; letter-spacing:.09em; color:var(--dim);}
@@ -531,6 +540,14 @@
   .tbtn.primary{border-color:#2f6f52; color:var(--green); background:rgba(14,26,20,.85);}
   .tbtn.small{font-size:12px; padding:12px 10px; color:var(--dim);}
   .tbtn.hidden{display:none;}
+  /* Greyed, not gone. A CONTINUE that vanishes on a first run tells a new
+     player nothing; one that is visibly inert says "this is where your game
+     will be". Note that .off has to beat .primary, which sets its own colours,
+     so it comes after it in the sheet. */
+  .tbtn.off, .tbtn:disabled{
+    color:#4a5261; border-color:#232a35; background:rgba(10,13,19,.6);
+    box-shadow:none; cursor:default;
+  }
   #title .tfine{font-size:11px; color:var(--dim); opacity:.7; text-align:center; margin-top:2px;}
 
   #intro{
