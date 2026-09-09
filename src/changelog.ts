@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.6';
+export const VERSION = '0.15.7';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.7', date: '2026-09-08', title: 'One lamp, one shadow',
+    notes: [
+      'The light no longer splits into several separate cones - it is one lamp casting one shadow.',
+      'Shadow edges now follow the wall the light actually meets instead of snapping to whole blocks.',
+      'Most of the warmth taken out of the tunnels last version is back: that darkening was treating the symptom.'
+    ]
+  },
   {
     version: '0.15.6', date: '2026-09-08', title: 'The tunnels stop being cards',
     notes: [

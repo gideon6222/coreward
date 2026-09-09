@@ -278,33 +278,33 @@ function rayHit(
     /* outside the grid entirely: nothing out there to light */
     if (ix < 0 || ix >= cols || iy < 0 || iy >= rows) return enter;
     if (solid[iy * cols + ix]) {
-      /* The FARTHEST corner of the cell, not where this particular ray happens
-         to leave it.
+      /* Where the ray actually MEETS the wall. Not the far corner of the cell,
+         and this is the difference between one lamp and several.
 
-         The fan is sampled by angle and interpolated between neighbouring rays,
-         so a fragment's occluder is a blend of two rays that may have clipped
-         quite different parts of the wall. With the exit distance, parts of a
-         cell end up beyond their own occluder and fall into shadow - on screen,
-         a hard diagonal cut across every single block in the frame, which reads
-         as every rock casting a shadow on itself. Found by eye in a playtest.
+         The far corner was here to stop a rock face falling into its own
+         shadow, from back when rock sampled this fan. It does not any more -
+         see coreReach in lightmap.ts, which has no shadow term at all - so the
+         only thing left reading the fan is the air in a tunnel, and the air is
+         only ever in open cells. The reason was gone; the cost was not.
 
-         The rule the fan exists to express is "the first wall is lit", and a
-         wall is a whole cell. The far corner makes the recorded value large
-         enough, and smooth enough across the cell, that every fragment of it
-         clears its own occluder. Bleeding a fraction of a cell past the wall
-         costs nothing: behind it is either more rock, which the seep already
-         darkens, or open air the flood never reached, which is zero anyway. */
-      const far = farCorner(li, lj, ix, iy);
-      return far < maxDist ? far : maxDist;
+         The cost is that a cell's far corner is CONSTANT across the whole cell
+         and then jumps to the next cell's. Occlusion against angle came out as
+         a staircase, one plateau per wall cell, and each plateau draws as its
+         own cone. Playtest, and an exactly correct diagnosis from a screenshot:
+         *"it looks like you are creating the shadows by sending out multiple
+         cone shape beams ... since the light should be coming from one location
+         it shouldn't be split into more than one beam."* One lamp, quantised
+         per block into several.
+
+         The entry distance has no such steps. Along a flat wall it is
+         (wall - lamp) / cos(angle), which is smooth in angle, so the shadow
+         boundary is a single silhouette. It jumps only at a real corner, which
+         is the one place a shadow is supposed to jump. */
+      return enter;
     }
   }
 }
 
-/* Distance from the lamp to the farthest of a cell's four corners. */
-function farCorner(li: number, lj: number, ix: number, iy: number): number {
-  const dx = Math.abs(ix - li) + 0.5, dy = Math.abs(iy - lj) + 0.5;
-  return Math.sqrt(dx * dx + dy * dy);
-}
 
 /* Fill `out` with one occluder distance per angle, evenly around the lamp.
    Ray k covers angle (k + 0.5) / out.length of a full turn, which is the

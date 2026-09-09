@@ -370,32 +370,31 @@ export const LM_INDIRECT = 0.22;
    number: the air's value is additionally multiplied by LM_HAZE and ADDED over
    the lit rock, so equal constants are not equal brightness. They stay separate
    because the reasons they move are different. */
-/* 0.20, down from 0.62, and this is the answer to *"we are still getting this
-   overlapping rounded look"* / *"dark angular quads approaching a branch"*.
+/* 0.45, and the history of this number is worth keeping because it is a
+   lesson about tuning around a bug.
 
-   This term is the bounce's share of the light in AIR, and the bounce is
-   omnidirectional with a long reach and a gentle curve. At 0.62 it dominated
-   everything the beam was not pointing at, which meant every open cell in the
-   connected tunnel network got very nearly the SAME value. The haze is an
-   additive quad drawn in front of the terrain with a hard per-cell mask, so a
-   near-constant value through that mask does not read as fog at all - it reads
-   as flat orange cards, one per cell, with straight cell-aligned edges and
-   45-degree corners where they meet.
+   It was 0.62. Hiding the haze quad showed that the angular shapes players
+   were complaining about were drawn by the haze, so it was cut to 0.20 - which
+   did remove them, and also took a lot of warmth out of the game. The next
+   playtest was *"it looks like it is happening worse now than it was and I
+   liked the art style before better."*
 
-   Which is why it showed APPROACHING a branch and not at one: level with the
-   branch you are inside its card, and from four cells above you see the card
-   edge-on next to the shaft's, as a trapezoid.
+   Both halves were right. The shapes were in the haze, but the haze was only
+   REVEALING them: the fan was recording the far corner of each wall cell, so
+   occlusion against angle was a staircase and the single lamp drew as several
+   cones. See rayHit in light.ts. Turning this down made the cones dimmer, not
+   fewer, and paid for it in every scene that never had them.
 
-   Found by elimination, not by reasoning - hiding the haze quad removed the
-   artefact completely while the rock kept its lighting, which is what said the
-   fault was in the air and not in the shadow. Two earlier A/Bs on the shadow
-   fan came back identical and were correct nulls. See PIPELINE.md on positive
-   controls, without which those nulls would have meant nothing.
+   With the fan fixed the cones are gone at 0.62 as well, so the darkening was
+   never the fix and most of it is given back. 0.45 rather than the old 0.62
+   because at 0.62 a crossing tunnel still fills to a fairly even band, and the
+   whole job of the number is that a branch the beam has passed reads as dim
+   lit air rather than as either a hole or a panel of colour.
 
-   0.20 keeps the job the number exists for - a branch the beam has passed is
-   still lit air rather than a hole - without the branch and the shaft agreeing
-   on a brightness. Above 0.28 the cards start coming back. */
-export const LM_AIR_AMBIENT = 0.20;
+   The general shape of the mistake: a change that makes an artefact less
+   VISIBLE is not the same as a change that removes its cause, and it will cost
+   something everywhere else. */
+export const LM_AIR_AMBIENT = 0.45;
 export const LM_BOUNCE_RANGE = 1.7;   /* multiple of the beam's reach */
 export const LM_BOUNCE_POW = 1.25;    /* against the beam's 3: a long fade */
 /* How tightly the beam narrows to the front. Higher is a spotlight, lower is a

@@ -302,16 +302,21 @@ test('nothing in the way means nothing is in shadow', () => {
   for (let k = 0; k < out.length; k++) assert.equal(out[k], 4, `ray ${k}`);
 });
 
-test('a wall is lit on its face and shadows everything behind it', () => {
-  /* Column 9 is solid. From the lamp at column 4, the wall itself has to stay
-     lit - it is the surface the lamp is falling ON - and the cell behind it
-     must not be. Recording the near side of the wall instead of the far side
-     puts every rock face in the game into its own shadow. */
+test('the fan stops at the near face of a wall, and nothing behind it reaches', () => {
+  /* Column 9 is solid. The fan's job is the AIR: the open cells in front of
+     the wall are reached, the wall's near face is where that stops, and
+     nothing behind it is reached.
+
+     This used to assert that the wall CELL was lit too, because rock once
+     sampled this fan and recording the near side put every rock face into its
+     own shadow. Rock does not sample it any more - coreReach in lightmap.ts
+     has no shadow term - so the fan is free to record where the wall actually
+     is, which is the only value that is continuous in angle. See rayHit. */
   const rows = Array.from({ length: 9 }, () =>
     '.'.repeat(9) + '#' + '.'.repeat(5));
   const out = fan(rows, 4, 4);
   assert.ok(lit(out, 4, 4, 8, 4), 'the open cell in front of the wall');
-  assert.ok(lit(out, 4, 4, 9, 4), 'the face of the wall');
+  assert.ok(lit(out, 4, 4, 8.4, 4), 'right up against the wall');
   assert.ok(!lit(out, 4, 4, 10, 4), 'the cell behind the wall');
   assert.ok(!lit(out, 4, 4, 12, 4), 'well behind the wall');
 });
@@ -334,8 +339,26 @@ function crossing(depthOfLamp) {
     rows.push(Array.from({ length: W }, (_, i) => (i === SHAFT ? '.' : '#')).join(''));
   }
   const out = fan(rows, SHAFT, depthOfLamp);
+  /* Lit AREA, not lit cell centres.
+
+     A centre is one sample, and in a one-cell shaft the centre of the cell
+     diagonally below is at exactly 45 degrees - straight through the corner
+     where the shaft wall meets the crossing. That is the single bearing the
+     answer is genuinely undefined at, so counting centres measured a
+     degeneracy rather than the property, and reported "one cell" for every
+     approach distance. What the player sees is how much of the tunnel is lit,
+     so that is what this counts. */
   let n = 0;
-  for (let m = 0; m < W - SHAFT; m++) if (lit(out, SHAFT, depthOfLamp, SHAFT + m, CROSS)) n++;
+  for (let m = 0; m < W - SHAFT; m++) {
+    let seen = 0, total = 0;
+    for (let ox = -0.4; ox <= 0.41; ox += 0.2) {
+      for (let oy = -0.4; oy <= 0.41; oy += 0.2) {
+        total++;
+        if (lit(out, SHAFT, depthOfLamp, SHAFT + m + ox, CROSS + oy)) seen++;
+      }
+    }
+    n += seen / total;
+  }
   return n;
 }
 
@@ -364,36 +387,51 @@ test('the shadow in a crossing tunnel is thrown by the corner, not by distance',
   assert.ok(lit(fan(open, 1, 1), 1, 1, 4, 3), 'the same bearing and distance, unobstructed');
 });
 
-test('the whole of the first wall is lit, not just where a ray clips it', () => {
-  /* The fan records the far corner of the cell it hits, and this is why.
+test('one lamp casts one shadow, not a cone per block', () => {
+  /* The regression this exists to catch, diagnosed from a screenshot by the
+     player before I found it in the code:
 
-     Rays are sampled by angle and blended, so a fragment's occluder is a mix
-     of two rays that may have clipped quite different parts of a wall. Record
-     where each ray happens to LEAVE the cell and parts of that same cell end
-     up beyond their own occluder: on screen, a hard diagonal cut across every
-     block in the frame. It reads as every rock casting a shadow on itself, and
-     that is exactly what a playtester called it.
+       *"it looks like you are creating the shadows by sending out multiple
+       cone shape beams to check if light should make it into the tunnel. since
+       the light should be coming from one location it shouldn't be split into
+       more than one beam like we see here."*
 
-     Sampled across the face of a wall six cells away rather than at cell
-     centres, because a centre is the one point that passes either way. */
+     Exactly right. The fan used to record the far CORNER of the wall cell a
+     ray hit. A corner is a property of the cell, not of the ray, so every
+     bearing that hit the same cell recorded the same distance: occlusion
+     against angle was a staircase, one plateau per wall cell, and each plateau
+     drew as its own cone out of a single point light.
+
+     What is asserted is smoothness, because that is the property that fails.
+     Along a flat wall the true distance is (wall - lamp) / cos(angle), whose
+     step between neighbouring rays is a few hundredths of a cell here; the old
+     per-cell plateaus stepped by a whole one. Anything under a seventh of a
+     cell is a silhouette; anything near a whole cell is a staircase. */
   const rows = Array.from({ length: 15 }, () =>
     Array.from({ length: 15 }, (_, i) => (i === 9 ? '#' : '.')).join(''));
   const out = fan(rows, 3, 7, 512, 20);
 
-  let dark = 0, total = 0;
-  for (let j = 4; j <= 10; j++) {
-    for (let ox = -0.45; ox <= 0.46; ox += 0.15) {
-      for (let oy = -0.45; oy <= 0.46; oy += 0.15) {
-        total++;
-        if (!lit(out, 3, 7, 9 + ox, j + oy)) dark++;
-      }
-    }
+  /* Only the bearings that actually land on the flat face - past the wall's
+     ends the distance genuinely jumps, which is a real silhouette edge. */
+  let worst = 0, at = -1;
+  for (let k = 0; k < out.length; k++) {
+    const a0 = ((k + 0.5) / out.length) * Math.PI * 2;
+    const a1 = ((k + 1.5) / out.length) * Math.PI * 2;
+    const ok = (a) => {
+      const c = Math.cos(a);
+      if (c < 0.6) return false;                 /* facing the wall at all */
+      const y = 7 + Math.tan(a) * 5.5;
+      return y > 4.5 && y < 9.5;                 /* within the face, not its ends */
+    };
+    if (!ok(a0) || !ok(a1)) continue;
+    const d = Math.abs(out[k + 1] - out[k]);
+    if (d > worst) { worst = d; at = k; }
   }
-  /* A handful of samples on the extreme silhouette edge can still fall out,
-     and those are a pixel wide on screen. A wall shadowing a twentieth of
-     itself is invisible; a wall shadowing a third of itself is the artefact. */
-  assert.ok(dark / total < 0.05,
-    `${dark} of ${total} samples on the lit face of a wall are in its own shadow`);
+
+  assert.ok(at >= 0, 'the sweep found no rays on the wall face - test is not testing anything');
+  assert.ok(worst < 0.15,
+    `occluder distance jumps ${worst.toFixed(3)} cells between adjacent rays ` +
+    `at ray ${at}: that is a per-block plateau, and it draws as a separate cone`);
 
   assert.ok(!lit(out, 3, 7, 11, 7), 'and the cell behind the wall is still shadowed');
 });

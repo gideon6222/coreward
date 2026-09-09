@@ -211,6 +211,19 @@ falloff, 1.7x the beam's reach on a much gentler curve: sharing the beam's pool 
 behind the ship end exactly where the beam did, with the same hard edge, which is the one thing
 the soft half must not do.
 
+**The shadow fan records where a ray MEETS a wall, and that value has to be continuous in
+angle.** The fan is sampled by bearing and interpolated, so anything constant across a whole
+cell makes occlusion-against-angle a staircase - one plateau per wall cell - and each plateau
+draws as its own cone. A single point lamp then renders as several separate beams, which is
+exactly what a playtest called: *"it looks like you are creating the shadows by sending out
+multiple cone shape beams ... since the light should be coming from one location it shouldn't
+be split into more than one beam."* The entry distance is `(wall - lamp) / cos(angle)`, smooth
+in angle, and jumps only at a real silhouette corner. **The old far-corner rule existed because
+rock used to sample this fan; it does not any more** (`coreReach` has no shadow term), so that
+justification is dead and re-adopting it brings the cones back. There is a test that sweeps
+adjacent rays across a flat wall and fails on a jump over a seventh of a cell - it reads 0.033
+correct against 0.293 for the old rule.
+
 **The haze is an additive quad through a HARD per-cell mask, so its value must vary across
 that mask or it draws flat cards.** This is the single most expensive thing in the file: five
 playtest rounds of *"there is a circle of light around the ship"*, four correct fixes to things
