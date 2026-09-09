@@ -26,10 +26,11 @@ import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, ren
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
 import { updateLight } from './lightmap';
-import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './particles';
+import { spray, stepParticles, starMat, sunSprite } from './particles';
+import { stepDust } from './dust';
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
-import { moveAndCollide, thrust, laneVel } from './fly';
+import { moveAndCollide, thrust, laneVel, headingFor } from './fly';
 import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
@@ -152,7 +153,14 @@ export function tick(raw: number, draw = true) {
     const p = R.flight.curve.getPointAt(clamp(u, 0, 1));
     const dx = p.x - R.flight.last.x, dy = p.y - R.flight.last.y;
     if (Math.abs(dx) + Math.abs(dy) > 0.0005) {
-      const ang = Math.atan2(dx, dy);
+      /* Nose along the way it is GOING. FACE_ANGLE has down = 0, so rotation
+         zero points the drill at the floor and the heading that goes with an
+         angle is (sin, -cos) - note the minus, which is the whole bug. With
+         atan2(dx, dy) the ship flew the whole route home pointing at the
+         ground, reversing up its own shaft: *"when the autopilot takes you
+         back to the platform, can you make it drive forward back to the start
+         instead of reverse all the way back?"* */
+      const ang = headingFor(dx, dy);
       let df = ang - rig.rotation.z;
       while (df > Math.PI) df -= Math.PI * 2;
       while (df < -Math.PI) df += Math.PI * 2;
@@ -164,7 +172,13 @@ export function tick(raw: number, draw = true) {
     thrustLevel = 1;
     camZBoost += (2.4 - camZBoost) * Math.min(1, dt * 3);
     syncBlocks();
-    if (Math.random() < 0.9) spray(p.x, p.y + 0.4, 0x7ad4ff, 2, 2.4, 0.35);
+    /* Exhaust out of the BACK, which is now a direction that changes: flying
+       home nose-first, the thruster plume trails below, and round a corner it
+       swings with the hull. Fixed at p.y + 0.4 it sat in front of the ship. */
+    if (Math.random() < 0.9) {
+      const m = Math.hypot(dx, dy) || 1;
+      spray(p.x - (dx / m) * 0.45, p.y - (dy / m) * 0.45, 0x7ad4ff, 2, 2.4, 0.35);
+    }
     if (raw01 >= 1) {
       R.flight = null;
       camZBoost = 0;
@@ -633,12 +647,10 @@ export function tick(raw: number, draw = true) {
   fog.color.copy(lerpHex(skyLo(g.planet), 0x07080d, tFog).lerp(new THREE.Color(0x4a1305), hot * 0.85));
   /* ambient warms too, so the rock itself is lit hot rather than just fogged */
   amb.color.setHex(0xffffff).lerp(new THREE.Color(0xff8a52), hot * 0.6);
-  dustMat.color.setHex(0xc8b89a).lerp(new THREE.Color(0xff6a28), hot);
-  starMat.opacity = clamp(1 - tDeep * 2.4, 0, 0.9);
-  sunSprite.material.opacity = clamp(0.5 - tDeep, 0, 0.5);
-  dustMat.opacity = clamp(tDeep * 0.7, 0, 0.62);
-  dust.position.set(px, py, 0);
-  dust.rotation.z += raw * 0.04;
+/* The mote field. World-anchored and wrapped around the ship rather than
+     parented to it - see dust.ts for why that is the whole difference between
+     dust and a texture on the camera. */
+  stepDust(px, py, g.pd, raw, hot);
 
   skyTick += raw;
   if (skyTick > 0.12) {

@@ -10,6 +10,31 @@
    spans [cx-0.5, cx+0.5] on each axis and the column containing a point p is
    Math.round(p). */
 
+import type { Dir } from './types';
+
+/* Which way the hull points, as a rotation about z, and the heading that goes
+   with one.
+
+   These live here rather than next to the model because they are geometry, not
+   art, and because keeping them pure is the only way the relationship between
+   them can be tested. It went untested and wrong for weeks: the autopilot
+   turned the ship with `atan2(dx, dy)` and flew the whole route home pointing
+   at the ground, reversing up its own shaft, until a playtest asked *"can you
+   make it drive forward back to the start instead of reverse all the way
+   back?"*
+
+   The relationship is the part worth stating. `down` is zero, so an angle a
+   corresponds to the heading (sin a, -cos a) - and it is that minus, dropped
+   once, that costs you the whole feature. */
+export const FACE_ANGLE: Record<Dir, number> =
+  { down: 0, right: Math.PI / 2, left: -Math.PI / 2, up: Math.PI };
+
+/* The hull rotation that points the nose along a WORLD-space heading. World y
+   is up and depth runs the other way, which is where the minus comes from. */
+export function headingFor(dx: number, dy: number): number {
+  return Math.atan2(dx, -dy);
+}
+
 export interface FlyResult {
   x: number; y: number;
   vx: number; vy: number;

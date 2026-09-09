@@ -321,3 +321,38 @@ test('lanes do not cost the coast that makes flight feel like flight', () => {
   }
   assert.ok(d > 0.35 && d < 1.6, 'coasts ' + d.toFixed(2) + ' cells after release');
 });
+
+test('the nose points the way the ship is going, in every direction', () => {
+  /* The autopilot bug, as a property rather than as a scene.
+
+     It flew the whole route home pointing at the ground - reversing up its own
+     shaft for weeks - because the heading was `atan2(dx, dy)` with the minus
+     dropped. Nothing could catch that: the angle was computed in the frame
+     loop, next to a renderer, so there was nowhere to assert it from.
+
+     What makes it testable is that FACE_ANGLE already fixes the answer for the
+     four directions the ship can face while digging. Flying in one of those
+     directions has to produce the angle the ship would hold if it were facing
+     that way - otherwise the same ship points two different ways depending on
+     how it got there, which is exactly the bug. */
+  const world = {
+    /* world-space heading for each facing: y is up, depth runs the other way */
+    down: [0, -1],
+    up: [0, 1],
+    right: [1, 0],
+    left: [-1, 0]
+  };
+  for (const [dir, [dx, dy]] of Object.entries(world)) {
+    const got = H.headingFor(dx, dy);
+    const want = H.FACE_ANGLE[dir];
+    assert.ok(Math.abs(Math.atan2(Math.sin(got - want), Math.cos(got - want))) < 1e-9,
+      `flying ${dir} gives ${got.toFixed(4)} but facing ${dir} is ${want.toFixed(4)}`);
+  }
+
+  /* And the diagonals land between their two neighbours rather than anywhere
+     else, which is the cheapest way to pin that the mapping is continuous and
+     not, say, mirrored. */
+  const dr = H.headingFor(1, -1);
+  assert.ok(dr > H.FACE_ANGLE.down && dr < H.FACE_ANGLE.right,
+    `down-and-right (${dr.toFixed(3)}) must lie between down and right`);
+});

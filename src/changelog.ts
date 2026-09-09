@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.7';
+export const VERSION = '0.16.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.16.0', date: '2026-09-08', title: 'Dust in the beam',
+    notes: [
+      'The lamp now throws a visible shaft of light through the air in front of the ship.',
+      'Real dust drifts in that beam - it hangs in the world, so it rises past you as you dive.',
+      'The air thickens the deeper you go, and the beam gets heavier with it.',
+      'Autopilot flies you home nose-first instead of reversing up the shaft.'
+    ]
+  },
   {
     version: '0.15.7', date: '2026-09-08', title: 'One lamp, one shadow',
     notes: [

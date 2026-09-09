@@ -46,7 +46,7 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/shader.ts` | `chainCompile`, the one way anything patches a stock three shader |
 | `src/feel.ts` | Every number that decides how it *feels*, plus the pure reducers (`tremorTick`, `chargeAfter`, `soakAfter`) |
 | `src/world.ts` | Generation, `blockAt`, `findRoute`, `planCollapse`, `cachePrize` |
-| `src/fly.ts` | **Pure.** Collision and thrust. No renderer, fully unit-tested |
+| `src/fly.ts` | **Pure.** Collision, thrust, and the hull's facing geometry (`FACE_ANGLE`, `headingFor`). No renderer, fully unit-tested |
 | `src/scene.ts` | Renderer, camera, lights, fog, backdrop, `resize()` |
 | `src/materials.ts` | Shared geometry and materials, rock displacement shader, procedural textures |
 | `src/blocks.ts` | Instanced terrain, pools keyed by block id, haloes, `beginDig`/`dropBlock` |
@@ -57,7 +57,8 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/mark.ts` | The deepest-reach marker line |
 | `src/beam.ts` | The cutting laser's visible cut |
 | `src/parallax.ts` | Distant rock behind the tunnels |
-| `src/particles.ts` | Sprays, dust, stars, sun |
+| `src/particles.ts` | Sprays, stars, sun |
+| `src/dust.ts` | The lit mote field. World-anchored, wraps around the ship |
 | `src/audio.ts` | The whole audio graph, score and effects |
 | `src/ui.ts` | The `ui` element map, HUD, station screen, manifest, patch notes |
 | `src/input.ts` | All d-pad, keyboard and button wiring |
@@ -210,6 +211,17 @@ two floors and goes black - which erases the shaft you came down. The bounce als
 falloff, 1.7x the beam's reach on a much gentler curve: sharing the beam's pool made the glow
 behind the ship end exactly where the beam did, with the same hard edge, which is the one thing
 the soft half must not do.
+
+**Dust motes are anchored in the WORLD and wrapped around the ship, never parented to it.**
+The field this replaced did `dust.position.set(px, py, 0)` every frame with a slow spin, and
+that single line is why it never read as dust: a cloud that travels with you cannot move past
+you, so a hundred metres of diving leaves the same motes in the same places. Wrapping costs a
+modulo and does more than any amount of extra geometry. They are also lit by `coreAir` on a
+hard curve (`DUST_LIT_POW`), which is what makes the beam read as a volume rather than a
+gradient - a flat-lit mote field is just noise over the picture. They sit BEHIND the terrain
+(z -0.55 to -1.25) so a mote only ever shows down a tunnel that has actually been dug, and they
+fade out at the surface on the same ramp as the haze, or specks hang in the daylight over the
+pad.
 
 **The shadow fan records where a ray MEETS a wall, and that value has to be continuous in
 angle.** The fan is sampled by bearing and interpolated, so anything constant across a whole

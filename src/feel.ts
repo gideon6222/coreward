@@ -395,6 +395,75 @@ export const LM_INDIRECT = 0.22;
    VISIBLE is not the same as a change that removes its cause, and it will cost
    something everywhere else. */
 export const LM_AIR_AMBIENT = 0.45;
+
+/* ---------- the beam, and the dust in it ----------
+
+   Playtest: *"can you make it feel more like we are seeing a beam of light
+   through increasing dense air and dust, specifically in front of the ship."*
+
+   Three separate things do that job and they are deliberately separate:
+
+     the SHAFT   a tighter, brighter lobe than the one that lights surfaces,
+                 added only to the air - a beam is a thing you see in the
+                 volume, not a thing that lands on rock
+     the MOTES   real geometry in dust.ts, lit by the same field, so the beam
+                 has grain that moves rather than being a smooth wash
+     the DENSITY both of the above scaled by depth, which is the "increasing"
+
+   A smooth gradient cannot read as dust however it is shaped; that is what the
+   motes are for. Equally, motes alone in clear air read as specks on the lens.
+   It needs both. */
+
+/* How much brighter the shaft is than the surface lobe at its centre, and how
+   tightly it narrows. Higher POW is a torch, lower is a floodlight. */
+export const LM_SHAFT = 0.55;
+export const LM_SHAFT_POW = 3.4;
+/* The shaft is a near-field effect: past this many multiples of the lamp's
+   reach it is gone, so it cannot become a second pool of light out in the
+   dark. */
+export const LM_SHAFT_RANGE = 0.85;
+
+/* Dust in the air thickens with depth. 1.0 at the surface up to this at the
+   core, over LM_DUST_RAMP metres. Deliberately superlinear at the bottom -
+   *"I like how the air seems to get thicker as we go down"* was about the
+   feeling of pressure, and a straight line does not give it. */
+export const LM_DUST_DEPTH = 2.3;
+export const LM_DUST_RAMP = 95;
+
+/* The grain in the beam: how far from flat the noise pushes the haze, and how
+   big one blob of it is in cells. Small amounts only - past about 0.35 it
+   stops reading as dust in light and starts reading as a dirty screen. */
+export const LM_DUST_GRAIN = 0.26;
+export const LM_DUST_SCALE = 0.55;
+/* Cells per second the dust drifts UP through the beam. Slow: this is settled
+   air being stirred, not wind. */
+export const LM_DUST_DRIFT = 0.28;
+
+/* ---------- the mote field ---------- */
+
+/* Motes in the box, and the box in cells around the ship. The count is the
+   whole "high definition" ask and it is one draw call either way, so it is set
+   by what looks right rather than by cost. */
+export const DUST_COUNT = 1400;
+export const DUST_BOX_W = 17;
+export const DUST_BOX_H = 22;
+/* Point size in world units, before per-mote variation and before the
+   perspective attenuation. */
+export const DUST_SIZE = 0.13;
+export const DUST_SIZE_VARY = 0.75;
+/* How strongly a mote answers to the light field. Motes are the one thing in
+   the game that should be almost INVISIBLE outside the beam and obvious inside
+   it - that contrast is what makes the beam look like a volume. */
+export const DUST_LIT_POW = 1.55;
+export const DUST_FLOOR = 0.02;
+/* Drift, in cells per second, and how much of it is sideways sway. */
+export const DUST_RISE = 0.22;
+export const DUST_SWAY = 0.5;
+/* Overall brightness of the field, before depth density and before the light
+   at the mote. Set by eye against the beam: at 0.5 the motes were there in the
+   buffer and invisible on screen, which is the failure mode a particle effect
+   has when nobody checks it against a positive control. */
+export const DUST_GAIN = 4.2;
 export const LM_BOUNCE_RANGE = 1.7;   /* multiple of the beam's reach */
 export const LM_BOUNCE_POW = 1.25;    /* against the beam's 3: a long fade */
 /* How tightly the beam narrows to the front. Higher is a spotlight, lower is a

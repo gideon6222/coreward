@@ -52,23 +52,14 @@ export function stepParticles(dt: number) {
   if (live) pGeo.attributes.position.needsUpdate = true;
 }
 
-/* drifting dust underground */
-const DMAX = 260;
-const dGeo = new THREE.BufferGeometry();
-const dPos = new Float32Array(DMAX * 3);
-for (let i = 0; i < DMAX; i++) {
-  dPos[i * 3] = (Math.random() - 0.5) * 14;
-  dPos[i * 3 + 1] = (Math.random() - 0.5) * 16;
-  /* BEHIND the terrain, between the rock face and the backdrop, so motes
-     only show through tunnels the player has actually dug. In front they
-     read as specks on the lens, floating over solid rock. */
-  dPos[i * 3 + 2] = -0.7 - Math.random() * 0.6;
-}
-dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
-export const dustMat = new THREE.PointsMaterial({ size: 0.07, color: 0xc8b89a, transparent: true, opacity: 0, depthWrite: false });
-export const dust = new THREE.Points(dGeo, dustMat);
-dust.frustumCulled = false;
-scene.add(dust);
+/* The drifting dust that used to live here is now dust.ts.
+
+   It was 260 flat-shaded square points, parented to the ship with
+   `dust.position.set(px, py, 0)` and given a slow spin. That parenting is why
+   it never read as dust: a cloud that travels with you cannot move past you,
+   so flying a hundred metres left the same motes in the same places. The
+   replacement is world-anchored, lit by the same field as everything else, and
+   wraps around the ship instead of following it. */
 
 /* stars and a distant sun, surface only */
 const sGeo = new THREE.BufferGeometry();

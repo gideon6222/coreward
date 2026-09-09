@@ -465,4 +465,7 @@ export function shipToLayer() {
 shipToLayer();
 
 scene.add(player);
-export const FACE_ANGLE = { down: 0, right: Math.PI / 2, left: -Math.PI / 2, up: Math.PI };
+/* FACE_ANGLE moved to fly.ts, which is pure - it is geometry rather than art,
+   and the autopilot's heading has to be testable against it. Re-exported here
+   so the model's orientation still has one obvious place to look. */
+export { FACE_ANGLE } from './fly';

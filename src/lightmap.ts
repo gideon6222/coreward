@@ -8,7 +8,9 @@ import { LM_ATT, LM_PINCH, LM_SEEP, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_HAZE, LM_HAZE_COLOR, LM_INDIRECT, LM_FOCUS, LM_OMNI_NEAR, LM_OMNI_FAR,
          LM_SHADOW_SOFT, LM_SHADOW_SPAN, LM_RAYS, LM_BOUNCE_RANGE, LM_BOUNCE_POW,
          LM_AIR_EDGE0, LM_AIR_EDGE1, LM_GLOW_FLOOR, LM_GLOW_POW, LM_FORWARD,
-         LM_AIR_AMBIENT } from './feel';
+         LM_AIR_AMBIENT, LM_SHAFT, LM_SHAFT_POW, LM_SHAFT_RANGE,
+         LM_DUST_DEPTH, LM_DUST_RAMP, LM_DUST_GRAIN, LM_DUST_SCALE,
+         LM_DUST_DRIFT } from './feel';
 
 /* The grid the solver works on, and the bridge from it to every shader.
 
@@ -255,6 +257,17 @@ export function updateLight(
   U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), LM_GLOW_FLOOR, LM_GLOW_POW,
                       LM_AIR_AMBIENT);
   haze.position.set(0, -pd, HAZE_Z);
+
+  /* The grain's clock and the air's thickness. Both driven here rather than in
+     the loop, because this is the function that already knows where the ship
+     is and how much time has passed - and because `dt` here is the carried
+     total, so the grain drifts at the same rate whether or not the tick drew.
+     Squared with depth for the same reason the mote field is: the bottom of a
+     planet should feel like it has weight in the air. */
+  const hu = (haze.material as THREE.ShaderMaterial).uniforms;
+  hu.uDustT.value += dt;
+  const dd = Math.min(1, Math.max(0, pd / LM_DUST_RAMP));
+  hu.uDustDens.value = 1 + (LM_DUST_DEPTH - 1) * dd * dd;
 }
 
 /* The whole lighting model, in one function that everything shares.
@@ -262,6 +275,13 @@ export function updateLight(
    Surfaces, the air in the tunnels and anything else that ever wants to know
    how lit a point is all call `coreReach`, so they cannot drift apart. The one
    thing that differs between them is what they do with the answer. */
+/* Exported so anything with its OWN ShaderMaterial can light itself by exactly
+   the same model - the haze below, and the dust motes in dust.ts. Writing the
+   falloff a second time is how the haze and the terrain came to disagree about
+   the shadow fan for three versions. One source, or they drift. */
+export const LM_DECL_SRC = () => DECL;
+export const lmUniforms = () => U;
+
 const DECL = `
   varying vec2 vLmPos;
   uniform sampler2D uLmMap;
@@ -366,7 +386,30 @@ const DECL = `
        does not alias into stair steps as the ship moves. */
     float occ = texture2D(uLmShadow, vec2(atan(dg.y, dg.x) * 0.15915494, 0.5)).r * uLmShade.y;
     float clear = 1.0 - smoothstep(occ - uLmShade.x, occ + uLmShade.x, t.x);
-    return air * max(t.y * t.z * clear, t.w * uLmSoft.w);
+    float base = max(t.y * t.z * clear, t.w * uLmSoft.w);
+
+    /* THE SHAFT. A second, much tighter lobe that exists only in the air.
+
+       Playtest: *"can you make it feel more like we are seeing a beam of light
+       through increasing dense air and dust, specifically in front of the
+       ship."* A beam is something you see in the volume between you and what
+       it lands on, so it belongs here and not in coreReach - putting it on
+       surfaces would just make the rock in front brighter, which is the thing
+       that already happens and is not what a beam looks like.
+
+       Shadowed like the direct term, because a beam that carried on through a
+       corner would undo the shadows entirely, and ADDED rather than max'd:
+       this is light on top of the light that is already there, which is what
+       stops it reading as a second pool with its own edge. */
+    float dist = t.x;
+    float ax = dist > 0.0001 ? dot(dg / dist, uLmDir.xy) : 1.0;
+    float shaft = pow(max(0.0, ax), ${LM_SHAFT_POW.toFixed(2)});
+    /* uLmLamp.z is 1 / reach, so this is a multiple of the LAMP'S REACH.
+       uLmShade.y is the fan's span, which is twice that - see LM_SHADOW_SPAN -
+       and using it here would make the beam almost twice as long as it reads
+       in the name. */
+    shaft *= 1.0 - smoothstep(0.0, ${LM_SHAFT_RANGE.toFixed(2)} / uLmLamp.z, dist);
+    return air * (base + shaft * clear * ${LM_SHAFT.toFixed(2)});
   }
 
   /* Daylight, read from the CELL's own depth rather than the ship's, so the
@@ -458,7 +501,13 @@ export const haze = new THREE.Mesh(
     uniforms: {
       ...U,
       uHaze: { value: new THREE.Color(LM_HAZE_COLOR) },
-      uHazeGain: { value: LM_HAZE }
+      uHazeGain: { value: LM_HAZE },
+      /* Wall time for the drifting grain, and how thick the air is at the
+         depth the ship is at. Both live on this material rather than in U,
+         because nothing else wants them and U is copied into thirty
+         materials. */
+      uDustT: { value: 0 },
+      uDustDens: { value: 1 }
     },
     vertexShader: `
       varying vec2 vLmPos;
@@ -473,12 +522,44 @@ export const haze = new THREE.Mesh(
     fragmentShader: `
       uniform vec3 uHaze;
       uniform float uHazeGain;
+      uniform float uDustT;
+      uniform float uDustDens;
       ${DECL}
+
+      /* Cheap value noise. Two octaves is enough: this is grain in a beam, not
+         a cloud, and the mote field in dust.ts carries the detail that a
+         fragment shader cannot. */
+      float vhash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+      float vnoise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(vhash(i), vhash(i + vec2(1, 0)), f.x),
+                   mix(vhash(i + vec2(0, 1)), vhash(i + vec2(1, 1)), f.x), f.y);
+      }
+
       void main() {
         /* Fades out at the surface with everything else - haze in daylight
            reads as a smudge on the screen. */
         float dep = clamp((-vLmPos.y - uLmDark.y) * uLmDark.z, 0.0, 1.0);
-        gl_FragColor = vec4(uHaze * (coreAir(vLmPos) * dep * uHazeGain), 1.0);
+
+        /* Grain, drifting UP through the beam. Two octaves at different speeds
+           so it churns instead of sliding as one sheet, and centred on 1.0 so
+           it only ever redistributes the light rather than adding any: the
+           beam's brightness is still decided entirely by the light model.
+
+           This is what stops the shaft being a smooth cone. A cone with no
+           grain in it does not read as light through dusty air at any
+           brightness - it reads as a coloured shape. */
+        vec2 q = vLmPos * ${(1 / LM_DUST_SCALE).toFixed(3)};
+        float drift = uDustT * ${LM_DUST_DRIFT.toFixed(3)};
+        float n = vnoise(q + vec2(0.0, drift)) * 0.65
+                + vnoise(q * 2.3 + vec2(drift * 0.6, -drift * 1.7)) * 0.35;
+        float grain = 1.0 + (n - 0.5) * 2.0 * ${LM_DUST_GRAIN.toFixed(2)};
+
+        float v = coreAir(vLmPos) * dep * uHazeGain * uDustDens * grain;
+        gl_FragColor = vec4(uHaze * max(0.0, v), 1.0);
       }`,
     transparent: true,
     blending: THREE.AdditiveBlending,
