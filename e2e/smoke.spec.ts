@@ -1305,12 +1305,23 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
 
     /* And the field itself, read straight off the texture the shader samples.
        Column index is x + 1, because the grid carries a border column. */
-    const data = w.lmDebug.U.uLmMap.value.image.data;
+    const img = w.lmDebug.U.uLmMap.value.image;
+    const data = img.data;
     const COLS = 15;
+    /* Texels per cell, derived rather than assumed. The grid holds one value
+       per cell but the TEXTURE carries several texels per cell, so that
+       bilinear filtering only softens the seam at a cell edge instead of
+       smearing across a whole cell - and that ratio has changed once already.
+       Reading it off the image means the next change does not land here as a
+       mystery. */
+    const SUB = img.width / COLS;
     /* The window is always centred on the ship, so the ship's row in the grid
-       is a constant - 17 rows down from the top of it. */
+       is a constant - 17 rows down from the top of it. Sampled at the middle
+       of each cell's block, which is the value the cell actually holds. */
     const ROW = 17, x = Math.round(w.g.px);
-    const at = (dx: number) => data[(ROW * COLS + (x + 1 + dx)) * 4];
+    const mid = (SUB / 2) | 0;
+    const at = (dx: number) =>
+      data[((ROW * SUB + mid) * img.width + (x + 1 + dx) * SUB + mid) * 4];
     return {
       rockPrograms: rock.length, unlit: unlit.length,
       missing: Array.from(new Set(missing)),

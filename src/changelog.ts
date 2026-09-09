@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.3';
+export const VERSION = '0.15.4';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.4', date: '2026-09-08', title: 'Light that fits the rock',
+    notes: [
+      'The rounded blobs are gone. Light now changes at the edges of blocks, where the rock changes.',
+      'A rock face is no longer half lit with a soft curve running across it.',
+      'The lighting grid is three times finer, so nothing is smeared a whole block wide any more.'
+    ]
+  },
   {
     version: '0.15.3', date: '2026-09-08', title: 'The glow ends at the rock',
     notes: [

@@ -410,9 +410,14 @@ export const LM_HAZE_COLOR = 0xffb46a;
    interpolated value runs 0.5 at the wall, 1.0 at the centre, 0.5 at the far
    wall. Mapping that range back onto 0..1 puts the glow exactly inside the
    corridor: brightest down the middle, fading to nothing AT the rock face
-   rather than a cell past it. */
-export const LM_AIR_EDGE0 = 0.5;
-export const LM_AIR_EDGE1 = 0.98;
+   rather than a cell past it.
+
+   Since the grid went to three texels per cell the ramp is already only a
+   third of a cell wide and centred on the boundary, so these no longer have to
+   claw a whole cell back - they just keep the last sliver of glow off the rock
+   and leave a soft edge on the air. */
+export const LM_AIR_EDGE0 = 0.35;
+export const LM_AIR_EDGE1 = 0.85;
 
 /* ---------- the vignette ----------
    How much of the frame stays clear, and how black the edge goes. Deep, the

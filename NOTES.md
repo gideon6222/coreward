@@ -2716,6 +2716,46 @@ actually ended it was reading the buffer instead of reasoning about the
 picture - fifteen numbers, one call, and the answer was unambiguous. **When a
 symptom survives two correct fixes, stop fixing and start measuring.**
 
+## Resolution, not filtering (2026-09-08)
+
+Gideon, with two screenshots and a red circle round the artefact: *"that helped
+but we are still getting this overlapping rounded look. do you know what is
+causing this?"*
+
+Same family as the last one and a bigger cause. The light grid held **one texel
+per cell**, and `LinearFilter` interpolates between the CENTRES of neighbouring
+texels - so every boundary in the lighting was a soft ramp a full cell wide. A
+single rock face could be half lit with a rounded edge curving across it, and
+what the player was reading was the shape of the light grid rather than the
+shape of the rock.
+
+**One toggle proved it.** Switching the texture to `NearestFilter` made the
+blobs vanish instantly and replaced them with hard rectangles. Neither is right,
+but the pair of them says exactly where the problem lives.
+
+**The fix is a finer texture holding the same per-cell values.** Each cell now
+fills a 3x3 block of texels, so bilinear has nothing to interpolate until it
+reaches the one-texel seam at a cell boundary: the transition is a third of a
+cell instead of a whole one, too tight to read as a blob and too soft to read
+as a step, and it sits exactly on the cell edge - which is where the rock's own
+edges are.
+
+The solve is untouched and still per cell. This is a fill loop and a 19 KB
+upload instead of a 2 KB one; the frame cost went from 0.83 ms to 0.88 ms.
+
+**Four rounds on one symptom, three genuinely different causes**: a halo
+sprite, a deliberate spill, and then the sampling itself twice - once for the
+air mask, once for the whole field. Every fix was correct and every one left
+some of the circle behind, which is the most misleading shape a bug can have.
+The thing that ended it both times was reading the buffer or flipping one
+renderer setting, not reasoning about the picture.
+
+**And a test lesson.** The e2e that reads the light field indexed the texture as
+one texel per cell and broke on the resolution change. It now derives the ratio
+from `image.width`, because that ratio has changed once and will change again.
+**A test that hard-codes a layout it did not choose breaks every time the layout
+moves, and it breaks without saying why.**
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

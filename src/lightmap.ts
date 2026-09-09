@@ -37,12 +37,36 @@ export const LM_ROWS = 36;
 const LM_ABOVE = 17;
 const CELLS = LM_COLS * LM_ROWS;
 
+/* Texels per CELL, and this number is the whole answer to a complaint that
+   took four rounds to pin down: *"we are still getting this overlapping rounded
+   look."*
+
+   At one texel per cell, LinearFilter interpolates between the CENTRES of
+   neighbouring cells - so every boundary in the lighting is a soft ramp a full
+   cell wide, and a single rock face can be half lit with a rounded edge running
+   across it. What the player sees is the shape of the light grid rather than
+   the shape of the rock. Switching to NearestFilter proves it instantly: the
+   blobs vanish and are replaced by hard rectangles.
+
+   Neither is right. What is right is a finer grid holding the SAME per-cell
+   values: each cell fills a 3x3 block, so bilinear only ever interpolates
+   across the one-texel seam at a cell boundary. The transition is a third of a
+   cell instead of a whole one - too tight to read as a blob, too soft to read
+   as a step - and it sits exactly on the cell edge, which is where the rock's
+   own edges are.
+
+   It costs nothing worth measuring. The solve is unchanged and still per cell;
+   this is a fill loop and a 19 KB upload instead of a 2 KB one. */
+const LM_SUB = 3;
+const TEX_W = LM_COLS * LM_SUB;
+const TEX_H = LM_ROWS * LM_SUB;
+
 const solid = new Uint8Array(CELLS);
 const target = new Float32Array(CELLS);
 const cur = new Float32Array(CELLS);
-const data = new Uint8Array(CELLS * 4);
+const data = new Uint8Array(TEX_W * TEX_H * 4);
 
-const lmTex = new THREE.DataTexture(data, LM_COLS, LM_ROWS, THREE.RGBAFormat);
+const lmTex = new THREE.DataTexture(data, TEX_W, TEX_H, THREE.RGBAFormat);
 lmTex.minFilter = lmTex.magFilter = THREE.LinearFilter;
 lmTex.wrapS = lmTex.wrapT = THREE.ClampToEdgeWrapping;
 lmTex.generateMipmaps = false;
@@ -171,19 +195,27 @@ export function updateLight(
 
   const k = snap ? 1 : 1 - Math.exp(-LM_SMOOTH * dt);
   snap = false;
-  for (let n = 0; n < CELLS; n++) {
-    const v = cur[n] + (target[n] - cur[n]) * k;
-    cur[n] = v;
-    const b = v <= 0 ? 0 : v >= 1 ? 255 : (v * 255 + 0.5) | 0;
-    /* R is how lit it is here. G is one bit: is this cell OPEN.
+  for (let j = 0; j < LM_ROWS; j++) {
+    for (let i = 0; i < LM_COLS; i++) {
+      const n = j * LM_COLS + i;
+      const v = cur[n] + (target[n] - cur[n]) * k;
+      cur[n] = v;
+      /* R is how lit it is here. G is one bit: is this cell OPEN.
 
-       Keeping brightness and openness in separate channels is what lets the
-       air be masked sharply without also crushing a dim tunnel to black. The
-       mask is hard - 255 or 0 - and the shader re-normalises the half-value
-       that bilinear filtering leaves at a cell boundary, so the glow ends at
-       the rock face instead of a cell past it. */
-    data[n * 4] = b;
-    data[n * 4 + 1] = solid[n] ? 0 : 255;
+         Keeping brightness and openness in separate channels is what lets the
+         air be masked sharply without also crushing a dim tunnel to black. */
+      const b = v <= 0 ? 0 : v >= 1 ? 255 : (v * 255 + 0.5) | 0;
+      const open = solid[n] ? 0 : 255;
+      /* One cell fills an LM_SUB square block. Flat inside, so bilinear has
+         nothing to interpolate until it reaches the seam at the cell edge. */
+      for (let sy = 0; sy < LM_SUB; sy++) {
+        let t = ((j * LM_SUB + sy) * TEX_W + i * LM_SUB) * 4;
+        for (let sx = 0; sx < LM_SUB; sx++, t += 4) {
+          data[t] = b;
+          data[t + 1] = open;
+        }
+      }
+    }
   }
   lmTex.needsUpdate = true;
 
