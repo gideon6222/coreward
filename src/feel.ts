@@ -381,6 +381,22 @@ export const LM_OMNI_FAR = 2.8;
    asked for sharp - but not zero, or the edge aliases into stair steps as the
    ship moves. */
 export const LM_SHADOW_SOFT = 0.07;
+/* How much further than the lamp's reach the fan is cast, as a multiple of it.
+   NOT cosmetic, and the fix for the last of the "circle of light" reports.
+
+   A ray that hits nothing records the distance it gave up at, which is
+   indistinguishable from a wall standing exactly there - so with the fan cast
+   to `reach`, every unobstructed bearing claimed an occluder at `reach`. Air is
+   lit out to LM_FORWARD past that along the way the ship points, so the band
+   between the two fell into a hard-edged false shadow: an arc a fixed distance
+   in front of the ship, sliced into straight pieces by the tunnel walls,
+   sweeping down the shaft as you fly. It only ever showed where there was open
+   air far enough ahead to be lit - which is a branch you are approaching, and
+   not one you are level with, because level with it there is no air beyond.
+
+   Casting past everything that can be lit removes the false occluder without a
+   sentinel: 1.0 + LM_FORWARD is the real limit, and 2 is that with room. */
+export const LM_SHADOW_SPAN = 2.0;
 /* Rays in the shadow fan. 512 over a full turn is one ray every 0.7 degrees,
    which at the far edge of the biggest lamp in the game is about a third of a
    cell - finer than the shadow needs to be, and still only a few thousand grid

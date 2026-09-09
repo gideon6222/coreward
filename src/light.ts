@@ -39,11 +39,27 @@ export type LightOpts = {
   att: number;
   /* extra cost for a diagonal that has to slip past one rock corner */
   pinch: number;
-  /* how much of a lit face carries into the rock behind it, per cell */
-  seep: number;
-  /* how many cells into the rock that carries at all */
-  seepSteps: number;
+  /* what one step of travel THROUGH rock costs on top of its geometry */
+  solidStep: number;
 };
+
+/* Turn the feel constants, which are written in CELLS because that is the unit
+   a person can picture, into the units a solve at `sub` samples per cell needs.
+
+   Two conversions and both are one line, which is the point of doing it here
+   rather than at three call sites:
+
+     att  is per unit of detour, and a detour measured in sub-cells is `sub`
+          times the same detour measured in cells
+     solidStep falls out of the seep: travelling one CELL through rock must
+          leave exp(-att * step) equal to the per-cell seep, and that works out
+          the same whatever the sampling is
+
+   Passing sub = 1 gives cell-unit behaviour, which is what the golden tests
+   use - they are about the geometry, not the resolution. */
+export function subOpts(att: number, pinch: number, seep: number, sub: number): LightOpts {
+  return { att: att / sub, pinch, solidStep: -Math.log(seep) / att };
+}
 
 /* A binary heap over cell indices, keyed by the dist array. Written out rather
    than pulled in because the whole solver is one array walk and a dependency
@@ -99,12 +115,20 @@ let heap: Heap | null = null;
    `solid` is row-major, 1 for rock and 0 for open. `out` is written with the
    visibility of every cell in 0..1 and returned.
 
-   Rock is relaxed but never EXPANDED: a wall next to a lit tunnel is lit,
-   and light stops there. That is what keeps a sealed cave sealed - if rock
-   could pass light on, a one-cell wall would leak a third of the lamp into
-   the chamber behind it and the shadow the player is reading would be a lie.
-   The gradient into the mass is a separate seep pass below, which only ever
-   writes to rock, so it cannot leak into open air either. */
+   Rock passes light on ONLY TO MORE ROCK. That one rule does two jobs. It
+   keeps a sealed cave sealed - if rock could reach open air, a one-cell wall
+   would leak a third of the lamp into the chamber behind it and the shadow the
+   player is reading would be a lie. And it turns the fade into the mass into a
+   distance transform that comes out of the same Dijkstra, at whatever
+   resolution the grid happens to be, instead of a fixed number of whole-cell
+   passes.
+
+   That second half is why this replaced an iterated seep. A per-cell seep can
+   only ever produce per-cell values, and a cell is a big thing on screen: the
+   rock ended up as visibly distinct patches, roughly 2.5x apart in brightness
+   between neighbours, with hard edges. Running the same solve at three samples
+   per cell gives a gradient that varies WITHIN a cell and follows the shape of
+   the tunnel rather than the shape of the grid. */
 export function solveVis(
   solid: Uint8Array, cols: number, rows: number,
   si: number, sj: number,
@@ -139,7 +163,7 @@ export function solveVis(
     /* Reached, so it gets a value - then, if it is rock, the walk ends here. */
     const j = (c / cols) | 0, i = c - j * cols;
     out[c] = Math.exp(-o.att * Math.max(0, dist[c] - octile(i - si, j - sj)));
-    if (solid[c]) continue;
+    const fromRock = solid[c] !== 0;
 
     for (let k = 0; k < 8; k++) {
       const dx = NX[k], dy = NY[k];
@@ -147,10 +171,17 @@ export function solveVis(
       if (ni < 0 || ni >= cols || nj < 0 || nj >= rows) continue;
       const nc = nj * cols + ni;
       if (seen[nc]) continue;
+      /* The one rule: rock never lights open air. */
+      if (fromRock && !solid[nc]) continue;
 
       let step: number;
       if (dx === 0 || dy === 0) {
         step = 1;
+      } else if (fromRock) {
+        /* Inside the mass every neighbour is rock, so the corner rule below
+           would forbid every diagonal and the fade would come out diamond
+           shaped. */
+        step = DIAG;
       } else {
         /* Both corners rock means a diagonal crack, and light does not squeeze
            through a crack that has no opening. One corner rock means it is
@@ -160,39 +191,14 @@ export function solveVis(
         if (a && b) continue;
         step = DIAG + (a || b ? o.pinch : 0);
       }
+      /* Entering the FIRST wall is free of this: that face is the surface the
+         lamp is falling on. Only rock-to-rock pays. */
+      if (fromRock) step += o.solidStep;
       const nd = dist[c] + step;
       if (nd < dist[nc]) { dist[nc] = nd; h.push(nc); }
     }
   }
 
-  /* The gradient into the mass.
-
-     A wall one cell thick catches the lamp; the rock behind it should fade,
-     not cut to black at a cell boundary. Each pass carries a fraction of the
-     brightest neighbour one cell deeper into rock, double buffered so the
-     result does not depend on which way the loop happens to scan. */
-  for (let pass = 0; pass < o.seepSteps; pass++) {
-    spare.set(out);
-    for (let j = 0; j < rows; j++) {
-      for (let i = 0; i < cols; i++) {
-        const c = j * cols + i;
-        if (!solid[c]) continue;
-        let best = 0;
-        for (let dy = -1; dy <= 1; dy++) {
-          const nj = j + dy;
-          if (nj < 0 || nj >= rows) continue;
-          for (let dx = -1; dx <= 1; dx++) {
-            const ni = i + dx;
-            if (ni < 0 || ni >= cols || (dx === 0 && dy === 0)) continue;
-            const v = spare[nj * cols + ni];
-            if (v > best) best = v;
-          }
-        }
-        const lit = best * o.seep;
-        if (lit > out[c]) out[c] = lit;
-      }
-    }
-  }
   return out;
 }
 

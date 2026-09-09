@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { W, worldX } from './config';
 import { blockAt } from './world';
-import { solveVis, shiftField, castShadows } from './light';
+import { solveVis, shiftField, castShadows, subOpts } from './light';
 import { chainCompile } from './shader';
-import { LM_ATT, LM_PINCH, LM_SEEP, LM_SEEP_STEPS, LM_SMOOTH, LM_FLOOR_DEEP,
+import { LM_ATT, LM_PINCH, LM_SEEP, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN, LM_CONTRAST,
          LM_HAZE, LM_HAZE_COLOR, LM_INDIRECT, LM_FOCUS, LM_OMNI_NEAR, LM_OMNI_FAR,
-         LM_SHADOW_SOFT, LM_RAYS, LM_BOUNCE_RANGE, LM_BOUNCE_POW,
+         LM_SHADOW_SOFT, LM_SHADOW_SPAN, LM_RAYS, LM_BOUNCE_RANGE, LM_BOUNCE_POW,
          LM_AIR_EDGE0, LM_AIR_EDGE1, LM_GLOW_FLOOR, LM_GLOW_POW, LM_FORWARD,
          LM_AIR_AMBIENT } from './feel';
 
@@ -61,9 +61,20 @@ const LM_SUB = 3;
 const TEX_W = LM_COLS * LM_SUB;
 const TEX_H = LM_ROWS * LM_SUB;
 
+/* Two grids, because two solvers want different things from the world.
+
+   `solid` is per CELL and the shadow fan uses it: that solver is about
+   straight lines past the corners of blocks, and blocks are cells.
+
+   `solidSub` is the same world at LM_SUB samples per cell, and the flood uses
+   it. That is what makes the fade into the rock a continuous gradient rather
+   than a staircase of whole-cell values - a cell is a big thing on screen, and
+   at one sample per cell neighbouring cells came out 2.5x apart in brightness
+   with a hard edge between them. */
 const solid = new Uint8Array(CELLS);
-const target = new Float32Array(CELLS);
-const cur = new Float32Array(CELLS);
+const solidSub = new Uint8Array(TEX_W * TEX_H);
+const target = new Float32Array(TEX_W * TEX_H);
+const cur = new Float32Array(TEX_W * TEX_H);
 const data = new Uint8Array(TEX_W * TEX_H * 4);
 
 const lmTex = new THREE.DataTexture(data, TEX_W, TEX_H, THREE.RGBAFormat);
@@ -110,18 +121,19 @@ const U = {
   /* which way the lamp points, in GRID space where +y is deeper, then the
      bounce fraction and how tightly the beam narrows to the front */
   uLmDir: { value: new THREE.Vector4(0, 1, LM_INDIRECT, LM_FOCUS) },
-  /* how far the shadow edge is smeared, and the reach the fan's distances are
-     stored as a fraction of */
-  /* shadow-edge smear, the reach the fan's distances are a fraction of, and
-     how much further the light reaches ahead than to the side */
-  uLmShade: { value: new THREE.Vector3(LM_SHADOW_SOFT, 8, LM_FORWARD) },
+  /* shadow-edge smear, the SPAN the fan's distances are stored as a fraction
+     of (the lamp's reach times LM_SHADOW_SPAN, not the reach), and how much
+     further the light reaches ahead than to the side */
+  uLmShade: { value: new THREE.Vector3(LM_SHADOW_SOFT, 16, LM_FORWARD) },
   /* 1 / the bounce's own reach, the floor and curve that decide how far
      glowing things stay visible through unlit rock, and the ambient the AIR in
      a tunnel keeps - which is much more than a rock face keeps */
   uLmSoft: { value: new THREE.Vector4(1 / 14, LM_GLOW_FLOOR, LM_GLOW_POW, LM_AIR_AMBIENT) }
 };
 
-const OPTS = { att: LM_ATT, pinch: LM_PINCH, seep: LM_SEEP, seepSteps: LM_SEEP_STEPS };
+/* Cell-unit feel constants, converted once into the units a sub-cell solve
+   needs. See subOpts in light.ts. */
+const OPTS = subOpts(LM_ATT, LM_PINCH, LM_SEEP, LM_SUB);
 
 let row0 = 0;
 let srcI = -999, srcJ = -999;
@@ -146,8 +158,15 @@ function fillSolid() {
       /* Above the surface is open sky in every column, including the two
          border ones - otherwise the world edge grows walls into the air and
          the pad sits in a slot. Below it, out of bounds is rock. */
-      solid[j * LM_COLS + i] =
-        d < 0 ? 0 : x < 0 || x >= W ? 1 : blockAt(x, d) ? 1 : 0;
+      const v = d < 0 ? 0 : x < 0 || x >= W ? 1 : blockAt(x, d) ? 1 : 0;
+      solid[j * LM_COLS + i] = v;
+      /* The same world at sub-cell resolution. Blocky by construction - the
+         world IS cells - but it lets the flood put values BETWEEN cell
+         centres, which is the whole point. */
+      for (let sy = 0; sy < LM_SUB; sy++) {
+        let t = (j * LM_SUB + sy) * TEX_W + i * LM_SUB;
+        for (let sx = 0; sx < LM_SUB; sx++, t++) solidSub[t] = v;
+      }
     }
   }
 }
@@ -162,7 +181,7 @@ export function updateLight(
   const want = Math.round(pd) - LM_ABOVE;
   /* Scroll the smoothed field with the window, or descending drags every
      cell's old value one row along with it and the field smears. */
-  if (want !== row0) { shiftField(cur, LM_COLS, LM_ROWS, want - row0); row0 = want; dirty = true; }
+  if (want !== row0) { shiftField(cur, TEX_W, TEX_H, (want - row0) * LM_SUB); row0 = want; dirty = true; }
 
   /* Nothing past this point is read by anything except a shader, so on a tick
      that is not going to draw it is pure waste - and the headless seam runs
@@ -189,33 +208,25 @@ export function updateLight(
   const si = Math.round(px) + 1, sj = Math.round(pd) - row0;
   if (dirty || si !== srcI || sj !== srcJ) {
     if (dirty) fillSolid();
-    solveVis(solid, LM_COLS, LM_ROWS, si, sj, OPTS, target);
+    /* Solved on the sub-cell grid, from the sub-cell the ship's cell centre
+       falls in. */
+    const mid = (LM_SUB / 2) | 0;
+    solveVis(solidSub, TEX_W, TEX_H, si * LM_SUB + mid, sj * LM_SUB + mid, OPTS, target);
     dirty = false; srcI = si; srcJ = sj;
   }
 
   const k = snap ? 1 : 1 - Math.exp(-LM_SMOOTH * dt);
   snap = false;
-  for (let j = 0; j < LM_ROWS; j++) {
-    for (let i = 0; i < LM_COLS; i++) {
-      const n = j * LM_COLS + i;
-      const v = cur[n] + (target[n] - cur[n]) * k;
-      cur[n] = v;
-      /* R is how lit it is here. G is one bit: is this cell OPEN.
+  /* One texel per solved sample now, so this is a straight copy.
 
-         Keeping brightness and openness in separate channels is what lets the
-         air be masked sharply without also crushing a dim tunnel to black. */
-      const b = v <= 0 ? 0 : v >= 1 ? 255 : (v * 255 + 0.5) | 0;
-      const open = solid[n] ? 0 : 255;
-      /* One cell fills an LM_SUB square block. Flat inside, so bilinear has
-         nothing to interpolate until it reaches the seam at the cell edge. */
-      for (let sy = 0; sy < LM_SUB; sy++) {
-        let t = ((j * LM_SUB + sy) * TEX_W + i * LM_SUB) * 4;
-        for (let sx = 0; sx < LM_SUB; sx++, t += 4) {
-          data[t] = b;
-          data[t + 1] = open;
-        }
-      }
-    }
+     R is how lit it is here. G is one bit: is this sample OPEN. Keeping
+     brightness and openness in separate channels is what lets the air be
+     masked sharply without also crushing a dim tunnel to black. */
+  for (let n = 0; n < TEX_W * TEX_H; n++) {
+    const v = cur[n] + (target[n] - cur[n]) * k;
+    cur[n] = v;
+    data[n * 4] = v <= 0 ? 0 : v >= 1 ? 255 : (v * 255 + 0.5) | 0;
+    data[n * 4 + 1] = solidSub[n] ? 0 : 255;
   }
   lmTex.needsUpdate = true;
 
@@ -226,9 +237,13 @@ export function updateLight(
      Cast against the same `solid` grid the flood used, so the two can never
      disagree about where a wall is. */
   const reach = Math.max(0.5, range);
-  castShadows(solid, LM_COLS, LM_ROWS, px + 1, pd - row0, reach, shadowRays);
+  /* Cast PAST the lamp's reach - see LM_SHADOW_SPAN. A ray that finds nothing
+     stops at the distance it was given, so that distance has to be further
+     than any air the lamp can light, or "nothing there" reads as a wall. */
+  const span = reach * LM_SHADOW_SPAN;
+  castShadows(solid, LM_COLS, LM_ROWS, px + 1, pd - row0, span, shadowRays);
   for (let n = 0; n < LM_RAYS; n++) {
-    const f = shadowRays[n] / reach;
+    const f = shadowRays[n] / span;
     shadowData[n * 4] = f >= 1 ? 255 : f <= 0 ? 0 : (f * 255 + 0.5) | 0;
   }
   shTex.needsUpdate = true;
@@ -236,7 +251,7 @@ export function updateLight(
   U.uLmFrame.value.set(worldX(-1) - 0.5, row0 - 0.5, 1 / LM_COLS, 1 / LM_ROWS);
   U.uLmLamp.value.set(worldX(px), -pd, 1 / reach, LM_GAIN);
   U.uLmDir.value.set(dirX, dirD, LM_INDIRECT, LM_FOCUS);
-  U.uLmShade.value.set(LM_SHADOW_SOFT, reach, LM_FORWARD);
+  U.uLmShade.value.set(LM_SHADOW_SOFT, span, LM_FORWARD);
   U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), LM_GLOW_FLOOR, LM_GLOW_POW,
                       LM_AIR_AMBIENT);
   haze.position.set(0, -pd, HAZE_Z);

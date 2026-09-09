@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.4';
+export const VERSION = '0.15.5';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.5', date: '2026-09-08', title: 'A smoother fade into the rock',
+    notes: [
+      'Rock now darkens as a smooth gradient into the mass instead of in visible patches.',
+      'The fade follows the shape of the tunnel rather than the shape of the grid.',
+      'Fixed a shadow that could appear a fixed distance ahead of the ship with nothing casting it.'
+    ]
+  },
   {
     version: '0.15.4', date: '2026-09-08', title: 'Light that fits the rock',
     notes: [

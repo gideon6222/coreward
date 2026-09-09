@@ -22,7 +22,9 @@ import { loadPure } from './harness.mjs';
 
 const H = await loadPure();
 
-const OPTS = { att: H.LM_ATT, pinch: H.LM_PINCH, seep: H.LM_SEEP, seepSteps: H.LM_SEEP_STEPS };
+/* Cell units - sub = 1. These tests are about the geometry, not the sampling
+   resolution the game happens to solve at. */
+const OPTS = H.subOpts(H.LM_ATT, H.LM_PINCH, H.LM_SEEP, 1);
 
 /* Build a grid from rows of text. '#' is rock, anything else is open. */
 function grid(rows) {
@@ -394,4 +396,42 @@ test('the whole of the first wall is lit, not just where a ray clips it', () => 
     `${dark} of ${total} samples on the lit face of a wall are in its own shadow`);
 
   assert.ok(!lit(out, 3, 7, 11, 7), 'and the cell behind the wall is still shadowed');
+});
+
+test('a ray that finds nothing must not read as a wall at the lamp\'s reach', () => {
+  /* The last of five "there is a circle of light around the ship" reports, and
+     the only one that was in the fan rather than in the field.
+
+     rayHit stops at the distance it is given and returns it, so an
+     unobstructed bearing and a wall standing exactly at that distance record
+     the same number. The shader cannot tell them apart: it shadows everything
+     further away on that bearing. Air, though, is lit out to LM_FORWARD past
+     the reach along the way the ship points - so the band between the two fell
+     into a hard-edged false shadow that sat a fixed distance ahead of the ship
+     and swept down the shaft as it flew, sliced into straight-edged pieces by
+     the tunnel walls.
+
+     Which is why it only showed APPROACHING a branch and not at one: level
+     with the branch there is no lit air beyond the reach to be wrongly cut.
+
+     The fix is that the fan is cast to reach x LM_SHADOW_SPAN, so "nothing
+     there" always records further than any air that can be lit. This asserts
+     the span actually covers the lit region - the two constants have to move
+     together, and nothing else would notice if they did not. */
+  assert.ok(H.LM_SHADOW_SPAN > 1 + H.LM_FORWARD,
+    `the fan is cast to ${H.LM_SHADOW_SPAN}x reach but air is lit to ` +
+    `${1 + H.LM_FORWARD}x, so the gap reads as a shadow`);
+
+  /* Big enough that the whole span stays inside it: a ray leaving the grid
+     records where it left, which would fail this for the wrong reason. */
+  const open = Array.from({ length: 45 }, () => '.'.repeat(45));
+  const reach = 8;
+  const out = fan(open, 22, 22, 512, reach * H.LM_SHADOW_SPAN);
+  /* Every point the lamp can light, in every direction, is clear of it. */
+  const d = reach * (1 + H.LM_FORWARD);
+  for (let k = 0; k < 512; k++) {
+    const a = ((k + 0.5) / 512) * Math.PI * 2;
+    assert.ok(lit(out, 22, 22, 22 + Math.cos(a) * d, 22 + Math.sin(a) * d),
+      `open air ${d} cells out on bearing ${k} is in shadow`);
+  }
 });
