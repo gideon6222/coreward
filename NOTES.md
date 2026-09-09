@@ -2612,6 +2612,42 @@ time the view changes, and it breaks in a way that does not say why.** The
 replacements read the dash array, the printed percentage and `textContent` -
 all things the player can see.
 
+## The last thing that ignored the light field (2026-09-08)
+
+Gideon: *"there still appears to be a circle of light that surrounds the ship on
+the tunnel level of the light ... this makes it look like light is clipping
+through the rock."*
+
+`lampGlow` - two additive sprites centred on the ship, standing in for "there is
+a lamp here". It predates the propagated light entirely, and additive quads know
+nothing about geometry, so it painted a soft circle over whatever was behind it,
+solid rock included. Every other source in the frame had been brought under the
+light field over three sessions; this one was never revisited because it was
+doing its original job perfectly well.
+
+**It is gone, and nothing replaces it.** The propagated light already puts light
+in the tunnel and the emissive lens housings on the nose are the visible source.
+The only thing lost was the Scanner's silhouette - the halo used to grow with
+the upgrade - and that moved to the lenses, which is the more honest version
+anyway: a bigger lamp rather than a bigger smudge. They are a third of a cell
+across and sit on the hull, so they cannot paint over anything.
+
+**The lesson is about the sequence, not the sprite.** A fake put in before the
+real system exists does not announce itself when the real system arrives - it
+keeps working, and it keeps being the one thing in the frame obeying different
+rules. The cone went when the light started propagating; this halo survived two
+more rounds of "the lighting still looks wrong" because it was small enough to
+read as part of the ship. **When a lighting model lands, audit everything that
+emits light, not just the thing being replaced.**
+
+Also this round: the fuel dial lost its outer tachometer ring. *"dont want the
+gas gauge to have the blue bar that goes up when the moving or digging."* It was
+asked for one round earlier and it was wrong in practice for a reason worth
+keeping: **a gauge you check under pressure should not be moving for reasons
+unrelated to the check.** Fuel is the reading that decides whether to turn round,
+and a second arc sweeping round it every time you touch the d-pad turns a
+glance into a parse.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

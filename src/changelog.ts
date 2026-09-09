@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.0';
+export const VERSION = '0.15.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.1', date: '2026-09-08', title: 'Nothing spare on the dial',
+    notes: [
+      'The fuel gauge lost its outer load ring. It was moving every time you did, which is not what a gauge is for.',
+      'No more circle of light around the ship. The lamps on its nose are the source now, and rock stops the light like everything else.',
+      'The Scanner grows those lamps instead, so the upgrade is still something you can see.'
+    ]
+  },
   {
     version: '0.15.0', date: '2026-09-08', title: 'The panel',
     notes: [

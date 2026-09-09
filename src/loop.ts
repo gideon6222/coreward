@@ -30,7 +30,7 @@ import { spray, stepParticles, dust, dustMat, starMat, sunSprite } from './parti
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
 import { moveAndCollide, thrust, laneVel } from './fly';
-import { player, rig, bit, flames, lampGlow, drillTint, FACE_ANGLE, SHIP_Z, GLOW_Z } from './ship';
+import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
@@ -560,18 +560,21 @@ export function tick(raw: number, draw = true) {
   shipKey.position.set(px + 0.35, py + 0.5, 1.5);
   lamp.distance = S.light();
 
-  /* The lamp's own glow. Invisible in daylight, because a visible light source
-     against a bright sky reads as a bug; grown by the Scanner Array, so the
-     upgrade still has a silhouette now that the cone is gone. Scaled rather
-     than faded - the sprite material is shared. */
+  /* The headlamp lenses. Dim in daylight, because a visible lamp against a
+     bright sky reads as a bug, and grown by the Scanner Array so the upgrade
+     is still something you can see rather than something you take on trust.
+
+     These are a third of a cell across and sit on the hull, so unlike the wide
+     halo they replaced they cannot paint a circle over the rock behind them.
+     Scaled rather than faded: the sprite material is shared with every other
+     glow of its colour. */
   const dark = depthT(g.pd);
-  lampGlow.position.set(px, py, GLOW_Z);
-  lampGlow.visible = dark > 0.02;
-  /* Scanner runs 8 m at level 0 to 29.6 m at level 9, mapped to between one
-     and two glow widths. Proportional would put a glow eight cells across on
-     the screen, which stops reading as a lamp and starts reading as fog. */
+  /* Scanner runs 8 m at level 0 to 29.6 m at level 9, mapped to between one and
+     two lamp widths. Proportional would put a lens the size of the ship on the
+     nose of the ship. */
   const reach = 1 + ((S.light() - 8) / 21.6) * 0.95;
-  lampGlow.scale.setScalar(reach * (0.35 + 0.65 * dark));
+  const lens = 0.3 * reach * (0.3 + 0.7 * dark);
+  for (const f of lensFlares) f.scale.set(lens, lens, 1);
 
   if (g.mode !== 'fly') {
     const target = FACE_ANGLE[g.face];
@@ -597,11 +600,6 @@ export function tick(raw: number, draw = true) {
      frame, where +y is deeper, is (sin, cos). */
   const fz = rig.rotation.z;
   updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw);
-
-  /* What the load needle reads. Drilling pins it; thrusting drives it in
-     proportion. Published before the HUD is written so the needle and the
-     flames can never describe different frames. */
-  R.load = Math.max(thrustLevel, R.digging ? 1 : 0);
 
   const fscale = 0.25 + thrustLevel * 1.15;
   for (const f of flames) {

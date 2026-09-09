@@ -246,6 +246,10 @@ for (const sx of [-0.28, 0.28]) {
    a highlight. They are the brightest thing on the ship by a wide margin now,
    and the hull around them is nearly black - which is what "light coming from
    the ship" looks like. */
+/* Held so the Scanner can grow them. That upgrade used to be read off the size
+   of the halo; with the halo gone the lamps themselves carry it, which is the
+   more honest version anyway - a bigger lamp, not a bigger smudge. */
+export const lensFlares: THREE.Sprite[] = [];
 const lensMat = new THREE.MeshStandardMaterial({
   color: 0xffdca8, emissive: 0xffc879, emissiveIntensity: 1.9,
   metalness: 0, roughness: 1, flatShading: true
@@ -263,6 +267,7 @@ for (const sx of [-0.15, 0.15]) {
   const flare = makeGlow(0xffc87a, 0.3, 0.55);
   flare.position.set(sx, -0.3, 0.3);
   rig.add(flare);
+  lensFlares.push(flare);
 }
 
 /* ---------- thrusters ---------- */
@@ -286,56 +291,31 @@ for (const sx of [-0.19, 0.19]) {
   flames.push({ cone: fl, glow: fg });
 }
 
-/* ---------- the lamp's own glow ----------
-
-   This replaces a volumetric cone, and the reason is worth keeping.
-
-   The cone was a shape drawn where light was SUPPOSED to be. It pointed the
-   way the drill pointed and ended at a hard mouth, so the light in the game
-   was a triangle no matter what the tunnel around it was doing - a beam that
-   went through solid rock as happily as through open air. The propagated field
-   in lightmap.ts now decides where light actually reaches, which leaves the
-   ship exactly one thing to draw: the source itself.
-
-   Two additive quads, a tight core and a wide soft one - the same pair the ore
-   haloes use, for the same reason: additive blending sums, so the dim one can
-   be three times the size for nothing, and together they have a far longer
-   tail than one gradient can.
-
-   The Scanner still has a silhouette. It scales the glow rather than
-   lengthening a cone, which is the honest version of the same signal: a bigger
-   lamp, not a longer triangle. Scaled rather than faded because the sprite
-   material is shared with every other glow of its colour. */
-export const lampGlow = new THREE.Group();
-lampGlow.add(makeGlow(0xffc078, 2.6, 0.13));
-lampGlow.add(makeGlow(0xffd9a0, 0.8, 0.34));
-/* BEHIND the ship, not in front of it.
-
-   In front, an additive quad centred on the lamp washes straight over the hull
-   and the ship renders as a bright blob with no facets - which is the exact
-   fault the render layers were added to fix, arriving by a different route.
-   Behind, the ship silhouettes against its own light, which is what a lamp on
-   a machine actually looks like. Still forward of z = 0, because the ship
-   spends its life in a one-cell tunnel and at zero the terrain occludes it. */
 /* The z stack, and why these numbers are what they are.
 
    Rock cells are unit cubes at z 0, and the displacement shader pushes their
    vertices up to a fifth of a cell either way, so a rock FACE can reach 0.7.
    The haze quad has to sit in front of all of that or bulges in a tunnel wall
-   draw over it as chips of lit rock floating in the fog; it is at 0.74. And
-   the ship has to sit in front of the haze, because an additive quad drawn
-   over the hull washes it flat - the exact fault the render layers were added
-   to fix, arriving by another route.
+   draw over it as chips of lit rock floating in the fog; it is at 0.74. And the
+   ship has to sit in front of the haze, because an additive quad drawn over the
+   hull washes it flat.
 
-   So: rock to 0.7, haze at 0.74, the lamp's glow just behind the ship, the
-   ship in front of everything. Moving the ship forward a third of a unit
-   against a camera twenty units away is a one per cent scale change, which is
-   the whole cost of getting the order right. */
+   So: rock to 0.7, haze at 0.74, the ship in front of everything. */
 export const SHIP_Z = 0.95;
-export const GLOW_Z = 0.80;
-lampGlow.position.z = GLOW_Z;
-lampGlow.renderOrder = 2;
-scene.add(lampGlow);
+
+/* The wide lamp halo is gone, and it is worth saying why it existed and why it
+   had to go.
+
+   It was two additive sprites centred on the ship, standing in for "there is a
+   lamp here". Additive quads know nothing about geometry, so it painted a soft
+   circle over whatever was behind it - including solid rock. Playtest: *"there
+   still appears to be a circle of light that surrounds the ship ... this makes
+   it look like light is clipping through the rock."* Exactly right, and it was
+   the one thing left in the frame that ignored the light field entirely.
+
+   Nothing replaces it. The propagated light already puts light in the tunnel,
+   the lens housings below are the visible source, and the halo was the last
+   survivor of the era when a sprite had to fake all of that. */
 
 /* Shrunk against the terrain so the world reads as large. The squash animation
    scales `player`, so scaling `rig` here does not interfere with it. */

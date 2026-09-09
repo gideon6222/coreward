@@ -8,8 +8,8 @@
 
    Three readings on two dials, in the corner the left thumb already lives in:
 
-     the big dial   FUEL on the main scale and needle, DRILL LOAD on the outer
-                    ring, and CARGO on a sub-dial let into the face
+     the big dial   FUEL on the main scale and needle, with CARGO on a
+                    sub-dial let into the face
      the small dial HULL, with heat soak as a red sector eating the top of the
                     scale - the same story the old bar told, in the shape a
                     pressure gauge tells it
@@ -34,7 +34,6 @@ import { asExpRate } from './feel';
    ever falls slowly; the load needle is quick because it is showing something
    that changes in a tenth of a second. */
 const NEEDLE_FUEL = asExpRate(9);
-const NEEDLE_LOAD = asExpRate(26);
 const NEEDLE_SLOW = asExpRate(11);
 
 type Dial = {
@@ -51,7 +50,7 @@ function needle(id: string, rate: number, cx: number, cy: number, sweep: number)
   return d;
 }
 
-let fuelN: Dial, loadN: Dial, weightN: Dial, hullN: Dial;
+let fuelN: Dial, weightN: Dial, hullN: Dial;
 
 const arcs: Record<string, SVGElement | null> = {};
 function setArc(id: string, v: number, fromEnd = false) {
@@ -102,20 +101,18 @@ export function buildGauges() {
   ticks('hullTicks', 12, 25, 32.5, 3, 50, 50, 118);
 
   fuelN = needle('fuelNeedle', NEEDLE_FUEL, 50, 50, 120);
-  loadN = needle('loadNeedle', NEEDLE_LOAD, 50, 50, 120);
   weightN = needle('weightNeedle', NEEDLE_SLOW, 50, 68, 78);
   hullN = needle('hullNeedle', NEEDLE_SLOW, 50, 50, 118);
 
-  for (const id of ['loadArc', 'weightArc', 'soakArc']) {
+  for (const id of ['weightArc', 'soakArc']) {
     arcs[id] = document.getElementById(id) as unknown as SVGElement | null;
   }
 }
 
 /* Targets, set from game state. Nothing here draws a frame. */
-export function setGauges(fuel: number, load: number, weight: number, hull: number, soak: number) {
+export function setGauges(fuel: number, weight: number, hull: number, soak: number) {
   if (!built) return;
   fuelN.want = clamp(fuel, 0, 1);
-  loadN.want = clamp(load, 0, 1);
   weightN.want = clamp(weight, 0, 1);
   hullN.want = clamp(hull, 0, 1);
   /* Soak has no needle, so it is written straight through: it is a sector on
@@ -139,8 +136,7 @@ export function stepGauges(dt: number) {
     const deg = -d.sweep + d.cur * d.sweep * 2;
     d.el.setAttribute('transform', `rotate(${deg.toFixed(2)} ${d.cx} ${d.cy})`);
   }
-  /* The arcs follow the SMOOTHED needle rather than the raw reading, so an arc
-     and the needle over it can never disagree mid-sweep. */
-  setArc('loadArc', loadN.cur);
+  /* The cargo arc follows the SMOOTHED needle rather than the raw reading, so
+     the arc and the needle over it can never disagree mid-sweep. */
   setArc('weightArc', weightN.cur);
 }

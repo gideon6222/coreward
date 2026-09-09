@@ -146,10 +146,9 @@ export function updateHUD() {
   const cooking = drain > 0;
   ui.hullTxt.classList.toggle('hot', cooking);
   ui.hullTxt.textContent = cooking ? 'HULL  -' + drain.toFixed(1) + '/s' : 'HULL';
-  /* One call for all four readings, so the dials cannot end up describing
-     different frames. Load is the drill and the thrusters together - the one
-     thing on the panel that moves fast enough to be worth a needle. */
-  setGauges(fuelFrac, R.load, weightFrac, hullFrac, clamp(g.soak, 0, 1));
+  /* One call for every reading, so the dials cannot end up describing
+     different frames. */
+  setGauges(fuelFrac, weightFrac, hullFrac, clamp(g.soak, 0, 1));
 
   /* Ember edges are heat. They hold a floor the moment you cross the line,
      because damage starts there whether or not you have soaked yet, and fade

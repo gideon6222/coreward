@@ -17,12 +17,6 @@ export const R = {
   /* input -> loop */
   held: null as Dir | null,
 
-  /* loop -> ui: how hard the machine is working right now, 0 to 1 - the drill
-     while it is cutting, the thrusters while they are firing. Lives here only
-     because the instrument cluster needs a needle for it and thrustLevel is a
-     local of the frame loop. */
-  load: 0,
-
   /* actions <-> loop */
   /* Velocity, in cells per second. Replaced the cell-to-cell `moving` lerp:
      the ship has a position and a speed now, and the frame loop integrates
