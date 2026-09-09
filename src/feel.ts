@@ -393,24 +393,26 @@ export const LM_RAYS = 512;
    looking empty and starts looking filled in. */
 export const LM_HAZE = 0.52;
 export const LM_HAZE_COLOR = 0xffb46a;
-/* How far the glow in a tunnel spills onto the rock at its edge. Zero.
+/* Where the glow in a tunnel stops, as a threshold on the openness mask.
 
-   It was 0.5, to stop wall bulges reading as unlit rock inside a glowing
-   shaft. That was the wrong fix for that problem - moving the haze quad in
-   FRONT of the terrain solved it properly a version later - and it caused a
-   worse one: every rock cell touching open air took half the tunnel's glow as
-   an additive wash, so a warm circle bled out over the rock faces around the
-   ship and softened the very shadow edges the ray fan exists to draw.
+   This is the fix for a circle of light that survived deleting a halo sprite
+   AND zeroing a deliberate spill, because it was never either of those: it is
+   what bilinear filtering does to a one-texel spike.
 
-   Gideon: *"it looks the tunnel light is still showing in a circle around the
-   ship and shows on the face of the rocks, making the sharp shadows not quite
-   look right."*
+   The light grid is one texel per CELL, and a tunnel is one cell wide, so the
+   open channel is a single 255 with 0 on both sides. Sampled with LinearFilter
+   that ramps to zero only at the neighbouring texel's centre - a full cell into
+   the rock, in every direction. A one-cell corridor therefore paints a
+   three-cell soft blob, which is exactly the "circle of light around the ship
+   that bleeds through the rock" three playtests in a row described.
 
-   Kept as a constant rather than deleted because it is exactly the dial to
-   reach for if a wall bulge ever reads as a hole in the glow again. The half
-   texel of bilinear softening at an open/solid boundary is doing that job on
-   its own now. */
-export const LM_HAZE_SPILL = 0;
+   The mask is hard (255 open, 0 solid), so across a one-cell corridor the
+   interpolated value runs 0.5 at the wall, 1.0 at the centre, 0.5 at the far
+   wall. Mapping that range back onto 0..1 puts the glow exactly inside the
+   corridor: brightest down the middle, fading to nothing AT the rock face
+   rather than a cell past it. */
+export const LM_AIR_EDGE0 = 0.5;
+export const LM_AIR_EDGE1 = 0.98;
 
 /* ---------- the vignette ----------
    How much of the frame stays clear, and how black the edge goes. Deep, the

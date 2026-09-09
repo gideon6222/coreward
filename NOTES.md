@@ -2679,6 +2679,43 @@ from a deliberate choice.
 Kept as a constant at zero rather than deleted, because it is exactly the dial
 to reach for if a wall bulge ever reads as a hole in the glow again.
 
+## The circle was the texture filter (2026-09-08)
+
+Third time asked, third different cause, and this was the real one.
+
+Round one it was a halo sprite. Round two it was a deliberate half-cell spill.
+Both were genuinely making a circle, both were removed, and the circle was
+still there: *"it looks like we are still getting the circle of tunnel light
+coming from the ship and it looks like it bleeds through the rock still."*
+
+**I stopped guessing and printed the air channel across the ship's row:**
+
+    0   0   0   0   0   0   0 255   0   0   0   0   0   0   0
+
+One texel. That is the whole tunnel - the grid is one texel per CELL and a
+tunnel is one cell wide. Sampled with `LinearFilter`, a one-texel spike ramps
+to zero only at the NEIGHBOURING texel's centre, which is a full cell into the
+rock in every direction. A one-cell corridor was painting a three-cell soft
+blob. The data was perfect; the filter was the bug.
+
+**The fix separates brightness from shape.** R stays the eased light value; G
+becomes a hard openness bit, 255 or 0. The shader multiplies them and puts the
+mask through `smoothstep(0.5, 0.98)`, which is not a fudge factor: bilinear
+leaves exactly 0.5 at a cell boundary and 1.0 at a cell centre, so
+re-normalising that range lands the glow precisely inside the open cell -
+brightest down the middle, gone AT the rock face.
+
+They had to be separate channels. Sharpening the old combined value would have
+crushed every dim tunnel to black, because "dim" and "outside the tunnel" were
+the same number.
+
+**The lesson is about how long it took.** Two rounds were spent removing things
+that were genuinely causing a circle, which made each removal feel like
+progress and each remaining circle feel like "not quite enough". The thing that
+actually ended it was reading the buffer instead of reasoning about the
+picture - fifteen numbers, one call, and the answer was unambiguous. **When a
+symptom survives two correct fixes, stop fixing and start measuring.**
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

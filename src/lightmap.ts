@@ -7,7 +7,7 @@ import { LM_ATT, LM_PINCH, LM_SEEP, LM_SEEP_STEPS, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN, LM_CONTRAST,
          LM_HAZE, LM_HAZE_COLOR, LM_INDIRECT, LM_FOCUS, LM_OMNI_NEAR, LM_OMNI_FAR,
          LM_SHADOW_SOFT, LM_RAYS, LM_BOUNCE_RANGE, LM_BOUNCE_POW,
-         LM_HAZE_SPILL, LM_GLOW_FLOOR, LM_GLOW_POW, LM_FORWARD,
+         LM_AIR_EDGE0, LM_AIR_EDGE1, LM_GLOW_FLOOR, LM_GLOW_POW, LM_FORWARD,
          LM_AIR_AMBIENT } from './feel';
 
 /* The grid the solver works on, and the bridge from it to every shader.
@@ -175,17 +175,15 @@ export function updateLight(
     const v = cur[n] + (target[n] - cur[n]) * k;
     cur[n] = v;
     const b = v <= 0 ? 0 : v >= 1 ? 255 : (v * 255 + 0.5) | 0;
-    /* R is how lit a SURFACE here is. G is the same number but only in cells
-       that are open, which is what the haze below draws: light in the air of a
-       tunnel rather than light on the rock around it. Two channels of one
-       upload - the alternative is a second texture for one bit of extra
-       information. */
+    /* R is how lit it is here. G is one bit: is this cell OPEN.
+
+       Keeping brightness and openness in separate channels is what lets the
+       air be masked sharply without also crushing a dim tunnel to black. The
+       mask is hard - 255 or 0 - and the shader re-normalises the half-value
+       that bilinear filtering leaves at a cell boundary, so the glow ends at
+       the rock face instead of a cell past it. */
     data[n * 4] = b;
-    /* A solid cell keeps a share rather than nothing, so the glow spills onto
-       the lip of the tunnel wall. Without it, the bulges the displacement
-       pushes into a tunnel sat in the middle of a lit shaft completely unlit,
-       and read as rock poking through the fog. */
-    data[n * 4 + 1] = solid[n] ? (b * LM_HAZE_SPILL) | 0 : b;
+    data[n * 4 + 1] = solid[n] ? 0 : 255;
   }
   lmTex.needsUpdate = true;
 
@@ -303,11 +301,18 @@ const DECL = `
   /* Light in the AIR of a tunnel. The flood spreads it through everything
      connected; the beam makes the tunnel you are facing the brightest; the fan
      throws a hard wedge into a branch the beam passes. The bounce underneath
-     is why that branch is still readable rather than a hole. */
+     is why that branch is still readable rather than a hole.
+
+     Brightness comes from the R channel and the shape from the hard mask in G.
+     The smoothstep is doing something specific: bilinear filtering leaves 0.5
+     at a cell boundary and 1.0 at a cell centre, so re-normalising that range
+     lands the glow exactly inside the open cell. Without it a one-cell tunnel
+     paints a three-cell blob - see LM_AIR_EDGE0 in feel.ts. */
   float coreReachAir(vec2 p) {
     vec2 dg = coreOffset(p);
     vec4 t = coreTerms(dg);
-    float air = texture2D(uLmMap, coreUv(p)).g;
+    vec4 lm = texture2D(uLmMap, coreUv(p));
+    float air = lm.r * smoothstep(${LM_AIR_EDGE0.toFixed(2)}, ${LM_AIR_EDGE1.toFixed(2)}, lm.g);
     /* The fan is indexed by angle and holds distance as a fraction of reach.
        Anything further from the lamp than the occluder on its own bearing is
        behind something. The smear is a twentieth of a cell, purely so the edge

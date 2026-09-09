@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.2';
+export const VERSION = '0.15.3';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.3', date: '2026-09-08', title: 'The glow ends at the rock',
+    notes: [
+      'The light in a tunnel is now exactly the width of the tunnel, and stops at the wall.',
+      'No more soft circle around the ship - that was the light grid being blurred a whole cell wide.',
+      'A crossing reads as a cross, a shaft reads as a shaft.'
+    ]
+  },
   {
     version: '0.15.2', date: '2026-09-08', title: 'Light stays in the tunnel',
     notes: [
