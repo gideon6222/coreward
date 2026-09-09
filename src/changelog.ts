@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.20.0';
+export const VERSION = '0.21.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.21.0', date: '2026-09-09', title: 'A way in',
+    notes: [
+      'A title screen, with Continue, New Game, Settings and Notes.',
+      'First time you play, a short intro tells you where you are and what you are trying to do.',
+      'It says the thing the game never used to: five jump drive components, one on each kind of world, and they open a route to the Heart.',
+      'Tap to move it along, or skip it entirely. It plays over the real starfield, with the real ship and real worlds.'
+    ]
+  },
   {
     version: '0.20.0', date: '2026-09-09', title: 'Every world has its own weather',
     notes: [

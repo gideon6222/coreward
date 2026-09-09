@@ -2,7 +2,7 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import { HULL_MAX, UPGRADES, SUPPLIES } from './config';
-import { g, S, save, load } from './state';
+import { g, S, save, load, hasSave } from './state';
 import { R } from './runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks } from './blocks';
@@ -18,6 +18,7 @@ import { lmDebug } from './lightmap';
 import { sfx } from './audio';
 import { setCoreHandler, breakCore } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
+import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
 
 /* actions.ts raises "a core broke"; chartui.ts answers it. Wired here rather
@@ -62,6 +63,38 @@ installPanelGrain();
 /* Ticks and needle handles, before updateHUD() first writes to them. */
 buildGauges();
 document.getElementById('boot')!.classList.add('hidden');
+
+/* ============ the way in ============
+
+   The game used to boot straight into a ship on a pad. It still does all of
+   the setup above first - the world is built, the ship is dressed, the HUD is
+   written - so whichever screen goes in front of it is standing over a game
+   that is ready to run, and starting is a matter of hiding a div rather than
+   of loading anything.
+
+   First run gets the intro; a returning player gets the title. `hasSave()` is
+   asked rather than a flag of our own, because "has this player been here"
+   and "is there something to continue" are the same question and keeping them
+   as one is what stops a CONTINUE button that continues nothing. */
+setStartHandler((fresh: boolean) => {
+  if (fresh) {
+    /* hardReset() already put the state back; this re-reads it into everything
+       downstream that caches a derived value. */
+    lamp.distance = S.light();
+    setDrillTier(g.up.drill);
+    setUpgradeHardware(g.up);
+    setMark(g.best.depth);
+    syncBlocks(true);
+  }
+  g.fuel = S.fuelCap();
+  g.hull = S.hullCap();
+  g.mode = 'play';
+  updateHUD();
+  save();
+});
+wireTitle();
+if (hasSave()) showTitle(); else showIntro();
+
 window.addEventListener('visibilitychange', () => { save(); if (document.hidden) sfx.digStop(); });
 setInterval(save, 5000);
 requestAnimationFrame(frame);
@@ -97,6 +130,16 @@ if (new URLSearchParams(location.search).has('debug')) {
        the game sits in 'boom' forever. Through the seam it is the same
        instance the game is running. */
     breakCore, openChart, arrive, skipTransit,
+    showTitle, showIntro,
+    /* Jump the intro to a beat and repaint it. Through the seam and not a
+       dynamic import, because under the dev server an import() resolves to a
+       different module instance than the one the loop is running - the same
+       trap that made breakCore sit in 'boom' forever. */
+    introTo: (i: number) => {
+      showIntro();
+      if (R.intro) { R.intro.i = i; R.intro.t = 0; }
+      paintBeat();
+    },
     pickBay, selectBay, selectedBay, bays, stationCamera,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */

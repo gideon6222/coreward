@@ -22,6 +22,8 @@ export type Transit = {
 };
 
 export const R = {
+  /* the intro's beat clock while it is running; see intro.ts */
+  intro: null as { i: number; t: number; done: boolean } | null,
   /* the per-world ambience clock; see ambience.ts */
   amb: { t: 0 },
   /* The timed consumables, while they are running.

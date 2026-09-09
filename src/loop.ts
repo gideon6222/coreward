@@ -44,7 +44,9 @@ import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showE
          stopDigging , absorb} from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
-import { isCrossing, stepTransit, renderTransit } from './transit';
+import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase } from './transit';
+import { introTick, beatT } from './intro';
+import { endIntro, paintBeat } from './titleui';
 import { arrive } from './chartui';
 
 export const FACE_VEC: Record<Dir, number[]> =
@@ -604,6 +606,33 @@ export function tick(raw: number, draw = true) {
      lamp, the world ambience, the vignette - is about being underground, and
      running it against a ship that is no longer in that world would fight the
      station's own framing. So the loop stops here and draws the room. */
+  /* The title screen and the intro, before anything else. Both run on the
+     showcase - the crossing's own scene - so the ship has been reparented out
+     of the world and nothing underground applies to it.
+
+     The intro's clock runs on `raw`: it is a sequence of pictures, not
+     simulation, and hit-stop cannot be in flight before the game has started
+     anyway. */
+  if (isShowcase()) {
+    if (g.mode === 'intro' && R.intro) {
+      const st = R.intro;
+      if (introTick(st, raw)) {
+        if (st.done) endIntro();
+        else paintBeat();
+      }
+      /* Held in a local, because endIntro() clears R.intro and the very next
+         line reads it. The intro's last beat therefore threw on the frame it
+         finished on - every single time, and only then, which is exactly the
+         shape of bug that survives a demo. */
+      stepShowcase(clock, beatT(st));
+    } else {
+      stepShowcase(clock, 1);
+    }
+    tickToast(raw);
+    if (draw) renderTransit();
+    return;
+  }
+
   /* The crossing between worlds, for the same reason and in the same place as
      the station: the ship has been reparented into another scene, so none of
      the underground machinery below applies to it. */

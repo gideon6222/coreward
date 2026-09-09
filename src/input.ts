@@ -1,4 +1,5 @@
 import { coreDepth, planetName, traitOf, SUPPLIES, RELIC_OF } from './config';
+import { atTitle, showTitle } from './titleui';
 import { relicDistance } from './relic';
 import { g , coreM, worldTrait} from './state';
 import { haulValue } from './world';
@@ -150,7 +151,16 @@ ui.btnLog.onclick = () => {
   ui.btnLog.textContent = closed ? 'HIDE' : 'RUN LOG';
 };
 
-mustEl('btnResume').onclick = () => { sfx.ui(); ui.pause.classList.add('hidden'); g.mode = 'play'; };
+mustEl('btnResume').onclick = () => {
+  sfx.ui();
+  ui.pause.classList.add('hidden');
+  /* The pause sheet doubles as the title screen's Settings, so closing it has
+     two destinations. Reading the mode rather than a flag of its own: `title`
+     is already the fact being asked about, and a second boolean tracking the
+     same thing is a second thing to get out of step. */
+  if (atTitle()) { showTitle(); return; }
+  g.mode = 'play';
+};
 ui.btnReset.onclick = () => {
   if (resetArmed === 0) {
     resetArmed = 1;

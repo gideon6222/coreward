@@ -166,6 +166,23 @@ export function grandfatherStock(): Cargo {
   return out;
 }
 
+/* Has this player been here before?
+
+   Asked before load() has done anything, so the title screen can tell a first
+   run from a returning one. Both keys, because a save written by the pre-v2
+   game is still someone's progress and offering them NEW GAME as the only
+   option would throw it away. */
+export function hasSave(): boolean {
+  try {
+    return !!(localStorage.getItem(SAVE_KEY) || localStorage.getItem(OLD_KEY));
+  } catch (e) {
+    /* Private browsing, or storage blocked. No save is the safe answer: the
+       worst case is a returning player being shown the intro, and the
+       alternative is a CONTINUE button that continues nothing. */
+    return false;
+  }
+}
+
 /* ============ save ============ */
 export function save() {
   try {

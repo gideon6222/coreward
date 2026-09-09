@@ -229,6 +229,117 @@ export function stepTransit(t: number, clock: number) {
   key.color.setHex(t > 0.7 ? toPal.haze : 0xfff0dd);
 }
 
+/* ---------- the showcase ----------
+
+   The title screen and the intro run on this same scene rather than on one of
+   their own. Everything they need already exists here and is already correct:
+   a starfield at three depths, a planet painted from a real palette, the ship,
+   and a world coming apart in pieces. A second scene would be a second place
+   for a world to be drawn, and the two would drift.
+
+   What a beat can ask for is deliberately small - which world, is the ship in
+   frame, is it breaking - because the intro is a sequence of pictures and not
+   a second renderer. */
+export interface Shot {
+  /* which world's palette the planet is painted in, or -1 for no planet */
+  world: number;
+  /* how big it sits in frame, 0..1 */
+  size: number;
+  ship: boolean;
+  breaking: boolean;
+}
+
+let shot: Shot = { world: -1, size: 0, ship: false, breaking: false };
+let showing = false;
+export function isShowcase() { return showing; }
+
+export function beginShowcase() {
+  if (showing) return;
+  showing = true;
+  transitScene.add(player);
+  player.scale.setScalar(1.35);
+  rig.rotation.set(0, 0, 0);
+  for (const f of flames) { f.cone.visible = true; f.glow.visible = true; }
+  transitScene.background = new THREE.Color(0x05070e);
+  from.grp.visible = false;
+  to.grp.visible = false;
+  debris.visible = false;
+}
+
+export function endShowcase() {
+  if (!showing) return;
+  showing = false;
+  gameScene.add(player);
+  player.scale.setScalar(1);
+  rig.rotation.set(0, 0, 0);
+  player.visible = true;
+  from.grp.visible = false;
+  to.grp.visible = false;
+  debris.visible = false;
+}
+
+export function setShot(next: Shot) { shot = next; }
+
+/* `t` is how far into the current beat, 0..1, so a beat eases its planet in
+   rather than cutting to it. */
+export function stepShowcase(clock: number, t: number) {
+  const ease = t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+
+  player.visible = shot.ship;
+  if (shot.ship) {
+    /* Nose up and drifting, the same orientation the crossing uses - a ship
+       pointed at the floor in open space reads as falling. */
+    player.position.set(-0.9 + Math.sin(clock * 0.5) * 0.12,
+                        -0.5 + Math.sin(clock * 0.8) * 0.12, 0);
+    rig.rotation.z = Math.PI + Math.sin(clock * 0.45) * 0.10;
+    rig.rotation.y = Math.sin(clock * 0.33) * 0.16;
+    rig.rotation.x = -0.28;
+    for (const f of flames) {
+      f.cone.scale.set(1.0, 1.25 + Math.sin(clock * 8) * 0.2, 1.0);
+      f.glow.scale.setScalar(1.1 + Math.sin(clock * 6) * 0.18);
+    }
+  }
+
+  const on = shot.world >= 0;
+  to.grp.visible = on;
+  if (on) {
+    const pal = paletteOf(shot.world);
+    (to.body.material as THREE.MeshStandardMaterial).color.setHex(pal.rock);
+    (to.halo.material as THREE.SpriteMaterial).color.setHex(skyLo(shot.world));
+    chunkMat.color.setHex(pal.rock);
+    const near = 90 - ease * shot.size * 78;
+    to.grp.position.set(0.16 * near, -0.06 * near, -near);
+    let sc = 3 + ease * shot.size * 22;
+    to.body.rotation.y = clock * 0.09;
+
+    /* A core breaking, on the same instanced debris the crossing throws. The
+       world shrinks as it goes, so the pieces read as having BEEN it rather
+       than as rocks flying past it. */
+    debris.visible = shot.breaking;
+    if (shot.breaking) {
+      sc *= 1 - ease * 0.45;
+      const spread = ease * 7;
+      for (let i = 0; i < CHUNKS; i++) {
+        scratch.position.copy(to.grp.position).addScaledVector(dDir[i], spread * sc * 0.55);
+        scratch.rotation.set(dSpin[i].x * clock, dSpin[i].y * clock, dSpin[i].z * clock);
+        scratch.scale.setScalar(sc * 0.5 * (1 - ease * 0.3));
+        scratch.updateMatrix();
+        debris.setMatrixAt(i, scratch.matrix);
+      }
+      debris.instanceMatrix.needsUpdate = true;
+    }
+    to.grp.scale.setScalar(sc);
+  } else {
+    debris.visible = false;
+  }
+
+  for (let L = 0; L < starLayers.length; L++) {
+    const sp = (3 - L) * 7;
+    starLayers[L].position.z = (clock * sp) % 90;
+    (starLayers[L].material as THREE.PointsMaterial).opacity = 0.9 - L * 0.22;
+  }
+}
+
 /* Sized here rather than from scene.ts's resize().
 
    scene.ts must not import this module: transit imports scene for the renderer

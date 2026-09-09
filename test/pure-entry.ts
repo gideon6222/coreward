@@ -16,3 +16,4 @@ export * from '../src/light';
 export * from '../src/chart';
 export * from '../src/drive';
 export * from '../src/ambience';
+export * from '../src/intro';

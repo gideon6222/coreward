@@ -65,6 +65,8 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
 | `src/loop.ts` | `frame()`. The one big function |
 | `src/ambience.ts` | **Pure.** What a world DOES in the air: per-trait emission timing |
+| `src/intro.ts` | **Pure.** The first-run intro: its beats, their shots and their timing |
+| `src/titleui.ts` | The title screen and the intro, wired to the DOM |
 | `src/chart.ts` | **Pure.** The navigation chart: which three worlds are offered at a leg |
 | `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
 | `src/drive.ts` | **Pure.** The Jump Drive, its five components, and the Heart |
@@ -187,6 +189,18 @@ has to be drilled by hand.
 
 **A tremor must never take the run.** `planCollapse()` applies the collapse, re-runs
 `findRoute()`, and reverts entirely if the ship can no longer reach the pad.
+
+**The game boots into a screen, and the e2e crosses it rather than bypassing it.** `main.ts`
+does all of its setup first and then shows the title (a save exists) or the intro (none), so
+starting is hiding a div rather than loading anything. The shared `beforeEach` in the e2e
+dismisses whichever appeared, and every spec that navigates itself calls `enterGame(page)`
+after its own `goto`. **Do not add a bypass flag for this** - a flag would make the one path
+every player takes the one path nothing exercises.
+
+**The pause sheet doubles as the title's Settings screen**, changing only its heading and its
+close button. It is already the settings screen - audio, restart, version, run log, what's
+new, build stamp - and a second copy would be a second place for those to drift. `showTitle()`
+puts the wording back, or the next in-game pause is still headed "Settings" with a BACK button.
 
 **The error overlay is in `<head>`**, above the module script. Vite hoists the entry, so a
 handler in `<body>` is registered too late. After changing the head, verify by deliberately

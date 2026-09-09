@@ -90,7 +90,41 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto('/');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 });
+
+/* Get past the way in.
+
+   Every spec below boots and starts driving, and as of the title screen there
+   is now something in front of that. Dismissed HERE rather than bypassed with
+   a flag, deliberately: a flag would mean the one path every player takes is
+   the one path nothing ever exercises. This way the title or the intro is
+   crossed on all twenty-five runs.
+
+   A fresh Playwright context has no save, so the normal answer is the intro;
+   a spec that seeds a save first gets the title. Both are handled because
+   which one appears is not this helper's business. */
+async function enterGame(page: Page) {
+  const intro = page.locator('#intro');
+  const title = page.locator('#title');
+  if (!(await intro.getAttribute('class'))?.includes('hidden')) {
+    await page.locator('#introSkip').dispatchEvent('click');
+  } else if (!(await title.getAttribute('class'))?.includes('hidden')) {
+    /* CONTINUE when there is a save, NEW GAME when there is not - and NEW GAME
+       from a fresh context needs no confirm, because there is nothing to
+       lose. */
+    const cont = page.locator('#btnContinue');
+    const useCont = !(await cont.getAttribute('class'))?.includes('hidden');
+    await page.locator(useCont ? '#btnContinue' : '#btnNewGame').dispatchEvent('click');
+    if (!useCont) await page.locator('#introSkip').dispatchEvent('click');
+  }
+  await expect(intro, 'the intro never closed').toHaveClass(/hidden/);
+  await expect(title, 'the title never closed').toHaveClass(/hidden/);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__cw?.g?.mode ?? 'play'),
+          { timeout: 5_000 })
+    .toBe('play');
+}
 
 test('boots without hitting the error overlay', async ({ page }) => {
   /* the overlay is the game's own last-resort reporter; if it is visible,
@@ -146,6 +180,7 @@ test('digging fills the hold and selling at the pad pays out', async ({ page }) 
 test('the shop, manifest and pause menu all open', async ({ page }) => {
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
   await page.locator('#btnShop').dispatchEvent('click');
   await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
 
@@ -220,6 +255,10 @@ test('the audio graph builds on a user gesture', async ({ page }) => {
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
 
   expect(await page.evaluate(() => (window as any).__audioContexts),
     'audio must not start before a gesture - Chrome blocks it').toBe(0);
@@ -281,6 +320,10 @@ test('the score layers respond to depth and to danger', async ({ page }) => {
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
 
   /* a real click, because Chrome will not build an AudioContext without one */
   await page.locator('#dpad .k[data-dir=left]').click();
@@ -361,6 +404,10 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
 
   /* Seeded to the worst case rather than dug to a shallow one.
 
@@ -391,6 +438,10 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
   await expect(page.locator('#depth')).toContainText('DEPTH 96 m');
 
   const perFrame = await page.evaluate(async () => {
@@ -444,6 +495,10 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
 
   await page.locator('#btnShop').dispatchEvent('click');
   const rows = page.locator('#supplies .up');
@@ -523,6 +578,10 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
   await expect(page.locator('#cargoTxt')).toHaveText('56.0 / 60 KG');
 
   /* the drill must keep working */
@@ -558,6 +617,10 @@ test('ore left behind is picked up by flying back through it', async ({ page }) 
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
   await expect(page.locator('#cargoTxt')).toHaveText('0.0 / 60 KG');
 
   await holdUntil(page, 'left', async () => {
@@ -619,6 +682,7 @@ test('a block remembers how far through it you were', async ({ page }) => {
   });
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
   await expect(page.locator('#depth')).toContainText('DEPTH 49 m');
 
   const r = await page.evaluate(() => {
@@ -664,6 +728,10 @@ test('the charge and the laser spend power and clear the ground', async ({ page 
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
 
   /* the meter is only shown to someone who can spend it */
   await expect(page.locator('#powerChip')).not.toHaveClass(/hidden/);
@@ -729,6 +797,7 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
      on every machine. */
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   /* Counted after the navigation, not before it: a reload wipes the page's
      globals, and an increment on an undefined counter is NaN rather than an
@@ -808,6 +877,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   /* ?debug: the shop is a 3D room, and tapping a case needs the scene handles */
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   await page.locator('#btnShop').dispatchEvent('click');
   await tapBay(page, 'cool');
@@ -843,6 +913,10 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
   await page.locator('#btnShop').dispatchEvent('click');
   await tapBay(page, 'cool');
   await expect(card, 'the tap should have selected the Cooling Rig case')
@@ -903,6 +977,7 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
        allows, so this is now both instant and identical on every machine. */
     await page.goto('/?debug');
     await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+    await enterGame(page);
 
     const widthOf = (sel: string) => page.evaluate((s) =>
       parseFloat((document.querySelector(s) as HTMLElement).style.width) || 0, sel);
@@ -1018,6 +1093,10 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
+     raises no pointerdown, so this cannot start the audio graph and the
+     gesture assertions below still mean what they say. */
+  await enterGame(page);
   await expect(page.locator('#depth')).toContainText('DEPTH 66 m');
 
   /* Down through the open shaft, then through the rock under it. Reaching 72
@@ -1052,6 +1131,7 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
 test('a tremor actually fires in a real run below the tremor line', async ({ page }) => {
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   const out = await page.evaluate(() => {
     const w = (window as any).__cw;
@@ -1096,6 +1176,7 @@ test('a tremor actually fires in a real run below the tremor line', async ({ pag
 test('advance is deterministic and far faster than real time', async ({ page }) => {
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   const out = await page.evaluate(() => {
     const w = (window as any).__cw;
@@ -1136,6 +1217,7 @@ test('advance is deterministic and far faster than real time', async ({ page }) 
 test('drilling holds the ship against the rock, never inside it', async ({ page }) => {
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   const out = await page.evaluate(() => {
     const w = (window as any).__cw;
@@ -1204,6 +1286,7 @@ test('hardware bought in the Outfitter is on the ship you undock with', async ({
   });
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   /* Counts the tank instances the ship is actually drawing. Instanced, so this
      is one mesh whose `count` is the number of tanks bolted on. */
@@ -1273,6 +1356,7 @@ test('hardware bought in the Outfitter is on the ship you undock with', async ({
 test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', async ({ page }) => {
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   const r = await page.evaluate(() => {
     const w = (window as any).__cw;
@@ -1388,6 +1472,7 @@ test('breaking a core opens the chart, and the crossing lands you somewhere else
      the game sits in 'boom' forever. That cost a debugging round. */
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
 
   const before = await page.evaluate(() => {
     const w = (window as any).__cw;

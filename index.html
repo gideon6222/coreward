@@ -68,6 +68,10 @@
     --lift:0 2px 9px rgba(0,0,0,.55);
     --grain:none;
     --safe-b: env(safe-area-inset-bottom, 0px);
+    /* The notch. Only the intro's skip button needs it so far, but a control
+       positioned from the top without it sits under the status bar on the
+       phone this is built for. */
+    --safe-t: env(safe-area-inset-top, 0px);
     /* How far the whole bottom thumb cluster sits above the safe area: the
        d-pad, the supply column mirroring it, and the ordnance row stacked on
        top of the d-pad. ONE number on purpose - the ordnance row is positioned
@@ -499,8 +503,66 @@
   }
   #skipCross.hidden{display:none;}
 
+  /* ---------- the way in ----------
+     Both screens are transparent over the 3D showcase, so the only thing they
+     draw is text and buttons. */
+  #title{
+    position:fixed; inset:0; z-index:24; display:flex; flex-direction:column;
+    padding:26px 22px calc(var(--ctrl-b) + 18px);
+    background:linear-gradient(180deg, rgba(4,6,12,.72) 0%, rgba(4,6,12,.18) 42%, rgba(4,6,12,.88) 100%);
+  }
+  #title.hidden, #intro.hidden{display:none;}
+  #title .tspacer{flex:0 0 6vh;}
+  #title h1{
+    margin:0; font-size:min(15vw,58px); letter-spacing:.13em; font-weight:800;
+    color:#f2f6ff; text-shadow:0 0 26px rgba(120,190,255,.42), 0 3px 0 rgba(0,0,0,.5);
+  }
+  #title .ttag{margin-top:8px; font-size:12.5px; letter-spacing:.09em; color:var(--dim);}
+  /* The menu sits at the BOTTOM. On a phone the top third of the screen is the
+     hardest place to reach one-handed, and it is also where the wordmark and
+     the planet want to be. */
+  #title .tmenu{margin-top:auto; display:flex; flex-direction:column; gap:9px;}
+  #title .trow{display:flex; gap:9px;}
+  .tbtn{
+    width:100%; padding:15px 14px; border-radius:12px; font:inherit; font-weight:700;
+    letter-spacing:.09em; font-size:14px; color:var(--ink);
+    background:rgba(12,17,25,.82); border:1px solid var(--line); backdrop-filter:blur(4px);
+  }
+  .tbtn.primary{border-color:#2f6f52; color:var(--green); background:rgba(14,26,20,.85);}
+  .tbtn.small{font-size:12px; padding:12px 10px; color:var(--dim);}
+  .tbtn.hidden{display:none;}
+  #title .tfine{font-size:11px; color:var(--dim); opacity:.7; text-align:center; margin-top:2px;}
+
+  #intro{
+    position:fixed; inset:0; z-index:24; display:flex; flex-direction:column;
+    justify-content:flex-end; padding:26px 24px calc(var(--ctrl-b) + 26px);
+    background:linear-gradient(180deg, rgba(4,6,12,.30) 0%, rgba(4,6,12,.10) 40%, rgba(4,6,12,.86) 100%);
+  }
+  #introText{
+    font-size:clamp(16px, 5.2vw, 22px); line-height:1.5; color:#eef4ff; font-weight:600;
+    text-shadow:0 2px 14px rgba(0,0,0,.85);
+    /* Faded in per beat rather than cut, so a line arriving does not read as a
+       glitch on a slow frame. */
+    opacity:0; transition:opacity .5s ease;
+  }
+  #introText.on{opacity:1;}
+  #introDots{display:flex; gap:6px; margin-top:18px;}
+  #introDots i{width:16px; height:3px; border-radius:2px; background:rgba(255,255,255,.20);}
+  #introDots i.on{background:rgba(160,210,255,.85);}
+  #introSkip{
+    position:fixed; right:16px; top:calc(var(--safe-t) + 14px); z-index:25;
+    padding:10px 14px; border-radius:10px; letter-spacing:.10em; font-size:11.5px; font-weight:700;
+    background:rgba(10,14,20,.68); color:var(--dim); border:1px solid var(--line);
+    backdrop-filter:blur(3px);
+  }
+
   .modal{
-    position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
+    /* 26, above the title screen at 24 and its skip button at 25. A modal is
+       the topmost thing in the game short of the white flash and the error
+       overlay, and it stopped being that the moment the title arrived: the
+       settings sheet opened UNDERNEATH the title's own buttons, which read as
+       the sheet failing to open. */
+    position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:26;
     display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px);
   }
   .modal.hidden{display:none;}
@@ -764,8 +826,8 @@
 
 <div id="pause" class="modal hidden">
   <div class="sheet">
-    <h2>Paused</h2>
-    <div class="sub">Everything is frozen until you resume</div>
+    <h2 id="pauseTitle">Paused</h2>
+    <div class="sub" id="pauseSub">Everything is frozen until you resume</div>
     <div id="pauseStats"></div>
     <div class="toggles">
       <button id="btnMusic" class="tog">MUSIC ON</button>
@@ -787,6 +849,32 @@
 
 <!-- The navigation chart. Three worlds, and the choice between them is the
      only decision in the game made above the level of a single run. -->
+<!-- The way in. Both of these sit over the live 3D showcase - see transit.ts
+     - so the thing behind the buttons is the game's own starfield and worlds
+     rather than a picture of them. -->
+<div id="title" class="hidden">
+  <div class="tspacer"></div>
+  <div class="tmark">
+    <h1>COREWARD</h1>
+    <div class="ttag">Drill down. Break the world. Find a way out.</div>
+  </div>
+  <div class="tmenu">
+    <button id="btnContinue" class="tbtn primary">CONTINUE</button>
+    <button id="btnNewGame" class="tbtn">NEW GAME</button>
+    <div class="trow">
+      <button id="btnSettings" class="tbtn small">SETTINGS</button>
+      <button id="btnTitleNotes" class="tbtn small">NOTES</button>
+    </div>
+    <div class="tfine" id="titleFine"></div>
+  </div>
+</div>
+
+<div id="intro" class="hidden">
+  <div id="introText"></div>
+  <div id="introDots"></div>
+  <button id="introSkip">SKIP &rsaquo;&rsaquo;</button>
+</div>
+
 <!-- Shown only during the crossing. A cutscene you cannot skip is a tax on
      every planet after the first one, and this game expects to be played for
      a long time. -->
