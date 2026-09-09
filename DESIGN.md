@@ -222,6 +222,72 @@ belonged anyway.
 
 ---
 
+## The way in: a title screen and a first-run intro
+
+The ask:
+
+> "can you create an intro screen? if it is the first time starting, make a little intro going
+> through the story and objective. if the game has already been started by the player before,
+> can you just have a start screen that has normal first screen options like, new game,
+> continue, settings, notes."
+
+The game currently boots straight into a ship on a pad, which was fine when the whole of it
+was "dig down, sell, upgrade". It is not fine now: there is a Jump Drive to assemble and a
+Heart to reach, and **nothing anywhere tells the player either of those things exists** until
+they break their first core, which is an hour in.
+
+### What the intro is for, and what it must not be
+
+`CRAFT.md`: *"DO NOT INVENT A SYMBOL FOR SOMETHING YOU CAN SHOW."* The rule was written about
+HUD elements and it applies exactly here — an intro that is paragraphs of fiction over a black
+screen is the same mistake in a different costume. The game already owns a starfield, twelve
+painted worlds, a ship, and a planet coming apart in pieces. The intro should be those things,
+with one line of text over each.
+
+Three hard requirements, all of them learned already this session:
+
+- **Skippable, always.** A cutscene you cannot skip is a tax on every replay. The crossing
+  needed this and shipped without it once.
+- **It must state the OBJECTIVE, not just the mood.** "Five pieces of a jump drive, one buried
+  on each kind of world" is the sentence the player needs; the rest is flavour.
+- **It must not block the tests.** Every one of the 24 e2e specs boots into play and starts
+  driving. A screen in front of that breaks all of them at once, and the fix is a dismissal in
+  the shared `beforeEach` rather than a bypass flag — so the title is exercised on every run
+  instead of being the one path nothing covers.
+
+### The shape
+
+**First run** (no save in `localStorage`): the intro plays immediately. Six beats over a live
+3D scene, auto-advancing, tap to go faster, SKIP in the corner throughout. It ends by starting
+a new game.
+
+**Every run after** (a save exists): a title screen over the same live scene.
+
+| | |
+|---|---|
+| **CONTINUE** | straight back in, and the default |
+| **NEW GAME** | confirms first — it wipes credits, upgrades, shards and relics — then replays the intro |
+| **SETTINGS** | the existing pause sheet: audio, restart, build stamp |
+| **NOTES** | the same sheet with what's-new already open |
+
+Settings and Notes **reuse the pause modal rather than duplicating it.** It is already the
+settings screen — audio toggles, restart progress, version, run log, what's new, build stamp —
+and a second copy of those controls is a second place for them to drift. It changes its
+heading and its close button depending on where it was opened from, and nothing else.
+
+### Two things it gets for free
+
+**The AudioContext gesture.** `audioInit()` currently rides on the first `pointerdown`
+anywhere, which means the first tap of the game is silent. A title screen is a tap before
+anything is at stake, which is the correct place for it.
+
+**A reason for the showcase scene to exist.** `transit.ts` already has a starfield at three
+depths, palette-painted planets, the ship, and debris. The title and the intro drive the same
+scene rather than a second one — so a world in the intro is drawn by exactly the code that
+draws it in the crossing.
+
+---
+
 ## Order of work
 
 Each slice ships on its own: typecheck, golden tests, build, size guard, e2e, CI, deploy.
