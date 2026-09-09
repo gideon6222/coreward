@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.14.0';
+export const VERSION = '0.14.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.14.1', date: '2026-09-08', title: 'Instruments',
+    notes: [
+      'Fuel, hull and cargo are lit segmented gauges behind glass now, not progress bars.',
+      'Each one carries its own number, so fuel is a reading rather than a guess.',
+      'Fuel and hull share a row at double the width; cargo sits under them, full width.',
+      'The heat stripe still runs along the bottom of the hull gauge, and still tells you the rate.'
+    ]
+  },
   {
     version: '0.14.0', date: '2026-09-08', title: 'Machined',
     notes: [

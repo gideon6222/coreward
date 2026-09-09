@@ -126,26 +126,101 @@
   .chip.power{color:#ffc861; border-color:#5a4520;}
   .chip.hidden{display:none;}
   .bars{margin-top:8px; gap:6px;}
-  /* A gauge is a recessed slot in the plate, not a floating pill: the inset
-     shadow is what makes the fill look like it is sitting IN something. The
-     repeating hairline is a scale - it costs one gradient and it is most of
-     what separates an instrument from a progress bar. */
+  /* Two rows, not three across.
+
+     Three gauges sharing 375 px left about twenty pixels of actual bargraph
+     between the label and the value - the instrument was mostly captions. Fuel
+     and hull are the two readings you take while flying and they get a row to
+     themselves at double the width; cargo is a capacity you check at the
+     surface and when it stops you, so it goes underneath at full width where
+     its longer readout fits comfortably. */
+  .bars.hold{margin-top:5px;}
+
+  /* ---------- the instrument panel ----------
+
+     Playtest: *"the Fuel, Hull, and Cargo bars still seem kind of out of
+     place. Can you make them look more in theme with a space ship or scifi.
+     Maybe Matrix themed?"*
+
+     They were progress bars, and a progress bar says "something is loading".
+     These are three of the four things you actually read while flying, so they
+     want to look like gauges you are reading rather than tasks completing.
+
+     Four things do the work, and none of them is a picture:
+
+       a SEGMENTED fill, so it reads as a bargraph and not as a liquid level
+       GHOST segments, so the unlit part of the scale is still visible
+       SCANLINES and a glass sheen, so it reads as a lit display behind glass
+       a NUMBER, right-aligned against the label, because an instrument has one
+
+     The channel colour is one custom property per gauge and everything else -
+     fill, glow, ghost cells, the tint of the glass - is derived from it. Adding
+     a fourth gauge is one line. */
   .bar{
-    position:relative; flex:1; height:19px; border-radius:2px; overflow:hidden;
+    --g:#4be08a; --gd:#0e3a24;
+    position:relative; flex:1; height:23px; border-radius:2px; overflow:hidden;
+    background:linear-gradient(180deg,#080b0a,#040605);
+    border:1px solid #2b2f36;
+    box-shadow:inset 0 2px 7px rgba(0,0,0,.9), var(--lift);
+  }
+
+  .hull{--g:#ff5c6b; --gd:#43141b;}
+  .cargo{--g:#3fe0ff; --gd:#0b2f40;}
+
+  /* The lit part. A vertical gradient with a bright top edge, not a horizontal
+     one: a lit segment is brightest where the light is behind it, and the old
+     dark-to-light-across ramp made a full gauge look like a half-empty one. */
+  .bar i{
+    position:absolute; inset:0 auto 0 0; width:0%; display:block;
+    transition:width .12s linear;
+    background:linear-gradient(180deg, var(--g) 0%, var(--gd) 118%);
+    box-shadow:0 0 9px var(--g), inset 0 1px 0 rgba(255,255,255,.32);
+  }
+
+  /* Glass over the screen: a sheen across the top third and the channel colour
+     bleeding in from the edges, which is what a phosphor display does. */
+  .bar::before{
+    content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+    /* Top sheen only. A vignette was fighting it - centred below the gauge it
+       darkened the TOP, which is exactly where the sheen is. */
+    background:linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.04) 40%, rgba(255,255,255,0) 64%);
+  }
+
+  /* Segments and scanlines, punched through everything under them.
+
+     The segment gaps are opaque, so they cut the fill into cells; the ghost
+     cells are a faint wash of the channel colour, so the unlit half of the
+     scale still shows where the graduations are. That is the difference
+     between a gauge at zero and a gauge that is switched off. */
+  .bar::after{
+    content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
     background:
-      repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, rgba(255,255,255,0) 1px 12px),
-      var(--grain) repeat 0 0 / 44px 44px,
-      linear-gradient(180deg,#101115,#191b20);
-    border:1px solid var(--line);
-    box-shadow:inset 0 2px 5px rgba(0,0,0,.75), inset 0 -1px 0 rgba(255,255,255,.06), var(--lift);
+      repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 5px, rgba(4,6,5,.92) 5px 7px),
+      repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 1px, rgba(255,255,255,0) 1px 3px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 5px, rgba(255,255,255,0) 5px 7px);
   }
-  .bar i{position:absolute; inset:0 auto 0 0; width:0%; display:block; transition:width .12s linear;}
+
+  /* Label left, value right - the layout every real readout uses, and the one
+     that stops the number wandering as it changes width. */
   .bar b{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-size:9.5px; font-weight:700; letter-spacing:.09em; text-shadow:0 1px 3px #000;
+    position:absolute; inset:0; z-index:2; display:flex; align-items:center;
+    justify-content:space-between; padding:0 6px;
+    font-size:9.5px; font-weight:700; letter-spacing:.1em; font-style:normal;
   }
-  .fuel i{background:linear-gradient(90deg,#1d5f38,var(--green)); box-shadow:0 0 12px rgba(75,224,138,.5);}
-  .hull i{background:linear-gradient(90deg,#6a2129,var(--red)); box-shadow:0 0 12px rgba(255,92,107,.5);}
+  /* Each caption sits in its own little dark window rather than floating over
+     the segments. Two reasons, and the second is the one that matters: a lit
+     bargraph is a terrible background for small type, and a gauge at 90% would
+     have put white text on a bright fill exactly when you most need to read it.
+     It also looks like what it is - a readout let into the face of the
+     instrument. */
+  .bar b em, .bar b s{
+    font-style:normal; text-decoration:none;
+    color:#eaf4ee; text-shadow:0 0 7px var(--g), 0 1px 2px rgba(0,0,0,.95);
+    background:rgba(3,5,4,.7); padding:2px 4px; border-radius:1px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+  }
+  /* Tabular figures so a changing number does not shuffle the label beside it. */
+  .bar b s{letter-spacing:.04em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
 
   /* Heat soak, drawn INSIDE the hull bar rather than beside it.
 
@@ -218,7 +293,7 @@
      than stretched so the column stays narrow and the world stays visible. */
   #actions{
     position:fixed; left:12px; z-index:9;
-    top:calc(env(safe-area-inset-top,0px) + 118px);
+    top:calc(env(safe-area-inset-top,0px) + 146px);
     display:flex; flex-direction:column; gap:8px; align-items:flex-start;
   }
   #actions button{
@@ -527,9 +602,11 @@
     </div>
   </div>
   <div class="row bars">
-    <div class="bar fuel"><i id="fuelBar"></i><b>FUEL</b></div>
-    <div class="bar hull"><i id="hullBar"></i><i id="soakBar"></i><b id="hullTxt">HULL</b></div>
-    <div class="bar cargo"><i id="cargoBar"></i><b id="cargoTxt">0 / 60 KG</b></div>
+    <div class="bar fuel"><i id="fuelBar"></i><b><em>FUEL</em><s id="fuelTxt">100%</s></b></div>
+    <div class="bar hull"><i id="hullBar"></i><i id="soakBar"></i><b><em id="hullTxt">HULL</em><s id="hullNum">100%</s></b></div>
+  </div>
+  <div class="row bars hold">
+    <div class="bar cargo"><i id="cargoBar"></i><b><em>CARGO</em><s id="cargoTxt">0 / 60 KG</s></b></div>
   </div>
   <div id="depth">DEPTH 0 m</div>
   <div id="toast"></div>

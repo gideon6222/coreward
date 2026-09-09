@@ -25,6 +25,7 @@ export const mustEl = (id: string): HTMLElement => {
 export const ui = {
   planet: mustEl('planet'), credits: mustEl('credits'), haul: mustEl('haul'), depth: mustEl('depth'),
   fuel: mustEl('fuelBar'), hull: mustEl('hullBar'), cargoBar: mustEl('cargoBar'), cargoTxt: mustEl('cargoTxt'),
+  fuelTxt: mustEl('fuelTxt'), hullNum: mustEl('hullNum'),
   toast: mustEl('toast'), shop: mustEl('shop'), shopCredits: mustEl('shopCredits'),
   shopCard: mustEl('shopCard'), shopHint: mustEl('shopHint'),
   event: mustEl('event'), evTitle: mustEl('evTitle'), evBody: mustEl('evBody'), evBtn: mustEl('evBtn'),
@@ -113,8 +114,16 @@ export function updateHUD() {
   ui.credits.textContent = Math.floor(g.credits).toLocaleString();
   ui.haul.textContent = haulValue().toLocaleString();
   ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   CORE ' + coreDepth(g.planet) + ' m';
-  ui.fuel.style.width = clamp(g.fuel / S.fuelCap(), 0, 1) * 100 + '%';
-  ui.hull.style.width = clamp(g.hull / HULL_MAX, 0, 1) * 100 + '%';
+  /* Each gauge carries its own number now. A bar tells you roughly where you
+     are; a number tells you whether to turn round, and fuel is the one reading
+     in the game that decides that. Rounded up so a gauge never reads 0% while
+     there is still a metre of climb in the tank. */
+  const fuelFrac = clamp(g.fuel / S.fuelCap(), 0, 1);
+  const hullFrac = clamp(g.hull / HULL_MAX, 0, 1);
+  ui.fuel.style.width = fuelFrac * 100 + '%';
+  ui.hull.style.width = hullFrac * 100 + '%';
+  ui.fuelTxt.textContent = Math.ceil(fuelFrac * 100) + '%';
+  ui.hullNum.textContent = Math.ceil(hullFrac * 100) + '%';
   ui.cargoBar.style.width = clamp(g.weight / S.cargoCap(), 0, 1) * 100 + '%';
   ui.cargoTxt.textContent = g.weight.toFixed(1) + ' / ' + S.cargoCap() + ' KG';
   ui.btnShop.style.display = atSurface() && g.mode === 'play' ? '' : 'none';

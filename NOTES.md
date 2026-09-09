@@ -2526,6 +2526,43 @@ dark as you drop below it instead of staying lit in a hole.
 
 68 draw calls of 150, and that number is honest again.
 
+## Gauges, not progress bars (2026-09-08)
+
+Gideon: *"the Fuel, Hull, and Cargo bars still seem kind of out of place. Can
+you make them look more in theme with a space ship or scifi. Maybe Matrix
+themed? They can also be rearranged or turned into realistic gauges."*
+
+A progress bar says "something is loading". These are three of the four things
+you read while flying, so they should look like readings.
+
+Four changes, none of which is a picture:
+
+- **Segmented fill.** A repeating gradient punches opaque gaps through
+  everything under it, so the fill reads as a bargraph rather than as a liquid
+  level. A second, faint pass paints GHOST segments in the unlit half, which is
+  the difference between a gauge at zero and a gauge that is switched off.
+- **Scanlines and a glass sheen**, so it reads as a lit display behind glass.
+  The first version also had a vignette, which was fighting the sheen: centred
+  below the gauge it darkened the TOP, exactly where the sheen was.
+- **A number.** Fuel especially - a bar tells you roughly where you are, and
+  fuel is the one reading that decides whether to turn round.
+- **Readout windows.** The label and the value sit in their own small dark
+  panels rather than floating over the segments. A lit bargraph is a terrible
+  background for small type, and a gauge at 90% would have put white text on a
+  bright fill exactly when you most need to read it.
+
+**The rearranging was the part I would not have done unprompted, and it was
+the biggest single win.** Three gauges sharing 375 px left about twenty pixels
+of actual bargraph between the label and the value - the instrument was mostly
+captions. Fuel and hull now share a row at double the width and cargo sits
+underneath at full width, where its longer readout fits. He offered the option
+in the same sentence as the theme, which is worth noticing: **a note that
+includes "or you could rearrange it" is permission to change the layout, not
+just the paint.**
+
+The channel colour is one custom property per gauge and the fill, glow, ghost
+cells and caption bloom all derive from it, so a fourth gauge is one line.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.
