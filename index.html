@@ -125,102 +125,81 @@
   .chip.haul{color:var(--cyan);}
   .chip.power{color:#ffc861; border-color:#5a4520;}
   .chip.hidden{display:none;}
-  .bars{margin-top:8px; gap:6px;}
-  /* Two rows, not three across.
+  /* ---------- the instrument cluster ----------
 
-     Three gauges sharing 375 px left about twenty pixels of actual bargraph
-     between the label and the value - the instrument was mostly captions. Fuel
-     and hull are the two readings you take while flying and they get a row to
-     themselves at double the width; cargo is a capacity you check at the
-     surface and when it stops you, so it goes underneath at full width where
-     its longer readout fits comfortably. */
-  .bars.hold{margin-top:5px;}
+     Two brass dials in the bottom-left corner, where the left thumb already
+     is. The bars they replace lived at the top of the screen, which is the one
+     place you are not looking while flying - the readings that matter most
+     were the furthest from the action.
 
-  /* ---------- the instrument panel ----------
+     Everything about the styling is aiming at old mining and diving gear: a
+     machined brass bezel with a bright turned edge, a dark patinated face, aged
+     ivory printing, an oxide-orange needle, and a fixed specular streak across
+     the glass. The one thing NOT in the SVG is the glass streak's warp - it is
+     a static gradient, because a moving highlight on an instrument you are
+     trying to read is decoration fighting information. */
+  #cluster{
+    position:fixed; left:10px; bottom:calc(var(--ctrl-b) + 10px); z-index:9;
+    pointer-events:none; display:block; width:172px; height:126px;
+  }
+  #fuelDial{position:absolute; left:0; bottom:0; width:118px; height:118px;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.7));}
+  #hullDial{position:absolute; right:0; bottom:26px; width:74px; height:74px;
+    filter:drop-shadow(0 3px 8px rgba(0,0,0,.7));}
 
-     Playtest: *"the Fuel, Hull, and Cargo bars still seem kind of out of
-     place. Can you make them look more in theme with a space ship or scifi.
-     Maybe Matrix themed?"*
+  /* Printing on the dial face. Aged ivory rather than white - a printed scale
+     that has been underground is never white. */
+  #cluster text{
+    fill:#cdbf9d; font-family:'Chakra Petch',system-ui,sans-serif; font-weight:700;
+    text-anchor:middle; paint-order:stroke; stroke:#0a0907; stroke-width:1.6;
+  }
+  #cluster .lbl{font-size:11px;}
+  #cluster .cap{font-size:8px; letter-spacing:.12em; fill:#a2977a;}
+  #cluster .cap.sm{font-size:6px;}
+  #cluster .rate{font-size:7.5px; fill:#b9ae92; letter-spacing:.04em;}
+  #cluster .rate.hot{fill:#ffc27a; stroke:#1a0c02;}
 
-     They were progress bars, and a progress bar says "something is loading".
-     These are three of the four things you actually read while flying, so they
-     want to look like gauges you are reading rather than tasks completing.
+  /* Ticks: majors reach further in and print brighter, which is the whole of
+     what makes a scale readable at a glance. */
+  #cluster .tk{stroke:#7d7358; stroke-width:.9; stroke-linecap:butt;}
+  #cluster .tk.maj{stroke:#d3c39c; stroke-width:1.7;}
 
-     Four things do the work, and none of them is a picture:
+  /* Arcs. The track is the unlit scale, always visible - a gauge at zero and a
+     gauge that is switched off must not look the same. */
+  #cluster .trk{fill:none; stroke:#2a2519; stroke-width:4.2; stroke-linecap:butt;}
+  #cluster .trk.sm{stroke-width:3;}
+  #cluster .load{fill:none; stroke:#8fe4ae; stroke-width:4.2; filter:drop-shadow(0 0 4px #4be08a);}
+  #cluster .red{fill:none; stroke:#c8452f; stroke-width:3.4; opacity:.85;}
+  #cluster .wt{fill:none; stroke:#7fdcf2; stroke-width:3; filter:drop-shadow(0 0 3px #3fe0ff);}
+  #cluster .soak{fill:none; stroke:#e0641c; stroke-width:3.4; filter:drop-shadow(0 0 4px #ff8a2a);}
 
-       a SEGMENTED fill, so it reads as a bargraph and not as a liquid level
-       GHOST segments, so the unlit part of the scale is still visible
-       SCANLINES and a glass sheen, so it reads as a lit display behind glass
-       a NUMBER, right-aligned against the label, because an instrument has one
+  /* The needle. Oxide orange with a dark spine, and a real drop shadow onto
+     the face - the shadow is most of why it looks like a part sitting above
+     the dial rather than a shape painted on it. */
+  #cluster .ndl{fill:#d9512b; stroke:#3a1206; stroke-width:.6;
+    filter:drop-shadow(0.8px 1.4px 0.8px rgba(0,0,0,.75));}
+  #cluster .ndl.sm{fill:#e0e6ea;}
+  #cluster .ndl.thin{fill:#bdf5d2; stroke:#123; stroke-width:.3;}
 
-     The channel colour is one custom property per gauge and everything else -
-     fill, glow, ghost cells, the tint of the glass - is derived from it. Adding
-     a fourth gauge is one line. */
-  .bar{
-    --g:#4be08a; --gd:#0e3a24;
-    position:relative; flex:1; height:23px; border-radius:2px; overflow:hidden;
-    background:linear-gradient(180deg,#080b0a,#040605);
-    border:1px solid #2b2f36;
-    box-shadow:inset 0 2px 7px rgba(0,0,0,.9), var(--lift);
+  /* The two numbers, printed on a plate under the dials rather than on the
+     face: a dial answers "roughly where", a number answers "exactly what", and
+     crowding both onto 118 px of glass loses the first. */
+  #clusterTxt{
+    position:absolute; left:0; bottom:-2px; width:172px;
+    display:flex; justify-content:space-between; gap:4px;
+  }
+  #clusterTxt s{
+    text-decoration:none; font-size:9px; font-weight:700; letter-spacing:.06em;
+    color:#d8cdb0; background:rgba(6,7,5,.78); padding:2px 5px; border-radius:2px;
+    border:1px solid #3f3a2a;
+    font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
+    text-shadow:0 1px 2px #000;
   }
 
-  .hull{--g:#ff5c6b; --gd:#43141b;}
-  .cargo{--g:#3fe0ff; --gd:#0b2f40;}
-
-  /* The lit part. A vertical gradient with a bright top edge, not a horizontal
-     one: a lit segment is brightest where the light is behind it, and the old
-     dark-to-light-across ramp made a full gauge look like a half-empty one. */
-  .bar i{
-    position:absolute; inset:0 auto 0 0; width:0%; display:block;
-    transition:width .12s linear;
-    background:linear-gradient(180deg, var(--g) 0%, var(--gd) 118%);
-    box-shadow:0 0 9px var(--g), inset 0 1px 0 rgba(255,255,255,.32);
-  }
-
-  /* Glass over the screen: a sheen across the top third and the channel colour
-     bleeding in from the edges, which is what a phosphor display does. */
-  .bar::before{
-    content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
-    /* Top sheen only. A vignette was fighting it - centred below the gauge it
-       darkened the TOP, which is exactly where the sheen is. */
-    background:linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.04) 40%, rgba(255,255,255,0) 64%);
-  }
-
-  /* Segments and scanlines, punched through everything under them.
-
-     The segment gaps are opaque, so they cut the fill into cells; the ghost
-     cells are a faint wash of the channel colour, so the unlit half of the
-     scale still shows where the graduations are. That is the difference
-     between a gauge at zero and a gauge that is switched off. */
-  .bar::after{
-    content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
-    background:
-      repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 5px, rgba(4,6,5,.92) 5px 7px),
-      repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 1px, rgba(255,255,255,0) 1px 3px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 5px, rgba(255,255,255,0) 5px 7px);
-  }
-
-  /* Label left, value right - the layout every real readout uses, and the one
-     that stops the number wandering as it changes width. */
-  .bar b{
-    position:absolute; inset:0; z-index:2; display:flex; align-items:center;
-    justify-content:space-between; padding:0 6px;
-    font-size:9.5px; font-weight:700; letter-spacing:.1em; font-style:normal;
-  }
-  /* Each caption sits in its own little dark window rather than floating over
-     the segments. Two reasons, and the second is the one that matters: a lit
-     bargraph is a terrible background for small type, and a gauge at 90% would
-     have put white text on a bright fill exactly when you most need to read it.
-     It also looks like what it is - a readout let into the face of the
-     instrument. */
-  .bar b em, .bar b s{
-    font-style:normal; text-decoration:none;
-    color:#eaf4ee; text-shadow:0 0 7px var(--g), 0 1px 2px rgba(0,0,0,.95);
-    background:rgba(3,5,4,.7); padding:2px 4px; border-radius:1px;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-  }
-  /* Tabular figures so a changing number does not shuffle the label beside it. */
-  .bar b s{letter-spacing:.04em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+  /* Nearly full. The pulse is on the cargo sub-dial only, so it reads as that
+     instrument complaining rather than as the whole panel alarming. */
+  #cluster.heavy #weightArc{animation:wtpulse .9s ease-in-out infinite;}
+  @keyframes wtpulse{0%,100%{stroke:#6fd0e8;} 50%{stroke:#ffd27a;}}
 
   /* Heat soak, drawn INSIDE the hull bar rather than beside it.
 
@@ -310,10 +289,14 @@
   /* Bottom LEFT, mirroring the d-pad. Movement is the right thumb, supplies
      are the left, so spending one never fights with steering. Deliberately
      the same 60 px module as a d-pad key. */
+  /* Above the instrument cluster now, not beside it - the dials took the
+     corner. Still the left thumb, still mirroring the d-pad, just stacked
+     higher up the same edge. */
   #kit{
-    position:fixed; left:18px; bottom:var(--ctrl-b); z-index:9;
+    position:fixed; left:14px; bottom:calc(var(--ctrl-b) + 136px); z-index:9;
     display:flex; flex-direction:column-reverse; gap:5px;
   }
+  #kit .sup{width:52px; height:52px;}
   /* Ordnance sits on the RIGHT, directly above the d-pad, because unlike a
      supply it is aimed: what it does depends on which way you are facing, so
      it belongs under the thumb that decides that. Supplies stay on the left
@@ -601,13 +584,6 @@
       <div class="chip gold">◈ <span id="credits">0</span></div>
     </div>
   </div>
-  <div class="row bars">
-    <div class="bar fuel"><i id="fuelBar"></i><b><em>FUEL</em><s id="fuelTxt">100%</s></b></div>
-    <div class="bar hull"><i id="hullBar"></i><i id="soakBar"></i><b><em id="hullTxt">HULL</em><s id="hullNum">100%</s></b></div>
-  </div>
-  <div class="row bars hold">
-    <div class="bar cargo"><i id="cargoBar"></i><b><em>CARGO</em><s id="cargoTxt">0 / 60 KG</s></b></div>
-  </div>
   <div id="depth">DEPTH 0 m</div>
   <div id="toast"></div>
 </div>
@@ -619,6 +595,72 @@
   <button id="btnAuto" style="display:none">AUTOPILOT</button>
 </div>
 
+
+<!-- The instrument cluster. Two dials, three readings, and the heat sector.
+     Ticks are generated by gauges.ts; everything static lives here so the
+     shapes are readable as shapes. -->
+<div id="cluster">
+  <svg id="fuelDial" viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <radialGradient id="face" cx="42%" cy="34%" r="78%">
+        <stop offset="0%" stop-color="#252017"/><stop offset="62%" stop-color="#14120c"/>
+        <stop offset="100%" stop-color="#070605"/>
+      </radialGradient>
+      <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b39257"/><stop offset="38%" stop-color="#6d5426"/>
+        <stop offset="100%" stop-color="#332612"/>
+      </linearGradient>
+      <linearGradient id="glass" x1="0" y1="0" x2="0.55" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity=".20"/>
+        <stop offset="46%" stop-color="#ffffff" stop-opacity=".04"/>
+        <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <circle cx="50" cy="50" r="49" fill="url(#brass)"/>
+    <circle cx="50" cy="50" r="49" fill="none" stroke="#dcc084" stroke-opacity=".5" stroke-width="0.8"/>
+    <circle cx="50" cy="50" r="42.5" fill="url(#face)" stroke="#0a0907" stroke-width="1.4"/>
+    <!-- drill load, on the outer ring, with a redline at the top end -->
+    <path class="trk" d="M 15.79 69.75 A 39.5 39.5 0 1 1 84.21 69.75" pathLength="100"/>
+    <path id="loadArc" class="load" d="M 15.79 69.75 A 39.5 39.5 0 1 1 84.21 69.75" pathLength="100" stroke-dasharray="0 100"/>
+    <path class="red" d="M 15.79 69.75 A 39.5 39.5 0 1 1 84.21 69.75" pathLength="100" stroke-dasharray="0 82 18 100"/>
+    <g id="fuelTicks"></g>
+    <text class="lbl" x="19" y="76">E</text>
+    <text class="lbl" x="81" y="76">F</text>
+    <text class="cap" x="50" y="33">FUEL</text>
+    <!-- cargo, let into the face -->
+    <circle cx="50" cy="68" r="17" fill="#0b0a07" stroke="#4a3a1c" stroke-width="1.2"/>
+    <path class="trk sm" d="M 36.80 65.19 A 13.5 13.5 0 0 1 63.20 65.19" pathLength="100"/>
+    <path id="weightArc" class="wt" d="M 36.80 65.19 A 13.5 13.5 0 0 1 63.20 65.19" pathLength="100" stroke-dasharray="0 100"/>
+    <g id="weightTicks"></g>
+    <text class="cap sm" x="50" y="59.5">KG</text>
+    <g id="weightNeedle"><path class="ndl sm" d="M 50 57.5 L 48.6 68.6 L 51.4 68.6 Z"/></g>
+    <circle cx="50" cy="68" r="1.8" fill="#8a6f3a"/>
+    <g id="loadNeedle"><path class="ndl thin" d="M 50 8.2 L 48.9 15.5 L 51.1 15.5 Z"/></g>
+    <g id="fuelNeedle"><path class="ndl" d="M 50 15 L 47.6 52 L 52.4 52 Z"/></g>
+    <circle cx="50" cy="50" r="4.2" fill="#2a2318" stroke="#8a6f3a" stroke-width="1"/>
+    <circle cx="50" cy="50" r="1.4" fill="#c9a86a"/>
+    <circle cx="50" cy="50" r="49" fill="url(#glass)" pointer-events="none"/>
+  </svg>
+
+  <svg id="hullDial" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="49" fill="url(#brass)"/>
+    <circle cx="50" cy="50" r="49" fill="none" stroke="#dcc084" stroke-opacity=".45" stroke-width="1"/>
+    <circle cx="50" cy="50" r="42" fill="url(#face)" stroke="#0a0907" stroke-width="1.6"/>
+    <!-- heat soak, eating the top of the scale -->
+    <path class="trk" d="M 18.21 66.90 A 36 36 0 1 1 81.79 66.90" pathLength="100"/>
+    <path id="soakArc" class="soak" d="M 18.21 66.90 A 36 36 0 1 1 81.79 66.90" pathLength="100" stroke-dasharray="0 100"/>
+    <g id="hullTicks"></g>
+    <!-- One legend, not two. It reads HULL normally and names heat as the
+         cause the moment heat starts eating it, which is the whole point of
+         putting the rate on the gauge it is draining. -->
+    <text id="hullTxt" class="rate" x="50" y="79">HULL</text>
+    <g id="hullNeedle"><path class="ndl" d="M 50 16 L 47.4 52 L 52.6 52 Z"/></g>
+    <circle cx="50" cy="50" r="4" fill="#2a2318" stroke="#8a6f3a" stroke-width="1"/>
+    <circle cx="50" cy="50" r="49" fill="url(#glass)" pointer-events="none"/>
+  </svg>
+
+  <div id="clusterTxt"><s id="fuelTxt">100%</s><s id="cargoTxt">0 / 60 KG</s></div>
+</div>
 <div id="kit">
   <button class="sup none" id="supCoolant"><span class="g">COOL</span><span class="n">0</span></button>
   <button class="sup none" id="supPatch"><span class="g">HULL</span><span class="n">0</span></button>

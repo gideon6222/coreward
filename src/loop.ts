@@ -36,6 +36,7 @@ import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
+import { stepGauges } from './gauges';
 import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent,
          stopDigging } from './actions';
 import { sfx, setDepth, setMood } from './audio';
@@ -542,6 +543,7 @@ export function tick(raw: number, draw = true) {
     stepStation(clock, raw);
     tickToast(raw);
     updateHUD();
+    stepGauges(raw);
     if (draw) renderStation();
     return;
   }
@@ -595,6 +597,11 @@ export function tick(raw: number, draw = true) {
      frame, where +y is deeper, is (sin, cos). */
   const fz = rig.rotation.z;
   updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw);
+
+  /* What the load needle reads. Drilling pins it; thrusting drives it in
+     proportion. Published before the HUD is written so the needle and the
+     flames can never describe different frames. */
+  R.load = Math.max(thrustLevel, R.digging ? 1 : 0);
 
   const fscale = 0.25 + thrustLevel * 1.15;
   for (const f of flames) {
@@ -693,5 +700,6 @@ export function tick(raw: number, draw = true) {
   tickToast(raw);
 
   updateHUD();
+  stepGauges(raw);
   if (draw) renderWorld();
 }

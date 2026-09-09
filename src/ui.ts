@@ -1,5 +1,6 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
          coreDepth, planetName, traitOf, valueMult, costOf, matCost } from './config';
+import { setGauges } from './gauges';
 import { clamp } from './util';
 import { g, S, save } from './state';
 import { heatDamagePerSecond } from './feel';
@@ -24,8 +25,7 @@ export const mustEl = (id: string): HTMLElement => {
 };
 export const ui = {
   planet: mustEl('planet'), credits: mustEl('credits'), haul: mustEl('haul'), depth: mustEl('depth'),
-  fuel: mustEl('fuelBar'), hull: mustEl('hullBar'), cargoBar: mustEl('cargoBar'), cargoTxt: mustEl('cargoTxt'),
-  fuelTxt: mustEl('fuelTxt'), hullNum: mustEl('hullNum'),
+  cargoTxt: mustEl('cargoTxt'), fuelTxt: mustEl('fuelTxt'),
   toast: mustEl('toast'), shop: mustEl('shop'), shopCredits: mustEl('shopCredits'),
   shopCard: mustEl('shopCard'), shopHint: mustEl('shopHint'),
   event: mustEl('event'), evTitle: mustEl('evTitle'), evBody: mustEl('evBody'), evBtn: mustEl('evBtn'),
@@ -33,7 +33,7 @@ export const ui = {
   vault: mustEl('vault'),
   pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
   btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
-  alarm: mustEl('alarm'), soakBar: mustEl('soakBar'), hullTxt: mustEl('hullTxt'),
+  alarm: mustEl('alarm'), hullTxt: mustEl('hullTxt'),
   vignette: mustEl('vignette'),
   flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto'),
   kit: mustEl('kit'), supplies: mustEl('supplies'),
@@ -114,17 +114,14 @@ export function updateHUD() {
   ui.credits.textContent = Math.floor(g.credits).toLocaleString();
   ui.haul.textContent = haulValue().toLocaleString();
   ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   CORE ' + coreDepth(g.planet) + ' m';
-  /* Each gauge carries its own number now. A bar tells you roughly where you
-     are; a number tells you whether to turn round, and fuel is the one reading
-     in the game that decides that. Rounded up so a gauge never reads 0% while
-     there is still a metre of climb in the tank. */
+  /* The dials take fractions and do their own smoothing - see gauges.ts. The
+     two numbers under them are the exact reading a needle cannot give you, and
+     fuel is the one that decides whether to turn round. Rounded UP, so a gauge
+     never prints 0% while there is still a metre of climb in the tank. */
   const fuelFrac = clamp(g.fuel / S.fuelCap(), 0, 1);
   const hullFrac = clamp(g.hull / HULL_MAX, 0, 1);
-  ui.fuel.style.width = fuelFrac * 100 + '%';
-  ui.hull.style.width = hullFrac * 100 + '%';
+  const weightFrac = clamp(g.weight / S.cargoCap(), 0, 1);
   ui.fuelTxt.textContent = Math.ceil(fuelFrac * 100) + '%';
-  ui.hullNum.textContent = Math.ceil(hullFrac * 100) + '%';
-  ui.cargoBar.style.width = clamp(g.weight / S.cargoCap(), 0, 1) * 100 + '%';
   ui.cargoTxt.textContent = g.weight.toFixed(1) + ' / ' + S.cargoCap() + ' KG';
   ui.btnShop.style.display = atSurface() && g.mode === 'play' ? '' : 'none';
   if (g.up.auto > 0 && !atSurface() && g.mode === 'play') {
@@ -147,10 +144,12 @@ export function updateHUD() {
      something the player has to be told. */
   const drain = heatDamagePerSecond(g.pd, S.shield(), g.soak);
   const cooking = drain > 0;
-  ui.soakBar.style.width = clamp(g.soak, 0, 1) * 100 + '%';
-  ui.soakBar.classList.toggle('hot', cooking);
   ui.hullTxt.classList.toggle('hot', cooking);
   ui.hullTxt.textContent = cooking ? 'HULL  -' + drain.toFixed(1) + '/s' : 'HULL';
+  /* One call for all four readings, so the dials cannot end up describing
+     different frames. Load is the drill and the thrusters together - the one
+     thing on the panel that moves fast enough to be worth a needle. */
+  setGauges(fuelFrac, R.load, weightFrac, hullFrac, clamp(g.soak, 0, 1));
 
   /* Ember edges are heat. They hold a floor the moment you cross the line,
      because damage starts there whether or not you have soaked yet, and fade

@@ -13,6 +13,7 @@ import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station'
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock } from './loop';
 import { installPanelGrain } from './grain';
+import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
 import './input';
@@ -51,6 +52,8 @@ updateHUD();
 stampBuild();
 /* Before the boot overlay lifts, so no frame is ever drawn with bare panels. */
 installPanelGrain();
+/* Ticks and needle handles, before updateHUD() first writes to them. */
+buildGauges();
 document.getElementById('boot')!.classList.add('hidden');
 window.addEventListener('visibilitychange', () => { save(); if (document.hidden) sfx.digStop(); });
 setInterval(save, 5000);

@@ -16,9 +16,19 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.14.1';
+export const VERSION = '0.15.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.0', date: '2026-09-08', title: 'The panel',
+    notes: [
+      'The status bars are gone. There are two brass dials in the bottom-left corner instead.',
+      'The big one is fuel, with the drill load running round its outer ring like a tachometer.',
+      'Cargo is a sub-dial let into its face, and it starts pulsing when the hold is nearly full.',
+      'The small dial is hull, with heat eating down from the full end of the scale.',
+      'The needles have weight - they swing and settle rather than snapping to a value.'
+    ]
+  },
   {
     version: '0.14.1', date: '2026-09-08', title: 'Instruments',
     notes: [

@@ -2563,6 +2563,55 @@ just the paint.**
 The channel colour is one custom property per gauge and the fill, glow, ghost
 cells and caption bloom all derive from it, so a fourth gauge is one line.
 
+## Two brass dials instead of three bars (2026-09-08)
+
+Gideon: *"Instead of having what looks like status bars at the top for these,
+can you make them look more like analog gauge? Have the fuel gauge toward the
+bottom left that looks like a cars fuel gauge with a tac. Inside that, have a
+weight gauge ... then add an indicator for hull health ... Stylize them to look
+like old mining or diving gauges/equipment."*
+
+The bars had just been redone as segmented instrument readouts and they were
+still wrong, and the reason is worth writing down: **they were at the top of
+the screen, which is the one place you are not looking while flying.** The three
+readings that decide what you do next were the furthest thing from the action.
+Making them prettier could never fix that. The corner beside the left thumb
+could.
+
+**Two dials, three readings.** The big one carries fuel on the main scale, drill
+load on the outer ring like a tachometer, and cargo on a sub-dial let into its
+face. The small one is hull, with heat soak as a sector eating DOWN from the
+full end of the scale - the same relationship the old bar had, where soak and
+hull advance from opposite ends because they are not the same quantity.
+
+**SVG, and `pathLength="100"` is the whole trick.** It renormalises a path so
+its length is exactly 100 whatever the real geometry, which makes "show 62 per
+cent" into `stroke-dasharray: 62 100` with nothing needing to know the radius.
+It is also the reason the heat assertion survived the bars being deleted: the
+drawn fraction IS the first number of the dash array, so a test can read the
+rendered value off the shape the player is looking at.
+
+**Ticks are generated.** Thirty hand-placed lines of SVG is thirty chances to be
+half a degree out, and all of it would have to be redone for the second dial.
+Four lines of trigonometry instead.
+
+**The needles have mass.** Each one eases toward its reading rather than
+snapping, and that single detail is most of what separates an analog gauge from
+a bar with a pointer on it. Fuel is heavily damped because it only ever falls
+slowly; the load needle is quick because it is showing something that changes in
+a tenth of a second. `R.load` is new - the drill while cutting, the thrusters
+while firing - and it exists only because the panel wanted a needle for it.
+
+**Three test breakages, all the same shape.** The soak assertion read a bar
+width; the fuel assertion read a bar width; the hull label read `innerText`.
+All three were reading the old presentation rather than the reading itself, and
+`innerText` in particular fails on an SVG `<text>` with "Node is not an
+HTMLElement", which reads like a broken selector rather than a changed element
+type. **A test that names an implementation detail of the view breaks every
+time the view changes, and it breaks in a way that does not say why.** The
+replacements read the dash array, the printed percentage and `textContent` -
+all things the player can see.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

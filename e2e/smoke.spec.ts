@@ -446,8 +446,12 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   await expect(page.locator('#supCell')).toHaveClass(/none/);
   await expect(page.locator('#supCoolant')).toHaveClass(/none/);
 
+  /* Read off the gauge the player is looking at. Fuel is a needle on a dial
+     now, and the printed percentage beside it is the exact figure the dial can
+     only approximate - which makes it both the honest thing to assert on and
+     the one that does not depend on a sweep angle. */
   const fuelPct = () => page.evaluate(() =>
-    parseFloat((document.querySelector('#fuelBar') as HTMLElement).style.width));
+    parseFloat((document.getElementById('fuelTxt') as HTMLElement).textContent || '0'));
 
   await holdUntil(page, 'down', async () => {
     await expect(page.locator('#depth')).not.toContainText('DEPTH 0 m', { timeout: DEEP_ENOUGH });
@@ -897,6 +901,19 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
     const advance = (secs: number) =>
       page.evaluate((n) => (window as any).__cw.advance(n), secs);
 
+    /* How much heat the gauge is showing, 0-100.
+
+       The soak used to be a bar and this used to be a width. It is a sector on
+       the hull dial now, and the arc carries `pathLength="100"` precisely so
+       that the drawn fraction IS the first number of its dash array - the
+       rendered value, readable without knowing the radius. Reading the shape
+       the player is actually looking at is the point; a data attribute would
+       pass just as happily with nothing drawn. */
+    const soakShown = () => page.evaluate(() => {
+      const el = document.getElementById('soakArc');
+      return el ? parseFloat((el.getAttribute('stroke-dasharray') || '0').split(' ')[0]) : -1;
+    });
+
     await page.evaluate(() => (window as any).__cw.stopClock());
     await advance(0.2);
 
@@ -907,13 +924,17 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
 
     /* Sixty seconds of sitting at 96 m, in about a second of real time. */
     await advance(60);
-    expect(await widthOf('#soakBar'),
+    expect(await soakShown(),
       'a minute at 96 m should visibly build heat soak').toBeGreaterThan(25);
 
-    const soakBefore = await widthOf('#soakBar');
+    const soakBefore = await soakShown();
     const emberBefore = await opacityOf('#heat');
+    /* textContent, not innerText. The hull legend is an SVG <text> now that the
+       gauges are dials, and Playwright's innerText refuses anything that is not
+       an HTMLElement - it fails with "Node is not an HTMLElement", which reads
+       like a broken selector rather than like a changed element type. */
     const rateBefore = Number(
-      (await page.locator('#hullTxt').innerText()).replace(/[^0-9.]/g, ''));
+      (await page.locator('#hullTxt').textContent())!.replace(/[^0-9.]/g, ''));
     expect(rateBefore, 'heat should be doing measurable damage at 96 m').toBeGreaterThan(0);
 
     await page.locator('#supCoolant').dispatchEvent('pointerdown');
@@ -922,11 +943,11 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
     /* The soak is zeroed synchronously; the gauge that shows it is not
        repainted until the next frame, so give it one. */
     await advance(0.2);
-    expect(await widthOf('#soakBar'), 'the flush must empty the soak gauge')
+    expect(await soakShown(), 'the flush must empty the soak gauge')
       .toBeLessThan(soakBefore / 4);
     expect(await opacityOf('#heat'), 'the ember edges must fall back with it')
       .toBeLessThan(emberBefore);
-    expect(Number((await page.locator('#hullTxt').innerText()).replace(/[^0-9.]/g, '')),
+    expect(Number((await page.locator('#hullTxt').textContent())!.replace(/[^0-9.]/g, '')),
       'the drain rate is what the player actually bought').toBeLessThan(rateBefore);
 
     /* Still in the zone, so the label keeps naming heat - a flush buys time,
