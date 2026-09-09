@@ -393,15 +393,24 @@ export const LM_RAYS = 512;
    looking empty and starts looking filled in. */
 export const LM_HAZE = 0.52;
 export const LM_HAZE_COLOR = 0xffb46a;
-/* How far the glow in a tunnel spills onto the rock at its edge.
+/* How far the glow in a tunnel spills onto the rock at its edge. Zero.
 
-   The open/solid channel is per cell, but a rock face is not flat - the
-   displacement pushes tunnel walls a fifth of a cell into the tunnel, and
-   those bulges landed in the middle of a glowing shaft with no glow on them
-   at all. Gideon: *"the rocks still stick up past the fog in certain areas."*
-   Letting the edge cells carry a share of the glow puts light in the air in
-   front of the wall, which is where it should have been anyway. */
-export const LM_HAZE_SPILL = 0.5;
+   It was 0.5, to stop wall bulges reading as unlit rock inside a glowing
+   shaft. That was the wrong fix for that problem - moving the haze quad in
+   FRONT of the terrain solved it properly a version later - and it caused a
+   worse one: every rock cell touching open air took half the tunnel's glow as
+   an additive wash, so a warm circle bled out over the rock faces around the
+   ship and softened the very shadow edges the ray fan exists to draw.
+
+   Gideon: *"it looks the tunnel light is still showing in a circle around the
+   ship and shows on the face of the rocks, making the sharp shadows not quite
+   look right."*
+
+   Kept as a constant rather than deleted because it is exactly the dial to
+   reach for if a wall bulge ever reads as a hole in the glow again. The half
+   texel of bilinear softening at an open/solid boundary is doing that job on
+   its own now. */
+export const LM_HAZE_SPILL = 0;
 
 /* ---------- the vignette ----------
    How much of the frame stays clear, and how black the edge goes. Deep, the

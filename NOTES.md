@@ -2648,6 +2648,37 @@ unrelated to the check.** Fuel is the reading that decides whether to turn round
 and a second arc sweeping round it every time you touch the d-pad turns a
 glance into a parse.
 
+## The circle was mine, twice (2026-09-08)
+
+Gideon, after the halo sprite was deleted: *"it looks the tunnel light is still
+showing in a circle around the ship and shows on the face of the rocks, making
+the sharp shadows not quite look right."*
+
+Two different things had been making the same shape, and I fixed the first and
+assumed it was the only one. The second was `LM_HAZE_SPILL`.
+
+It was 0.5: every solid cell touching open air took half the tunnel's glow into
+the haze channel. I added it to stop wall bulges reading as unlit rock inside a
+glowing shaft - and that was the wrong fix for that problem, because moving the
+haze quad in FRONT of the terrain solved it properly one version later. The
+spill stayed, and what it actually did was paint an additive warm wash over
+every rock face near the ship: a circle, over the rock, softening the very
+shadow edges the ray fan exists to draw.
+
+At zero, the glow is exactly the shape of the tunnel - a clean cross at a
+junction - and the half texel of bilinear softening at an open/solid boundary
+handles the bulges on its own.
+
+**The lesson is about leaving a fix in after its cause is gone.** The spill was
+correct when it was written. It became wrong the moment the depth ordering
+changed, and nothing failed - it just quietly became the largest thing in the
+frame that ignored geometry. **When you replace the reason for a workaround,
+delete the workaround in the same commit,** or it becomes indistinguishable
+from a deliberate choice.
+
+Kept as a constant at zero rather than deleted, because it is exactly the dial
+to reach for if a wall bulge ever reads as a hole in the glow again.
+
 ## What to do next
 
 Nothing here is committed to; they are the live threads.

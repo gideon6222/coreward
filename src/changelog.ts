@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.15.1';
+export const VERSION = '0.15.2';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.15.2', date: '2026-09-08', title: 'Light stays in the tunnel',
+    notes: [
+      'The glow in a tunnel stops at the rock now instead of washing over the faces around you.',
+      'No circle around the ship: the lit shape is the tunnel you dug, whatever shape that is.',
+      'Shadow edges are crisp again - nothing is painted over them.'
+    ]
+  },
   {
     version: '0.15.1', date: '2026-09-08', title: 'Nothing spare on the dial',
     notes: [
