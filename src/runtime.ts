@@ -22,6 +22,8 @@ export type Transit = {
 };
 
 export const R = {
+  /* the per-world ambience clock; see ambience.ts */
+  amb: { t: 0 },
   /* The timed consumables, while they are running.
 
      Run-scoped and NOT saved, unlike the kit counts. A window you bought and

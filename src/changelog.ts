@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.19.0';
+export const VERSION = '0.20.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.20.0', date: '2026-09-09', title: 'Every world has its own weather',
+    notes: [
+      'Volatile worlds vent gas out of the rock. Searing worlds send embers up from the deep.',
+      'Crystalline worlds glint in the lamp; Hollow ones drop grit from a ceiling you cannot see.',
+      'Stable worlds stay completely still - which is how you notice all the others.',
+      'The deeper you go, the busier the air gets.'
+    ]
+  },
   {
     version: '0.19.0', date: '2026-09-09', title: 'Five more ways to build the ship',
     notes: [

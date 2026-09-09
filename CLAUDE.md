@@ -64,6 +64,7 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/input.ts` | All d-pad, keyboard and button wiring |
 | `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
 | `src/loop.ts` | `frame()`. The one big function |
+| `src/ambience.ts` | **Pure.** What a world DOES in the air: per-trait emission timing |
 | `src/chart.ts` | **Pure.** The navigation chart: which three worlds are offered at a leg |
 | `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
 | `src/drive.ts` | **Pure.** The Jump Drive, its five components, and the Heart |

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ambienceTick } from './ambience';
 import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './drive';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo,
@@ -200,6 +201,15 @@ export function tick(raw: number, draw = true) {
        not be spent by frames in which nothing happened. */
     if (R.odT > 0) R.odT = Math.max(0, R.odT - dt);
     if (R.pulseT > 0) R.pulseT = Math.max(0, R.pulseT - dt);
+
+    /* What this world does, as opposed to what colour it is - see
+       ambience.ts. On `raw` rather than `dt`: weather does not stop for
+       hit-stop, and a world that froze its own air every time you struck rock
+       would read as the game stuttering. */
+    const em = ambienceTick(R.amb, worldTrait(), g.pd, raw, Math.random(), Math.random());
+    if (em) {
+      spray(worldX(g.px) + em.dx, -g.pd + em.dy, em.color, em.count, em.power, em.life);
+    }
     camZBoost = approach(camZBoost, 0, CAM_BOOST_DECAY, raw);
     /* Let go and the drill stops. It used to run to completion no matter what,
        which meant the only way to change your mind about a block was to have

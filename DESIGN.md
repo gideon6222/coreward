@@ -192,9 +192,15 @@ bottleneck you are actually in.
   counts impacts rather than seconds because heat soak is a drain and would eat a timer before
   the thing it exists to stop ever arrived.
 
-**Still open:** caches that sometimes hand you a temporary effect instead of goods, and the
-per-trait surface signatures from the "look different" section (gas venting, lit magma veins,
-crystal formations). The palettes carry world identity on their own for now.
+- **6. Per-trait ambience** — shipped in 0.20.0. A palette is a still image; two worlds
+  painted differently still behaved identically. Each trait now emits something of its own in
+  the air — gas out of the walls, embers from below, glints, falling grit — and Stable emits
+  nothing at all, which is what makes the others read. The timing is a pure reducer for the
+  same reason everything else is: the preview browser stops `requestAnimationFrame` when
+  hidden, so anything on a timer cannot be tested by eye there.
+
+**Still open:** caches that sometimes hand you a temporary effect instead of goods, aimed at
+whatever bottleneck the player is actually in.
 
 Two things changed shape while building, both worth recording:
 
