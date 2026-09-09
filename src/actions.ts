@@ -1,10 +1,11 @@
 import * as THREE from 'three';
+import { isHeart } from './drive';
 import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
          PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE,
          GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult } from './config';
+         coreDepth, planetName, traitOf, valueMult , OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS} from './config';
 import { clamp, key } from './util';
-import { g, S, save } from './state';
+import { g, S, save , coreM, worldTrait} from './state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './world';
 import { R } from './runtime';
 import { lamp } from './scene';
@@ -32,6 +33,26 @@ import { mergeLog, blankLog } from './telemetry';
 
    Lives here rather than in loop.ts because loop.ts already imports this
    module, and goSurface() and autopilot() below both need it. */
+/* An IMPACT - gas, rockfall, anything sudden - against the Bulwark Field.
+
+   Returns the damage that actually lands. Counting impacts rather than running
+   a timer is the whole design of the field: heat soak is a drain, not a hit,
+   and a timed shield would be eaten by it in a second and never be there for
+   the thing it exists to stop.
+
+   One function so both gas paths agree. They did not used to - the ordnance
+   path and the drilling path each applied their own gas damage, which is fine
+   while there is nothing to consult and two places to update the moment there
+   is. */
+export function absorb(dmg: number): number {
+  if (R.bulwark <= 0) return dmg;
+  R.bulwark--;
+  flash('rgba(150,210,255,.4)', 260);
+  toast('Bulwark absorbed it · ' + R.bulwark + ' left');
+  sfx.supply();
+  return 0;
+}
+
 export function stopDigging() {
   if (!R.digging) return;
   const done = clamp(R.digging.t / R.digging.total, 0, 1);
@@ -86,10 +107,12 @@ export function goSurface() {
   R.vx = 0; R.vy = 0; R.flight = null;
   /* landing on the pad must not re-trigger the sale that just happened */
   R.wasAtSurface = true;
-  g.fuel = S.fuelCap(); g.hull = HULL_MAX; g.soak = 0; g.charge = CHARGE_MAX;
+  g.fuel = S.fuelCap(); g.hull = S.hullCap(); g.soak = 0; g.charge = CHARGE_MAX;
   R.hullCause = 'heat';
   R.wasHot = false;
   R.tremorT = 0; R.tremorWarn = 0;
+  /* The timed consumables end with the descent they were spent on. */
+  R.odT = 0; R.pulseT = 0; R.bulwark = 0;
   syncBlocks(true);
   save();
 }
@@ -115,15 +138,33 @@ export function useSupply(k: SupplyKey) {
     flash('rgba(120,220,255,.26)', 340);
     toast('Coolant flush · heat soak cleared');
   } else if (k === 'patch') {
-    if (g.hull >= HULL_MAX - 0.5) { toast('Hull is already sound'); return; }
-    g.hull = Math.min(HULL_MAX, g.hull + PATCH_HULL);
+    if (g.hull >= S.hullCap() - 0.5) { toast('Hull is already sound'); return; }
+    g.hull = Math.min(S.hullCap(), g.hull + PATCH_HULL);
     flash('rgba(255,120,140,.22)', 300);
     toast('Hull patched · +' + PATCH_HULL);
-  } else {
+  } else if (k === 'cell') {
     if (g.fuel >= S.fuelCap() - 0.5) { toast('Tank is already full'); return; }
     g.fuel = Math.min(S.fuelCap(), g.fuel + CELL_FUEL);
     flash('rgba(120,255,180,.22)', 300);
     toast('Fuel cell burned · +' + CELL_FUEL);
+  } else if (k === 'overdrive') {
+    /* Refuses to stack rather than refreshing. Refreshing would make holding
+       two the same as holding one long window, which quietly removes the
+       decision about when to spend the second. */
+    if (R.odT > 0) { toast('Overdrive is already running'); return; }
+    R.odT = OVERDRIVE_SECS;
+    flash('rgba(255,190,80,.24)', 340);
+    toast('Overdrive · ' + OVERDRIVE_MULT + 'x drill for ' + OVERDRIVE_SECS + ' s');
+  } else if (k === 'bulwark') {
+    if (R.bulwark > 0) { toast('The field is already up'); return; }
+    R.bulwark = BULWARK_HITS;
+    flash('rgba(150,210,255,.26)', 340);
+    toast('Bulwark field up · absorbs ' + BULWARK_HITS + ' impacts');
+  } else {
+    if (R.pulseT > 0) { toast('A pulse is already live'); return; }
+    R.pulseT = PULSE_SECS;
+    flash('rgba(190,140,255,.26)', 380);
+    toast('Survey pulse · every vein for ' + PULSE_SECS + ' s');
   }
 
   g.kit[k]--;
@@ -157,17 +198,44 @@ export function tremor(): number {
    at a cell and the ship moves cell to cell - there is no in-between state
    where a partial overlap would mean anything. */
 export function collectHere() {
-  const id = g.drops[key(Math.round(g.px), Math.round(g.pd))];
-  if (!id) return;
+  /* The cell you are standing in, and then anything the Salvage Magnet
+     reaches.
+
+     A radius, not a vacuum: you still have to fly back to the neighbourhood of
+     what you dropped, it just no longer has to be cell-exact. The minute spent
+     lining up on a single cell of ore you already paid to cut is the least
+     interesting minute in the game, and it is not a decision - which is the
+     test for whether removing something is a loss. */
+  const cx = Math.round(g.px), cd = Math.round(g.pd);
+  if (!pickAt(cx, cd)) { /* nothing here; the magnet may still find some */ }
+
+  const r = S.magnetR();
+  if (r <= 0) return;
+  const ri = Math.ceil(r);
+  for (let dx = -ri; dx <= ri; dx++) {
+    for (let dd = -ri; dd <= ri; dd++) {
+      if (dx === 0 && dd === 0) continue;
+      if (Math.hypot(dx, dd) > r) continue;
+      pickAt(cx + dx, cd + dd);
+    }
+  }
+}
+
+/* Take the drop in one cell, if there is one and it fits. Returns whether it
+   did, so the caller can tell "nothing there" from "hold is full". */
+function pickAt(x: number, d: number): boolean {
+  const id = g.drops[key(x, d)];
+  if (!id) return false;
   const def = DEF[id];
-  if (!def) { takeDrop(g.px, g.pd); return; }
-  if (g.weight + def.wt > S.cargoCap()) return;
-  takeDrop(g.px, g.pd);
+  if (!def) { takeDrop(x, d); return false; }
+  if (g.weight + def.wt > S.cargoCap()) return false;
+  takeDrop(x, d);
   g.cargo[id] = (g.cargo[id] || 0) + 1;
   g.weight += def.wt;
   sfx.collect(isOre(def) ? def.tone : 1);
-  spray(worldX(Math.round(g.px)), -Math.round(g.pd), def.color, 14, 3, 0.5);
+  spray(worldX(x), -d, def.color, 14, 3, 0.5);
   save();
+  return true;
 }
 
 /* ---------- ordnance ----------
@@ -185,7 +253,7 @@ function breakCells(cells: number[][]) {
   let taken = 0, dropped = 0, gassed = 0;
   for (const c of cells) {
     const x = c[0], d = c[1];
-    if (x < 0 || x >= W || d < 0 || d > coreDepth(g.planet)) continue;
+    if (x < 0 || x >= W || d < 0 || d > coreM()) continue;
     const b = blockAt(x, d);
     if (!b || b.hard === Infinity || b.core) continue;
 
@@ -195,7 +263,7 @@ function breakCells(cells: number[][]) {
 
     if (b.hazard) {
       gassed++;
-      g.hull -= Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1));
+      g.hull -= absorb(Math.round(GAS_HULL_DAMAGE * (worldTrait().gasDamage || 1)));
       g.soak = Math.min(1, g.soak + GAS_SOAK);
       R.hullCause = 'gas';
     } else if (b.cache) {
@@ -335,6 +403,13 @@ export function showEvent(title: string, bodyTxt: string, btnTxt: string, cb: ()
   ui.evBtn.onclick = () => { sfx.ui(); ui.event.classList.add('hidden'); g.mode = 'play'; cb(); };
 }
 
+/* Set by main.ts. actions.ts must not import chartui.ts: chartui imports
+   actions (for goSurface and stopDigging), and a cycle that only works because
+   of when each binding happens to be read is a trap for whoever moves a call
+   next - the same reason FACE_VEC is duplicated rather than imported here. */
+let onCoreBroken: () => void = () => {};
+export function setCoreHandler(fn: () => void) { onCoreBroken = fn; }
+
 export function breakCore() {
   g.mode = 'boom';
   const x = worldX(g.px), y = -g.pd;
@@ -343,36 +418,42 @@ export function breakCore() {
   flash('rgba(255,255,255,.95)', 700);
   sfx.boom();
   R.shake = SHAKE_BOOM;
+  const heart = isHeart(g.world);
   setTimeout(() => {
     g.shards++;
-    const next = g.planet + 1;
-    showEvent(planetName(g.planet).toUpperCase() + ' DESTROYED',
-      'The core gave way and the planet tore itself apart. You recovered a Core Shard, worth a permanent 8% drill power. ' +
-      'Total shards: ' + g.shards + '. Next stop: ' + planetName(next) +
-      ', where the crust is tougher and the veins run richer. ' + traitOf(next).blurb,
-      'LAUNCH TO ' + planetName(next).toUpperCase(),
-      () => {
-        g.planet = next;
-        g.dug = new Set();
-        g.rubble = new Set();
-        /* Cell keys carry no planet, so every per-cell map has to be cleared
-           together or the new world inherits the old one's holes. */
-        g.damage = {};
-        g.drops = {}; syncDrops();
-        for (const k of Array.from(meshes.keys())) dropBlock(k);
-        goSurface();
-        save();
-      });
+    /* The core is broken and the world is gone. Anything still buried in it is
+       gone with it - which is what makes a Jump Drive component worth going
+       and looking for rather than something you pick up eventually. */
+    if (heart) {
+      /* The end. The one core in the game that does not open a chart.
+
+         The save is left exactly as it is rather than wiped: the Drift stays
+         open afterwards, so the endless game people are already playing is
+         still there with a finished thing behind it. Ending a long run by
+         deleting it would be the worst possible reward for completing it. */
+      g.won = true;
+      showEvent('THE DRIFT IS BEHIND YOU',
+        'The Heart came apart and the drive caught. ' +
+        'Fourteen worlds, ' + g.shards + ' cores, and a jump engine built out of five pieces ' +
+        'of the places that nearly kept you. Whatever the Drift was turning around, it is ' +
+        'not turning any more.  ' +
+        'The chart is still there when you want it. There is always more rock.',
+        'FLY ON', () => { onCoreBroken(); });
+      save();
+      return;
+    }
+    onCoreBroken();
   }, 1700);
 }
 
 export function hardReset() {
   try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) { /* ignore */ }
   g.planet = 0; g.credits = 0; g.shards = 0;
-  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0 };
-  g.kit = { coolant: 0, patch: 0, cell: 0 };
+  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0,
+    hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 };
+  g.kit = { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 };
   g.stock = {};
-  g.relics = []; g.relicsTaken = [];
+  g.relics = []; g.relicsTaken = []; g.drive = [];
   g.drops = {}; syncDrops();
   g.damage = {};
   g.dug = new Set();

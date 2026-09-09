@@ -3,7 +3,8 @@ import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          RELIC_COLOR, RELIC_HOST, relicAt, relicFor,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
 import { key, mixHex } from './util';
-import { g } from './state';
+import { g , coreM, valueM, worldTrait} from './state';
+import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
 import type { Block, SupplyKey } from './types';
 
 export function rnd(x: number, y: number, p: number) {
@@ -15,18 +16,37 @@ export function rnd(x: number, y: number, p: number) {
 export function blockAt(x: number, d: number): Block | null {
   if (d < 0 || x < 0 || x >= W) return null;
   if (g.dug.has(key(x, d))) return null;
-  const cd = coreDepth(g.planet);
+  const cd = coreM();
   if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(g.planet), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
   const hm = hardMult(g.planet);
 
   /* The relic, before anything that could hide it. It is one cell on the whole
      planet and it must not lose a coin flip to a cave. */
-  const rl = relicAt(g.planet);
+  const rl = relicAt(g.planet, g.coreOff);
   if (x === rl.x && d === rl.d && !g.relicsTaken.includes(g.planet)) {
     return { id: 'relic', name: relicFor(g.planet).name, color: RELIC_COLOR, host: RELIC_HOST,
              glow: 0.95, shards: 9, tone: 10, hard: 9 * hm, wt: 0, value: 0,
              ore: true, relic: true };
+  }
+
+  /* The Jump Drive component, on the same footing as the relic and for the
+     same reason: it is one cell on the whole planet, so nothing is allowed to
+     overwrite it. Deeper than the relic, and only on a world whose trait holds
+     one - see drive.ts.
+
+     No roll of its own because it needs none: the position is a hash of the
+     leg, not a sample of the world's noise, so it consumes nothing from the
+     ore stream. That is the trap CLAUDE.md warns about, avoided by not rolling
+     at all rather than by rolling carefully. */
+  const pid = partFor(g.trait);
+  if (pid && !g.drive.includes(pid)) {
+    const pa = partAt(g.planet, g.coreOff);
+    if (x === pa.x && d === pa.d) {
+      return { id: 'part', name: partName(pid), color: PART_COLOR, host: PART_HOST,
+               glow: 1.0, shards: 10, tone: 10, hard: 13 * hm, wt: 0, value: 0,
+               ore: true, part: true };
+    }
   }
 
 
@@ -50,7 +70,7 @@ export function blockAt(x: number, d: number): Block | null {
      Evaluated on a coarse grid and with its own seed offset, so adding them
      leaves every ore and rock roll exactly where it was. */
   if (d >= CAVE_MIN_DEPTH &&
-      rnd(Math.floor(x / 2), Math.floor(d / 2), g.planet + 77) < caveChanceOn(d, g.planet)) {
+      rnd(Math.floor(x / 2), Math.floor(d / 2), g.planet + 77) < caveChanceOn(d, worldTrait())) {
     return null;
   }
 
@@ -60,7 +80,7 @@ export function blockAt(x: number, d: number): Block | null {
      enough to be an event rather than a resource. Gas first: it is the one you
      do not want, and it should not be crowded out by a geode roll. */
   const pr = rnd(x + 313, d + 977, g.planet + 41);
-  if (d >= GAS.min && pr < gasChanceOn(g.planet)) {
+  if (d >= GAS.min && pr < gasChanceOn(worldTrait())) {
     return { id: GAS.id, name: GAS.name, color: GAS.color, host: GAS.host, glow: GAS.glow,
              shards: GAS.shards, tone: GAS.tone, hard: GAS.hard * hm, wt: GAS.wt,
              value: GAS.value, ore: true, hazard: true };
@@ -73,7 +93,7 @@ export function blockAt(x: number, d: number): Block | null {
              shards: CACHE.shards, tone: CACHE.tone, hard: CACHE.hard * hm, wt: CACHE.wt,
              value: CACHE.value, ore: true, cache: true };
   }
-  if (d >= GEODE.min && pr > 1 - geodeChanceOn(g.planet)) {
+  if (d >= GEODE.min && pr > 1 - geodeChanceOn(worldTrait())) {
     return { id: GEODE.id, name: GEODE.name, color: GEODE.color, host: GEODE.host, glow: GEODE.glow,
              shards: GEODE.shards, tone: GEODE.tone, hard: GEODE.hard * hm, wt: GEODE.wt,
              value: GEODE.value, ore: true };
@@ -110,7 +130,7 @@ export function blockAt(x: number, d: number): Block | null {
 export const haulValue = () => {
   let v = 0;
   for (const k in g.cargo) v += g.cargo[k] * DEF[k].value;
-  return Math.round(v * valueMult(g.planet));
+  return Math.round(v * valueM());
 };
 
 /* ---------- cache contents ----------
@@ -152,7 +172,7 @@ export function cachePrize(x: number, d: number): CachePrize {
     return { kind: 'mineral', id: o.id, n: 3 + Math.floor(r2 * 4) };
   }
 
-  return { kind: 'credits', n: Math.round((400 + d * 22) * valueMult(g.planet)) };
+  return { kind: 'credits', n: Math.round((400 + d * 22) * valueM()) };
 }
 
 /* ---------- collapse ----------
@@ -218,7 +238,7 @@ export function findRoute() {
       for (const n of around) {
         guard++;
         const nx = n[0], nd = n[1];
-        if (nx < 0 || nx >= W || nd < -3 || nd > coreDepth(g.planet)) continue;
+        if (nx < 0 || nx >= W || nd < -3 || nd > coreM()) continue;
         const k = key(nx, nd);
         if (seen.has(k)) continue;
         if (blockAt(nx, nd)) continue;

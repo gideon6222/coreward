@@ -1,8 +1,8 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult, costOf, matCost } from './config';
+         coreDepth, planetName, traitOf, valueMult, costOf, matCost , TRAIT_OF} from './config';
 import { setGauges } from './gauges';
 import { clamp } from './util';
-import { g, S, save } from './state';
+import { g, S, save , coreM, valueM, worldTrait} from './state';
 import { heatDamagePerSecond } from './feel';
 import type { Upgrade } from './types';
 import { VERSION, CHANGELOG } from './changelog';
@@ -13,6 +13,7 @@ import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './telemetry';
 import { R } from './runtime';
 import { selectedBay, refreshBays } from './station';
+import { PARTS, DRIVE_SLOTS } from './drive';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
    ones the game cannot run without: throwing here reaches the on-screen
@@ -62,8 +63,8 @@ export function buildRunLog() {
     '<div class="lg"><div class="l">' + r.label + '</div><div class="v">' + r.value +
     '</div><div class="n">' + r.note + '</div></div>').join('');
   ui.runlog.innerHTML =
-    '<div class="lgh">THIS RUN</div>' + table(summarise(R.run, S.fuelCap(), HULL_MAX)) +
-    '<div class="lgh">ALL TIME</div>' + table(summarise(allNow, S.fuelCap(), HULL_MAX));
+    '<div class="lgh">THIS RUN</div>' + table(summarise(R.run, S.fuelCap(), S.hullCap())) +
+    '<div class="lgh">ALL TIME</div>' + table(summarise(allNow, S.fuelCap(), S.hullCap()));
 }
 
 /* Rendered once, on first open, because a changelog does not change while the
@@ -107,19 +108,19 @@ export function updateHUD() {
      modifier you play without. Stable is left unlabelled - "Verdax · Stable"
      would teach the first-time player that traits are a thing before they have
      ever seen one bite. */
-  const tr = traitOf(g.planet);
+  const tr = worldTrait();
   ui.planet.textContent = tr.id === 'stable'
-    ? planetName(g.planet)
-    : planetName(g.planet) + '  ·  ' + tr.name.toUpperCase();
+    ? planetName(g.world)
+    : planetName(g.world) + '  ·  ' + tr.name.toUpperCase();
   ui.credits.textContent = Math.floor(g.credits).toLocaleString();
   ui.haul.textContent = haulValue().toLocaleString();
-  ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   CORE ' + coreDepth(g.planet) + ' m';
+  ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   CORE ' + coreM() + ' m';
   /* The dials take fractions and do their own smoothing - see gauges.ts. The
      two numbers under them are the exact reading a needle cannot give you, and
      fuel is the one that decides whether to turn round. Rounded UP, so a gauge
      never prints 0% while there is still a metre of climb in the tank. */
   const fuelFrac = clamp(g.fuel / S.fuelCap(), 0, 1);
-  const hullFrac = clamp(g.hull / HULL_MAX, 0, 1);
+  const hullFrac = clamp(g.hull / S.hullCap(), 0, 1);
   const weightFrac = clamp(g.weight / S.cargoCap(), 0, 1);
   ui.fuelTxt.textContent = Math.ceil(fuelFrac * 100) + '%';
   ui.cargoTxt.textContent = g.weight.toFixed(1) + ' / ' + S.cargoCap() + ' KG';
@@ -168,7 +169,7 @@ export function updateHUD() {
    still worth seeing, because the count is the information. */
 function supplyIdle(key: string) {
   if (key === 'coolant') return g.soak < 0.02;
-  if (key === 'patch') return g.hull >= HULL_MAX - 0.5;
+  if (key === 'patch') return g.hull >= S.hullCap() - 0.5;
   return g.fuel >= S.fuelCap() - 0.5;
 }
 
@@ -206,7 +207,7 @@ export function updateKit() {
 
 export function buildManifest() {
   ui.manifestRows.innerHTML = '';
-  const vm = valueMult(g.planet);
+  const vm = valueM();
   const rows = Object.keys(g.cargo).filter((k) => g.cargo[k] > 0)
     .sort((a, b) => g.cargo[b] * DEF[b].value - g.cargo[a] * DEF[a].value);
   if (!rows.length) {
@@ -253,6 +254,39 @@ export function buildVault() {
       '<div class="val">' + (g.stock[o.id] || 0) + '</div>';
     ui.vault.appendChild(row);
   }
+
+  /* The Jump Drive, under the minerals.
+
+     It belongs in the manifest because the manifest is the screen that answers
+     "what have I got" - and the whole reason the drive exists is that the old
+     answer was a credit balance, which is a number that will look small next
+     week. Five named things you either have or do not is the opposite. */
+  const head = document.createElement('div');
+  head.className = 'sub';
+  head.style.marginTop = '16px';
+  head.textContent = 'JUMP DRIVE  ' + g.drive.length + ' / ' + DRIVE_SLOTS;
+  ui.vault.appendChild(head);
+  for (const part of PARTS) {
+    const has = g.drive.includes(part.id);
+    const row = document.createElement('div');
+    row.className = 'up';
+    row.innerHTML =
+      '<div class="dot" style="background:' +
+        (has ? '#9ffcff' : '#2a3038') + '; color:' + (has ? '#9ffcff' : '#2a3038') + '"></div>' +
+      '<div class="upinfo"><div class="upname"' + (has ? '' : ' style="color:#6b7480"') + '>' +
+        part.name + '</div>' +
+      '<div class="upeff">' + (has ? 'Aboard' : 'On a ' + (TRAIT_OF[part.trait] || { name: part.trait }).name + ' world') +
+      '</div></div>' +
+      '<div class="val"' + (has ? '' : ' style="color:#6b7480"') + '>' + (has ? '✓' : '—') + '</div>';
+    ui.vault.appendChild(row);
+  }
+  if (g.won) {
+    const w = document.createElement('div');
+    w.className = 'upeff';
+    w.style.marginTop = '10px';
+    w.textContent = 'The Heart is broken. The Drift is behind you.';
+    ui.vault.appendChild(w);
+  }
 }
 
 /* The shop is a room now, so this builds the HEADER and the card for whatever
@@ -263,7 +297,7 @@ export function buildVault() {
    the list used. Only the presentation moved. */
 export function buildShop() {
   ui.shopCredits.textContent = Math.floor(g.credits).toLocaleString();
-  ui.shopPlanet.textContent = planetName(g.planet).toUpperCase();
+  ui.shopPlanet.textContent = planetName(g.world).toUpperCase();
   /* The cases carry price and availability too, so they have to be redrawn
      whenever anything they show can have changed - which is exactly when this
      runs: opening the shop, and after every purchase. */

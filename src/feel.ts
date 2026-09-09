@@ -641,10 +641,14 @@ export function tremorTick(
 export const CHARGE_MAX = 4;
 export const CHARGE_SECONDS = 42;   /* seconds underground per point */
 
-export function chargeAfter(charge: number, dt: number, atPad: boolean, bonus = 0): number {
+export function chargeAfter(charge: number, dt: number, atPad: boolean, bonus = 0,
+                            rate = 1): number {
   const cap = CHARGE_MAX + bonus;
   if (atPad) return cap;
-  return Math.min(cap, charge + dt / CHARGE_SECONDS);
+  /* `rate` is the Reactor Core. Ordnance ran off a meter nothing could
+     improve, so the answer to "I want to use these more" was to stop using
+     them - two upgrades with no ladder underneath either of them. */
+  return Math.min(cap, charge + (dt * rate) / CHARGE_SECONDS);
 }
 
 /* ---------- costs and damage ---------- */

@@ -153,7 +153,15 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
      reparented onto the deck. Asserting the case COUNT is the equivalent of the
      old row count - it catches an upgrade that stops being reachable. */
   const bays = await page.evaluate(() => (window as any).__cw.bays.length);
-  expect(bays, 'every upgrade needs a case to stand in').toBe(10);
+  /* Against the number of upgrades, not against a literal. The literal said 10
+     and the message said "every upgrade needs a case to stand in", which are
+     two different claims - and when the shop went from ten upgrades to fifteen
+     it failed for the wrong reason and would have been fixed by editing the
+     number. The property is the one worth keeping: an upgrade with no case is
+     an upgrade nobody can buy. */
+  const upgrades = await page.evaluate(() => (window as any).__cw.upgradeCount);
+  expect(bays, 'every upgrade needs a case to stand in').toBe(upgrades);
+  expect(upgrades, 'the shop is empty').toBeGreaterThan(5);
   /* Nothing picked yet, so the card is empty and the hint is showing. */
   await expect(page.locator('#shopHint')).not.toHaveClass(/gone/);
 
@@ -165,8 +173,13 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
   await expect(page.locator('#shopCard'), 'a sealed case must say what unlocks it')
     .toContainText('Sealed until');
 
-  /* supplies stay as their own row of chips */
-  await expect(page.locator('#supplies .up')).toHaveCount(3);
+  /* Supplies stay as their own row of chips - one per supply, asserted against
+     the real count for the same reason as the cases above. This one was a
+     literal 3 sitting directly under the literal 10, and fixing only the first
+     of them meant the kit grew from three items to six and failed the same way
+     one line later. */
+  const supplies = await page.evaluate(() => (window as any).__cw.supplyCount);
+  await expect(page.locator('#supplies .up')).toHaveCount(supplies);
   await page.locator('#shopClose').dispatchEvent('click');
 
   await page.locator('#btnManifest').dispatchEvent('click');
@@ -1360,4 +1373,73 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
   expect(onScreen(r.four), 'four cells into solid rock, as displayed')
     .toBeLessThan(0.08);
   expect(r.two, 'two cells in is darker than one').toBeLessThan(r.wall);
+});
+
+test('breaking a core opens the chart, and the crossing lands you somewhere else', async ({ page }) => {
+  /* The whole top level of the game in one pass: a core breaks, three worlds
+     are offered, one is chosen, the ship crosses, and it arrives somewhere
+     that is genuinely a different place.
+
+     Driven through the debug seam rather than by playing down to a core,
+     because a core is 110 m of drilling and this test is about what happens
+     after it. Note the seam and not a dynamic import: under a dev server an
+     `import()` resolves to a different module instance than the one main.ts
+     wired up, so breakCore imported that way calls a handler nobody set and
+     the game sits in 'boom' forever. That cost a debugging round. */
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  const before = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    return { world: w.g.world, planet: w.g.planet, name: document.querySelector('#planet')!.textContent };
+  });
+
+  await page.evaluate(() => (window as any).__cw.breakCore());
+  await expect(page.locator('#chart')).not.toHaveClass(/hidden/, { timeout: 8_000 });
+
+  /* The property is "a choice", not "three". Written as a count here it would
+     be the third literal in this file to fail for the wrong reason the day the
+     chart grows a card - the other two were `bays` and `supplies`. */
+  const cards = page.locator('#chartCards .dest');
+  const n = await cards.count();
+  expect(n, 'the chart must offer a choice, not an announcement').toBeGreaterThan(1);
+
+  /* And every card a different world with a different trait, or some of them
+     are decoration. */
+  const names = await page.locator('#chartCards .dname').allTextContents();
+  expect(new Set(names).size, 'two cards named the same world: ' + names.join(', ')).toBe(n);
+  const traits = await page.locator('#chartCards .dtrait').allTextContents();
+  expect(new Set(traits).size, 'two cards with the same trait: ' + traits.join(', ')).toBe(n);
+
+  await cards.nth(1).click();
+
+  /* The crossing is its own mode and its own scene, and the HUD is gone for
+     it - depth and a d-pad mean nothing in open space. */
+  const crossing = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    return { mode: w.g.mode, body: document.body.className, hud: getComputedStyle(document.querySelector('#hud')!).display };
+  });
+  expect(crossing.mode).toBe('transit');
+  expect(crossing.body).toContain('crossing');
+  expect(crossing.hud, 'the HUD is still up during the crossing').toBe('none');
+
+  /* Run it out on the tick seam rather than in wall-clock: the crossing is
+     nine seconds of game time and CI has no GPU to spend on them. */
+  await page.evaluate(() => (window as any).__cw.advance(11));
+
+  const after = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    return {
+      mode: w.g.mode, world: w.g.world, planet: w.g.planet, trait: w.g.trait,
+      dug: w.g.dug.size, body: document.body.className,
+      name: document.querySelector('#planet')!.textContent
+    };
+  });
+
+  expect(after.mode, 'the crossing never ended').toBe('play');
+  expect(after.body, 'the HUD never came back').not.toContain('crossing');
+  expect(after.planet, 'the leg did not advance, so nothing got harder').toBe(before.planet + 1);
+  expect(after.world, 'arrived at the world it left').not.toBe(before.world);
+  expect(after.dug, 'the new world inherited the old one\'s tunnels').toBe(0);
+  expect(after.name, 'the HUD still names the old world').not.toBe(before.name);
 });

@@ -16,9 +16,30 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.17.0';
+export const VERSION = '0.19.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.19.0', date: '2026-09-09', title: 'Five more ways to build the ship',
+    notes: [
+      'Hull Plating: the hull was stuck at 100 forever. Now it is a ladder like everything else.',
+      'Salvage Magnet: ore you dropped when the hold filled now comes to you instead of needing a cell-perfect approach.',
+      'Deep Survey: reads ore through solid rock, and points at what is buried down there.',
+      'Repair Drone: slowly mends the hull underground, so a bad run can become a long one instead of a tow.',
+      'Reactor Core: more power cells and a faster trickle, so the charge and the laser finally have a ladder of their own.',
+      'And three new consumables that buy a window rather than fixing a bar: Overdrive, Bulwark Field and Survey Pulse.'
+    ]
+  },
+  {
+    version: '0.18.0', date: '2026-09-09', title: 'A chart, a crossing, and a way out',
+    notes: [
+      'Breaking a core now opens a navigation chart: three worlds, and you choose. Shallow and poor, or deep and rich.',
+      'You actually fly there. The world you broke falls away in pieces and the next one comes up out of the dark.',
+      'There is a goal now. Five Jump Drive components, one buried on each kind of world, and they open a route to the Heart of the Drift.',
+      'A component left in the ground goes with the planet when its core breaks - so go and find it first.',
+      'The manifest tracks the drive and tells you what kind of world each missing piece is on.'
+    ]
+  },
   {
     version: '0.17.0', date: '2026-09-09', title: 'Twelve worlds, twelve palettes',
     notes: [

@@ -26,6 +26,33 @@
       "max": 3,
       "blurb": "Burns 55 fuel straight into the tank.",
       "idle": "tank full"
+    },
+    {
+      "key": "overdrive",
+      "name": "Overdrive",
+      "icon": "OVR",
+      "cost": 1200,
+      "max": 2,
+      "blurb": "20 seconds of drilling at 1.8x power.",
+      "idle": "already running"
+    },
+    {
+      "key": "bulwark",
+      "name": "Bulwark Field",
+      "icon": "BWK",
+      "cost": 1400,
+      "max": 2,
+      "blurb": "Absorbs the next 2 impacts outright. Gas, rockfall, anything sudden.",
+      "idle": "field is up"
+    },
+    {
+      "key": "pulse",
+      "name": "Survey Pulse",
+      "icon": "PLS",
+      "cost": 1100,
+      "max": 2,
+      "blurb": "30 seconds of seeing every vein through the rock.",
+      "idle": "pulse is live"
     }
   ],
   "patchHull": 45,

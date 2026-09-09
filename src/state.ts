@@ -1,12 +1,35 @@
 import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
-         bombRadius, laserRange } from './config';
+         bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
+         valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
+import { R } from './runtime';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */
 export const g: {
+  /* THE LEG, and it is not the same thing as the world.
+
+     `planet` counts how far you have come: it seeds generation, sets the core
+     depth, the rock hardness and the base ore value, and it goes up by one
+     every time a core breaks. It is the difficulty ladder and it always was.
+
+     `world` is IDENTITY - the name on the HUD and the palette it is drawn in -
+     and the chart chooses it. Splitting them is what lets three candidates at
+     the same leg be three different places rather than three copies of one.
+     A save from before the chart existed has no world, so it defaults to the
+     leg and the old behaviour comes back exactly. */
   planet: number; credits: number; shards: number;
+  world: number;
+  /* The trait of the world you are on, STORED rather than hashed from an
+     index. The chart is what decides what is out there, and `traitOf` can
+     never return Stable for anything but planet zero - which would make one
+     of the five Jump Drive components unobtainable. */
+  trait: string;
+  /* What the chart's chosen world does to the leg's baseline: metres on the
+     core depth, and a multiplier on what ore is worth. They move together -
+     see the note in chart.ts on why deeper must also mean richer. */
+  coreOff: number; rich: number;
   up: Record<UpgradeKey, number>;
   kit: Kit;
   dug: Set<string>;
@@ -25,6 +48,14 @@ export const g: {
   stock: Cargo;
   /* Relic PERKS collected, across every planet ever visited. The one list in
      the save that only ever grows. */
+  /* Jump Drive components aboard. Like `relics`, a list that only grows - and
+     like relics, it is what you OWN rather than what you have done. See
+     drive.ts. */
+  drive: string[];
+  /* Whether the Heart has ever been broken. A flag rather than an end state:
+     the game keeps going afterwards, and this is what the chart and the
+     manifest read to say so. */
+  won: boolean;
   relics: string[];
   /* Which planets have had their relic taken.
 
@@ -51,8 +82,11 @@ export const g: {
   mode: Mode;
 } = {
   planet: 0, credits: 0, shards: 0,
-  up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0 },
-  kit: { coolant: 0, patch: 0, cell: 0 },
+  world: 0, trait: 'stable', coreOff: 0, rich: 1,
+  drive: [], won: false,
+  up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0,
+    hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 },
+  kit: { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 },
   dug: new Set<string>(),
   rubble: new Set<string>(),
   px: START_X, pd: -1,
@@ -70,7 +104,8 @@ export const relic = (id: string) => g.relics.includes(id);
 export const relicCount = (id: string) => g.relics.filter((r) => r === id).length;
 
 export const S = {
-  drill: () => (1 + g.up.drill * 0.95) * (1 + g.shards * 0.08) * (relic('drum') ? 1.1 : 1),
+  drill: () => (1 + g.up.drill * 0.95) * (1 + g.shards * 0.08) * (relic('drum') ? 1.1 : 1)
+           * (R.odT > 0 ? OVERDRIVE_MULT : 1),
   cargoCap: () => Math.round((60 + g.up.cargo * 45) * (relic('weave') ? 1.15 : 1)),
   speed: () => 3.0 + g.up.thrust * 0.7,
   fuelCap: () => 90 + g.up.tank * 40,
@@ -92,7 +127,29 @@ export const S = {
     Math.round((0.5 - g.up.tow * 0.05 - (relic('rights') ? 0.1 : 0)) * 1000) / 1000),
   autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075),
   bombR: () => bombRadius(g.up.bomb),
-  laserLen: () => laserRange(g.up.laser)
+  laserLen: () => laserRange(g.up.laser),
+
+  /* ---------- the second wave ---------- */
+
+  /* Hull was a flat HULL_MAX everywhere in the game, so this is the one that
+     had to be threaded through rather than added: anything that repaired to
+     "full" was reading the constant. */
+  hullCap: () => HULL_MAX + g.up.hull * 25,
+  /* 0 means not installed, and the pull is a radius rather than a vacuum -
+     you still have to go back for the ore, it just does not have to be exact. */
+  magnetR: () => (g.up.magnet === 0 ? 0 : 0.8 + g.up.magnet * 0.55),
+  /* How far into unbroken rock ore reads. Feeds the glow floor in the shader,
+     which is the term that was already deciding this - see LM_GLOW_FLOOR. */
+  surveyM: () => (g.up.survey === 0 ? 0 : 2 + g.up.survey * 1.6)
+                 + (R.pulseT > 0 ? PULSE_REACH : 0),
+  /* Hull per second underground. Deliberately an order of magnitude under what
+     soak takes at depth: this makes a bad run recoverable, never heat
+     survivable. */
+  repair: () => g.up.drone * 0.55,
+  /* Ordnance had no ladder of its own; both weapons ran off a meter nothing
+     could improve. */
+  powerExtra: () => g.up.reactor,
+  rechargeMult: () => 1 + g.up.reactor * 0.35
 };
 
 /* A save written before minerals existed has no stock, and its owner has
@@ -114,6 +171,8 @@ export function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
+      world: g.world, trait: g.trait, coreOff: g.coreOff, rich: g.rich,
+      drive: g.drive, won: g.won,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
@@ -128,6 +187,12 @@ export function load() {
     if (raw) {
       const s = JSON.parse(raw);
       g.planet = s.planet || 0; g.credits = s.credits || 0; g.shards = s.shards || 0;
+      /* Every one of these defaults to the pre-chart behaviour, so a save made
+         before the chart existed loads as the world it was on. */
+      g.world = typeof s.world === 'number' ? s.world : g.planet;
+      g.trait = typeof s.trait === 'string' ? s.trait : traitOf(g.planet).id;
+      g.coreOff = typeof s.coreOff === 'number' ? s.coreOff : 0;
+      g.rich = typeof s.rich === 'number' ? s.rich : 1;
       Object.assign(g.up, s.up || {});
       Object.assign(g.kit, s.kit || {});
       Object.assign(g.best, s.best || {});
@@ -136,6 +201,8 @@ export function load() {
       g.drops = s.drops || {};
       g.damage = s.damage || {};
       if (typeof s.charge === 'number') g.charge = s.charge;
+      g.drive = Array.isArray(s.drive) ? s.drive.slice() : [];
+      g.won = !!s.won;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
       g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];
       /* loadLog defaults every field, so a save from before the log existed
@@ -161,4 +228,39 @@ export function load() {
     g.stock = grandfatherStock();
     save();
   } catch (e) { /* corrupt save, start fresh */ }
+}
+
+/* ---------- the world you are actually on ----------
+
+   Three things that every module used to compute for itself out of `g.planet`,
+   and which now have a leg and a world to reconcile. One helper each, because
+   the failure mode of six call sites doing their own arithmetic is that five
+   of them get updated.
+
+   `worldTrait` falls back rather than throwing: a save carrying a trait id
+   that no longer exists (a trait renamed between versions) should load as
+   Stable and be playable, not refuse to start. */
+export function worldTrait() {
+  return TRAIT_OF[g.trait] || TRAITS[0];
+}
+
+/* Where the core is on THIS world: the leg's baseline plus what the chart
+   promised when you chose it. */
+export function coreM() {
+  return coreDepth(g.planet) + g.coreOff;
+}
+
+/* What ore is worth here: the leg's ladder times this world's richness. */
+export function valueM() {
+  return valueMult(g.planet) * g.rich;
+}
+
+/* Set the leg and the world together, for tests and for a fresh start. The
+   two drifting apart is exactly the bug this whole split can cause. */
+export function setWorld(p: number) {
+  g.planet = p;
+  g.world = p;
+  g.trait = traitOf(p).id;
+  g.coreOff = 0;
+  g.rich = 1;
 }

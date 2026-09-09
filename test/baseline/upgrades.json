@@ -533,5 +533,225 @@
       null
     ],
     "matTotal": 0
+  },
+  "hull": {
+    "name": "Hull Plating",
+    "base": 420,
+    "mul": 1.95,
+    "max": 9,
+    "tiers": null,
+    "costs": [
+      420,
+      819,
+      1597,
+      3114,
+      6073,
+      11842,
+      23092,
+      45029,
+      87806,
+      171222
+    ],
+    "effects": [
+      "100 hull",
+      "125 hull",
+      "150 hull",
+      "175 hull",
+      "200 hull",
+      "225 hull",
+      "250 hull",
+      "275 hull",
+      "300 hull",
+      "325 hull"
+    ],
+    "mat": "silver",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "silver",
+        "need": 2
+      },
+      {
+        "id": "silver",
+        "need": 4
+      },
+      {
+        "id": "silver",
+        "need": 6
+      },
+      {
+        "id": "silver",
+        "need": 8
+      },
+      {
+        "id": "silver",
+        "need": 10
+      },
+      {
+        "id": "silver",
+        "need": 12
+      }
+    ],
+    "matTotal": 42
+  },
+  "magnet": {
+    "name": "Salvage Magnet",
+    "base": 260,
+    "mul": 1.85,
+    "max": 6,
+    "tiers": null,
+    "costs": [
+      260,
+      481,
+      890,
+      1646,
+      3046,
+      5634,
+      10423
+    ],
+    "effects": [
+      "Not installed",
+      "Pulls drops from 1.4 cells",
+      "Pulls drops from 1.9 cells",
+      "Pulls drops from 2.5 cells",
+      "Pulls drops from 3.0 cells",
+      "Pulls drops from 3.5 cells",
+      "Pulls drops from 4.1 cells"
+    ],
+    "mat": "copper",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "copper",
+        "need": 2
+      },
+      {
+        "id": "copper",
+        "need": 4
+      },
+      {
+        "id": "copper",
+        "need": 6
+      }
+    ],
+    "matTotal": 12
+  },
+  "survey": {
+    "name": "Deep Survey",
+    "base": 700,
+    "mul": 2.05,
+    "max": 5,
+    "tiers": null,
+    "costs": [
+      700,
+      1435,
+      2942,
+      6031,
+      12363,
+      25344
+    ],
+    "effects": [
+      "Not installed",
+      "Reads ore 3.6 m through rock",
+      "Reads ore 5.2 m through rock",
+      "Reads ore 6.8 m through rock",
+      "Reads ore 8.4 m through rock",
+      "Reads ore 10.0 m through rock"
+    ],
+    "mat": "amethyst",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "amethyst",
+        "need": 2
+      },
+      {
+        "id": "amethyst",
+        "need": 4
+      }
+    ],
+    "matTotal": 6
+  },
+  "drone": {
+    "name": "Repair Drone",
+    "base": 1100,
+    "mul": 2.1,
+    "max": 5,
+    "tiers": null,
+    "costs": [
+      1100,
+      2310,
+      4851,
+      10187,
+      21393,
+      44925
+    ],
+    "effects": [
+      "Not installed",
+      "+0.55 hull/s underground",
+      "+1.10 hull/s underground",
+      "+1.65 hull/s underground",
+      "+2.20 hull/s underground",
+      "+2.75 hull/s underground"
+    ],
+    "mat": "amethyst",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "amethyst",
+        "need": 2
+      },
+      {
+        "id": "amethyst",
+        "need": 4
+      }
+    ],
+    "matTotal": 6
+  },
+  "reactor": {
+    "name": "Reactor Core",
+    "base": 900,
+    "mul": 2,
+    "max": 5,
+    "tiers": null,
+    "costs": [
+      900,
+      1800,
+      3600,
+      7200,
+      14400,
+      28800
+    ],
+    "effects": [
+      "Not installed",
+      "+1 power · 1.35x recharge",
+      "+2 power · 1.70x recharge",
+      "+3 power · 2.05x recharge",
+      "+4 power · 2.40x recharge",
+      "+5 power · 2.75x recharge"
+    ],
+    "mat": "gold",
+    "mats": [
+      null,
+      null,
+      null,
+      {
+        "id": "gold",
+        "need": 2
+      },
+      {
+        "id": "gold",
+        "need": 4
+      }
+    ],
+    "matTotal": 6
   }
 }

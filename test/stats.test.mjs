@@ -78,12 +78,12 @@ test('haul value is unchanged for fixed cargos', () => {
   for (const c of cargos) {
     for (const p of [0, 1, 2, 3]) {
       H.g.cargo = c;
-      H.g.planet = p;
+      H.setWorld(p);
       out.push({ cargo: c, planet: p, value: H.haulValue() });
     }
   }
   H.g.cargo = savedCargo;
-  H.g.planet = savedPlanet;
+  H.setWorld(savedPlanet);
   assertGolden('haul', out);
 });
 
@@ -497,7 +497,7 @@ test('relics move around between planets', () => {
 });
 
 test('a relic is generated until it is taken, then never again', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   H.g.rubble = new Set();
   H.g.relics = [];
@@ -538,7 +538,7 @@ test('relics keep appearing past the point where the perks repeat', () => {
   H.g.relicsTaken = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
   for (const p of [12, 13, 20]) {
-    H.g.planet = p;
+    H.setWorld(p);
     const r = H.relicAt(p);
     const b = H.blockAt(r.x, r.d);
     assert.ok(b && b.relic,
@@ -547,11 +547,11 @@ test('relics keep appearing past the point where the perks repeat', () => {
   }
 
   /* and a planet already cleared still has none */
-  H.g.planet = 3;
+  H.setWorld(3);
   const done = H.relicAt(3);
   assert.ok(!(H.blockAt(done.x, done.d) || {}).relic, 'a cleared planet regrew its relic');
 
-  H.g.relics = []; H.g.relicsTaken = []; H.g.planet = 0;
+  H.g.relics = []; H.g.relicsTaken = []; H.setWorld(0);
 });
 
 test('every relic perk is named, described and actually does something', () => {
@@ -598,4 +598,116 @@ test('the assay charter stacks past the named relics', () => {
   /* and past the named eight, every planet grants the stacking one */
   assert.equal(H.relicFor(20).id, 'assay');
   assert.equal(H.relicFor(0).id, H.RELICS[0].id);
+});
+
+test('the second wave of upgrades each answer something the first ten cannot', () => {
+  /* The bar for a new upgrade is that it is not a second price on a decision
+     the player already makes. These are the five gaps that existed, asserted
+     as properties rather than as a list of names, so the test survives a
+     rename and fails on a duplicate. */
+  const by = (k) => H.UPGRADES.find((u) => u.key === k);
+
+  /* Hull was a flat constant from the first metre to the last - the only
+     survival stat with no ladder at all. */
+  H.g.up.hull = 0;
+  const base = H.S.hullCap();
+  H.g.up.hull = by('hull').max;
+  assert.ok(H.S.hullCap() > base * 2, 'maxed Hull Plating barely moves the hull');
+  H.g.up.hull = 0;
+
+  /* Not installed means NOT INSTALLED. CRAFT.md: a station the player can pass
+     through and get nothing from teaches them to stop reading the signs - and
+     the inverse, a level-0 effect that already does something, means the first
+     purchase buys nothing you did not have. */
+  for (const k of ['magnet', 'survey', 'drone', 'reactor']) {
+    H.g.up[k] = 0;
+  }
+  assert.equal(H.S.magnetR(), 0, 'the magnet pulls before it is bought');
+  assert.equal(H.S.surveyM(), 0, 'the survey reads before it is bought');
+  assert.equal(H.S.repair(), 0, 'the drone repairs before it is bought');
+  assert.equal(H.S.powerExtra(), 0, 'the reactor adds power before it is bought');
+  assert.equal(H.S.rechargeMult(), 1, 'the reactor speeds recharge before it is bought');
+
+  for (const k of ['magnet', 'survey', 'drone', 'reactor']) {
+    H.g.up[k] = 1;
+  }
+  assert.ok(H.S.magnetR() > 0.5, 'the first level of the magnet does nothing worth the price');
+  assert.ok(H.S.surveyM() > 1, 'the first level of the survey does nothing worth the price');
+  assert.ok(H.S.repair() > 0, 'the first level of the drone does nothing');
+  assert.ok(H.S.powerExtra() >= 1 && H.S.rechargeMult() > 1, 'the first reactor does nothing');
+
+  for (const k of ['hull', 'magnet', 'survey', 'drone', 'reactor']) H.g.up[k] = 0;
+});
+
+test('the repair drone can never outpace the heat it is meant to survive', () => {
+  /* The drone must make a bad run recoverable, never make heat survivable.
+     If it out-heals soak at depth, the whole bottom half of the game stops
+     having a cost and the Cooling Rig - which is the ladder the deep game is
+     built on - becomes optional. */
+  const maxRepair = (() => {
+    const u = H.UPGRADES.find((x) => x.key === 'drone');
+    H.g.up.drone = u.max;
+    const r = H.S.repair();
+    H.g.up.drone = 0;
+    return r;
+  })();
+
+  /* Soak damage per second at the heat line and well past it, with no cooling.
+     soakAfter returns the new soak; what costs hull is the rate it climbs. */
+  const at = (d) => {
+    let soak = 0;
+    for (let i = 0; i < 60; i++) soak = H.soakAfter(soak, d, 1 / 60, 1);
+    return soak;
+  };
+  const deep = at(H.HEAT_DEPTH + 60);
+  assert.ok(deep > 0, 'the heat model stopped charging for depth');
+  /* The drone heals `maxRepair` hull per second; soak climbing to `deep` in a
+     second is what the hull then pays for. An order of magnitude is the claim. */
+  assert.ok(maxRepair < 4,
+    'a maxed drone repairs ' + maxRepair + ' hull/s, which is in the range heat takes');
+});
+
+test('a consumable never undercuts the upgrade that answers the same problem', () => {
+  /* CRAFT.md: consumables and permanent upgrades sit on different axes, and
+     the way that breaks is on price. If the one-run answer to a problem costs
+     less than the first rung of the permanent answer, stocking up quietly
+     replaces climbing - and the ladder, which is the whole progression, stops
+     being bought.
+
+     Asserted as pairs rather than as absolute numbers so a repricing of either
+     side keeps the relationship. */
+  const sup = (k) => H.SUPPLIES.find((s) => s.key === k);
+  const up = (k) => H.UPGRADES.find((u) => u.key === k);
+  const rung1 = (k) => H.costOf(up(k), 0);
+
+  const pairs = [
+    ['overdrive', 'drill'],
+    ['bulwark', 'hull'],
+    ['pulse', 'survey']
+  ];
+  for (const [s, u] of pairs) {
+    assert.ok(sup(s), 'no supply "' + s + '"');
+    assert.ok(sup(s).cost > rung1(u),
+      sup(s).name + ' costs ' + sup(s).cost + ' against ' + up(u).name +
+      ' level 1 at ' + rung1(u) + ' - the consumable replaces the ladder');
+  }
+});
+
+test('the timed consumables are windows, not permanent power', () => {
+  /* A stack limit and a window length are the two things that keep these on
+     the consumable axis. Large stacks turn a window into a state you are
+     always in; a long window does the same thing more slowly. */
+  for (const k of ['overdrive', 'bulwark', 'pulse']) {
+    const s = H.SUPPLIES.find((x) => x.key === k);
+    assert.ok(s.max <= 2, s.name + ' stacks to ' + s.max + ', which is a strategy rather than a decision');
+  }
+  assert.ok(H.OVERDRIVE_SECS <= 30, 'Overdrive lasts long enough to be a state rather than a moment');
+  assert.ok(H.PULSE_SECS <= 45, 'the pulse lasts long enough to be a permanent sense');
+
+  /* And Overdrive must stay under a free Drill Bit level, or carrying one is
+     strictly better than buying the rung it imitates. */
+  const drill = H.UPGRADES.find((u) => u.key === 'drill');
+  const perLevel = 1 + 0.95;
+  assert.ok(H.OVERDRIVE_MULT < perLevel,
+    'Overdrive at ' + H.OVERDRIVE_MULT + 'x is worth more than a level of ' + drill.name);
 });

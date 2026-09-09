@@ -64,6 +64,10 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/input.ts` | All d-pad, keyboard and button wiring |
 | `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
 | `src/loop.ts` | `frame()`. The one big function |
+| `src/chart.ts` | **Pure.** The navigation chart: which three worlds are offered at a leg |
+| `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
+| `src/drive.ts` | **Pure.** The Jump Drive, its five components, and the Heart |
+| `src/transit.ts` | The crossing between worlds. Its own scene |
 | `src/changelog.ts` | Version and the player-facing what's-new list |
 
 **Import direction is one-way and load-bearing:** types → config → util → runtime → state →
@@ -94,6 +98,23 @@ two constants stay equal because they drifted apart silently once.
 **`ORES` is ordered deepest-first, and each entry's `chance` is strictly lower than the next.**
 That is what makes adding a new deepest ore convert only the ore directly above it rather than
 reshuffling every band. There is a test.
+
+**`g.planet` is the LEG; `g.world` is the identity. They are not the same number.**
+`planet` counts how far you have come - it seeds generation, sets core depth, rock hardness
+and base ore value, and goes up by one per core broken. `world` is what the chart chose: the
+name on the HUD and the palette it is drawn in. A save from before the chart has no `world`
+and defaults to the leg, which is exactly the old behaviour. **`g.trait` is stored, not hashed
+from an index** - the chart decides what is out there, and `traitOf()` can never return Stable
+for anything but planet zero, which would make the Guidance Spine unobtainable. `coreM()` and
+`valueM()` in state.ts exist so the leg and the world are reconciled in one place each; six
+call sites doing their own arithmetic means five of them get updated. **Tests must use
+`setWorld(p)`**, never `g.planet = p`, or the trait drifts from the leg and generation quietly
+changes.
+
+**`relicAt()` and `partAt()` take the world's REAL core depth, offset included.** The chart can
+put a core 18 m shallower than the ladder would, and anything placed against the leg's baseline
+then generates below the floor of the world it is on - unreachable, and silently, because
+nothing looks for a relic it cannot see.
 
 **Per-cell maps carry no planet in their keys.** `dug`, `rubble`, `damage` and `drops` must all
 be cleared together on a planet change, or the new world inherits the old one's holes.
@@ -151,6 +172,14 @@ Recording the near side puts every rock face in the game into its own shadow.
 **Rock is relaxed but never expanded by the solver.** That one line in `light.ts` is what
 stops light passing through a wall into the chamber behind it. Without it every sealed
 pocket glows faintly and tells the player it is there before they have dug to it.
+
+**Every upgrade needs a display case, and station.ts throws at boot if it does not have one.**
+`SLOTS` in station.ts is a hand-placed list and `UPGRADES` is a one-line addition in config.ts
+a long way from it. The index used to wrap with `i % SLOTS.length`, which put four cases
+*inside* four others where they were invisible and could not be tapped. The e2e asserts one
+case per upgrade against `UPGRADES.length` rather than a literal, because the literal version
+of that test said 10, failed for the wrong reason, and would have been "fixed" by editing the
+number.
 
 **Bedrock and the planet core are unbreakable by ordnance.** The core is a planet's climax and
 has to be drilled by hand.

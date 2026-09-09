@@ -170,7 +170,7 @@ test('a seam is worth stopping for early and outclassed by ore later', () => {
 });
 
 test('seams are common enough to shape a tunnel, rare enough to be a find', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   H.g.rubble = new Set();
   let rock = 0, seams = 0;

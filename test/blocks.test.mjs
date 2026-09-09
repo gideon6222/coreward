@@ -14,10 +14,29 @@ const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ALL_IDS = [
   ...H.ORES.map((o) => o.id), ...H.ROCKS.map((r) => r.id),
   H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, H.SEAM.id,
-  'core', 'bedrock', '(empty)'
+  'core', 'bedrock', '(empty)', 'relic', 'part'
 ].sort();
 const CHAR = new Map(ALL_IDS.map((id, i) => [id, ALPHA[i]]));
 assert.ok(ALL_IDS.length <= ALPHA.length, 'ran out of snapshot characters');
+
+/* An id with no character silently became the literal string "undefined" in
+   the grid, and 'relic' had been doing exactly that since the day it was
+   added. On its own that is only ugly - the baseline recorded it consistently,
+   so changes were still caught. It became a real hole the moment a SECOND id
+   was missing: two different blocks both spelling "undefined" cannot be told
+   apart, so a cell changing from one to the other would compare equal and the
+   golden would pass through the change it exists to catch.
+
+   Asserting here rather than in the loop so it fails once with a useful name
+   rather than four thousand times. */
+function charFor(id) {
+  const c = CHAR.get(id);
+  if (c === undefined) {
+    throw new Error('snapshot: block id "' + id + '" has no legend character - ' +
+      'add it to ALL_IDS, or it will be indistinguishable from every other missing id');
+  }
+  return c;
+}
 
 /* A cell's payload is determined by (planet, id, colour). It used to be just
    (planet, id) - every numeric field was constant per id or scaled by
@@ -29,7 +48,7 @@ assert.ok(ALL_IDS.length <= ALPHA.length, 'ran out of snapshot characters');
    trusting it. Widening the key rather than dropping the assertion: the point
    of it is to catch a field that starts varying by something nobody expected. */
 function snapshot(p) {
-  H.g.planet = p;
+  H.setWorld(p);
   H.g.dug = new Set();
   const cd = H.coreDepth(p);
   const defs = {};
@@ -39,7 +58,7 @@ function snapshot(p) {
     for (let x = 0; x < H.W; x++) {
       const b = H.blockAt(x, d);
       const id = b ? b.id : '(empty)';
-      grid += CHAR.get(id);
+      grid += charFor(id);
       counts[id] = (counts[id] || 0) + 1;
       if (!b) continue;
       const payload = { ...b };
@@ -59,7 +78,7 @@ test('world generation is unchanged for planets 0-5', () => {
 /* Infinity does not survive JSON, so bedrock gets its own explicit assertion
    on the live value rather than relying on the snapshot round-trip. */
 test('bedrock hardness is Infinity (asserted directly, not via snapshot)', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   const below = H.blockAt(H.START_X, H.coreDepth(0) + 1);
   assert.equal(below.id, 'bedrock');
@@ -68,7 +87,7 @@ test('bedrock hardness is Infinity (asserted directly, not via snapshot)', () =>
   assert.equal(below.wt, 0);
   assert.equal(below.value, 0);
   for (const p of PLANETS) {
-    H.g.planet = p;
+    H.setWorld(p);
     const b = H.blockAt(0, H.coreDepth(p) + 5);
     assert.equal(b.hard, Infinity, 'bedrock on planet ' + p + ' must stay unbreakable');
   }
@@ -76,7 +95,7 @@ test('bedrock hardness is Infinity (asserted directly, not via snapshot)', () =>
 
 test('the core sits exactly at coreDepth and is breakable', () => {
   for (const p of PLANETS) {
-    H.g.planet = p;
+    H.setWorld(p);
     H.g.dug = new Set();
     const cd = H.coreDepth(p);
     const core = H.blockAt(H.START_X, cd);
@@ -88,7 +107,7 @@ test('the core sits exactly at coreDepth and is breakable', () => {
 });
 
 test('dug cells read as empty', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   const k = H.key(4, 5);
   assert.notEqual(H.blockAt(4, 5), null, 'cell should start solid');
@@ -113,7 +132,12 @@ const PRE = JSON.parse(
    a deliberate act and should come with a diff you have read: it says "this
    new feature overwrites cells", which is fine, as opposed to "this new
    feature moved the ore around", which is not. */
-const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic']);
+/* 'part' is the Jump Drive component - one cell per world, on the worlds whose
+   trait holds one. It is an overwriter in exactly the sense this set means: it
+   replaces whatever was generated in its cell and touches nothing else,
+   because its position is a hash of the leg rather than a sample of the
+   world's noise. It consumes no roll at all. */
+const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'part']);
 
 /* Extending the ore ladder downward is the other legal change, and it is a
    NARROWER claim than the one above, so it is stated narrowly rather than by
@@ -146,7 +170,7 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
      "pockets have gone wrong" for a change that had nothing to do with them. */
   let same = 0, overwritten = 0, extended = 0;
   for (const snap of PRE) {
-    H.g.planet = snap.planet;
+    H.setWorld(snap.planet);
     H.g.dug = new Set();
     let i = 0;
     for (let d = snap.rowsFrom; d <= snap.rowsTo; d++) {
@@ -182,7 +206,7 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
 
 test('caves stay below CAVE_MIN_DEPTH and never eat the core', () => {
   for (const p of PLANETS) {
-    H.g.planet = p;
+    H.setWorld(p);
     H.g.dug = new Set();
     const cd = H.coreDepth(p);
     for (let d = 0; d < H.CAVE_MIN_DEPTH; d++)
@@ -236,7 +260,7 @@ test('a geode outvalues every ore available at its depth', () => {
    reaches into `rnd(x, d, planet)` it fails there, not here. */
 
 function census(p) {
-  H.g.planet = p;
+  H.setWorld(p);
   H.g.dug = new Set();
   const cd = H.coreDepth(p);
   let cells = 0, gas = 0, geo = 0, cave = 0;
@@ -335,7 +359,7 @@ test('trait-adjusted rates stay inside their caps at any depth', () => {
 });
 
 test('out of bounds and above surface read as empty', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   assert.equal(H.blockAt(-1, 5), null);
   assert.equal(H.blockAt(H.W, 5), null);
@@ -360,7 +384,7 @@ test('rnd() is a pure deterministic hash', () => {
    the game can be farmed forever from one spot. */
 
 test('a collapsed cell comes back as rubble, never as the ore it held', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   H.g.rubble = new Set();
 
@@ -400,7 +424,7 @@ test('a collapsed cell comes back as rubble, never as the ore it held', () => {
 });
 
 test('rubble never appears on its own, only where something put it', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   H.g.rubble = new Set();
   for (let d = 0; d < H.coreDepth(0); d++)
@@ -436,7 +460,7 @@ test('a tremor takes more of the tunnel the deeper you are, but stays bounded', 
 });
 
 test('rubble is coloured as the band it sits in, not one fixed grey', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   H.g.rubble = new Set();
   const at = (d) => {
@@ -487,7 +511,7 @@ test('mixHex blends channels and stays inside 24 bits', () => {
 
 test('a cache is rare enough to be a surprise and common enough to be met', () => {
   for (const p of PLANETS) {
-    H.g.planet = p;
+    H.setWorld(p);
     H.g.dug = new Set();
     H.g.rubble = new Set();
     const cd = H.coreDepth(p);
@@ -510,7 +534,7 @@ test('a cache is rare enough to be a surprise and common enough to be met', () =
 });
 
 test('what a cache holds is fixed by where it is, not by when you open it', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   const a = H.cachePrize(4, 61);
   const b = H.cachePrize(4, 61);
   assert.deepEqual(a, b, 'the same cache rolled differently twice');
@@ -522,7 +546,7 @@ test('what a cache holds is fixed by where it is, not by when you open it', () =
 });
 
 test('every cache prize is something the game can actually give you', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   const kinds = { supply: 0, mineral: 0, credits: 0 };
   for (let d = H.CACHE.min; d < 280; d++)
     for (let x = 0; x < H.W; x++) {
@@ -551,7 +575,7 @@ test('every cache prize is something the game can actually give you', () => {
 });
 
 test('a deep cache holds deeper minerals than a shallow one', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   const deepestAt = (d) => {
     let best = 0;
     for (let x = 0; x < H.W; x++) {

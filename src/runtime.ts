@@ -13,7 +13,25 @@
 import type { Dir, Dig, Flight } from './types';
 import { blankLog } from './telemetry';
 
+/* The crossing between worlds, while it is running. Null the rest of the
+   time, exactly like `flight`. */
+export type Transit = {
+  t: number; dur: number;
+  dest: { world: number; trait: string; coreOff: number; rich: number; fuel: number };
+  leg: number;
+};
+
 export const R = {
+  /* The timed consumables, while they are running.
+
+     Run-scoped and NOT saved, unlike the kit counts. A window you bought and
+     paid for is part of a descent; carrying one across a reload would make it
+     a permanent upgrade you can bank, which is the axis these exist to be the
+     opposite of. Cleared by goSurface() with everything else. */
+  odT: 0,          /* seconds of Overdrive left */
+  pulseT: 0,       /* seconds of Survey Pulse left */
+  bulwark: 0,      /* impacts the Bulwark Field will still absorb */
+  transit: null as Transit | null,
   /* input -> loop */
   held: null as Dir | null,
 

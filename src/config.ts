@@ -94,9 +94,24 @@ const PALETTES: Palette[] = [
   { rock: 0x3a3040, mix: 0.44, fog: 0x050308, haze: 0xb088e0, dust: 0xa898b8, para: 0x14101a }
 ];
 
-export const paletteOf = (i: number): Palette => PALETTES[i % PALETTES.length];
+/* The Heart's own palette: black rock, red air, nothing else like it in the
+   game. It is the last place you will ever go and it has to look like it. */
+const HEART_PAL: Palette =
+  { rock: 0x2a0808, mix: 0.55, fog: 0x140000, haze: 0xff5028, dust: 0xff8858, para: 0x1c0604 };
+
+export const paletteOf = (i: number): Palette =>
+  i === 9999 ? HEART_PAL : PALETTES[i % PALETTES.length];
+
+/* How many distinct identities exist before the names and palettes repeat.
+   The chart uses it to spread world ids over the whole set rather than over
+   whatever range the leg happens to be in. */
+export const PLANET_COUNT = PALETTES.length;
 
 export const planetName = (i: number) => {
+  /* The Heart is not on the list and never cycles - see HEART_WORLD in
+     drive.ts. Named here because planetName is what every screen in the game
+     asks, and a special case in each of them would be six places to forget. */
+  if (i === 9999) return 'The Heart';
   const base = PLANET_NAMES[i % PLANET_NAMES.length];
   const cyc = Math.floor(i / PLANET_NAMES.length);
   return cyc ? base + ' ' + (cyc + 1) : base;
@@ -206,8 +221,16 @@ export const RELIC_HOST = 0x2a2438;
 
 /* Below the halfway point of the planet, and never in the outermost column -
    a relic hard against the wall is one you find by accident or not at all. */
-export function relicAt(planet: number): { x: number; d: number } {
-  const cd = coreDepth(planet);
+export function relicAt(planet: number, coreOff = 0): { x: number; d: number } {
+  /* The OFFSET core depth, not the leg's baseline.
+
+     The chart can put a world's core 18 m shallower than the ladder would, and
+     a relic placed against the baseline then generates below the floor of the
+     world it is on - unreachable, and silently, because nothing looks for a
+     relic it cannot see. Found by a test asserting the component sits deeper
+     than the relic, which it could not do on a shallow world for exactly this
+     reason. */
+  const cd = coreDepth(planet) + coreOff;
   const lo = Math.floor(cd * 0.5);
   const span = Math.max(1, cd - 6 - lo);
   const hx = Math.imul(planet + 1, 2654435761) >>> 0;
@@ -251,10 +274,18 @@ export const caveChance = (d: number) => Math.min(0.09, 0.03 + (d - CAVE_MIN_DEP
 /* Trait-adjusted rates. Capped after the multiply, because a 2.4x on a rate
    that already climbs with depth dissolves the deep ground into open air. */
 export const CAVE_CHANCE_CAP = 0.17;
-export const caveChanceOn = (d: number, p: number) =>
-  Math.min(CAVE_CHANCE_CAP, caveChance(d) * (traitOf(p).cave || 1));
-export const gasChanceOn = (p: number) => Math.min(0.06, GAS.chance * (traitOf(p).gas || 1));
-export const geodeChanceOn = (p: number) => Math.min(0.06, GEODE.chance * (traitOf(p).geode || 1));
+/* These take the TRAIT, not a planet index, and that is the whole reason the
+   chart can offer you a Hollow world and have it actually be hollow.
+
+   They used to hash the trait out of the planet index themselves, which meant
+   a world's trait was a property of how far you had come rather than of where
+   you had chosen to go - and it made Stable unreachable for every planet but
+   the first, because that is what traitOf does. Passing the trait in moves the
+   decision to the one place that should own it. */
+export const caveChanceOn = (d: number, t: Trait) =>
+  Math.min(CAVE_CHANCE_CAP, caveChance(d) * (t.cave || 1));
+export const gasChanceOn = (t: Trait) => Math.min(0.06, GAS.chance * (t.gas || 1));
+export const geodeChanceOn = (t: Trait) => Math.min(0.06, GEODE.chance * (t.geode || 1));
 
 /* ---------- tremors ----------
 
@@ -431,6 +462,22 @@ for (const r of ROCKS) DEF[r.id] = r;
 export const PATCH_HULL = 45;
 export const CELL_FUEL = 55;
 
+/* How long each window lasts, and how much it is worth while it does.
+
+   Overdrive is deliberately under 2x: at 2x it is a free Drill Bit level and
+   the ladder stops mattering for the length of the run you carry one. Bulwark
+   counts IMPACTS rather than seconds, because a timer would be eaten by heat
+   soak - which is a drain, not a hit, and is the one thing it must not
+   cancel. */
+export const OVERDRIVE_SECS = 20;
+export const OVERDRIVE_MULT = 1.8;
+export const BULWARK_HITS = 2;
+export const PULSE_SECS = 30;
+/* What a live pulse adds to the Deep Survey's reach, in metres. Larger than
+   the maxed upgrade on purpose: the upgrade is a standing sense, the pulse is
+   a moment of seeing everything. */
+export const PULSE_REACH = 14;
+
 export const SUPPLIES: Supply[] = [
   { key: 'coolant', name: 'Coolant Flush', icon: 'COOL', cost: 1500, max: 2,
     blurb: 'Dumps accumulated heat soak back to zero. Does not cool the rock.',
@@ -440,8 +487,34 @@ export const SUPPLIES: Supply[] = [
     idle: 'hull full' },
   { key: 'cell', name: 'Fuel Cell', icon: 'FUEL', cost: 600, max: 3,
     blurb: 'Burns ' + CELL_FUEL + ' fuel straight into the tank.',
-    idle: 'tank full' }
+    idle: 'tank full' },
+
+  /* ---------- the timed three ----------
+
+     The first three consumables all UNDO something: heat, damage, an empty
+     tank. These three do the opposite - they buy a window in which the ship is
+     better than it is. That is the axis the kit was missing, and it is what
+     makes a consumable a decision about WHEN rather than a repair you make
+     when a bar gets low.
+
+     Priced above the first rung of the upgrade that answers the same problem,
+     per CRAFT.md: a consumable that undercuts the ladder replaces it, and then
+     nobody ever buys the ladder. Overdrive against Drill Bit at 130, Bulwark
+     against Hull Plating at 420, Pulse against Deep Survey at 700. Stack limits
+     stay at two, so a full kit is a run's worth of decisions and not a
+     strategy. */
+  { key: 'overdrive', name: 'Overdrive', icon: 'OVR', cost: 1200, max: 2,
+    blurb: OVERDRIVE_SECS + ' seconds of drilling at ' + OVERDRIVE_MULT + 'x power.',
+    idle: 'already running' },
+  { key: 'bulwark', name: 'Bulwark Field', icon: 'BWK', cost: 1400, max: 2,
+    blurb: 'Absorbs the next ' + BULWARK_HITS + ' impacts outright. Gas, rockfall, anything sudden.',
+    idle: 'field is up' },
+  { key: 'pulse', name: 'Survey Pulse', icon: 'PLS', cost: 1100, max: 2,
+    blurb: PULSE_SECS + ' seconds of seeing every vein through the rock.',
+    idle: 'pulse is live' }
 ];
+
+
 
 export const SUPPLY_OF: Record<string, Supply> = {};
 for (const sup of SUPPLIES) SUPPLY_OF[sup.key] = sup;
@@ -490,7 +563,47 @@ export const UPGRADES: Upgrade[] = [
      the two was decoration. Ruby lives at 105 m, which puts both gates in the
      same neighbourhood, and a ruby laser is the better fiction anyway. */
   { key: 'laser',  name: 'Cutting Laser',  base: 2800, mul: 2.30, max: 3, mat: 'ruby', group: 'ordnance', unlock: 90,
-    effect: (l) => (l === 0 ? 'Not installed' : laserRange(l) + ' cells straight ahead') }
+    effect: (l) => (l === 0 ? 'Not installed' : laserRange(l) + ' cells straight ahead') },
+
+  /* ---------- the second wave ----------
+
+     Five ladders for five things that had none. Each answers a complaint the
+     existing ten cannot, which is the bar: an upgrade that overlaps an
+     existing one is a second price on the same decision.
+
+     HULL PLATING. Hull was a flat 100 from the first metre to the last, the
+     only survival stat in the game with no ladder at all - so the answer to
+     "the deep is chewing me up" was always a consumable, never a rig. Gated at
+     45 m and on iron, both cheap, because this is the one that makes the
+     middle of the game survivable rather than the end of it. */
+  { key: 'hull',   name: 'Hull Plating',   base: 420, mul: 1.95, max: 9, mat: 'silver', group: 'survival', unlock: 45,
+    effect: (l: number) => (100 + l * 25) + ' hull' },
+
+  /* SALVAGE MAGNET. Ore dropped when the hold filled has to be re-approached
+     one cell at a time, which is the least interesting minute in the game.
+     Radius, not automation: you still have to go back for it. */
+  { key: 'magnet', name: 'Salvage Magnet', base: 260, mul: 1.85, max: 6, mat: 'copper', group: 'rig', unlock: 20,
+    effect: (l: number) => (l === 0 ? 'Not installed' : 'Pulls drops from ' + (0.8 + l * 0.55).toFixed(1) + ' cells') },
+
+  /* DEEP SURVEY. Distinct from the Scanner, which is light and framing: this
+     is knowing what is inside rock you have not cut. It also points at the
+     buried Jump Drive component, which is the thing the goal most needs a way
+     to find - a component you can only locate by digging the whole world is a
+     goal made of patience. */
+  { key: 'survey', name: 'Deep Survey',    base: 700, mul: 2.05, max: 5, mat: 'amethyst', group: 'instruments', unlock: 35,
+    effect: (l: number) => (l === 0 ? 'Not installed' : 'Reads ore ' + (2 + l * 1.6).toFixed(1) + ' m through rock') },
+
+  /* REPAIR DRONE. Turns a bad run into a long one instead of a tow. Slow on
+     purpose - it must never make heat survivable, only recoverable, so it is
+     an order of magnitude under what soak takes at depth. */
+  { key: 'drone',  name: 'Repair Drone',   base: 1100, mul: 2.10, max: 5, mat: 'amethyst', group: 'survival', unlock: 60,
+    effect: (l: number) => (l === 0 ? 'Not installed' : '+' + (l * 0.55).toFixed(2) + ' hull/s underground') },
+
+  /* REACTOR. Ordnance had two rungs and no ladder of its own: both weapons ran
+     off a meter nothing could improve, so the answer to "I want to use these
+     more" was to stop using them. */
+  { key: 'reactor', name: 'Reactor Core',  base: 900, mul: 2.00, max: 5, mat: 'gold', group: 'ordnance', unlock: 50,
+    effect: (l: number) => (l === 0 ? 'Not installed' : '+' + l + ' power · ' + (1 + l * 0.35).toFixed(2) + 'x recharge') }
 ];
 export const costOf = (u: Upgrade, lvl: number) => Math.round(u.base * Math.pow(u.mul, lvl));
 

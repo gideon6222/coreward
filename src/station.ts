@@ -266,11 +266,27 @@ const SLOTS: [number, number, number, number][] = [
   [-1.18, -0.22, -1.2, 0.5], [-1.18, -0.98, -1.2, 0.5],
   [1.18, 2.05, -1.2, -0.5], [1.18, 1.29, -1.2, -0.5], [1.18, 0.53, -1.2, -0.5],
   [1.18, -0.22, -1.2, -0.5], [1.18, -0.98, -1.2, -0.5],
-  [0, 2.85, -2.2, 0]
+  /* A rack across the back wall, above the ship. The second wave of upgrades
+     took the count from ten to fifteen and the two columns only ever held
+     eleven; the wrap below put four cases inside four others, where they were
+     invisible and could not be tapped. Flat-on rather than angled, because
+     they are read straight down the barrel of the camera from here. */
+  [-1.52, 2.88, -2.3, 0], [-0.76, 2.88, -2.3, 0], [0, 2.88, -2.3, 0],
+  [0.76, 2.88, -2.3, 0], [1.52, 2.88, -2.3, 0]
 ];
 
+/* Every upgrade needs its own case. The wrap that used to hide this is gone,
+   but the shape of the mistake is not: adding an upgrade is a one-line change
+   in config.ts and this file is nowhere near it. Throwing at module load puts
+   the failure in the error overlay on the first boot after the change, which
+   is the cheapest possible place to find it. */
+if (UPGRADES.length > SLOTS.length) {
+  throw new Error('station: ' + UPGRADES.length + ' upgrades but only ' +
+    SLOTS.length + ' display cases - add a slot or cases will overlap');
+}
+
 UPGRADES.forEach((u, i) => {
-  const slot = SLOTS[i % SLOTS.length];
+  const slot = SLOTS[i];
   const grp = new THREE.Group();
   grp.position.set(slot[0], slot[1], slot[2]);
   grp.rotation.y = slot[3];

@@ -1,7 +1,7 @@
 /* Boot. Every imported module's top-level setup runs before this file's
    body, which is what the single-file version got for free by being written
    top to bottom. */
-import { HULL_MAX } from './config';
+import { HULL_MAX, UPGRADES, SUPPLIES } from './config';
 import { g, S, save, load } from './state';
 import { R } from './runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
@@ -16,7 +16,14 @@ import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
+import { setCoreHandler, breakCore } from './actions';
+import { openChart, arrive, skipTransit } from './chartui';
 import './input';
+
+/* actions.ts raises "a core broke"; chartui.ts answers it. Wired here rather
+   than imported directly, because chartui already imports actions and a cycle
+   that works only because of when each binding is read is a trap. */
+setCoreHandler(openChart);
 
 /* ============ build stamp ============
    Vite replaces __BUILD_SHA__ and __BUILD_TIME__ at build time. This is the
@@ -39,7 +46,7 @@ function stampBuild() {
 load();
 lamp.distance = S.light();
 g.fuel = S.fuelCap();
-g.hull = HULL_MAX;
+g.hull = S.hullCap();
 camera.position.set(0, -g.pd - 0.8, 13);
 resize();
 syncBlocks(true);
@@ -83,6 +90,16 @@ if (new URLSearchParams(location.search).has('debug')) {
        rebuild-and-reload cycle is how an afternoon disappears. */
     scene, camera, lamp, amb, sun, rim, fog, renderer, lmDebug,
     setDrillTier, setUpgradeHardware,
-    pickBay, selectBay, selectedBay, bays, stationCamera
+    /* The chart and the crossing. Reached through here rather than by
+       importing the module in a test: under the dev server a dynamic import
+       resolves to a different module instance than the one main.ts wired up,
+       so `breakCore` imported that way calls a handler that was never set and
+       the game sits in 'boom' forever. Through the seam it is the same
+       instance the game is running. */
+    breakCore, openChart, arrive, skipTransit,
+    pickBay, selectBay, selectedBay, bays, stationCamera,
+    /* So a test can assert one case per upgrade against the real number
+       rather than against a literal that goes stale. */
+    upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length
   };
 }

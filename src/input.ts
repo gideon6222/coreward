@@ -1,6 +1,6 @@
 import { coreDepth, planetName, traitOf, SUPPLIES, RELIC_OF } from './config';
 import { relicDistance } from './relic';
-import { g } from './state';
+import { g , coreM, worldTrait} from './state';
 import { haulValue } from './world';
 import { R } from './runtime';
 import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
@@ -103,10 +103,10 @@ mustEl('btnPause').onclick = () => {
   audioLabels();
   buildNotes();
   ui.pauseStats.innerHTML =
-    '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.planet) +
-    (traitOf(g.planet).id === 'stable' ? '' : ' <span class="mult">' + traitOf(g.planet).name + '</span>') + '</div>' +
-    '<div class="upeff">Core at ' + coreDepth(g.planet) + ' m · you are at ' + Math.max(0, Math.round(g.pd)) + ' m</div>' +
-    '<div class="upeff">' + traitOf(g.planet).blurb + '</div></div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.world) +
+    (worldTrait().id === 'stable' ? '' : ' <span class="mult">' + worldTrait().name + '</span>') + '</div>' +
+    '<div class="upeff">Core at ' + coreM() + ' m · you are at ' + Math.max(0, Math.round(g.pd)) + ' m</div>' +
+    '<div class="upeff">' + worldTrait().blurb + '</div></div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Credits</div>' +
     '<div class="upeff">Haul aboard worth ◈ ' + haulValue().toLocaleString() + '</div></div>' +
     '<div class="val">◈ ' + Math.floor(g.credits).toLocaleString() + '</div></div>' +
@@ -116,7 +116,7 @@ mustEl('btnPause').onclick = () => {
       : 'One is buried on every planet, below the halfway mark. Nothing marks it.') +
     '</div>' +
     (relicDistance() === null
-      ? '<div class="upeff">Recovered on ' + planetName(g.planet) + '.</div>'
+      ? '<div class="upeff">Recovered on ' + planetName(g.world) + '.</div>'
       : '<div class="upeff">Still in the ground here.</div>') + '</div>' +
     '<div class="val">' + g.relics.length + '</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Records</div>' +

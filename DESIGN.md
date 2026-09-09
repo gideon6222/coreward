@@ -173,6 +173,43 @@ bottleneck you are actually in.
 
 ---
 
+## Status
+
+- **1. Planet identity** — shipped in 0.17.0. Twelve palettes, applied to rock, fog, haze,
+  dust and the silhouettes at once. Ore keeps its own colour everywhere.
+- **2. The chart and the transit** — shipped in 0.18.0.
+- **3. The Jump Drive and the Heart** — shipped in 0.18.0. Components generate, are collected,
+  are tracked in the manifest, and the Heart appears on the chart once the drive is complete.
+- **4. Upgrades** — shipped in 0.19.0. Hull Plating, Salvage Magnet, Deep Survey, Repair
+  Drone and Reactor Core, taking the shop from ten cases to fifteen. Three of the five had
+  their material changed by a test before they landed: `hull` wanted iron from 11 m behind a
+  45 m seal, which is CRAFT.md's *"two gates on one thing means one of them is decoration"*,
+  and `drone` wanted emerald from inside the heat zone for something you buy before reaching
+  it.
+- **5. Consumables** — shipped in 0.19.0. Overdrive, Bulwark Field and Survey Pulse. The kit
+  had three items and all three UNDID something (heat, damage, an empty tank); these buy a
+  window in which the ship is better than it is, which is the axis that was missing. Bulwark
+  counts impacts rather than seconds because heat soak is a drain and would eat a timer before
+  the thing it exists to stop ever arrived.
+
+**Still open:** caches that sometimes hand you a temporary effect instead of goods, and the
+per-trait surface signatures from the "look different" section (gas venting, lit magma veins,
+crystal formations). The palettes carry world identity on their own for now.
+
+Two things changed shape while building, both worth recording:
+
+**The leg and the world had to be split.** `g.planet` was doing two jobs — difficulty ladder
+and identity — and a chart offering three worlds at the same leg needs those to be different
+numbers. `g.world`, `g.trait`, `g.coreOff` and `g.rich` are the chart's answer, and they all
+default to the pre-chart behaviour so old saves load unchanged.
+
+**The trait had to be stored rather than hashed.** `traitOf()` returns Stable only for planet
+zero, so a Guidance Spine gated behind a Stable world would have been unobtainable for the
+whole game. The chart is now the authority on what a world is, which is where that decision
+belonged anyway.
+
+---
+
 ## Order of work
 
 Each slice ships on its own: typecheck, golden tests, build, size guard, e2e, CI, deploy.

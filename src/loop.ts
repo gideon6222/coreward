@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './drive';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH, paletteOf } from './config';
 import { clamp, key, mixHex } from './util';
-import { g, S, save } from './state';
+import { g, S, save , coreM, valueM, worldTrait} from './state';
 import { blockAt } from './world';
 import { R } from './runtime';
 import type { Dir } from './types';
@@ -39,9 +40,11 @@ import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
 import { stepGauges } from './gauges';
 import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent,
-         stopDigging } from './actions';
+         stopDigging , absorb} from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
+import { isCrossing, stepTransit, renderTransit } from './transit';
+import { arrive } from './chartui';
 
 export const FACE_VEC: Record<Dir, number[]> =
   { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -59,7 +62,7 @@ export function step(dir: Dir) {
 export function solidAt(cx: number, cy: number) {
   if (cx < 0 || cx >= W) return true;
   if (cy < -1) return true;
-  if (cy > coreDepth(g.planet)) return true;
+  if (cy > coreM()) return true;
   return blockAt(cx, cy) !== null;
 }
 
@@ -192,6 +195,11 @@ export function tick(raw: number, draw = true) {
     /* The only clock the run log keeps. It runs in play and nowhere else, so
        time spent paused, shopping or reading the manifest never dilutes a rate. */
     R.run.sec += dt;
+    /* The timed consumables. On `dt` rather than `raw`, so hit-stop pauses
+       them with the simulation - a window bought with a limited resource must
+       not be spent by frames in which nothing happened. */
+    if (R.odT > 0) R.odT = Math.max(0, R.odT - dt);
+    if (R.pulseT > 0) R.pulseT = Math.max(0, R.pulseT - dt);
     camZBoost = approach(camZBoost, 0, CAM_BOOST_DECAY, raw);
     /* Let go and the drill stops. It used to run to completion no matter what,
        which meant the only way to change your mind about a block was to have
@@ -308,7 +316,7 @@ export function tick(raw: number, draw = true) {
              one, and it gives dwelling deep a second thing to fear besides
              heat. The soak spike is what actually bites, because it multiplies
              every bit of heat damage for the rest of the trip. */
-          const dmg = Math.round(GAS_HULL_DAMAGE * (traitOf(g.planet).gasDamage || 1) * S.gasTake());
+          const dmg = absorb(Math.round(GAS_HULL_DAMAGE * (worldTrait().gasDamage || 1) * S.gasTake()));
           R.run.hullGas += dmg;
           g.hull -= dmg;
           R.hullCause = 'gas';
@@ -334,6 +342,29 @@ export function tick(raw: number, draw = true) {
           sfx.relic();
           showEvent('RELIC RECOVERED', rel.name + '. ' + rel.blurb +
             '  Relics found: ' + g.relics.length + '.', 'STOW IT', () => {});
+          R.digging = null;
+          save();
+        }
+        else if (b.part) {
+          /* A Jump Drive component. The other thing in the game you can lose
+             for good: leave it in the ground, break the core, and it goes with
+             the planet. Unlike a relic it is not a perk - it is a key, and
+             five of them open the Heart. */
+          const pid = partFor(g.trait);
+          if (pid && !g.drive.includes(pid)) g.drive.push(pid);
+          spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 190, 12, 2.2);
+          spray(worldX(R.digging.x), -R.digging.d, PART_COLOR, 150, 9, 2.6);
+          flash('rgba(160,255,255,.6)', 800);
+          R.shake = Math.max(R.shake, 0.9);
+          sfx.relic();
+          const left = DRIVE_SLOTS - g.drive.length;
+          showEvent('COMPONENT RECOVERED',
+            (pid ? partName(pid) + '. ' + (PART_OF[pid] ? PART_OF[pid].blurb : '') : '') +
+            (left > 0
+              ? '  Jump Drive ' + g.drive.length + '/' + DRIVE_SLOTS + '. ' + left +
+                ' still out there, on worlds the chart can find.'
+              : '  The Jump Drive is complete. A route to the Heart of the Drift is open.'),
+            'STOW IT', () => {});
           R.digging = null;
           save();
         }
@@ -367,7 +398,7 @@ export function tick(raw: number, draw = true) {
           g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
           g.weight += b.wt;
           if (b.ore) sfx.collect(b.tone);
-          if (b.value >= 400) toast(b.name + '  +◈ ' + Math.round(b.value * valueMult(g.planet)).toLocaleString());
+          if (b.value >= 400) toast(b.name + '  +◈ ' + Math.round(b.value * valueM()).toLocaleString());
           R.digging = null;
           save();
         }
@@ -464,16 +495,17 @@ export function tick(raw: number, draw = true) {
          surface at all - which also means it fires once however slowly the
          ship drifts up onto the pad. */
       const now = atSurface();
-      if (now && !R.wasAtSurface) { sell(); g.fuel = S.fuelCap(); g.hull = HULL_MAX; }
+      if (now && !R.wasAtSurface) { sell(); g.fuel = S.fuelCap(); g.hull = S.hullCap(); }
       R.wasAtSurface = now;
     }
 
     /* Power cells trickle back underground and fill at the pad; see
        chargeAfter in feel.ts for why it is both. */
-    g.charge = chargeAfter(g.charge, dt, atSurface(), S.powerCap());
+    g.charge = chargeAfter(g.charge, dt, atSurface(), S.powerCap() + S.powerExtra(),
+                           S.rechargeMult());
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
-    g.soak = soakAfter(g.soak, g.pd, dt, traitOf(g.planet).soak || 1);
+    g.soak = soakAfter(g.soak, g.pd, dt, worldTrait().soak || 1);
     if (g.pd > HEAT_DEPTH) {
       /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
       const hd = heatDamagePerSecond(g.pd, S.shield(), g.soak) * S.heatTake() * dt;
@@ -487,8 +519,17 @@ export function tick(raw: number, draw = true) {
         flash('rgba(255,120,30,.20)', 420);
       }
     } else if (atSurface()) {
-      g.hull = Math.min(HULL_MAX, g.hull + HULL_REGEN * dt);
+      g.hull = Math.min(S.hullCap(), g.hull + HULL_REGEN * dt);
       g.fuel = S.fuelCap();
+    } else if (S.repair() > 0 && g.hull < S.hullCap()) {
+      /* The Repair Drone, and it only runs where the pad cannot reach you.
+
+         Deliberately an order of magnitude under what soak takes at depth: it
+         turns a bad run into a long one rather than making heat survivable.
+         In the `else` chain AFTER the overheating branch on purpose - a drone
+         that ticked while the hull was draining would be quietly cancelling
+         part of the hazard, which is the one thing it must not do. */
+      g.hull = Math.min(S.hullCap(), g.hull + S.repair() * dt);
     }
 
     /* Two metres of hysteresis, so hovering on the line cannot spam the
@@ -553,6 +594,19 @@ export function tick(raw: number, draw = true) {
      lamp, the world ambience, the vignette - is about being underground, and
      running it against a ship that is no longer in that world would fight the
      station's own framing. So the loop stops here and draws the room. */
+  /* The crossing between worlds, for the same reason and in the same place as
+     the station: the ship has been reparented into another scene, so none of
+     the underground machinery below applies to it. */
+  if (isCrossing() && R.transit) {
+    R.transit.t += raw;
+    const u = Math.min(1, R.transit.t / R.transit.dur);
+    stepTransit(u, clock);
+    tickToast(raw);
+    if (draw) renderTransit();
+    if (u >= 1) arrive();
+    return;
+  }
+
   if (isDocked()) {
     stepStation(clock, raw);
     tickToast(raw);
@@ -613,7 +667,8 @@ export function tick(raw: number, draw = true) {
      by the smoothed facing gives world (sin, -cos) - which in the grid's
      frame, where +y is deeper, is (sin, cos). */
   const fz = rig.rotation.z;
-  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw);
+  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw,
+              S.surveyM());
 
   const fscale = 0.25 + thrustLevel * 1.15;
   for (const f of flames) {
@@ -637,8 +692,8 @@ export function tick(raw: number, draw = true) {
      dust all warm together. Three coordinated signals so the boundary reads at
      a glance instead of having to be noticed in the HUD. */
   const hot = heatT(g.pd);
-  const hi = lerpHex(skyHi(g.planet), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
-  const lo = lerpHex(skyLo(g.planet), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
+  const hi = lerpHex(skyHi(g.world), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
+  const lo = lerpHex(skyLo(g.world), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
   /* The SKY keeps the gradual ramp; the fog does not. Fog only ever tints what
      is underground, and underground is not the colour of the horizon - at 40 m
      the old shared value was still a bright blue and was washing it over every
@@ -647,8 +702,8 @@ export function tick(raw: number, draw = true) {
   /* The deep fog target is the WORLD'S, not one shared near-black. It is most
      of what makes Cryon read as ice and Ashvault as ash from the surface down,
      because fog tints every distant surface in the frame at once. */
-  const pal = paletteOf(g.planet);
-  fog.color.copy(lerpHex(skyLo(g.planet), pal.fog, tFog).lerp(new THREE.Color(0x4a1305), hot * 0.85));
+  const pal = paletteOf(g.world);
+  fog.color.copy(lerpHex(skyLo(g.world), pal.fog, tFog).lerp(new THREE.Color(0x4a1305), hot * 0.85));
   /* The tunnel haze and the silhouettes behind it take the same palette. Heat
      still overrides all of it at the bottom - the heat line has to read the
      same on every world or it stops being a threshold the player can learn. */

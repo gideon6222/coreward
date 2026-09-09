@@ -13,3 +13,5 @@ export * from '../src/feel';
 export * from '../src/fly';
 export * from '../src/telemetry';
 export * from '../src/light';
+export * from '../src/chart';
+export * from '../src/drive';

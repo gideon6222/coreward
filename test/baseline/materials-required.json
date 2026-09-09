@@ -286,6 +286,121 @@
         null
       ],
       "total": 0
+    },
+    {
+      "key": "hull",
+      "mat": "silver",
+      "mineralDepth": 22,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "silver",
+          "need": 2
+        },
+        {
+          "id": "silver",
+          "need": 4
+        },
+        {
+          "id": "silver",
+          "need": 6
+        },
+        {
+          "id": "silver",
+          "need": 8
+        },
+        {
+          "id": "silver",
+          "need": 10
+        },
+        {
+          "id": "silver",
+          "need": 12
+        }
+      ],
+      "total": 42
+    },
+    {
+      "key": "magnet",
+      "mat": "copper",
+      "mineralDepth": 4,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "copper",
+          "need": 2
+        },
+        {
+          "id": "copper",
+          "need": 4
+        },
+        {
+          "id": "copper",
+          "need": 6
+        }
+      ],
+      "total": 12
+    },
+    {
+      "key": "survey",
+      "mat": "amethyst",
+      "mineralDepth": 56,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "amethyst",
+          "need": 2
+        },
+        {
+          "id": "amethyst",
+          "need": 4
+        }
+      ],
+      "total": 6
+    },
+    {
+      "key": "drone",
+      "mat": "amethyst",
+      "mineralDepth": 56,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "amethyst",
+          "need": 2
+        },
+        {
+          "id": "amethyst",
+          "need": 4
+        }
+      ],
+      "total": 6
+    },
+    {
+      "key": "reactor",
+      "mat": "gold",
+      "mineralDepth": 36,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "gold",
+          "need": 2
+        },
+        {
+          "id": "gold",
+          "need": 4
+        }
+      ],
+      "total": 6
     }
   ]
 }

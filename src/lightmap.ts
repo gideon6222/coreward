@@ -178,7 +178,7 @@ function fillSolid() {
    swings round with the model instead of snapping a quarter turn ahead of it. */
 export function updateLight(
   px: number, pd: number, range: number, dirX: number, dirD: number, dt: number,
-  draw = true
+  draw = true, surveyM = 0
 ) {
   const want = Math.round(pd) - LM_ABOVE;
   /* Scroll the smoothed field with the window, or descending drags every
@@ -254,7 +254,18 @@ export function updateLight(
   U.uLmLamp.value.set(worldX(px), -pd, 1 / reach, LM_GAIN);
   U.uLmDir.value.set(dirX, dirD, LM_INDIRECT, LM_FOCUS);
   U.uLmShade.value.set(LM_SHADOW_SOFT, span, LM_FORWARD);
-  U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), LM_GLOW_FLOOR, LM_GLOW_POW,
+  /* The Deep Survey raises the floor under a GLOWING thing, which is exactly
+     what "reads ore through rock" means in this renderer: coreGlow() already
+     decides how much of a buried vein survives the rock in front of it, and
+     LM_GLOW_FLOOR is the term that stops it reaching zero. An upgrade that
+     raises that floor is the whole feature - see S.surveyM() and the note on
+     the glow curve in CLAUDE.md.
+
+     Capped well under 1: at 1 every vein on the map would be equally bright
+     whatever was in front of it, which stops being a survey and starts being
+     a map with the game turned off. */
+  const survey = Math.min(0.34, LM_GLOW_FLOOR + surveyM * 0.035);
+  U.uLmSoft.value.set(1 / (reach * LM_BOUNCE_RANGE), survey, LM_GLOW_POW,
                       LM_AIR_AMBIENT);
   haze.position.set(0, -pd, HAZE_Z);
 

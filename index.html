@@ -463,11 +463,41 @@
   #btnAuto{border-color:#2a5570; color:var(--cyan);}
   #btnPause{color:var(--dim);}
 
+  /* ---------- the navigation chart ----------
+     A card per candidate world, painted in that world's own palette so the
+     choice is made against the colour you will actually be flying in. */
+  .dest{
+    display:block; width:100%; text-align:left; margin-top:10px; padding:12px 13px;
+    border:1px solid var(--line); border-radius:12px; background:#0e1219;
+    color:var(--ink); font:inherit; cursor:pointer; position:relative; overflow:hidden;
+  }
+  .dest:disabled{opacity:.45; cursor:default;}
+  /* The world's colour as a bar down the leading edge. Cheap, and it makes the
+     three cards read as three places rather than three paragraphs. */
+  .dest::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--dc,#888);}
+  .dest .dname{font-size:15px; font-weight:700; letter-spacing:.04em;}
+  .dest .dtrait{font-size:11.5px; font-weight:700; color:var(--dc,#888); margin-top:2px; letter-spacing:.06em;}
+  .dest .dblurb{font-size:11.5px; color:var(--dim); margin-top:5px; line-height:1.5;}
+  .dest .drow{display:flex; gap:14px; margin-top:8px; font-size:11.5px; color:var(--dim);}
+  .dest .drow b{color:var(--ink); font-weight:700;}
+  /* The component line is the reason the chart exists, so it is the loudest
+     thing on the card it appears on and absent everywhere else. */
+  .dest .dpart{margin-top:7px; font-size:12px; font-weight:700; color:var(--cyan);}
+  .dest.short{border-color:#5a3320;}
+  .dest.short .dfuel{color:var(--amber);}
+  .chartfoot{font-size:11.5px; margin-top:14px;}
+
   .modal{
     position:fixed; inset:0; background:rgba(3,5,10,.86); z-index:20;
     display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px);
   }
   .modal.hidden{display:none;}
+  /* The crossing owns the screen. The HUD is about being underground - depth,
+     hold, fuel gauges, a d-pad - and none of it means anything in open space;
+     left up it reads as the game failing to change scene. */
+  body.crossing #hud, body.crossing #kit, body.crossing #cluster,
+  body.crossing #actions, body.crossing #ord, body.crossing #ctrl,
+  body.crossing #vignette, body.crossing #heat{display:none !important;}
   .sheet{
     width:100%; max-width:460px; max-height:86vh; overflow:auto;
     background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px;
@@ -662,6 +692,12 @@
   <button class="sup none" id="supCoolant"><span class="g">COOL</span><span class="n">0</span></button>
   <button class="sup none" id="supPatch"><span class="g">HULL</span><span class="n">0</span></button>
   <button class="sup none" id="supCell"><span class="g">FUEL</span><span class="n">0</span></button>
+  <!-- The timed three. Same row, because they are the same kind of thing to
+       reach for; the first three undo a problem and these three buy a window,
+       and both are "spend one now". -->
+  <button class="sup none" id="supOverdrive"><span class="g">OVR</span><span class="n">0</span></button>
+  <button class="sup none" id="supBulwark"><span class="g">BWK</span><span class="n">0</span></button>
+  <button class="sup none" id="supPulse"><span class="g">PLS</span><span class="n">0</span></button>
 </div>
 
 <div id="ord">
@@ -734,6 +770,17 @@
     <div id="runlog" class="notes hidden"></div>
     <div id="notes" class="notes hidden"></div>
     <div class="fine build" id="build"></div>
+  </div>
+</div>
+
+<!-- The navigation chart. Three worlds, and the choice between them is the
+     only decision in the game made above the level of a single run. -->
+<div id="chart" class="modal hidden">
+  <div class="sheet">
+    <h2>NAVIGATION CHART</h2>
+    <div class="sub" id="chartSub"></div>
+    <div id="chartCards"></div>
+    <p id="chartFoot" class="chartfoot"></p>
   </div>
 </div>
 

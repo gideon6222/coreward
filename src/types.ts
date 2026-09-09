@@ -64,13 +64,15 @@ export interface Block {
   seam?: boolean;
   /* The one buried artefact on this planet. */
   relic?: boolean;
+  /* the Jump Drive component buried on this world - see drive.ts */
+  part?: boolean;
 }
 
 export type UpgradeKey =
   | 'drill' | 'cargo' | 'thrust' | 'tank' | 'cool' | 'scan' | 'tow' | 'auto'
-  | 'bomb' | 'laser';
+  | 'bomb' | 'laser' | 'hull' | 'magnet' | 'survey' | 'drone' | 'reactor';
 
-export type SupplyKey = 'coolant' | 'patch' | 'cell';
+export type SupplyKey = 'coolant' | 'patch' | 'cell' | 'overdrive' | 'bulwark' | 'pulse';
 
 /* A consumable bought at the pad and spent underground.
 
@@ -172,7 +174,8 @@ export interface Relic {
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
 /* g.mode gates input and the frame loop. */
-export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly' | 'boom';
+export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly' | 'boom'
+                 | 'chart' | 'transit';
 
 /* Chewing through one block. */
 export interface Dig {
@@ -222,6 +225,12 @@ export interface SaveV2 {
   charge?: number;
   relics?: string[];
   relicsTaken?: number[];
+  drive?: string[];
+  won?: boolean;
+  world?: number;
+  trait?: string;
+  coreOff?: number;
+  rich?: number;
 }
 
 /* The pre-v2 save. `beacon` was the old name for the autopilot upgrade and no

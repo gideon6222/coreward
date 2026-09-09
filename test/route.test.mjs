@@ -15,7 +15,7 @@ const H = await loadPure();
 /* A 3-wide room from the surface down to d=10, with the ship parked off-axis at
    x=3 so that many equal-length routes to the pad at (4,-1) exist. */
 function room() {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   for (let d = 0; d <= 10; d++)
     for (let x = H.START_X - 1; x <= H.START_X + 1; x++) H.g.dug.add(H.key(x, d));
@@ -25,7 +25,7 @@ function room() {
 
 /* An L-shaped tunnel: straight down, then across. Only one route exists. */
 function elbow() {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   for (let d = 0; d <= 8; d++) H.g.dug.add(H.key(H.START_X, d));
   for (let x = H.START_X; x <= H.START_X + 3; x++) H.g.dug.add(H.key(x, 8));
@@ -38,7 +38,7 @@ function elbow() {
    and one to the right. Nothing but the neighbour order can decide which the
    BFS returns, so this is the fixture that gives the canary real teeth. */
 function fork() {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   for (let d = 0; d <= 10; d++) if (d !== 5) H.g.dug.add(H.key(H.START_X, d));
   for (const x of [H.START_X - 1, H.START_X + 1])
@@ -110,7 +110,7 @@ test('route through a one-way elbow tunnel is valid and optimal', () => {
 });
 
 test('no route when the ship is sealed in', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set([H.key(H.START_X, 50)]);
   H.g.px = H.START_X;
   H.g.pd = 50;
@@ -118,7 +118,7 @@ test('no route when the ship is sealed in', () => {
 });
 
 test('no route when already at the pad', () => {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.dug = new Set();
   H.g.px = H.START_X;
   H.g.pd = -1;
@@ -169,7 +169,7 @@ test('CANARY: exact tie-break path (safe to re-record on its own)', () => {
    in it is load-bearing, which makes it the worst case for the seal-in
    guarantee and useless for testing anything else. */
 function shaft(depth, x = H.START_X) {
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.rubble = new Set();
   H.g.dug = new Set();
   for (let d = -1; d <= depth; d++) H.g.dug.add(H.key(x, d));
@@ -187,7 +187,7 @@ function shaft(depth, x = H.START_X) {
 function cavern(depth) {
   assert.ok(depth < H.coreDepth(0),
     'cavern(' + depth + ') is at or below the core, where no route can exist');
-  H.g.planet = 0;
+  H.setWorld(0);
   H.g.rubble = new Set();
   H.g.dug = new Set();
   for (let d = -1; d <= depth; d++)
