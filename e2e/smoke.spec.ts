@@ -45,6 +45,46 @@ async function holdUntil(page: Page, dir: string, settled: () => Promise<void>) 
   }
 }
 
+/* Hold a direction and run GAME time until a condition holds, rather than
+   waiting on the wall clock.
+
+   `holdUntil` above presses the same button and then waits for real seconds to
+   pass, which is fine when there is a GPU and marginal when there is not. CI
+   has no GPU, falls back to a software rasteriser, and the suite has grown a
+   1400-mote dust field and per-world weather since these budgets were set: the
+   sell test needed more than its 45 seconds to fly back up to the pad and went
+   red on CI while passing locally in a third of the time.
+
+   PIPELINE.md already names the fix and it is not a bigger timeout: *"anything
+   that accumulates over GAME time belongs on advance(), where a slow machine
+   costs nothing."* The button is still pressed with a real pointer event, so
+   the input path is exercised exactly as before; only the waiting changes.
+
+   Advanced in one-second slices with a check between them, so a hold cannot
+   overshoot by more than a second - which matters for the directions where
+   holding too long drives into something. */
+async function holdSeam(
+  page: Page, dir: string, check: () => Promise<boolean>, maxSecs = 90
+) {
+  const key = page.locator(`#dpad .k[data-dir=${dir}]`);
+  await key.dispatchEvent('pointerdown');
+  let ok = false;
+  try {
+    for (let t = 0; t < maxSecs && !ok; t++) {
+      ok = await check();
+      if (!ok) await page.evaluate(() => (window as any).__cw.advance(1));
+    }
+    ok = ok || await check();
+  } finally {
+    await key.dispatchEvent('pointerup');
+    await page.waitForTimeout(60);
+  }
+  if (!ok) {
+    throw new Error('held ' + dir + ' for ' + maxSecs +
+      ' s of GAME time and the condition never held - this is a real failure, not a slow machine');
+  }
+}
+
 /* Tap a display case in the Outfitter, the way a thumb would.
 
    The shop is a 3D room now, so there is no row to click: the case has to be
@@ -154,21 +194,24 @@ test('the frame loop advances', async ({ page }) => {
 });
 
 test('digging fills the hold and selling at the pad pays out', async ({ page }) => {
-  await holdUntil(page, 'down', async () => {
-    await expect(page.locator('#cargoTxt')).not.toHaveText(/^0\.0 /, { timeout: DEEP_ENOUGH });
-  });
+  /* On the tick seam rather than the wall clock - see holdSeam. This is the
+     test that went red on CI while passing locally: flying back up to the pad
+     took longer than its 45-second budget on a runner with no GPU. */
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+
+  const weight = () => page.evaluate(() => (window as any).__cw.g.weight);
+  const credits = () => page.evaluate(() => (window as any).__cw.g.credits);
+
+  await holdSeam(page, 'down', async () => (await weight()) > 0);
   expect(await num(page.locator('#haul')), 'digging should produce a haul').toBeGreaterThan(0);
 
-  /* Wait for the sale itself, not for the depth readout. The HUD rounds, so it
-     shows "DEPTH 0 m" while the ship is still one cell above the pad at pd=0 -
-     releasing there leaves the sale to whether a move happened to be in flight.
-     Credits changing is the unambiguous signal that the pad was touched. */
-  await holdUntil(page, 'up', async () => {
-    await expect(
-      page.locator('#credits'),
-      'never reached the pad, so the haul was never sold'
-    ).not.toHaveText('0', { timeout: DEEP_ENOUGH });
-  });
+  /* The sale itself, not the depth readout. The HUD rounds, so it shows
+     "DEPTH 0 m" while the ship is still a cell above the pad - credits
+     changing is the unambiguous signal that the pad was touched. */
+  await holdSeam(page, 'up', async () => (await credits()) > 0);
+
   await expect(page.locator('#cargoTxt')).toHaveText(/^0\.0 /, { timeout: 10_000 });
   expect(await num(page.locator('#credits')), 'the pad should have bought the haul')
     .toBeGreaterThan(0);
@@ -576,7 +619,9 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
       return set.call(this, k, v);
     };
   });
-  await page.reload();
+  /* ?debug, not a bare reload: holdSeam below needs the tick seam, and a
+     bare reload keeps the beforeEach's plain '/' where __cw does not exist. */
+  await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
      raises no pointerdown, so this cannot start the audio graph and the
@@ -584,11 +629,11 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
   await enterGame(page);
   await expect(page.locator('#cargoTxt')).toHaveText('56.0 / 60 KG');
 
-  /* the drill must keep working */
-  await holdUntil(page, 'down', async () => {
-    await expect(page.locator('#depth'))
-      .toContainText(/DEPTH (7[5-9]|[89][0-9]) m/, { timeout: DEEP_ENOUGH });
-  });
+  /* The drill must keep working. On the tick seam - see holdSeam - because
+     this needs seventy-five metres of drilling and that is game time, which is
+     the one thing a slow runner must not be charged for. */
+  await holdSeam(page, 'down',
+    async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 75);
   const kg = () => page.evaluate(() =>
     parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText));
   expect(await kg(), 'the hold must never exceed its cap').toBeLessThanOrEqual(60);
@@ -1091,7 +1136,9 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
       return set.call(this, k, v);
     };
   });
-  await page.reload();
+  /* ?debug, not a bare reload: holdSeam below needs the tick seam, and a
+     bare reload keeps the beforeEach's plain '/' where __cw does not exist. */
+  await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   /* A reload lands back on the way in - see enterGame. `dispatchEvent('click')`
      raises no pointerdown, so this cannot start the audio graph and the
@@ -1101,13 +1148,11 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
 
   /* Down through the open shaft, then through the rock under it. Reaching 72
      means the ship both moved off-lane without snagging AND completed at least
-     one cut it could not previously start. */
-  await holdUntil(page, 'down', async () => {
-    await expect(
-      page.locator('#depth'),
-      'the ship never got past its own shaft, which is the snag this test is for'
-    ).toContainText(/DEPTH (7[2-9]|[89][0-9]) m/, { timeout: DEEP_ENOUGH });
-  });
+     one cut it could not previously start - and neither of those claims is
+     about how fast the machine happens to be running, so it goes on the tick
+     seam. See holdSeam. */
+  await holdSeam(page, 'down',
+    async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 72);
 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
