@@ -314,9 +314,25 @@ let launchT = 0;
 let launchDur = 0;
 let launchWorld = -1;
 const LAUNCH_BOOST = 5.5;   /* multiple of cruise speed at the peak of the burn */
-/* How far the nose is tipped away from the camera while cruising. A quarter
-   turn is dead astern; this is a little under, for the three-quarter view. */
-const CRUISE_PITCH = -1.16;
+/* How far the nose is tipped away from the camera while cruising.
+
+   It was -1.16, a quarter turn less about twenty-four degrees, on the argument
+   that dead astern shows the engine bells and nothing else. Measured, that put
+   the drill at (0, +0.40, -0.92): pointing into the screen, yes, but tipped a
+   quarter of a right angle NOSE-UP, which fires the flare down the screen. The
+   eye reads a ship climbing while the worlds stream past saying it is going
+   forward - two directions at once, which is the exact fault the broadside
+   version had and which was supposed to have been fixed in round three.
+
+   Playtest: *"the ship flies backwards in the into scene, can you make it fly
+   with the drill facing forward, the direction it is flying."*
+
+   It is square now, and the three-quarter view comes from where the CAMERA
+   stands rather than from tipping the ship. That is the right place for it:
+   pointing a ship away from its own heading to make it photograph better is a
+   lie the picture tells about the physics, and this game has been caught
+   telling it twice. */
+const CRUISE_PITCH = -Math.PI / 2;
 
 export function isShowcase() { return showing; }
 export function isLanding() { return landWorld >= 0; }
@@ -445,8 +461,11 @@ export function stepShowcase(dt: number, clock: number) {
      so rotation PI points it the way it is going - a ship crossing open space
      with its drill at the deck reads as falling. */
   player.visible = true;
-  player.position.set(-0.62 + Math.sin(clock * 0.5) * 0.10,
-                      -0.42 + Math.sin(clock * 0.8) * 0.09, 0);
+  /* Held left of centre and low, so the worlds have the rest of the frame to
+     come through. Moved in from -0.62 when the camera went off-axis for the
+     three-quarter view: the old station put the ship half outside the frame. */
+  player.position.set(-0.08 + Math.sin(clock * 0.5) * 0.10,
+                      -0.34 + Math.sin(clock * 0.8) * 0.09, 0);
   /* NOSE-FIRST, seen from behind.
 
      Playtest: *"can you make it look like the ship is actually flying toward
@@ -533,7 +552,7 @@ function stepLanding(dt: number, clock: number) {
   rig.rotation.x = CRUISE_PITCH - e * 0.30;
   rig.rotation.z = Math.PI + (1 - e) * Math.sin(clock * 0.45) * 0.06;
   rig.rotation.y = (1 - e) * Math.sin(clock * 0.33) * 0.10;
-  player.position.set((1 - e) * -0.62, -0.42 + e * 0.30, 0);
+  player.position.set((1 - e) * -0.08, -0.34 + e * 0.26, 0);
 
   /* Atmosphere: the world's own sky takes the frame over the last stretch. */
   const glow = Math.max(0, (t - 0.62) / 0.38);
@@ -569,8 +588,12 @@ function streamStars(clock: number, alpha: number, boost = 1) {
    import direction stays one-way and this listens for itself. */
 function fit() {
   transitCamera.aspect = Math.max(0.01, window.innerWidth / Math.max(1, window.innerHeight));
-  transitCamera.position.set(0, 0.35, 6.2);
-  transitCamera.lookAt(0, 0, -12);
+  /* Off the axis and above it, so a ship flying dead away from us is still
+     seen three-quarter rear rather than as a circle of engine bells. This is
+     what CRUISE_PITCH used to be doing by tipping the ship, which cost the
+     picture its honesty about which way the thing was going. */
+  transitCamera.position.set(0.92, 0.62, 6.2);
+  transitCamera.lookAt(-0.05, -0.22, -13);
   transitCamera.updateProjectionMatrix();
 }
 fit();

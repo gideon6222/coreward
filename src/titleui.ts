@@ -166,6 +166,22 @@ export function finishLanding() {
   if (landingInto === null) return;
   const fresh = landingInto;
   landingInto = null;
+  /* The cut is hidden inside the atmosphere rather than played over it.
+
+     Playtest: *"can you make the cut from the ship flying to the planet, to it
+     landing more seamless? I want it to actually show the ship flying onto the
+     planet, then landing where befor being available to take control."*
+
+     Two scenes have to be joined here - the crossing has its own camera, its
+     own scale and its own sky - and no amount of matching makes two different
+     renderers agree frame to frame. What does work is what every film does with
+     a cut it cannot hide: put something bright over it. The landing already
+     ends with the destination's own sky washing the frame out, so the flash
+     starts in that colour and holds through the swap, and the game's first
+     frames are the ship still coming down onto the pad rather than sitting on
+     it. The descent is on the far side of the cut, which is the half he could
+     not see. */
+  flash('rgba(255,255,255,.92)', 620);
   arrive(g.world);
   onStart(fresh);
 }

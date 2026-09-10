@@ -3205,3 +3205,39 @@ an assertion.
 
 The blocks golden moved by exactly one thing: `hard` values on Searing and Crystalline legs,
 scaled by 0.84 and 1.2. No block id changed anywhere.
+
+---
+
+# 2026-09-10, the intro's heading - a fix verified in one scene and shipped as general
+
+Playtest: *"the ship flies backwards in the into scene, can you make it fly with the drill
+facing forward, the direction it is flying."* This is the second time this game has been told
+its ship is pointing the wrong way. Round three fixed it for the crossing and the landing.
+
+**Measured rather than eyeballed, and the maths said it was already right.** With
+`CRUISE_PITCH` at -1.16 and the roll at PI, the drill's world vector is (0, +0.40, -0.92).
+The camera sits at z +6.2 looking at -12, so -Z is the direction of travel: the drill WAS
+pointing forward, by 0.917 of a unit vector.
+
+What it was also doing was sitting a quarter of a right angle nose-UP, which fires the flare
+down the screen. The eye reads a ship climbing while the worlds stream past saying it is going
+forward - **two directions at once, which is the exact fault the broadside version had.** The
+round-three note in this file describes that fault precisely and the fix was applied to the
+crossing, where it was verified, and never to the showcase.
+
+`CRUISE_PITCH` is now a square `-PI/2`, so the drill is exactly on the travel axis, and the
+three-quarter view comes from where the CAMERA stands - (0.92, 0.62, 6.2) looking slightly
+left and down - rather than from tipping the ship away from its own heading. That is the right
+place for it. Pointing a ship off its heading to make it photograph better is a lie the picture
+tells about the physics, and this game has now been caught telling it twice.
+
+The first attempt at the camera put the ship half outside the frame, which the filmstrip
+showed immediately and which no amount of reading the diff would have.
+
+**The landing cut.** Two scenes have to be joined - the crossing has its own camera, its own
+scale and its own sky - and no amount of matching makes two renderers agree frame to frame.
+What works is what film does with a cut it cannot hide: put something bright over it. The
+landing already ends with the destination's sky washing out the frame, so a white flash now
+starts in that wash and holds across the swap, and `SETTLE_FROM` went from 5.5 to 9.5 with
+`SETTLE_MAX` from 2.0 to 3.2 - the descent onto the pad is now long enough to watch. The half
+he could not see was always there and was over before the flash had faded.
