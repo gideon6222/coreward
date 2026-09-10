@@ -651,12 +651,18 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   const fuelPct = () => page.evaluate(() =>
     parseFloat((document.getElementById('fuelTxt') as HTMLElement).textContent || '0'));
 
-  /* Far enough down that the tank has visibly moved. One metre used to be
-     enough; M3 cut the fuel a cell of drilling costs by about two thirds, so
-     the gauge no longer rounds off a single cut and the assertion below was
-     reading 100% for a run that had genuinely spent fuel. */
+  /* Hold until the TANK has moved, which is the thing the assertion after this
+     actually needs, rather than until a depth that stands in for it.
+
+     M3 cut the fuel a cell of drilling costs by about two thirds, so a single
+     cut no longer rounds the gauge off 100% and the old "not DEPTH 0 m" was
+     satisfied long before the fuel was. Asking for ten metres instead fixed it
+     on this desk and failed on CI, which reached seven in the same wall-clock
+     window because it has no GPU - which is this repo's own recorded lesson:
+     waiting on real time for something measured in game time is the bug rather
+     than the timeout. Waiting on the precondition itself is immune to both. */
   await holdUntil(page, 'down', async () => {
-    await expect(page.locator('#depth')).toContainText(/DEPTH (1[0-9]|[2-9][0-9]) m/, { timeout: DEEP_ENOUGH });
+    await expect.poll(fuelPct, { timeout: DEEP_ENOUGH }).toBeLessThan(100);
   });
   await expect(page.locator('#supCell')).not.toHaveClass(/none/);
 
