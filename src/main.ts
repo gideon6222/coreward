@@ -8,7 +8,7 @@ import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './sce
 import { syncBlocks, resetBlockCache } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
-import { setDrillTier, setUpgradeHardware } from './ship';
+import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
 import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station';
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
@@ -162,6 +162,10 @@ if (new URLSearchParams(location.search).has('debug')) {
        whole world first. coreM is here for the same reason: every fixture that
        used to write a literal depth is now written against the world. */
     beginBreach, coreM,
+    /* The ship's own objects, for measuring which way the drill actually
+       points rather than reasoning about Euler order. Two "fixes" to the
+       intro's heading were argued from the code and both were wrong. */
+    rig, bit, player,
     shelfKeys: () => shelfStock(g.best.depth).map((u) => u.key),
     sealedKey: () => {
       const s = shelfStock(g.best.depth).filter((u) => g.best.depth < u.unlock);

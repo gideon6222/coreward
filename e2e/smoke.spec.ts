@@ -1809,3 +1809,38 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
     .toBe(true);
   expect(afterSkip.mode).not.toBe('play');
 });
+
+/* THE HEADING. Measured, not reasoned about.
+
+   "The ship flies backwards" has now been reported three times in this game and
+   fixed wrongly twice, both times by arguing from the code about Euler order
+   and the sign of a pitch. The third fix came from measuring the vector between
+   the hull and the drill in the running game, which said the drill was pointing
+   at the camera when two rounds of arithmetic had concluded it was not.
+
+   So the arithmetic does not get another chance. This asserts the thing the
+   player actually sees: the drill leads, along the direction of travel. */
+test('the ship flies drill-first in the showcase', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await page.evaluate(() => (window as any).__cw.showTitle());
+  await page.waitForTimeout(900);
+
+  const drill = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const at = (o: any) => { o.updateWorldMatrix(true, false); const e = o.matrixWorld.elements;
+      return { x: e[12], y: e[13], z: e[14] }; };
+    const hull = at(w.rig), tip = at(w.bit);
+    const d = { x: tip.x - hull.x, y: tip.y - hull.y, z: tip.z - hull.z };
+    const len = Math.hypot(d.x, d.y, d.z) || 1;
+    return { x: d.x / len, y: d.y / len, z: d.z / len };
+  });
+
+  /* The showcase camera sits at +z looking toward -z, so the direction of
+     travel is -z. The drill has to be pointing that way, and by most of a unit
+     vector rather than merely on the correct side of zero - it was 0.917 of
+     the way there while also pitched a quarter of a right angle nose-up, which
+     is what made it read as climbing. */
+  expect(drill.z, 'the drill must point away from the camera, along the heading').toBeLessThan(-0.9);
+  expect(Math.abs(drill.y), 'and must not be pitched up or down off that heading').toBeLessThan(0.2);
+});

@@ -328,11 +328,17 @@ const LAUNCH_BOOST = 5.5;   /* multiple of cruise speed at the peak of the burn 
    with the drill facing forward, the direction it is flying."*
 
    It is square now, and the three-quarter view comes from where the CAMERA
-   stands rather than from tipping the ship. That is the right place for it:
-   pointing a ship away from its own heading to make it photograph better is a
-   lie the picture tells about the physics, and this game has been caught
-   telling it twice. */
-const CRUISE_PITCH = -Math.PI / 2;
+   stands rather than from tipping the ship.
+
+   **The sign is +PI/2 and it was MEASURED, not derived.** Two attempts at this
+   were argued from the code - local -Y, rotated by an Euler in XYZ order,
+   therefore -Z - and both were wrong in the same direction. Reading the vector
+   between the hull and the drill out of the running game says the drill points
+   +0.999 z at -PI/2, straight at the camera, and -0.999 at +PI/2. Three
+   reports of "the ship flies backwards" and two fixes that reasoned their way
+   to the wrong answer is enough: `the ship flies drill-first in the showcase`
+   in the smoke suite now measures that vector every run. */
+const CRUISE_PITCH = Math.PI / 2;
 
 export function isShowcase() { return showing; }
 export function isLanding() { return landWorld >= 0; }
