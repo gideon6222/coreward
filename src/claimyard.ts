@@ -31,11 +31,19 @@ import { START_X } from './sim/config';
 import { scene } from './scene';
 import { worldX, asMetal, gritTex, makeGlow } from './materials';
 import { applyLight } from './lightmap';
-import { g } from './sim/state';
-import { stabilityLine } from './sim/claim';
+import { g, S } from './sim/state';
+import { stabilityLine, SHED_MULT } from './sim/claim';
+import { makeSign, makeWindow, CLAIM_COLOR } from './claimsigns';
 import { coreM } from './sim/state';
 
 const yard = new THREE.Group();
+
+/* The three windows and the derrick's beam, declared before the blocks that
+   build them so each structure can be assembled in one place. */
+let refWin: ReturnType<typeof makeWindow>;
+let derWin: ReturnType<typeof makeWindow>;
+let shedWin: ReturnType<typeof makeWindow>;
+let beam: THREE.Mesh;
 
 const steel = applyLight(asMetal(new THREE.MeshStandardMaterial({
   color: 0x3b434e, map: gritTex, metalness: 0.6, roughness: 0.7, flatShading: true
@@ -69,6 +77,12 @@ const refinery = new THREE.Group();
     pipe.position.set(sx * 0.9, 0.3, 0.2);
     refinery.add(pipe);
   }
+  refWin = makeWindow('refinery', 0.5, 0.34);
+  refWin.group.position.set(0, 0.46, 0.63);
+  refinery.add(refWin.group);
+  const rs = makeSign('refinery', 0.66);
+  rs.position.set(0, 1.18, 0.45);
+  refinery.add(rs);
 }
 refinery.position.set(-2.35, 0.02, 0.35);
 yard.add(refinery);
@@ -100,6 +114,23 @@ const derrick = new THREE.Group();
   const jib = box(0.16, 0.16, 0.9, painted);
   jib.position.set(0, 2.42, 0.62);
   derrick.add(jib);
+  /* The tank at its foot is where the fuel actually is, so that is where the
+     window goes - not on the tower, which is only the thing that stands over
+     it. */
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.5, 10), steelWorn);
+  tank.position.set(0, 0.25, 0.46);
+  derrick.add(tank);
+  derWin = makeWindow('derrick', 0.34, 0.34);
+  derWin.group.position.set(0, 0.25, 0.815);
+  derrick.add(derWin.group);
+  const ds = makeSign('derrick', 0.62);
+  ds.position.set(0, 1.02, 0.42);
+  derrick.add(ds);
+  /* The walking beam: the one moving part, and the thing that says "running"
+     from across the surface. */
+  beam = box(0.7, 0.09, 0.09, painted);
+  beam.position.set(0, 1.6, 0.3);
+  derrick.add(beam);
 }
 derrick.position.set(2.35, 0.02, 0.1);
 yard.add(derrick);
@@ -124,6 +155,12 @@ const shed = new THREE.Group();
   const door = box(0.5, 0.42, 0.03, steel);
   door.position.set(0, 0.21, 0.41);
   shed.add(door);
+  shedWin = makeWindow('shed', 0.42, 0.3);
+  shedWin.group.position.set(0, 0.3, 0.415);
+  shed.add(shedWin.group);
+  const ss = makeSign('shed', 0.56);
+  ss.position.set(-0.62, 0.62, 0.3);
+  shed.add(ss);
 }
 shed.position.set(-0.95, 0.02, 1.25);
 yard.add(shed);
@@ -142,7 +179,7 @@ const LEAN = { refinery: 0.16, derrick: -0.13, shed: 0.09 };
    height each structure was placed at. */
 const BASE_Y = { refinery: refinery.position.y, derrick: derrick.position.y, shed: shed.position.y };
 
-let lampT = 0;
+let lampT = 0, beamT = 0;
 
 /* Called every frame from the loop. Cheap: three rotations, three colours and
    one sine. Nothing here allocates. */
@@ -156,6 +193,28 @@ export function updateClaim(dt: number) {
        a lean as damage rather than as a jaunty angle. */
     grp.position.y = BASE_Y[k] - 0.22 * hurt * hurt;
   }
+
+  /* What each building is DOING, which is the half a lean cannot carry.
+
+     Factorio's chemical plant: the window shows the tinted contents and the
+     motion says whether it is working. Here the refinery's window fills with
+     what is in the hold - so flying home with a full load lights it up before
+     you have sold anything - the derrick's shows the tank against the ship's
+     own fuel, and the shed's shows how much is stored in it. Each dims as its
+     structure takes damage, because a wrecked building doing less is exactly
+     what the mechanic says happens. */
+  const cap = Math.max(1, S.cargoCap());
+  refWin.set((g.weight / cap) * (c.refinery / 100), c.refinery / 100 * 0.6);
+  derWin.set((g.fuel / Math.max(1, S.fuelCap())) * (c.derrick / 100), 0.2);
+  let stored = 0;
+  for (const k in c.stored) stored += c.stored[k];
+  shedWin.set(Math.min(1, stored / 40) * (c.shed / 100), 0);
+
+  /* The walking beam only walks when there is something to pump into, which
+     is the difference between a machine and a decoration. */
+  const pumping = g.fuel < S.fuelCap() - 0.5 && c.derrick > 0;
+  beamT += dt * (pumping ? 2.4 : 0.15);
+  beam.rotation.z = Math.sin(beamT) * (pumping ? 0.26 : 0.02);
 
   /* The strain lamp: green and steady at rest, amber and quickening as the
      ground gives, red and fast just before it goes. A rate rather than a
