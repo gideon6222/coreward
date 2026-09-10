@@ -53,7 +53,7 @@ function fresh(style, ox) {
   });
   H.g.credits = 0; H.g.shards = 0; H.g.relics = []; H.g.relicsTaken = [];
   H.g.cargo = {}; H.g.weight = 0; H.g.dug = new Set(); H.g.stock = {};
-  return { style, ox, shaft: 0, t: 0, runs: 0, bought: [], history: [] };
+  return { style, ox, shaft: 0, strain: 0, t: 0, runs: 0, bought: [], history: [] };
 }
 
 /* The cell as the generator really makes it, with its hardness multiplier.
@@ -97,6 +97,14 @@ function simulate(st, depth, dry) {
   const ox = st.ox;
   const shaft0 = st.shaft;
   let t = 0, fuel = H.S.fuelCap(), hull = hullMax(), soak = 0;
+  /* The Claim, walked alongside the run rather than mutated in it: how many
+     cells this run takes out from below the stability line, and how often that
+     sets off a quake. */
+  const core = H.coreM();
+  let deepCells = 0, quakes = 0;
+  /* Strain carries across runs on the real thing but a dry run must not spend
+     it, so it is read from the style and only written back when this is real. */
+  let strain = st.strain;
   const cargo = {};
   let weight = 0;
   const cap = H.S.cargoCap();
@@ -118,6 +126,7 @@ function simulate(st, depth, dry) {
       const c = digCost(b);
       t += c.secs; fuel -= c.fuel * H.S.fuelUse(); heatTick(d, c.secs);
       if (weight + b.wt <= cap) { cargo[b.id] = (cargo[b.id] || 0) + 1; weight += b.wt; }
+      if (H.strainPerCell(d, core) > 0) { deepCells++; const q = H.afterCell(strain, d, core); strain = q.strain; if (q.quake) quakes++; }
       if (!dry) st.shaft = d;
     }
     if (hull <= 0 || fuel <= 0) { towed = true; break; }
@@ -134,6 +143,7 @@ function simulate(st, depth, dry) {
       const c = digCost(b);
       t += c.secs; fuel -= c.fuel * H.S.fuelUse(); heatTick(dd, c.secs);
       if (weight + b.wt <= cap) { cargo[b.id] = (cargo[b.id] || 0) + 1; weight += b.wt; }
+      if (H.strainPerCell(dd, core) > 0) { deepCells++; const q = H.afterCell(strain, dd, core); strain = q.strain; if (q.quake) quakes++; }
       if (hull <= 0) { towed = true; break; }
     }
     side = -side;
@@ -154,8 +164,8 @@ function simulate(st, depth, dry) {
   if (towed) value = Math.round(value * (1 - H.S.towCut()));
   value = Math.round(value * H.S.saleBonus());
 
-  if (dry) st.shaft = shaft0;
-  return { t, value, weight, cap, towed, depth, rate: value / Math.max(t, 1) };
+  if (dry) st.shaft = shaft0; else st.strain = strain;
+  return { t, value, weight, cap, towed, depth, deepCells, quakes, rate: value / Math.max(t, 1) };
 }
 
 /* Who buys what. A style is a purchasing policy as much as a depth policy. */
@@ -200,6 +210,7 @@ function play(style, runs, ox) {
     st.history.push({
       run: st.runs, min: +(st.t / 60).toFixed(1), depth, secs: Math.round(r.t),
       paid: r.value, hold: `${Math.round(r.weight)}/${r.cap}`, towed: r.towed ? 'TOW' : '',
+      deep: r.deepCells, quakes: r.quakes,
       bank: H.g.credits, bought: purchases.join(', ')
     });
   }
@@ -218,7 +229,13 @@ function play(style, runs, ox) {
 const runs = +arg('runs', 24);
 const only = arg('style', null);
 const styles = only ? [only] : ['cautious', 'greedy', 'optimal'];
-const OFFSETS = [0, 7, 13, 21, 29];
+/* Shaft positions, not arbitrary numbers. The world is W = 13 cells wide and
+   blockAt() returns null outside it, so the first version's offsets of 0, 7,
+   13, 21 and 29 put three of five shafts entirely outside the world and the
+   fourth against the left wall: three seeds mined an empty planet and reported
+   it as a poor one. Every median in the first M1 report was computed over that.
+   These are inside the world, spread either side of the pad at START_X = 6. */
+const OFFSETS = [2, 4, 6, 8, 10];
 
 const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 
@@ -255,8 +272,12 @@ for (const style of styles) {
     const [w, c] = h.hold.split('/').map(Number); return w / c;
   }));
   const paid = all.flatMap((st) => st.history.map((h) => h.paid));
+  const deep = all.flatMap((st) => st.history.map((h) => h.deep));
+  const totalQuakes = all.map((st) => st.history.reduce((a, h) => a + h.quakes, 0));
   headline.push({
     style,
+    quakesIn20Runs: med(totalQuakes),
+    deepCellsPerRun: med(deep),
     run1: med(all.map((st) => st.history[0].paid)),
     minutesToAllLadders: +med(rows.length ? [Math.max(...rows.map((r) => r.firstMinute))] : [0]).toFixed(1),
     medianHoldUse: (med(holdUse) * 100).toFixed(0) + '%',

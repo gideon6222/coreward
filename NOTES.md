@@ -2870,3 +2870,40 @@ credits, is an upper bound rather than a measurement - it assumed a hold of pure
 run-one payout is 114 to 311 credits because most of what you cut is in the way rather than
 worth money. The conclusion is unchanged and the reason is better: the ladders are cheap
 against income that arrives in one or two runs regardless.
+
+## M1 corrected, same day - three of five seeds were mining an empty planet
+
+The first M1 table above is wrong and is left in place because the correction is the
+interesting part.
+
+`OFFSETS` in `econ.mjs` was `[0, 7, 13, 21, 29]`, chosen as "spread out" without checking
+what they were spread across. **The world is `W = 13` cells wide** and `blockAt()` returns
+null outside it, so offsets 13, 21 and 29 put the shaft entirely outside the planet and 0 put
+it against the left wall with half the corridor out of bounds. Three of five seeds mined
+nothing, returned nothing, and were averaged in as poor worlds. Every median in the first
+report was computed over that.
+
+Found by adding the Claim's deep-cell counter in M2 and seeing `deepCellsPerRun: 0` for a
+style whose own run table clearly showed it working at 109 m. The contradiction between two
+columns of the same report is what exposed it; neither column alone looked wrong.
+
+**Corrected baseline, shafts at x = 2, 4, 6, 8, 10 around the pad at START_X = 6:**
+
+| Style | Run 1 pays | Every ladder started by | Median hold use | Payout spread | Rungs in 20 runs | Deep cells per run | Quakes in 20 runs |
+|---|---|---|---|---|---|---|---|
+| cautious | 143 cr | minute 10.9 | 7% | 132 - 3,961 | 19 | 22 | 1 |
+| greedy | 394 cr | minute 16.1 | 12% | 118 - 7,565 | 50 | 24 | 4 |
+| optimal | 1,189 cr | minute 5.3 | 5% | 616 - 18,846 | 64 | 2 |
+
+**Every M1 conclusion survives, and two get stronger.** The hold is 5 to 12 per cent full
+rather than 11 to 14, so the weight cap is even further from binding. Rungs bought in twenty
+runs went from 11/19/75 to 19/50/64, so the shop empties faster than the first report said,
+not slower. Every ladder is still started inside five to sixteen minutes at every style.
+
+**And the Claim's first measurement, which is what M2 needed:** a run takes 22 to 24 cells out
+from below the stability line at 50 m, and a quake needs about 170 of them, so a quake arrives
+every seven or eight deep runs. That is too rare to teach the mechanic - `CRAFT.md` wants a
+frequency that teaches and a severity that punishes, and this is rare AND mild. It is left as
+it is until M5, because M5 moves the stability line from 50 m to 26 m on leg 0, after which
+nearly every cell a player removes is below it. The retune happens there with this probe, not
+by guessing twice.
