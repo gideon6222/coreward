@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.26.0';
+export const VERSION = '0.27.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.27.0', date: '2026-09-10', title: 'The counter',
+    notes: [
+      'The Outfitter is a shop counter now. The expensive upgrades sit on the glass in front of you; the ordinary ones are racked on the wall behind.',
+      'Nothing has to be tapped to see what is for sale. Where a thing stands is what tells you which kind it is.',
+      'Every neon light is a real fitting - a tube in a metal housing with a lamp in it - so the colour lands on the counter and the floor instead of floating in front of the room.',
+      'The four group plinths are gone. They named a filter that had been cut, so they did nothing.'
+    ]
+  },
   {
     version: '0.26.0', date: '2026-09-10', title: 'A room that digs for a living',
     notes: [

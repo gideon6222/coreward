@@ -6,7 +6,7 @@ import { loadShipParts } from './shipparts';
 import { makeHeader, GROUP_ORDER, GROUP_COLOR, type GroupName } from './stationsigns';
 import { loadStationProps, buildRoom, type Room } from './stationroom';
 import { asMetal } from './materials';
-import { UPGRADES, shelfState, shelfStock } from './sim/config';
+import { UPGRADES, shelfState, shelfStock, costOf } from './sim/config';
 import { g } from './sim/state';
 import type { UpgradeKey } from './types';
 
@@ -302,44 +302,62 @@ function drawPlate(b: Bay, name: string, line: string, tone: string, dim: boolea
 type Slot = [number, number, number, number];
 
 function layout(n: number): { slots: Slot[]; scale: number } {
+  /* A counter and a wall, which is how a shop is actually arranged.
+
+     Playtest: *"the shop is similar to a gas station store. there is a display
+     case that is also a counter. in the display case are important and
+     expensive upgrades. behind the counter on the wall are the more standard
+     upgrades."*
+
+     Two columns of fifteen cases was a menu drawn in 3D, and four tappable
+     plinths that filtered it was a second mechanism bolted onto the first.
+     This is one mechanism and it is the room's own: everything is on screen at
+     once, and WHERE a thing is says what kind of thing it is. Nothing has to be
+     tapped to reveal anything.
+
+     The split is by PRICE rather than by category, which is what a real
+     counter does - the dear stock is under glass at the till because that is
+     where it can be watched, and the ordinary stock is on the wall behind
+     because there is more of it and nobody needs to be careful with it. The
+     display research is consistent that this is what carries the reading:
+     individual light on few items says precious, repetition under one flat
+     wash says stock.
+
+     `refreshBays` sorts by price before calling this, so the first COUNTER_SLOTS
+     entries are the dear ones. */
   const slots: Slot[] = [];
-  /* Split as evenly as the two columns allow, capped at six a side. */
-  const perCol = Math.min(6, Math.ceil(Math.min(n, 12) / 2));
-  const inCols = Math.min(n, perCol * 2);
-  /* CENTRED on the deck, not hung from the top. Hanging from a fixed top meant
-     a short shelf ran off the bottom of a portrait frame - three rows of the
-     bigger cases put the last one under the deck. Centring keeps whatever
-     number there is inside the same band the camera can actually show.
+  const COUNTER = Math.min(COUNTER_SLOTS, n);
 
-     The step is capped so a long shelf uses the full span and a short one does
-     not spread until the cases stop reading as a column. */
-  const SPAN = 3.1, MID = 0.5;
-  const step = perCol > 1 ? Math.min(0.76, SPAN / (perCol - 1)) : 0;
-  const top = MID + ((perCol - 1) * step) / 2;
-  for (let i = 0; i < inCols; i++) {
-    const col = i % 2 === 0 ? -1 : 1;
-    const row = Math.floor(i / 2);
-    slots.push([col * 1.18, top - row * step, -1.2, col * -0.5]);
+  /* --- the counter: a shallow arc across the front, facing the camera --- */
+  for (let i = 0; i < COUNTER; i++) {
+    const t = COUNTER === 1 ? 0.5 : i / (COUNTER - 1);
+    const x = -1.28 + t * 2.56;
+    /* Curved toward the viewer at the ends, so it reads as a case you are
+       standing at rather than a row of boxes on a line. */
+    const z = 1.62 - Math.abs(t - 0.5) * 0.42;
+    slots.push([x, -0.62, z, (0.5 - t) * 0.55]);
   }
-  /* Anything left goes on a rack BELOW the columns, spread to fit.
 
-     It used to hang at the top of the room, which was fine while the shelf was
-     laid out in table order and nothing about the sequence meant anything. Once
-     the shelf is sorted by group, the slot order IS the reading order - and an
-     overflow rack above the columns put the last group at the top of the
-     screen, so the room read ordnance, rig, survival, instruments. Below the
-     columns it reads in the order it is sorted in. */
-  const rest = n - inCols;
-  const floor = MID - ((perCol - 1) * step) / 2;
+  /* --- the wall behind: a regular grid, which is what says "stock" --- */
+  const rest = n - COUNTER;
+  const cols = rest > 8 ? 3 : 2;
+  const rows = Math.ceil(rest / cols);
   for (let i = 0; i < rest; i++) {
-    const t = rest === 1 ? 0.5 : i / (rest - 1);
-    slots.push([-1.52 + t * 3.04, floor - 0.92, -2.0, 0]);
+    const c = i % cols, r = Math.floor(i / cols);
+    const x = (-1 + (2 * c) / (cols - 1)) * 1.32;
+    const y = 1.42 - r * 0.62;
+    slots.push([x, y, -2.15, 0]);
   }
-  /* Bigger when there are fewer of them. Four cases at the size fifteen need
-     is a wall of empty shelf. */
-  const scale = n <= 8 ? 1.18 : n <= 11 ? 1.06 : 1;
+
+  /* Bigger when there are fewer of them, as before. */
+  const scale = n <= 8 ? 1.1 : n <= 11 ? 1.0 : 0.92;
   return { slots, scale };
 }
+
+/* How many go under glass. Six of fifteen leaves a wall of nine in a three-wide
+   grid, which is enough repetition to read as stock without becoming the wall
+   this room was rebuilt to get away from. */
+const COUNTER_SLOTS = 6;
 
 /* One header per group, built once and moved with its band. Hidden when the
    group has nothing stocked, which in the first hour is most of them. */
@@ -467,8 +485,11 @@ export function refreshBays() {
      scanner, so what the shop looked like had nothing to do with how it is
      organised. Deep Rock's rig is the reference - a separate, named place per
      function - and this is the version of it a portrait phone can hold. */
+  /* Dearest first, so the counter gets the expensive stock and the wall gets
+     the rest. Priced at the rung the player would buy NEXT rather than at the
+     base, or a ladder they are halfway up would sit in the cheap seats. */
   const sorted = raw.slice().sort((a, b) =>
-    GROUP_ORDER.indexOf(a.group as GroupName) - GROUP_ORDER.indexOf(b.group as GroupName));
+    costOf(b, g.up[b.key] || 0) - costOf(a, g.up[a.key] || 0));
   /* Once the room exists, only the chosen group is on the shelf. Before it
      does - a cached build without the models, or a failed fetch - the whole
      sorted shelf shows, exactly as it did before, so the shop is never empty. */

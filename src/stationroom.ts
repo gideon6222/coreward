@@ -326,79 +326,32 @@ export function buildRoom(): Room | null {
     consoles.push({ mesh: c, bar, read: r.read });
   }
 
-  /* --- four plinths, one per group --- */
+  /* --- the counter the display cases stand on ---
+
+     The plinths that used to be here are gone. They named the four upgrade
+     groups and filtered the shelf by them, which was a second mechanism bolted
+     onto the first and which shipped with the filtering cut - four lit,
+     labelled, tappable-looking objects that did nothing, and he found it in the
+     first minute.
+
+     The layout is by PRICE now and it lives in station.ts's `layout()`: the
+     dear stock on this counter, the rest on the wall behind. Where a thing
+     stands is what says which kind it is, so nothing needs a label and nothing
+     needs tapping to be revealed. */
   const plinths: Plinth[] = [];
-  GROUP_ORDER.forEach((name, i) => {
-    const grp = new THREE.Group();
-    const x = -1.30 + i * 0.87;
-    grp.position.set(x, -1.34, 1.55);
+  const counter = prop('table-display', gearMat, 0.9);
+  if (counter) { counter.position.set(0, -1.34, 1.62); counter.scale.set(3.1, 0.9, 1.0); root.add(counter); }
+  /* A strip under the counter lip, which is the light that makes a glass case
+     read as a case. Warm, against the cool room. */
+  const lip = neonFitting(0xffc98a, 2.8, { light: 3.0, pool: 2.2 });
+  lip.position.set(0, -0.92, 2.12);
+  root.add(lip);
 
-    const base = prop(i % 2 === 0 ? 'table-display' : 'table-display-small', gearMat, 0.62);
-    if (base) grp.add(base);
-
-    /* The neon that names it: a bar in the group's colour under a small lit
-       label, both facing the fixed camera. */
-    const bar = neonBar(GROUP_COLOR[name], 0.72, 0.05, 3.6);
-    bar.position.set(0, 0.86, 0.3);
-    grp.add(bar);
-
-    const label = makeLabel(GROUP_LABEL[name], GROUP_COLOR[name]);
-    label.position.set(0, 1.02, 0.3);
-    grp.add(label);
-
-    /* A floating sample over the plinth, turning slowly. Deep Rock's rig is
-       full of things that do nothing but invite a look, and this is the
-       cheapest version of that: an object under glass that moves. */
-    const sample = prop('rocks', gearMat, 0.3);
-    if (sample) { sample.position.set(0, 0.5, 0); grp.add(sample); }
-
-    /* The down-light, which is the whole of what museum display sources call
-       "museum-quality": a cone from directly above onto an object in an
-       otherwise dark surround, rather than an evenly lit box. Additive and
-       depth-write-free so it reads as light in the air rather than as a solid
-       cone sitting over the sample. */
-    const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.34, 0.92, 12, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: GROUP_COLOR[name], transparent: true, opacity: 0.075,
-        side: THREE.DoubleSide, depthWrite: false,
-        blending: THREE.AdditiveBlending, toneMapped: false
-      })
-    );
-    cone.position.set(0, 0.72, 0);
-    grp.add(cone);
-
-    /* And a pool of the same light on the plinth top, which is the half that
-       makes the cone land on something. */
-    const pool = new THREE.Mesh(
-      new THREE.CircleGeometry(0.3, 16),
-      new THREE.MeshBasicMaterial({
-        color: GROUP_COLOR[name], transparent: true, opacity: 0.16,
-        depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false
-      })
-    );
-    pool.rotation.x = -Math.PI / 2;
-    pool.position.set(0, 0.28, 0);
-    grp.add(pool);
-
-    /* A wide invisible box for the tap, because the plinth's own geometry is
-       thin and a thumb is not. */
-    const hit = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, 1.5, 0.8),
-      new THREE.MeshBasicMaterial({ visible: false })
-    );
-    hit.position.set(0, 0.5, 0);
-    grp.add(hit);
-
-    root.add(grp);
-    plinths.push({
-      name, group: grp, hit,
-      setPicked(on: boolean) {
-        setNeon(bar, on ? 1 : 0.45);
-        if (sample) sample.visible = true;
-      }
-    });
-  });
+  /* And one flat wash over the wall rack behind, which is what says "stock":
+     repetition under one even light rather than a highlight per item. */
+  const wash = neonFitting(0x8fb6ff, 2.9, { light: 2.2, pool: 2.6 });
+  wash.position.set(0, 1.92, -2.1);
+  root.add(wash);
 
   /* A foreground occluder: a rail close to the lens, overlapping the room
      behind it. The diorama sources are consistent that this is what makes a
