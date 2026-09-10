@@ -102,25 +102,140 @@ function prop(name: PropName, mat: THREE.Material, scale = 1): THREE.Object3D | 
 
 /* ---------- neon ---------- */
 
-/* A strip and its hand-made halo. Without a bloom pass an emissive quad is a
-   bright line and nothing more; the second, larger, dimmer additive quad
-   behind it is what makes the eye read a glow. */
-export function neonBar(color: number, w: number, h = 0.05, glow = 3.2): THREE.Group {
-  const grp = new THREE.Group();
-  const core = new THREE.Mesh(
-    new THREE.PlaneGeometry(w, h),
-    new THREE.MeshBasicMaterial({ color, toneMapped: false })
-  );
-  const halo = new THREE.Mesh(
-    new THREE.PlaneGeometry(w * 1.06, h * glow),
-    new THREE.MeshBasicMaterial({
-      color, transparent: true, opacity: 0.24, blending: THREE.AdditiveBlending,
-      depthWrite: false, toneMapped: false
+/* A soft radial falloff, drawn once and shared by every light pool.
+
+   This is the half a bloom pass would otherwise do: light spreading onto the
+   surface behind a fitting. A hard-edged coloured plane cannot stand in for it
+   - the edge is the tell - so the gradient goes into a texture and the quad
+   that carries it is tinted per fitting. */
+let fallTex: THREE.CanvasTexture | null = null;
+function falloffTexture(): THREE.CanvasTexture {
+  if (fallTex) return fallTex;
+  const S = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const x = c.getContext('2d')!;
+  const grd = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  grd.addColorStop(0, 'rgba(255,255,255,1)');
+  grd.addColorStop(0.45, 'rgba(255,255,255,0.34)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = grd;
+  x.fillRect(0, 0, S, S);
+  fallTex = new THREE.CanvasTexture(c);
+  return fallTex;
+}
+
+/* How many real lights the room has handed out.
+
+   A forward renderer costs every light on every shaded fragment, and the
+   three.js forum's practical figure is about ten fixed point lights against a
+   typical uniform ceiling near fifteen. Fittings past the cap still get their
+   tube, their housing and their light pool - they simply do not get a light of
+   their own, which is invisible in a still and cheap in a frame. */
+export const NEON_LIGHT_BUDGET = 7;
+let lightsUsed = 0;
+export function neonLightsUsed() { return lightsUsed; }
+export function resetNeonLights() { lightsUsed = 0; }
+
+/* A neon fitting: a tube in a housing, with a light.
+
+   Playtest: *"anything neon should feel like it is actually coming from an
+   object or light in the room, not an overlay."* That was a correct read of
+   what this used to be - a MeshBasicMaterial plane with an additive quad
+   behind it, floating at a fixed z. A lit rectangle, not a lit fitting.
+
+   The sourced recipe names four ingredients and the old version had one:
+
+     1. a TUBE rather than a plane, so it has a lit side and a shaded side
+     2. an emissive material on that tube
+     3. a HOUSING of ordinary metal around it, lit by the room's own lights -
+        the missing ingredient, and the whole reason the old one read as a
+        sticker. The eye needs "normally lit" beside "self-lit" in one glance
+        before it will believe the second
+     4. a real light at the tube, which is what actually puts colour on the
+        surfaces near it
+
+   The light pool on the wall behind is the fifth thing, and it is the piece
+   that stands in for a bloom pass this renderer does not have. */
+export function neonFitting(color: number, len: number, opts: {
+  housing?: boolean; light?: number; pool?: number; radius?: number;
+} = {}): NeonFitting {
+  const grp = new THREE.Group() as NeonFitting;
+  const r = opts.radius ?? 0.028;
+
+  /* The housing: a shallow channel the tube sits in, in ordinary lit metal.
+     Slightly longer than the tube and open toward the camera. */
+  if (opts.housing !== false) {
+    const back = new THREE.Mesh(new THREE.BoxGeometry(len + 0.12, r * 2.6, r * 1.6), gearMat);
+    back.position.z = -r * 1.5;
+    grp.add(back);
+    for (const sy of [-1, 1]) {
+      const lip = new THREE.Mesh(new THREE.BoxGeometry(len + 0.12, r * 0.6, r * 2.6), gearMat);
+      lip.position.set(0, sy * r * 1.5, -r * 0.4);
+      grp.add(lip);
+    }
+  }
+
+  /* The tube. Emissive rather than unlit, so the room's own lighting still
+     touches its shaded side and it sits in the scene instead of on top of it. */
+  const tube = new THREE.Mesh(
+    new THREE.CylinderGeometry(r, r, len, 8, 1),
+    new THREE.MeshStandardMaterial({
+      color: 0x0b0b0b, emissive: color, emissiveIntensity: 1.0,
+      roughness: 0.35, metalness: 0
     })
   );
-  halo.position.z = -0.004;
-  grp.add(halo, core);
-  return grp;
+  tube.rotation.z = Math.PI / 2;
+  grp.add(tube);
+
+  /* The light. Short range and no shadow - a point-light shadow is six cube
+     faces and this room would pay for it on every fragment. */
+  if (lightsUsed < NEON_LIGHT_BUDGET) {
+    const l = new THREE.PointLight(color, opts.light ?? 2.4, opts.pool ?? 1.6, 2);
+    l.castShadow = false;
+    l.position.z = 0.06;
+    grp.add(l);
+    lightsUsed++;
+  }
+
+  /* And the pool it throws on whatever is behind it. */
+  const pool = new THREE.Mesh(
+    new THREE.PlaneGeometry(len * 1.5, len * 0.55),
+    new THREE.MeshBasicMaterial({
+      color, map: falloffTexture(), transparent: true, opacity: 0.3,
+      blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+    })
+  );
+  pool.position.z = -r * 2.2;
+  grp.add(pool);
+
+  /* Named handles rather than child indices. The old version was poked at with
+     children[0] and children[1] from three different places, which is a
+     structure nobody can change without breaking a caller that never said what
+     it wanted. */
+  (grp as NeonFitting).tube = tube;
+  (grp as NeonFitting).pool = pool;
+  return grp as NeonFitting;
+}
+
+export interface NeonFitting extends THREE.Group {
+  tube: THREE.Mesh;
+  pool: THREE.Mesh;
+}
+
+/* How brightly a fitting is burning, 0 to 1 of its own colour. Drives the
+   tube's emissive and the pool together, because a tube that brightens without
+   its pool brightening is back to being a sticker. */
+export function setNeon(f: NeonFitting, amount: number) {
+  const a = Math.max(0, Math.min(1, amount));
+  (f.tube.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.25 + a * 1.15;
+  (f.pool.material as THREE.MeshBasicMaterial).opacity = 0.1 + a * 0.34;
+}
+
+/* Kept as a thin alias so the callers that only want a lit line still read
+   that way. Everything goes through the fitting now. */
+export function neonBar(color: number, w: number, _h = 0.05, _glow = 3.2): NeonFitting {
+  return neonFitting(color, w);
 }
 
 /* ---------- the room ---------- */
@@ -143,6 +258,9 @@ export interface Room {
    missing model must never cost the player the ability to buy anything. */
 export function buildRoom(): Room | null {
   if (!props.size) return null;
+  /* The room is built once, but a counter that only ever climbs is a slow leak
+     waiting for the day something rebuilds it. */
+  resetNeonLights();
   const root = new THREE.Group();
 
   /* --- the deck --- */
@@ -189,7 +307,7 @@ export function buildRoom(): Room | null {
   }
 
   /* --- the instruments on the back wall --- */
-  const consoles: { mesh: THREE.Object3D; bar: THREE.Group; read: () => number }[] = [];
+  const consoles: { mesh: THREE.Object3D; bar: NeonFitting; read: () => number }[] = [];
   const READS: { x: number; color: number; read: () => number }[] = [
     { x: -1.35, color: 0xff6b5e, read: () => Math.min(1, g.claim.strain) },
     { x: 0, color: 0x49e0c0, read: () => Math.min(1, g.best.depth / 260) },
@@ -276,8 +394,7 @@ export function buildRoom(): Room | null {
     plinths.push({
       name, group: grp, hit,
       setPicked(on: boolean) {
-        (bar.children[1] as THREE.Mesh).scale.setScalar(on ? 1.12 : 1);
-        ((bar.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = on ? 0.5 : 0.24;
+        setNeon(bar, on ? 1 : 0.45);
         if (sample) sample.visible = true;
       }
     });
@@ -301,7 +418,7 @@ export function buildRoom(): Room | null {
       for (const c of consoles) {
         const v = c.read();
         c.bar.scale.x = 0.08 + v * 0.92;
-        ((c.bar.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.16 + v * 0.34;
+        setNeon(c.bar, v);
       }
       /* The samples turn. */
       for (const p of plinths) {
