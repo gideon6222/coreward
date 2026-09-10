@@ -2,7 +2,7 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './sim/config';
-import { g, S, save, load, hasSave } from './sim/state';
+import { g, S, save, load, hasSave, coreM } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
@@ -16,7 +16,7 @@ import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
-import { setCoreHandler, breakCore, beginSettle } from './actions';
+import { setCoreHandler, breakCore, beginSettle, beginBreach } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
@@ -158,6 +158,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* Force a full terrain rebuild - for looking at a world's ground without
        flying to it. */
     resetBlocks: () => { resetBlockCache(); syncBlocks(true); },
+    /* The breach, so the filmstrip can start one without having to drill a
+       whole world first. coreM is here for the same reason: every fixture that
+       used to write a literal depth is now written against the world. */
+    beginBreach, coreM,
     shelfKeys: () => shelfStock(g.best.depth).map((u) => u.key),
     sealedKey: () => {
       const s = shelfStock(g.best.depth).filter((u) => g.best.depth < u.unlock);

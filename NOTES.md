@@ -3043,3 +3043,37 @@ Nothing else is touched.
 any of this round, quakes in twenty runs 3 / 5 / 5 against 0 / 0 / 5, and the payout spread
 tightened from 84-3,708 to 152-1,274 for a cautious player. All three styles now meet the
 Claim, which none of them did when it was written.
+
+---
+
+# M6, 2026-09-10 - the breach
+
+Breaking a core was the most cinematic beat in the game and it was a modal dialog with a
+button on it. You destroyed a world and the game asked where you would like to go next.
+
+`src/sim/breach.ts` is ninety seconds of climbing out of a world that is closing from the
+bottom. The collapse front rises linearly from the core to the surface over the clock, so the
+thing behind you IS the timer - no number, and `CRAFT.md`'s "make failure a shape". Tremors
+fire every six to nine seconds instead of every twenty-seven, through the same
+`planCollapse()`, which still reverts any set that would seal the ship in. The chart opens
+when you reach the pad, not when the core breaks. Miss the clock and you are towed for the
+usual cut and the world still breaks: it can cost you the hold, never the run.
+
+One number grades the whole thing. `breachHeat()` runs 0 to 1 over the clock and the sky, the
+fog and the dust warm on it exactly as they already do for the heat zone - taken as a max
+rather than added, so a breach that starts inside the heat zone does not double-expose the
+picture.
+
+**Filmed, and the sheet is the answer.** Frame 0 is 56 m down and dark with the hull draining;
+frame 1 is the whole world glowing ember with the ship climbing a lit shaft; frame 2 is 1 m
+and cool again; frame 3 is the chart. That is the sequence the plan asked for.
+
+The clock is generous - a stock climb from leg 0's core is twenty seconds against ninety - and
+that is asserted rather than left to chance: `the clock is long enough to climb out of any
+world it can start in` fails if the bare climb ever passes 40% of it. The pressure is meant to
+come from the tremors and from whatever you still want to cut on the way, not from the
+distance.
+
+Six design tests, all properties: the front only ever rises, it ends in exactly one of two
+ways and stays ended, the grade never overshoots 1, and everything at or below the front is
+gone while nothing above it is.

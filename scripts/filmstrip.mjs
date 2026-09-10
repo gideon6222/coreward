@@ -207,6 +207,33 @@ const SCENES = {
     `
   },
 
+  /* The breach: the core goes and the world starts closing from the bottom.
+     Eight frames over the first half of the clock, which is where the grade
+     moves fastest. */
+  breach: {
+    secs: 5,
+    frames: 8,
+    enter: true,
+    setup: `
+      __cw.stopClock();
+      __cw.g.up.thrust = 4; __cw.g.up.tank = 9; __cw.g.up.cool = 9; __cw.g.up.drill = 8;
+      __cw.g.best.depth = 300;
+      const core = __cw.coreM();
+      const dug = [];
+      for (let d = 0; d <= core - 1; d++) for (let x = 5; x <= 7; x++) dug.push(x + ',' + d);
+      __cw.g.dug = new Set(dug);
+      __cw.g.px = 6; __cw.g.pd = core - 2;
+      __cw.resetBlocks();
+      __cw.beginBreach();
+      __cw.advance(0.2);
+    `,
+    step: `
+      /* climbing, so the frames show the front rising behind the ship */
+      __cw.R.held = 'up';
+      __cw.advance(SECS);
+    `
+  },
+
   /* The Claim, from intact to wrecked. Four frames because damage is shown as
      a lean and a settle, and a lean is only legible against the one before it. */
   claim: {

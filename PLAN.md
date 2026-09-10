@@ -479,7 +479,7 @@ depth, danger and zone off one scheduler, and nothing available can do that.
       decision, and Cargo Hold is currently the first thing every style buys.
 - [x] **M5 — The first world compressed.** Per-leg thresholds, save migration, the invariant as
       a relation asserted at every leg.
-- [ ] **M6 — The breach.** The clock, the collapse behind you, the tow path, the chart after.
+- [x] **M6 — The breach.** The clock, the collapse behind you, the tow path, the chart after.
       Filmed. This is the one to send a video of.
 
 ### Phase 2: the look

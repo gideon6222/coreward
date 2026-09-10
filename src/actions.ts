@@ -1,10 +1,8 @@
 import * as THREE from 'three';
 import { isHeart } from './sim/drive';
-import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
-         PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE,
-         GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult , OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS} from './sim/config';
+import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF, PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE, GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS, tremorDepth } from './sim/config';
 import { clamp, key, stream } from './sim/util';
+import { newBreach, stepBreach } from './sim/breach';
 import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './sim/world';
 import { R } from './sim/runtime';
@@ -468,8 +466,58 @@ export function breakCore() {
       save();
       return;
     }
-    onCoreBroken();
+    /* Not the chart. The world has just started coming apart and the way out
+       is up - the chart opens when the ship is standing on the pad, in
+       beginBreach's own hand-off. */
+    beginBreach();
   }, 1700);
+}
+
+/* ---------- the breach ----------
+
+   Ninety seconds to climb out of a world that is closing from the bottom. The
+   clock, the tremor cadence and the collapse front are all in src/sim/breach.ts;
+   this is the part that touches the world. */
+
+export function beginBreach() {
+  g.mode = 'play';
+  R.breach = newBreach(g.planet);
+  toast('THE CORE IS GONE · GET OUT');
+  sfx.rumble();
+  R.shake = Math.max(R.shake, 1.6);
+}
+
+/* One tick of it. Returns true while the breach is still running, so the frame
+   loop can skip the ordinary tremor clock and the ordinary heat grade. */
+export function stepBreachHere(dt: number): boolean {
+  const b = R.breach;
+  if (!b) return false;
+  const home = g.pd <= 0;
+  const { tremor: fire } = stepBreach(b, dt, home);
+  if (fire) {
+    /* Bigger than an ordinary tremor and rising with the clock, but through
+       the same planCollapse - which still reverts any set that would seal the
+       ship in. The breach is allowed to be brutal; it is not allowed to take
+       the run. */
+    const want = tremorCells(Math.max(g.pd, tremorDepth(g.planet) + 1), g.planet) + 2;
+    const taken = planCollapse(want, stream(R.tremorN++, Math.round(g.pd), g.planet + 211));
+    if (taken.length) { syncBlocks(true); R.shake = Math.max(R.shake, 1.1); sfx.rumble(); }
+  }
+  if (b.done) {
+    R.breach = null;
+    onCoreBroken();
+    return false;
+  }
+  if (b.failed) {
+    R.breach = null;
+    /* The world still breaks. You just do not get to carry anything out of it,
+       which is the same price the game already charges for running dry. */
+    toast('THE SHAFT CLOSED · TOWED OUT');
+    tow('the shaft closed');
+    onCoreBroken();
+    return false;
+  }
+  return true;
 }
 
 export function hardReset() {
