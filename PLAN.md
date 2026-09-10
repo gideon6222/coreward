@@ -533,6 +533,112 @@ Each is reversible, each has an alternative, and each goes into `NOTES.md` when 
 
 ---
 
+# Round five: the Outfitter as a gas station
+
+Written 2026-09-10 against v0.26.0, from his own design brief:
+
+> *"like a 3d futuristic gas station. the ship parks at the gas station, it has a retro neon
+> feel with the lights. anything neon should feel like it is actually coming from an object or
+> light in the room, not an overlay. the shop is similar to a gas station store. there is a
+> display case that is also a counter. in the display case are important and expensive
+> upgrades. behind the counter on the wall are the more standard upgrades."*
+
+He designed the room. This is how it gets built.
+
+## What is wrong with what is there
+
+**The plinths are a control that does nothing.** They were built to filter the shelf, the
+filtering was cut in the same commit for a real reason, and four lit, labelled,
+tappable-looking objects shipped anyway. `POLISH.md`: every state names a visible action. He
+found it in the first minute. Two attempts to wire them back up broke three different smoke
+tests, all of which were written when every case was always on the shelf - which is the signal
+that the grouping is the wrong mechanism, not that the tests are wrong.
+
+**The neon is a decal.** `MeshBasicMaterial` planes with an additive halo, at a fixed z in
+front of the room. Lit rectangles, not lit fittings. His read of it is exactly right.
+
+## The build
+
+### R1. Neon that is a fitting
+
+The sourced recipe has four ingredients and the room has one:
+
+- a **tube**, not a plane - a thin cylinder, so it has a lit side and a shaded side
+- an **emissive material** on that tube
+- a **housing** it sits in: a shallow channel of ordinary metal, lit by the room's own lights.
+  This is the missing ingredient and it is the whole reason the current version reads as a
+  sticker - the eye needs "normally lit" beside "self-lit" in one glance to believe the second
+- a **real light** at the tube, short range and colour-matched, which is what actually puts
+  colour on the wall behind it
+
+For the softness a bloom pass would give: a **radial-gradient canvas texture** flush against
+the wall behind the tube, additive and depth-write-free - not a hard-edged colour plane, and on
+the wall rather than in front of the sign. That is the difference between a halo and a light
+pool.
+
+**Light budget.** The three.js forum's practical figure is about ten fixed point lights against
+a typical uniform ceiling near fifteen, and a forward renderer pays for every light on every
+shaded fragment. So six to eight short-range lights, **no shadows** - a point-light shadow is
+six cube faces - with `visible` and `intensity` toggled rather than lights added and removed,
+which avoids shader recompiles, and `layers` keeping each fitting's light off geometry it has
+no business touching. This game already uses `SHIP_LAYER` for exactly that. **Measured on the
+phone before it is called done**: none of those are mobile numbers.
+
+### R2. The forecourt
+
+Portrait decides the composition. The sourced vocabulary is canopy, illuminated fascia band,
+totem sign, pump island, bollards, wet forecourt - and in a tall narrow frame **the canopy is
+the one element that reads badly**, so it is implied by the fascia band rather than modelled.
+
+- an **illuminated fascia band** across the top of frame, the element canopy makers call the
+  most visible part of the whole structure
+- a **totem sign** standing tall at one side with the dock name and the world on it
+- a **pump island** the ship is parked at, at eye level
+- **bollards** and a nozzle at the near edge
+- the **wet forecourt** filling the bottom third
+
+### R3. The counter and the wall
+
+His split, and it is better than the one it replaces because it is how a real shop works:
+
+- **A display case that is also a counter** in the foreground, holding the **expensive**
+  upgrades, each individually spot-lit under glass with the down-light cone already built.
+  Individual light reads as precious.
+- **The wall behind the counter** holds the **standard** upgrades: a repeating rack washed by
+  one strip rather than lit per item. Repetition plus flat light reads as stock.
+
+A split by PRICE, not by category - which retires the four-group filtering that has been
+fighting this room since it was added. Nothing has to be tapped to reveal anything: both tiers
+are on screen at once. The clutter was never the count, it was fifteen things competing for one
+lighting setup.
+
+### R4. The ship parks at the pump
+
+The docking collar becomes a pump: a housing, a hose to the ship's existing hardpoint, a
+nozzle, and a readout that ticks while the tank fills, reusing the canvas-plate code the prices
+already use. A reskin of geometry that exists rather than a new system.
+
+### R5. Wet ground without a reflection pass
+
+The Half-Life: Blue Shift trick, still used on mobile: duplicate the geometry, flip it in Y
+under the floor, darken it, blend it under a semi-transparent floor plane. **Only the neon
+fittings and the ship get mirrored** - a handful of meshes, not the room - with a
+normal-mapped floor at low roughness so the lights streak across it.
+
+## Milestones
+
+- [ ] **R1 Neon as fittings** - tube, housing, one short-range light each, gradient pools on
+      the wall. Replaces `neonBar` everywhere. Frame cost measured on the phone
+- [ ] **R2 The forecourt** - fascia band, totem, pump island, bollards, floor
+- [ ] **R3 The counter and the wall** - expensive under glass and spot-lit, standard on a
+      repeating rack behind. Retires the plinths and the group filtering
+- [ ] **R4 The pump** - hose, nozzle, ticking readout
+- [ ] **R5 Wet ground** - mirrored fittings and ship under a translucent floor
+- [ ] **R6 The phone pass** - all of it judged at 1080x2340 rather than on a contact sheet,
+      which is where the last three rounds of this room went wrong
+
+---
+
 # Appendix: rounds one to three, as planned and shipped
 
 Kept because the reasoning is why the game is shaped the way it is. Everything below has
