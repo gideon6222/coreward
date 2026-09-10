@@ -651,8 +651,12 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
   const fuelPct = () => page.evaluate(() =>
     parseFloat((document.getElementById('fuelTxt') as HTMLElement).textContent || '0'));
 
+  /* Far enough down that the tank has visibly moved. One metre used to be
+     enough; M3 cut the fuel a cell of drilling costs by about two thirds, so
+     the gauge no longer rounds off a single cut and the assertion below was
+     reading 100% for a run that had genuinely spent fuel. */
   await holdUntil(page, 'down', async () => {
-    await expect(page.locator('#depth')).not.toContainText('DEPTH 0 m', { timeout: DEEP_ENOUGH });
+    await expect(page.locator('#depth')).toContainText(/DEPTH (1[0-9]|[2-9][0-9]) m/, { timeout: DEEP_ENOUGH });
   });
   await expect(page.locator('#supCell')).not.toHaveClass(/none/);
 
@@ -691,7 +695,7 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
 test('a full hold no longer stops the drill, and the ore waits', async ({ page }) => {
   await page.evaluate(() => {
     const dug: string[] = [];
-    for (let d = 0; d <= 70; d++) dug.push('6,' + d);
+    for (let d = 0; d <= 44; d++) dug.push('6,' + d);
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
       up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
@@ -700,7 +704,7 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
       /* Six amethyst at 7 kg is 42 of the 45 kg a stock hold carries: room for
          nothing worth having. Written as the ore rather than as a number so
          that a retune of the hold moves this with it. */
-      dug, cargo: { amethyst: 6 }, weight: 42, px: 6, pd: 70
+      dug, cargo: { amethyst: 6 }, weight: 42, px: 6, pd: 44
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -726,7 +730,7 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
      this needs seventy-five metres of drilling and that is game time, which is
      the one thing a slow runner must not be charged for. */
   await holdSeam(page, 'down',
-    async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 75);
+    async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 50);
   const kg = () => page.evaluate(() =>
     parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText));
   expect(await kg(), 'the hold must never exceed its cap').toBeLessThanOrEqual(cap);
@@ -737,15 +741,15 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
 test('ore left behind is picked up by flying back through it', async ({ page }) => {
   await page.evaluate(() => {
     const dug: string[] = [];
-    for (let d = 0; d <= 70; d++) dug.push('6,' + d);
-    dug.push('5,70', '4,70');
+    for (let d = 0; d <= 44; d++) dug.push('6,' + d);
+    dug.push('5,44', '4,44');
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
       up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [],
-      drops: { '5,70': 'amethyst', '4,70': 'gold' },
+      drops: { '5,44': 'amethyst', '4,44': 'gold' },
       best: { depth: 300, haul: 0 },
-      dug, cargo: {}, weight: 0, px: 6, pd: 70
+      dug, cargo: {}, weight: 0, px: 6, pd: 44
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -966,14 +970,18 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
        Yielding between slices lets the observer run while the toast is still on
        screen. The simulation is still fixed 1/60 steps, so nothing about the
        determinism changes. */
-    for (let i = 0; i < 80; i++) {
+    /* Thirty slices, not eighty. M5 ended leg 0 at 58 m with heat from 38, so
+       forty seconds of holding down now drills into the heat zone without a
+       rig and the run ends in a tow - which is the game working, and made this
+       test about survival rather than about the record announcement. */
+    for (let i = 0; i < 30; i++) {
       w.advance(0.5);
       await new Promise((r) => setTimeout(r, 0));
     }
     w.R.held = null;
     w.advance(0.3);
   });
-  await expect(page.locator('#depth')).toContainText(/DEPTH (2[5-9]|[3-9][0-9]) m/);
+  await expect(page.locator('#depth')).toContainText(/DEPTH (1[5-9]|[2-9][0-9]) m/);
 
   expect(await page.evaluate(() => (window as any).__records),
     'the record announcement must fire once, not on every frame past the line')
@@ -1092,8 +1100,8 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
         planet: 0, credits: 0, shards: 0,
         up: { drill: 6, cargo: 3, thrust: 4, tank: 4, cool: 7, scan: 4, tow: 0, auto: 0 },
         kit: { coolant: 1, patch: 0, cell: 0 },
-        dug: Array.from({ length: 97 }, (_, d) => '6,' + d),
-        cargo: {}, weight: 0, px: 6, pd: 96
+        dug: Array.from({ length: 49 }, (_, d) => '6,' + d),
+        cargo: {}, weight: 0, px: 6, pd: 48
       }));
       const set = Storage.prototype.setItem;
       Storage.prototype.setItem = function (k, v) {
@@ -1211,9 +1219,11 @@ test('the build stamp is populated', async ({ page }) => {
 test('a ship parked off-lane still digs instead of snagging on its own shaft', async ({ page }) => {
   await page.evaluate(() => {
     const dug: string[] = [];
-    /* a one-cell shaft straight down column 6, stopping at 70 - so row 71 is
-       untouched rock and the ship has something to actually drill */
-    for (let d = 0; d <= 70; d++) dug.push('6,' + d);
+    /* a one-cell shaft straight down column 6, stopping at 44 - so row 45 is
+       untouched rock and the ship has something to actually drill. 44 rather
+       than 70 because M5 moved leg 0's core to 58 m, and a save whose ship is
+       below the core is put back on the pad by the migration in state.ts. */
+    for (let d = 0; d <= 44; d++) dug.push('6,' + d);
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
       up: { drill: 8, cargo: 4, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
@@ -1222,7 +1232,7 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
       dug, cargo: {}, weight: 0,
       /* off the centre line by 0.4 of a cell: enough that the ship's radius
          reaches into column 7 and the old collision saw a wall */
-      px: 6.4, pd: 66
+      px: 6.4, pd: 40
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -1238,15 +1248,16 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
      raises no pointerdown, so this cannot start the audio graph and the
      gesture assertions below still mean what they say. */
   await enterGame(page);
-  await expect(page.locator('#depth')).toContainText('DEPTH 66 m');
+  await expect(page.locator('#depth')).toContainText('DEPTH 40 m');
 
-  /* Down through the open shaft, then through the rock under it. Reaching 72
+  /* Down through the open shaft, then through the rock under it. Reaching 46
      means the ship both moved off-lane without snagging AND completed at least
      one cut it could not previously start - and neither of those claims is
      about how fast the machine happens to be running, so it goes on the tick
-     seam. See holdSeam. */
+     seam. See holdSeam. The old target of 72 m is below leg 0's core since M5
+     moved it to 58. */
   await holdSeam(page, 'down',
-    async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 72);
+    async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 46);
 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
@@ -1278,7 +1289,12 @@ test('a tremor actually fires in a real run below the tremor line', async ({ pag
     /* Sat well below the tremor line, in a shaft, with the hull and tank
        upgraded enough that nothing else ends the run first. */
     w.g.up.tank = 9; w.g.up.cool = 9; w.g.up.drill = 8;
-    w.g.px = 6; w.g.pd = 90;
+    /* Just below the tremor line at 44 m rather than deep in the heat zone.
+       M5 scaled the heat curve to each world's own zone, so leg 0 goes from
+       warm at 38 m to lethal at 58 - and seventy seconds of waiting for a
+       tremor at 52 m now ends in a tow, which is the heat working rather than
+       the tremor failing. */
+    w.g.px = 6; w.g.pd = 46;
     w.g.best.depth = 300;
     /* THREE columns wide, and that is load-bearing rather than incidental.
 
@@ -1292,7 +1308,7 @@ test('a tremor actually fires in a real run below the tremor line', async ({ pag
        A fixture that cannot reach the behaviour it names reads as coverage and
        is worse than no test, so the precondition is asserted below rather than
        assumed. */
-    for (let d = 0; d <= 90; d++) for (let x = 5; x <= 7; x++) w.g.dug.add(x + ',' + d);
+    for (let d = 0; d <= 50; d++) for (let x = 5; x <= 7; x++) w.g.dug.add(x + ',' + d);
     const before = w.g.rubble.size;
     /* Two full tremor periods plus the jitter, so "none fired" cannot just
        mean the window was too short. */
@@ -1303,7 +1319,7 @@ test('a tremor actually fires in a real run below the tremor line', async ({ pag
 
   expect(out.dug, 'nothing was dug, so there was nothing a tremor could collapse')
     .toBeGreaterThan(100);
-  expect(out.depth, 'the ship should still be deep, not towed home').toBeGreaterThan(80);
+  expect(out.depth, 'the ship should still be deep, not towed home').toBeGreaterThan(40);
   expect(out.after, 'no tremor collapsed anything in 70 s below the tremor line')
     .toBeGreaterThan(out.before);
 });

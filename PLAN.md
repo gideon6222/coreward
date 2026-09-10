@@ -477,7 +477,7 @@ depth, danger and zone off one scheduler, and nothing available can do that.
 - [x] **M4 — The hold as a decision.** Dump by mineral, widened weight spread, manifest tap.
       Promoted by M1 from a refinement to a missing mechanic: a cap that never binds is not a
       decision, and Cargo Hold is currently the first thing every style buys.
-- [ ] **M5 — The first world compressed.** Per-leg thresholds, save migration, the invariant as
+- [x] **M5 — The first world compressed.** Per-leg thresholds, save migration, the invariant as
       a relation asserted at every leg.
 - [ ] **M6 — The breach.** The clock, the collapse behind you, the tow path, the chart after.
       Filmed. This is the one to send a video of.

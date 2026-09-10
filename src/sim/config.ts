@@ -174,7 +174,33 @@ export const planetName = (i: number) => {
 };
 export const skyHi = (i: number) => SKY_HI[i % SKY_HI.length];
 export const skyLo = (i: number) => SKY_LO[i % SKY_LO.length];
-export const coreDepth = (p: number) => 110 + p * 35;
+/* 58 + 48p, not 110 + 35p.
+
+   Planet 0's core sat at 110 m with heat at 70 and tremors at 85, and five
+   sessions of playtest notes never went past about 78 m - so the chart, the
+   traits, the Jump Drive, the Heart and the crossing were all behind a dive
+   that had never happened. Leg 0 now ends at 58 m and teaches heat at 32 and
+   tremors at 44, which is a whole world inside a first session. The ladder is
+   steeper so that leg 4 lands on 250 m, exactly where the old one did: the
+   deep game is unchanged, only the distance to your first sight of it. */
+export const coreDepth = (p: number) => 58 + p * 48;
+
+/* Heat and tremors are fractions of the world's own core rather than two
+   global metres. Every world then has the same SHAPE - danger at 55%, the
+   ground giving at 76%, the core at 100% - so what leg 0 teaches is true of
+   leg 9, which a pair of fixed depths could never be: at 250 m a heat line at
+   70 is a third of the way down and at 58 m it is past the end.
+
+   0.66 rather than 0.55 because the ore ladder has to fit above it. At 0.55
+   leg 0's heat line landed at 32 m, four metres above gold, so the Fuel Tank -
+   which every player needs from the first run - would have demanded a trip
+   into the heat to buy. Only the rows you buy BECAUSE you go deep may ask for
+   a mineral from down there. The heat zone is now the bottom third of every
+   world, which is also easier to say out loud than any pair of metres. */
+export const HEAT_FRACTION = 0.66;
+export const TREMOR_FRACTION = 0.76;
+export const heatDepth = (p: number) => Math.round(coreDepth(p) * HEAT_FRACTION);
+export const tremorDepth = (p: number) => Math.round(coreDepth(p) * TREMOR_FRACTION);
 
 /* ---------- planet traits ----------
 
@@ -360,11 +386,19 @@ export const geodeChanceOn = (t: Trait) => Math.min(0.06, GEODE.chance * (t.geod
    rather than two: quiet, hot, and unstable. 85 m leaves a 25 m window on
    planet 0, whose core sits at 110, so the band is reachable on the planet
    everyone starts on. */
-export const TREMOR_DEPTH = 85;
+/* Pre-M5 saves were played with tremors at a global 85; tremorDepth(leg) is
+   the live one. Kept only so the constant's name still means something in the
+   places that record what a world USED to be. */
+export const TREMOR_DEPTH_LEGACY = 85;
 /* The rhythm - first delay, gap, jitter, warning - lives in feel.ts. */
 /* how far from the ship a cell has to be before it may collapse */
 export const TREMOR_SAFE_RADIUS = 3;
-export const tremorCells = (d: number) => Math.min(9, 3 + Math.floor((d - TREMOR_DEPTH) / 22));
+/* How many cells one tremor takes, from how far below that world's own tremor
+   line you are. Scaled by the world's span rather than by a flat 22 m, or a
+   58 m world would never reach the second step and a 250 m one would cap out
+   halfway down. */
+export const tremorCells = (d: number, p: number) =>
+  Math.min(9, 3 + Math.floor((d - tremorDepth(p)) / Math.max(6, coreDepth(p) * 0.2)));
 
 /* What a collapsed cell becomes. It regenerates as loose rubble rather than as
    whatever was there before, because otherwise a tremor would refill the ore
@@ -473,16 +507,23 @@ export const DROP_MIN_VALUE = 10;
 
    Basalt moved from 130 to 120 because planet 0's core sits at 110 - the old
    band meant the deepest rock in the game was unreachable on the first planet. */
-const DIRT_TO_STONE = 10;
-const STONE_TO_GRANITE = 45;
-export const GRANITE_TO_SCORIA = 70;   /* === HEAT_DEPTH */
-const SCORIA_TO_BASALT = 120;
+/* The bands are fractions of the world too, for the same reason, and the one
+   that matters is still nailed to the danger: graniteToScoria IS heatDepth, so
+   the rock turning to smouldering ember and the hull starting to drain happen
+   on the same metre in every world. There is a test at every leg. */
+export const DIRT_FRACTION = 0.09;
+export const STONE_FRACTION = 0.39;
+export const BASALT_FRACTION = 1.05;
+export const dirtToStone = (p: number) => Math.max(4, Math.round(coreDepth(p) * DIRT_FRACTION));
+export const stoneToGranite = (p: number) => Math.round(coreDepth(p) * STONE_FRACTION);
+export const graniteToScoria = (p: number) => heatDepth(p);
+export const scoriaToBasalt = (p: number) => Math.round(coreDepth(p) * BASALT_FRACTION);
 
-export const baseRock = (d: number) =>
-  d < DIRT_TO_STONE ? ROCKS[0]
-  : d < STONE_TO_GRANITE ? ROCKS[1]
-  : d < GRANITE_TO_SCORIA ? ROCKS[2]
-  : d < SCORIA_TO_BASALT ? ROCKS[3]
+export const baseRock = (d: number, p: number) =>
+  d < dirtToStone(p) ? ROCKS[0]
+  : d < stoneToGranite(p) ? ROCKS[1]
+  : d < graniteToScoria(p) ? ROCKS[2]
+  : d < scoriaToBasalt(p) ? ROCKS[3]
   : ROCKS[4];
 
 /* Ore carries a depth gate and a spawn chance; rock does not. That is the only
@@ -584,22 +625,31 @@ export const UPGRADES: Upgrade[] = [
   { key: 'thrust', name: 'Thrusters',     base: 300, mul: 1.55, max: 9, mat: 'silver', group: 'rig', unlock: 0,
     effect: (l: number) => (3.0 + l * 0.7).toFixed(1) + ' cells/s' },
   /* Priced against the depth where running dry actually strands you, not
-     against the first haul. The old 200 was pocket change by 36 m. */
+     against the first haul.
+
+     The Scanner moved from amethyst at 56 m to copper at 4: amethyst is below
+     every heat line and the scanner is an opening-kit row. See HEAT_FRACTION
+     for why the line itself moved rather than the tank's mineral. */
   { key: 'tank',   name: 'Fuel Tank',     base: 1100, mul: 1.55, max: 9, mat: 'gold', group: 'survival', unlock: 0,
     effect: (l: number) => (90 + l * 40) + ' fuel' },
-  /* The expensive one, and the ladder you save for. Heat starts at 70 m, so
-     the first level costs about half a good run from that depth rather than
-     one gold block. The shallower multiplier keeps later levels reachable. */
-  { key: 'cool',   name: 'Cooling Rig',   base: 5000, mul: 1.5, max: 9, mat: 'emerald', group: 'survival', unlock: 55,
+  /* The expensive one, and the ladder you save for.
+
+     Unlocked at 78 m rather than 55, which is emerald's own depth: the row now
+     opens on exactly the world where the mineral it is built from exists. At
+     55 it opened on leg 0, whose core M5 moved up to 58 m, so the shop offered
+     a rig that could not be paid for - two gates on one thing, and one of them
+     pointing at nothing. The design it protects is unchanged: you still have to
+     survive inside the heat to buy the thing that answers it. */
+  { key: 'cool',   name: 'Cooling Rig',   base: 5000, mul: 1.5, max: 9, mat: 'emerald', group: 'survival', unlock: 78,
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
   /* The effect line names the framing as well as the lamp, because the
      framing is now the part the player actually feels. */
-  { key: 'scan',   name: 'Scanner Array', base: 700, mul: 1.55, max: 9, mat: 'amethyst', group: 'instruments', unlock: 0,
+  { key: 'scan',   name: 'Scanner Array', base: 700, mul: 1.55, max: 9, mat: 'copper', group: 'instruments', unlock: 0,
     effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light · ' +
       Math.round(zoomForScan(l) * 100) + '% view' },
   { key: 'tow',    name: 'Tow Insurance', base: 1500, mul: 1.5, max: 8, mat: 'iron', group: 'survival', unlock: 25,
     effect: (l: number) => 'Tow takes ' + Math.round(Math.max(0.1, 0.5 - l * 0.05) * 100) + '% of haul' },
-  { key: 'auto',   name: 'Autopilot',     base: 6400, mul: 1.55, max: 6, mat: 'ruby', group: 'instruments', unlock: 65,
+  { key: 'auto',   name: 'Autopilot',     base: 4900, mul: 1.55, max: 6, mat: 'ruby', group: 'instruments', unlock: 65,
     effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') },
 
   /* ---------- ordnance ----------
@@ -652,7 +702,7 @@ export const UPGRADES: Upgrade[] = [
   /* REPAIR DRONE. Turns a bad run into a long one instead of a tow. Slow on
      purpose - it must never make heat survivable, only recoverable, so it is
      an order of magnitude under what soak takes at depth. */
-  { key: 'drone',  name: 'Repair Drone',   base: 5600, mul: 1.5, max: 5, mat: 'amethyst', group: 'survival', unlock: 60,
+  { key: 'drone',  name: 'Repair Drone',   base: 4700, mul: 1.5, max: 5, mat: 'amethyst', group: 'survival', unlock: 60,
     effect: (l: number) => (l === 0 ? 'Not installed' : '+' + (l * 0.55).toFixed(2) + ' hull/s underground') },
 
   /* REACTOR. Ordnance had two rungs and no ladder of its own: both weapons ran

@@ -77,7 +77,7 @@ function digCost(b) {
 
 /* How deep this style is willing to work, given what it owns right now. */
 function targetDepth(st) {
-  const heat = H.HEAT_DEPTH;
+  const heat = H.heatDepth(H.g.planet);
   const core = H.coreM();
   if (st.style === 'cautious') return Math.min(st.shaft + 8, heat - 2, core - 1);
   if (st.style === 'greedy') return Math.min(st.shaft + 14, core - 1);
@@ -260,7 +260,7 @@ const OFFSETS = [2, 4, 6, 8, 10];
 const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 
 H.setWorld(0);
-console.log(`Coreward economy probe - planet 0, core at ${H.coreM()} m, heat at ${H.HEAT_DEPTH} m, tremors at ${H.TREMOR_DEPTH} m`);
+console.log(`Coreward economy probe - planet 0, core at ${H.coreM()} m, heat at ${H.heatDepth(0)} m, tremors at ${H.tremorDepth(0)} m`);
 console.log(`${runs} runs per style, ${OFFSETS.length} corridor offsets, medians reported.`);
 console.log('');
 console.log('Model: a straight reused shaft, a corridor at the bottom, every broken block in the');

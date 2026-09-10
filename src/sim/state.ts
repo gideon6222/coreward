@@ -234,6 +234,12 @@ export function load() {
       Object.assign(g.best, s.best || {});
       /* A save from before the Claim existed loads an intact one. */
       g.claim = loadClaim(s.claim);
+      /* M5 moved every world's core. A save made when planet 0 ended at 110 m
+         can have its ship parked at 70, which is now inside bedrock, so it is
+         put back where the world still exists. Nothing else is touched: the
+         cargo, the credits and the record all still mean what they meant. */
+      const floor = coreM() - 1;
+      if (g.pd > floor) { g.pd = 0; g.px = START_X; }
       g.dug = new Set(s.dug || []);
       g.rubble = new Set(s.rubble || []);
       g.drops = s.drops || {};

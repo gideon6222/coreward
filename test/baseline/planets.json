@@ -2,7 +2,7 @@
   {
     "p": 0,
     "name": "Verdax",
-    "coreDepth": 110,
+    "coreDepth": 58,
     "hardMult": 1,
     "valueMult": 1,
     "skyHi": 863058,
@@ -11,7 +11,7 @@
   {
     "p": 1,
     "name": "Rustmoor",
-    "coreDepth": 145,
+    "coreDepth": 106,
     "hardMult": 1.28,
     "valueMult": 1.6,
     "skyHi": 4857104,
@@ -20,7 +20,7 @@
   {
     "p": 2,
     "name": "Cryon",
-    "coreDepth": 180,
+    "coreDepth": 154,
     "hardMult": 1.56,
     "valueMult": 2.2,
     "skyHi": 801348,
@@ -29,7 +29,7 @@
   {
     "p": 3,
     "name": "Ashvault",
-    "coreDepth": 215,
+    "coreDepth": 202,
     "hardMult": 1.84,
     "valueMult": 2.8,
     "skyHi": 2756406,
@@ -47,7 +47,7 @@
   {
     "p": 5,
     "name": "Tessivar",
-    "coreDepth": 285,
+    "coreDepth": 298,
     "hardMult": 2.4000000000000004,
     "valueMult": 4,
     "skyHi": 799519,
@@ -56,7 +56,7 @@
   {
     "p": 6,
     "name": "Obrinth",
-    "coreDepth": 320,
+    "coreDepth": 346,
     "hardMult": 2.68,
     "valueMult": 4.6,
     "skyHi": 3805232,
@@ -65,7 +65,7 @@
   {
     "p": 7,
     "name": "Palewell",
-    "coreDepth": 355,
+    "coreDepth": 394,
     "hardMult": 2.96,
     "valueMult": 5.2,
     "skyHi": 1846316,
@@ -74,7 +74,7 @@
   {
     "p": 8,
     "name": "Serrik",
-    "coreDepth": 390,
+    "coreDepth": 442,
     "hardMult": 3.24,
     "valueMult": 5.8,
     "skyHi": 4203276,
@@ -83,7 +83,7 @@
   {
     "p": 9,
     "name": "Vantomir",
-    "coreDepth": 425,
+    "coreDepth": 490,
     "hardMult": 3.5200000000000005,
     "valueMult": 6.3999999999999995,
     "skyHi": 662846,
@@ -92,7 +92,7 @@
   {
     "p": 10,
     "name": "Halcyne",
-    "coreDepth": 460,
+    "coreDepth": 538,
     "hardMult": 3.8000000000000003,
     "valueMult": 7,
     "skyHi": 3025416,
@@ -101,7 +101,7 @@
   {
     "p": 11,
     "name": "Dross",
-    "coreDepth": 495,
+    "coreDepth": 586,
     "hardMult": 4.08,
     "valueMult": 7.6,
     "skyHi": 1707550,
@@ -110,7 +110,7 @@
   {
     "p": 12,
     "name": "Verdax 2",
-    "coreDepth": 530,
+    "coreDepth": 634,
     "hardMult": 4.36,
     "valueMult": 8.2,
     "skyHi": 863058,

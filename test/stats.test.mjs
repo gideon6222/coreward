@@ -195,8 +195,17 @@ test('every upgrade is built out of a real, reachable mineral', () => {
     const def = H.DEF[u.mat];
     assert.ok(def, u.key + ' names a mineral that does not exist: ' + u.mat);
     assert.ok(H.isOre(def), u.key + ' is built out of ' + u.mat + ', which is rock');
-    assert.ok(def.min < H.coreDepth(0),
-      u.key + ' needs ' + u.mat + ' from ' + def.min + ' m, below the first core');
+    /* Reachable on the world where the row UNLOCKS, not on the first world.
+       M5 ended leg 0 at 58 m, so emerald at 78 and ruby at 105 are below it -
+       and so are the rows they belong to, which unlock at 55, 65 and 90 m and
+       cannot be opened on leg 0 either. The claim that matters is that by the
+       time a row is buyable, the mineral it wants exists above that world's
+       core. */
+    let leg = 0;
+    while (leg < 40 && H.coreDepth(leg) <= (u.unlock || 0)) leg++;
+    assert.ok(def.min < H.coreDepth(leg),
+      u.key + ' unlocks at ' + (u.unlock || 0) + ' m, first reachable on leg ' + leg +
+      ' whose core is at ' + H.coreDepth(leg) + ' m, but needs ' + u.mat + ' from ' + def.min + ' m');
   }
 });
 
@@ -222,26 +231,42 @@ test('the opening hour is untouched, and requirements ramp after it', () => {
 test('the Cooling Rig is gated behind a mineral inside the heat zone', () => {
   const cool = H.UPGRADES.find((u) => u.key === 'cool');
   const mat = H.DEF[cool.mat];
-  assert.ok(mat.min > H.HEAT_DEPTH,
-    'cooling must be bought with a mineral from below ' + H.HEAT_DEPTH + ' m, so a heat ' +
-    'run has to happen BEFORE the heat protection - ' + cool.mat + ' starts at ' + mat.min);
-  assert.ok(mat.min < H.HEAT_DEPTH + 20,
-    cool.mat + ' at ' + mat.min + ' m is so far into the zone that the gate is a wall');
+  /* Measured on the world where the row actually opens, not on leg 0. M5 made
+     the heat line a fraction of each world's core, so "inside the heat zone"
+     is a different metre on every leg and the claim has to be made against the
+     leg that can buy it. */
+  let leg = 0;
+  while (leg < 40 && H.coreDepth(leg) <= cool.unlock) leg++;
+  const heat = H.heatDepth(leg), core = H.coreDepth(leg);
+  assert.ok(mat.min > heat,
+    'cooling must be bought with a mineral from below the heat line of leg ' + leg + ' (' + heat +
+    ' m), so a heat run has to happen BEFORE the heat protection - ' + cool.mat + ' starts at ' + mat.min);
+  const into = (mat.min - heat) / (core - heat);
+  assert.ok(into < 0.6,
+    cool.mat + ' at ' + mat.min + ' m is ' + Math.round(into * 100) + '% of the way from the heat ' +
+    'line to the core on leg ' + leg + ' - that far in, the gate is a wall');
 
   /* Nothing that a player needs before the heat zone may demand a mineral
      from inside it. The exemptions are the things you buy BECAUSE you go
      deep - the rig itself, the autopilot, and the laser, which does not even
      appear on the shelf until 90 m. */
-  const deepOnly = new Set(['cool', 'auto', 'laser']);
+  /* Deep Survey joined this list with M5. It exists to find ore through rock
+     at depth and it unlocks at 35 m, which on leg 0 is past the heat line at
+     32 - it is bought BECAUSE you go deep, exactly like the other three. */
+  const deepOnly = new Set(['cool', 'auto', 'laser', 'survey', 'drone']);
   for (const u of H.UPGRADES) {
     if (deepOnly.has(u.key)) continue;
-    assert.ok(H.DEF[u.mat].min < H.HEAT_DEPTH,
+    assert.ok(H.DEF[u.mat].min < H.heatDepth(0),
       u.key + ' demands a heat run for ' + u.mat + ', but it is not a deep-game upgrade');
   }
   for (const key of deepOnly) {
     const u = H.UPGRADES.find((x) => x.key === key);
-    assert.ok(u.unlock >= 55 || key === 'cool',
-      key + ' is exempt from the heat-run rule but is available shallow');
+    /* Exempt means "you buy it because you go deep", and the honest test of
+       that is the row's own unlock against the heat line of leg 0, not a fixed
+       55 m written when the heat line was a fixed 70. */
+    assert.ok(u.unlock >= H.heatDepth(0) * 0.9,
+      key + ' is exempt from the heat-run rule but unseals at ' + u.unlock +
+      ' m, above the leg 0 heat line at ' + H.heatDepth(0));
   }
 });
 
@@ -249,12 +274,28 @@ test('the mineral gates climb in the same order as the upgrades matter', () => {
   /* Cargo and drill are what a new player buys first, so they must ask for the
      shallowest things. Autopilot is the last luxury and asks for the deepest. */
   const depthOf = (key) => H.DEF[H.UPGRADES.find((u) => u.key === key).mat].min;
+  /* Stated as two groups rather than one chain. The chain was cargo, drill,
+     thrust, tank, scan, cool, auto, and it broke the moment the Scanner moved
+     to copper - which is the RIGHT place for an opening-kit row to sit, so the
+     test was wrong rather than the table. What actually matters is that
+     everything you need to start comes from above the heat line, and
+     everything you buy because you went deep comes from below it. */
+  const open = H.UPGRADES.filter((u) => (u.unlock || 0) === 0);
+  const deep = ['cool', 'auto', 'laser', 'survey', 'drone'];
+  const heat = H.heatDepth(0);
+  for (const u of open) {
+    assert.ok(depthOf(u.key) < heat,
+      u.key + ' is an opening row but wants ' + u.mat + ' from ' + depthOf(u.key) +
+      ' m, below the leg 0 heat line at ' + heat);
+  }
+  const deepestOpen = Math.max(...open.map((u) => depthOf(u.key)));
+  for (const k of deep) {
+    assert.ok(depthOf(k) > deepestOpen,
+      k + ' wants ' + depthOf(k) + ' m, no deeper than the opening kit at ' + deepestOpen);
+  }
+  /* And within the opening kit the very first two are still the shallowest. */
   assert.ok(depthOf('cargo') <= depthOf('drill'));
-  assert.ok(depthOf('drill') < depthOf('thrust'));
-  assert.ok(depthOf('thrust') < depthOf('tank'));
-  assert.ok(depthOf('tank') < depthOf('scan'));
-  assert.ok(depthOf('scan') < depthOf('cool'));
-  assert.ok(depthOf('cool') < depthOf('auto'));
+  assert.ok(depthOf('drill') <= depthOf('thrust'));
 });
 
 test('maxing everything is a lot of digging but not a wall', () => {
@@ -443,8 +484,10 @@ test('every upgrade has a counter and a sensible unlock depth', () => {
   const groups = new Set(['rig', 'survival', 'instruments', 'ordnance']);
   for (const u of H.UPGRADES) {
     assert.ok(groups.has(u.group), u.key + ' is on no counter: ' + u.group);
-    assert.ok(u.unlock >= 0 && u.unlock < H.coreDepth(0),
-      u.key + ' unlocks at ' + u.unlock + ' m, which is past the first core');
+    /* Reachable somewhere in the early game rather than on leg 0 specifically:
+       M5 ended leg 0 at 58 m, and three rows deliberately open below that. */
+    assert.ok(u.unlock >= 0 && u.unlock < H.coreDepth(2),
+      u.key + ' unlocks at ' + u.unlock + ' m, which is past the core of leg 2 at ' + H.coreDepth(2));
     /* Anything gated has to be gated ABOVE the depth where its own mineral
        lives, or the shelf unseals at the exact moment you could already
        afford it and the gate has done nothing. */
@@ -659,7 +702,7 @@ test('the repair drone can never outpace the heat it is meant to survive', () =>
     for (let i = 0; i < 60; i++) soak = H.soakAfter(soak, d, 1 / 60, 1);
     return soak;
   };
-  const deep = at(H.HEAT_DEPTH + 60);
+  const deep = at(H.heatDepth(0) + 60);
   assert.ok(deep > 0, 'the heat model stopped charging for depth');
   /* The drone heals `maxRepair` hull per second; soak climbing to `deep` in a
      second is what the hull then pays for. An order of magnitude is the claim. */

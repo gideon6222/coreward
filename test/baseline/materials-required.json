@@ -178,34 +178,34 @@
     },
     {
       "key": "scan",
-      "mat": "amethyst",
-      "mineralDepth": 56,
+      "mat": "copper",
+      "mineralDepth": 4,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "amethyst",
+          "id": "copper",
           "need": 2
         },
         {
-          "id": "amethyst",
+          "id": "copper",
           "need": 4
         },
         {
-          "id": "amethyst",
+          "id": "copper",
           "need": 6
         },
         {
-          "id": "amethyst",
+          "id": "copper",
           "need": 8
         },
         {
-          "id": "amethyst",
+          "id": "copper",
           "need": 10
         },
         {
-          "id": "amethyst",
+          "id": "copper",
           "need": 12
         }
       ],

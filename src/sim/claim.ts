@@ -39,8 +39,15 @@ import type { Cargo } from '../types';
    pressure, and the measured play never went past 78 m. */
 export const STABILITY_FRACTION = 0.45;
 
+/* Capped, because the fraction alone stops working on a deep world: 45% of
+   leg 11's 586 m core is 264 m, which is deeper than the deepest ore in the
+   game, so nothing below the line could repair the surface and the Claim
+   became unrepairable exactly where it matters most. The cap is the deepest
+   ore's own gate. */
+export const STABILITY_MAX = ORES[0].min;
+
 export function stabilityLine(core: number): number {
-  return Math.round(core * STABILITY_FRACTION);
+  return Math.min(STABILITY_MAX, Math.round(core * STABILITY_FRACTION));
 }
 
 /* What repairs the refinery is the shallowest ore that only exists BELOW the

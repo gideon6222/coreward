@@ -3,7 +3,7 @@ import { ambienceTick } from './sim/ambience';
 import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './sim/drive';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo,
-         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH, paletteOf } from './sim/config';
+         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel } from './sim/state';
 import { blockAt } from './sim/world';
@@ -19,7 +19,7 @@ import {
   AMBIENT_SURFACE, AMBIENT_DEEP, LIGHT_FALL_POW, FOG_SURFACE, FOG_GAIN, FOG_COLOR_RUSH,
   RIM_SURFACE, RIM_DEEP, LAMP_INTENSITY, LM_RANGE_MULT,
   VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
-  FUEL_PER_MOVE, HULL_REGEN, HEAT_DEPTH, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
+  FUEL_PER_MOVE, HULL_REGEN, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
   LANE_PULL, DIG_ALIGNED,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
@@ -560,10 +560,13 @@ export function tick(raw: number, draw = true) {
                            S.rechargeMult());
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
-    g.soak = soakAfter(g.soak, g.pd, dt, worldTrait().soak || 1);
-    if (g.pd > HEAT_DEPTH) {
-      /* heat ramps in below HEAT_DEPTH and escalates with soak; see feel.ts */
-      const hd = heatDamagePerSecond(g.pd, S.shield(), g.soak) * S.heatTake() * dt;
+    const heatLine = heatDepth(g.planet);
+    const heatSpan = coreM() - heatLine;
+    g.soak = soakAfter(g.soak, g.pd, dt, worldTrait().soak || 1, heatLine);
+    if (g.pd > heatLine) {
+      /* heat ramps in below this world's own heat line and escalates with
+         soak; see feel.ts and heatDepth() in config.ts */
+      const hd = heatDamagePerSecond(g.pd, S.shield(), g.soak, heatLine, heatSpan) * S.heatTake() * dt;
       g.hull -= hd;
       R.run.hullHeat += hd;
       R.hullCause = 'heat';
@@ -589,7 +592,7 @@ export function tick(raw: number, draw = true) {
 
     /* Two metres of hysteresis, so hovering on the line cannot spam the
        warning every time the camera lerp nudges you across it. */
-    if (R.wasHot && g.pd < HEAT_DEPTH - 2) R.wasHot = false;
+    if (R.wasHot && g.pd < heatDepth(g.planet) - 2) R.wasHot = false;
 
     /* ---------- personal best ----------
        Updated live so it survives a tow, but the marker line stays where it
@@ -609,7 +612,7 @@ export function tick(raw: number, draw = true) {
        you leave it, so climbing out of the band is a real reprieve rather
        than a pause. */
     const tk = tremorTick({ t: R.tremorT, warn: R.tremorWarn }, dt,
-      g.pd > TREMOR_DEPTH && !R.flight,
+      g.pd > tremorDepth(g.planet) && !R.flight,
       () => TREMOR_EVERY + Math.random() * TREMOR_JITTER);
     R.tremorT = tk.t;
     R.tremorWarn = tk.warn;
@@ -639,8 +642,8 @@ export function tick(raw: number, draw = true) {
      failing hull or a full heat soak is worse, so the alarm layer answers to
      both without either drowning the other. */
   setMood(
-    heatT(g.pd),
-    g.pd > TREMOR_DEPTH && g.mode === 'play' ? 1 : 0,
+    heatT(g.pd, heatDepth(g.planet), (coreM() - heatDepth(g.planet)) * 0.55),
+    g.pd > tremorDepth(g.planet) && g.mode === 'play' ? 1 : 0,
     Math.max(clamp((45 - g.hull) / 45, 0, 1), clamp((g.soak - 0.6) / 0.4, 0, 1))
   );
 
@@ -781,7 +784,7 @@ export function tick(raw: number, draw = true) {
   /* Below the heat line the whole world turns ember: sky, fog and the drifting
      dust all warm together. Three coordinated signals so the boundary reads at
      a glance instead of having to be noticed in the HUD. */
-  const hot = heatT(g.pd);
+  const hot = heatT(g.pd, heatDepth(g.planet), (coreM() - heatDepth(g.planet)) * 0.55);
   const hi = lerpHex(skyHi(g.world), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
   const lo = lerpHex(skyLo(g.world), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
   /* The SKY keeps the gradual ramp; the fog does not. Fog only ever tints what

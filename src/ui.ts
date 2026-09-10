@@ -1,5 +1,4 @@
-import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult, costOf, matCost , TRAIT_OF} from './sim/config';
+import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
 import { setGauges } from './gauges';
 import { clamp } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, padFuel } from './sim/state';
@@ -143,7 +142,10 @@ export function updateHUD() {
      The rate is the load-bearing one. It appears on the hull bar only while
      heat is actually flowing, so the connection between the two is not
      something the player has to be told. */
-  const drain = heatDamagePerSecond(g.pd, S.shield(), g.soak);
+  /* The readout has to use the same world-scaled curve the loop does, or the
+     number on the hull bar disagrees with the hull. */
+  const heatLine = heatDepth(g.planet);
+  const drain = heatDamagePerSecond(g.pd, S.shield(), g.soak, heatLine, coreM() - heatLine);
   const cooking = drain > 0;
   ui.hullTxt.classList.toggle('hot', cooking);
   ui.hullTxt.textContent = cooking ? 'HULL  -' + drain.toFixed(1) + '/s' : 'HULL';

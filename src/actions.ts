@@ -4,7 +4,7 @@ import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
          PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE,
          GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE,
          coreDepth, planetName, traitOf, valueMult , OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS} from './sim/config';
-import { clamp, key } from './sim/util';
+import { clamp, key, stream } from './sim/util';
 import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './sim/world';
 import { R } from './sim/runtime';
@@ -200,7 +200,10 @@ export function useSupply(k: SupplyKey) {
    still reach the pad afterwards - is in planCollapse() so it can be tested
    without a renderer. What is left here is dust and bookkeeping. */
 export function tremor(): number {
-  const taken = planCollapse(tremorCells(g.pd));
+  /* Seeded, not Math.random. INDEX.md: nothing that affects state rolls an
+     unseeded die, and a collapse decides whether the way out is still open -
+     which made it the one event in the game a replay could not reproduce. */
+  const taken = planCollapse(tremorCells(g.pd, g.planet), stream(R.tremorN++, Math.round(g.pd), g.planet + 211));
   if (!taken.length) return 0;
   syncBlocks(true);
   for (const k of taken) {

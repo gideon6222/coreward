@@ -1,29 +1,27 @@
 [
   {
     "planet": 0,
-    "coreDepth": 110,
+    "coreDepth": 58,
     "cols": 13,
     "rowsFrom": -1,
-    "rowsTo": 111,
+    "rowsTo": 59,
     "counts": {
-      "(empty)": 79,
-      "dirt": 108,
-      "seam": 204,
-      "copper": 28,
-      "stone": 328,
-      "iron": 32,
-      "silver": 17,
-      "cache": 6,
-      "gold": 11,
-      "gas": 12,
-      "granite": 227,
-      "geode": 4,
-      "amethyst": 15,
-      "scoria": 357,
-      "emerald": 9,
-      "relic": 1,
+      "(empty)": 29,
+      "dirt": 54,
+      "seam": 108,
+      "copper": 18,
+      "stone": 182,
+      "iron": 16,
+      "silver": 14,
+      "granite": 135,
+      "cache": 3,
+      "gold": 8,
+      "gas": 5,
+      "scoria": 187,
       "part": 1,
-      "ruby": 4,
+      "relic": 1,
+      "geode": 3,
+      "amethyst": 3,
       "core": 13,
       "bedrock": 13
     },
@@ -109,6 +107,27 @@
         "value": 150,
         "ore": true
       },
+      "granite:6183526": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 5,
+        "wt": 0.25,
+        "value": 1.6,
+        "ore": false
+      },
+      "seam:7564653": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 7564653,
+        "hard": 5,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
+      },
       "cache:16743120": {
         "id": "cache",
         "name": "Supply Cache",
@@ -150,26 +169,54 @@
         "ore": true,
         "hazard": true
       },
-      "granite:6183526": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 5,
-        "wt": 0.25,
-        "value": 1.6,
+      "scoria:7023128": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 7,
+        "wt": 0.3,
+        "value": 2.2,
         "ore": false
       },
-      "seam:7564653": {
+      "seam:8275759": {
         "id": "seam",
         "name": "Mineral Seam",
         "glow": 0.07,
-        "color": 7564653,
-        "hard": 5,
+        "color": 8275759,
+        "hard": 7,
         "wt": 2,
         "value": 26,
         "ore": false,
         "seam": true
+      },
+      "part:10484991": {
+        "id": "part",
+        "name": "Guidance Spine",
+        "color": 10484991,
+        "host": 1911347,
+        "glow": 1,
+        "shards": 10,
+        "tone": 10,
+        "hard": 13,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "part": true
+      },
+      "relic:16773375": {
+        "id": "relic",
+        "name": "Kinetic Drum",
+        "color": 16773375,
+        "host": 2761784,
+        "glow": 0.95,
+        "shards": 9,
+        "tone": 10,
+        "hard": 9,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "relic": true
       },
       "geode:8388576": {
         "id": "geode",
@@ -197,81 +244,6 @@
         "value": 900,
         "ore": true
       },
-      "seam:8275759": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 8275759,
-        "hard": 7,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
-      "scoria:7023128": {
-        "id": "scoria",
-        "name": "Scoria",
-        "color": 7023128,
-        "glow": 0.1,
-        "hard": 7,
-        "wt": 0.3,
-        "value": 2.2,
-        "ore": false
-      },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
-        "shards": 5,
-        "tone": 6,
-        "hard": 8.5,
-        "wt": 8.5,
-        "value": 1800,
-        "ore": true
-      },
-      "relic:16773375": {
-        "id": "relic",
-        "name": "Kinetic Drum",
-        "color": 16773375,
-        "host": 2761784,
-        "glow": 0.95,
-        "shards": 9,
-        "tone": 10,
-        "hard": 9,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "relic": true
-      },
-      "part:10484991": {
-        "id": "part",
-        "name": "Guidance Spine",
-        "color": 10484991,
-        "host": 1911347,
-        "glow": 1,
-        "shards": 10,
-        "tone": 10,
-        "hard": 13,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "part": true
-      },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 10,
-        "wt": 10,
-        "value": 3600,
-        "ore": true
-      },
       "core:16773792": {
         "id": "core",
         "name": "Planet Core",
@@ -296,34 +268,32 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiiiiiiiiiiiiivviiiiiviiiiiviiviiiiiiiviiviiiiviiiiviiiiiivfiiiiiiiiiviifivifiviiiiiiiiifiiiivfiiiiiiiiifiiifiiiiiiiiiiiiiiiiiviyyyyyvyyyyyvyvvvyffyvyyyyyyyyyyvyyvyyyyyyfyyvyyyyyyyyooyyyyyyooyyyyyoyyyyoyvyyyvyyyyyvyyyvyyyyyyyyyyyyyvoyyovovvyyvyyyyyyyyyoyyoyyyyyvyyvyyyvovyvyyyyyyyyyyyyyyvyyvyyyywyyyyyyyyyyyywvyvyyyfwyfyvyvvvyyywwyyyyyvyyyyyyyyvyyyvyyyvyyvyyyfeyvyyyywyyvyaayyywvyovyyyaayyyvyyyyyaayyyyyyyywyyaayvyyyywyyfyyyyyvyyyyyyyyvyoyyvyvywyyvyyyyyyyvywyyyyyyvymvykvyyyyymyyyyyvywyvywmvyyyaayyymyyvyymyaayvvfvyyyvwyyyyymyvyyymyoyyyyyoyyyyyyyyyyyvvyeyyyyyyvvyyyyyyvyyyyyyyvvyyyyynnnfnnnnnnmnnnnnnnnnnnnnnvnvnnnnnnnnnnnnnnnnnnnvvvnfnvnvvnnnnnnvnnvknnnnvnnnnnnvnnvnnnnnnnnnnelnnnnnvnknvnvlnlnnnnnnnnnnvnnnnvnnnvnvnnnvvnnnnnnnfnnnnknaannvnbnbvkvnaanbvaaonnnnnnnvnnaannvnnnnvnnnvnaannnnnnnnnnnaannnvnvnnbbownaanvvvnnbnvnbaannnekvbnnnnnnnnnnnbnnvnonnnvnnvnnnmnnbmaanobnnvnnnnnaannnnnfnnnnnnvnnnnvnnnfvnnnnnnnnvuvuubuuuubuuwvuvuuuuuvvuuvuuuufuuuukukvvuuuuuuubuuuvuuuuvuuuuuvuuuuuvuuuvvuuuuuuuuuvuuuubuuvuuuuuuvuuuuuuvuuuuuuuuuuuuuvuvwuuuuuuvuaauvuuuuuvuuuaauuuuuuujuuuuuuvuuvuuuuuuuuuuouuuuvuuuuuuuuvaavuvjuuuuuvuaajrvaauuuuuuvvvuuaavuvuuuuvjuuuuvuuuaavuvmvuuuvuuaauuuuvuuuuaavuuufuuuuuuaavuuuouuuuuuuuvvouuuuujvuuvuuuuuuuvuuuuvvvkfjkavfuuuquvfuouauuuuuuuuujuuuuofuuuuuuuuuuuuuuujuvuuvuuuuvuuuuuuuvvvvuuuuvvuuufuuuluuouujuoouvaaeuuuaauuuukaauuuuaauuuuuvuuuuuaauuvuuuuvuuuaauoouuuuvuuvuuutukueuuuuovutuuuuuuuvuuuovttvuvuuuuuuvuvfuugggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiiiiiiiiiiiiiiivviiiiiviiiiiviiviiiiiiiviiviiiiviiiiviiiiiivfiiiyyyyyyvyyfyvyfyvyyyyyyyyyfyyyyvfyyyyyyyyyfyyyfyyyyyyyyyyyyyyyyyvyyyyyyvyyyyyvyvvvyffyvyyyyyyyyyyvyyvyyyyyyfyyvyyyyyyyyooyyyyyyooyyyyyoyyyyoyvyyyvyyyyyvyyyvyyyyyyyyyyyyyvoyyovovvyyvyyyyyyyyyoyyoyyyyyvyyvyyyvovyvyyyyyyyyyyyyyyvyyvyyyywynnnnnnnnnnnwvnvnnnfwnfnvnvvvnnnwwnnnnnvnnnnnnnnvnnnvnnnvnnvnnnfenvnnnnwnnvnaannnwvnovnnnaannnvnnnnnaannnnnnnnwnnaanvnnnnwnnfnnnnnvnnnnnnnnvnonnvnvnwnnvnnnnnnnvnwnnnnnnvnmvnkvnnnnnmnnnnnvnwnvnwmvnuuaauuumuuvuumuaauvvfvuuuvwuuuuqmuvuuumuouuuuuouuuuuuuuuuuvvueuuuuuuvvuuuuuuvuuuuuuuvvuuuuuuuufuuuuuumuuuuuuuuuuuuurvuvuuuuuuuuuuuuuuuuuuuvvvufuvuvvuuuuuuvuuvkuuuuvuuuuuuvuuvuuuuuuuuuueluuuuuvukuvuvluluuuuuuuuuuvuuuuvuuuvuvuuuvvuuuuuuufuuuukuaauuvububvkvuaaubvgggggggggggggddddddddddddd"
   },
   {
     "planet": 1,
-    "coreDepth": 145,
+    "coreDepth": 106,
     "cols": 13,
     "rowsFrom": -1,
-    "rowsTo": 146,
+    "rowsTo": 107,
     "counts": {
-      "(empty)": 239,
+      "(empty)": 148,
       "dirt": 104,
-      "seam": 230,
-      "copper": 21,
-      "stone": 322,
-      "iron": 34,
-      "silver": 23,
-      "cache": 12,
-      "gas": 18,
-      "gold": 26,
-      "granite": 195,
-      "geode": 16,
-      "amethyst": 19,
-      "scoria": 399,
-      "emerald": 17,
-      "part": 1,
-      "ruby": 7,
+      "seam": 179,
+      "copper": 20,
+      "stone": 282,
+      "iron": 27,
+      "silver": 19,
+      "cache": 8,
+      "gas": 10,
+      "gold": 25,
+      "granite": 235,
+      "geode": 9,
+      "amethyst": 17,
+      "scoria": 292,
+      "emerald": 14,
       "relic": 1,
-      "basalt": 214,
+      "part": 1,
       "core": 13,
       "bedrock": 13
     },
@@ -531,33 +501,6 @@
         "value": 1800,
         "ore": true
       },
-      "part:10484991": {
-        "id": "part",
-        "name": "Void Resonator",
-        "color": 10484991,
-        "host": 1911347,
-        "glow": 1,
-        "shards": 10,
-        "tone": 10,
-        "hard": 16.64,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "part": true
-      },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 12.8,
-        "wt": 10,
-        "value": 3600,
-        "ore": true
-      },
       "relic:16773375": {
         "id": "relic",
         "name": "Ballast Weave",
@@ -572,26 +515,19 @@
         "ore": true,
         "relic": true
       },
-      "basalt:3814720": {
-        "id": "basalt",
-        "name": "Basalt",
-        "color": 3814720,
-        "glow": 0.03,
-        "hard": 11.52,
-        "wt": 0.35,
-        "value": 3,
-        "ore": false
-      },
-      "seam:5721935": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 5721935,
-        "hard": 11.52,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
+      "part:10484991": {
+        "id": "part",
+        "name": "Void Resonator",
+        "color": 10484991,
+        "host": 1911347,
+        "glow": 1,
+        "shards": 10,
+        "tone": 10,
+        "hard": 16.64,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "part": true
       },
       "core:16773792": {
         "id": "core",
@@ -617,35 +553,34 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaivvviviiiiiiiiiiiiviiiiiiiiiiiviiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiviiivifiiifviifiiviviviiviiivifiiviiiviiifiiiifiviiiiiiviiifififyyyyvvyyyyyyyyyyyvyyyyyyyyyyyyyvyoyyyvooyoyyvyyyyyyyyyyyyyyovyyyyyfyvvyyyyyvvyyvyyyyvyvyooyvyoyyyvyvyvyoyvoyyyvoovyyyyyyyyyyvyvyyyoyyvyyyyyyyyyyvyyyvyyvyyyvyyyyyywyyyyywyyyyyyvyyyyyyyvyyyyyyyyyyyyyyyyyyywywyyyyyyyaayfevvyyyvyyaayyvvyyyvyyyyyaayofyvyyyyyvaavyvyyyyaayyyyyyyyvyyaayyyyvyyyyyyyvaayyyyvyyyyvyaayywvywywwyykvyyyyywwwyoyyyyvyyyaayyyvymyyvvmaayymyyyymyymyyyyvoaayyyyyyyyymyaayeyyvaayyyyyykyymyaayywyymyyyyyyyyyymyyyyfvyyyyyyyyyyvyyyvyyyyyyymyvyfnnvnnnnnnnnnnmvaannonnvvnnnmaavnnvvnvnvnnvnaanvvnnnonennaafnvnnnnnnaannnnnnnnnnnaavnnenmvnvmvvmnvaannnlnvnnvnnaannvnomnaannnnnnvnmnmaanmnnnnmmvnnvnnnnvnnaannlvonnvmnnaanaannnnvnnnaanaannwfvnbnaannnbnnnaannnnnnnnbnnaannbnnvvnnaannnnnnannnnaanonnnnanwnnnnnnnnnnnnnvoonnvnnvvnnnnbnnvvvbbnnnnnvnnnnnnvnnnnnnaanvkvlenvnnmaavnnnnbnaavuuuvubfaauaauuuuuuubaaubuouvuuuvuuuuubvuuukuuuuuubbuuvuuuuukuuuuuuuuuuuuuuuuuvuaauvuuubuvuuvaauububuvuvluuuuuuuuvfvuuuuuuvuvuuuvvvuuujuuvvuuvuuvuuuuuuvujvuujaauuuuuuuujuuaauuuuuovulvuaauuuuujuuuuuaauuuuuouuuaauueuuuvkumvaauuuuujuuuaafvuuuuaauuuaauvuuujaauuvaaaauvuuufuuvaaaauuuuvjukuaaaauuukeuaauaaaauvujuvaauuujuuvuuuuuuuujvukuvvvuvuuuuuuvuaaqvuuuuuuuuvaavvuuuuwujouuujuuuuuuuuvuuuwvujvkuuwuumueuuuauuuwuuvuluuuauuaauuuuuuuuuuuaavluvuuuulwuluvuuuuuuuuuvuuuuvuuvvuuvuuvaavuuuuuuuuuuaatuuouuuouuuvuvvuuaaauuuuutuuuuaaavuuvuvuuvuvuuuuuoubuuuueuuvuuuevluuuaauuuvuuuruuuaauvuuvaaaaaauuuuuvuaaaaaauuuaauukluuaauuvaavuuuuuaauuulfuuuuaauuulatuuuuuaauuuuaccaavvaaaaaacccaaccaaaaaacccccvcaaccccclcvkccaacvccbcccvccccccccacccccwccvtccalccvjcccccccvccccccvcccccccccccccckkcccckeclvctccccccccocccjaaccccccccvvcaacccaaccccccaaccoaacvvccvaavccccvcccocccjcccccvvccccccccaamwcvcvaaaacaacccvccaaaaccccvcccccctecwkcccccccccvcccckcvccccccccccvcwccccccctcccaacccvccccokcaacccccccccvcvcccccvvcgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaivvviviiiiiiiiiiiiviiiiiiiiiiiviiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiviiivifiiifviifiiviviviiviiivifiiviiiviiifiiiifiviiiiiiviiifififyyyyvvyyyyyyyyyyyvyyyyyyyyyyyyyvyoyyyvooyoyyvyyyyyyyyyyyyyyovyyyyyfyvvyyyyyvvyyvyyyyvyvyooyvyoyyyvyvyvyoyvoyyyvoovyyyyyyyyyyvyvyyyoyyvyyyyyyyyyyvyyyvyyvyyyvyyyyyywyyyyywyyyyyyvyyyyyyyvyyyyyyyyyyyyyyyyyyywywyyyyyyyaayfevvyyyvyyaayyvvyyyvyyyyyaayofyvyyyyyvaavyvyyyyaayyyyyyyyvyyaayyyyvyyyyyyyvaayyyyvyyyyvyaayywvywywwyykvyyyyywwwyoyyyyvyyyaayyyvymyyvvmaayymyyyymyymyyyyvoaayyyyyyyyymyaayeyyvaayyyyyykyymyaannwnnmnnnnnnnnnnmnnnnfvnnnnnnnnnnvnnnvnnnnnnnmnvnfnnvnnnnnnnnnnmvaannonnvvnnnmaavnnvvnvnvnnvnaanvvnnnonennaafnvnnnnnnaannnnnnnnnnnaavnnenmvnvmvvmnvaannnlnvnnvnnaannvnomnaannnnnnvnmnmaanmnnnnmmvnnvnnnnvnnaannlvonnvmnnaanaannnnvnnnaanaannwfvnbnaannnbnnnaannnnnnnnbnnaannbnnvvnnaannnnnnannnnaanonnnnanwnnnnnnnnnnnnnvoonnvnnvvnnnnbnnvvvbbnnnnnvnnnnnnvnnnnnnaanvkvlenvnnmaavnnnnbnaavuuuvubfaauaauuuuuuubaaubuouvuuuvuuuuubvuuukuuuuuubbuuvuuuuukuuuuuuuuuuuuuuuuuvuaauvuuubuvuuvaauububuvuvluuuuuuuuvfvuuuuuuvuvuuuvvvuuujuuvvuuvuuvuuuuuuvujvuujaauuuuuuuujuuaauuuuuovulvuaaruuuujuuuuuaauuuuuouuuaauueuuuvkumvaauuuuujuuuaafvuuuuqauuuaauvuuujaauuvaaaauvuuufuuvaaaauuuuvjukuaaaauuukeuaauaaaauvujuvaauuujuuvuuuuuuuujvukuvvvuvuuuuuuvuaauvuuuuuuuuvaavvuuuuwujouuujuuuuuuuuvuuuwvujvkuuwuumueuuuauuuwuuvuluuuauuaauuuuuuuuuuuaavluvuuuulwuluvuuuuuuuuuvuuuuvuuvvuugggggggggggggddddddddddddd"
   },
   {
     "planet": 2,
-    "coreDepth": 180,
+    "coreDepth": 154,
     "cols": 13,
     "rowsFrom": -1,
-    "rowsTo": 181,
+    "rowsTo": 155,
     "counts": {
-      "(empty)": 183,
-      "dirt": 95,
-      "seam": 333,
-      "copper": 39,
-      "stone": 343,
-      "iron": 35,
-      "cache": 14,
-      "silver": 29,
-      "gold": 18,
-      "gas": 24,
-      "granite": 217,
-      "geode": 16,
+      "(empty)": 139,
+      "dirt": 137,
+      "seam": 297,
+      "copper": 31,
+      "iron": 28,
+      "stone": 443,
+      "cache": 12,
+      "silver": 27,
+      "gold": 17,
+      "gas": 22,
+      "geode": 13,
       "amethyst": 19,
-      "scoria": 434,
-      "emerald": 18,
+      "granite": 359,
+      "emerald": 15,
+      "scoria": 428,
       "ruby": 23,
-      "basalt": 497,
-      "magmite": 14,
-      "part": 1,
       "relic": 1,
+      "part": 1,
+      "magmite": 3,
       "core": 13,
       "bedrock": 13
     },
@@ -684,6 +619,19 @@
         "value": 25,
         "ore": true
       },
+      "iron:11581117": {
+        "id": "iron",
+        "name": "Iron",
+        "color": 11581117,
+        "host": 3814960,
+        "glow": 0.1,
+        "shards": 4,
+        "tone": 2,
+        "hard": 5.46,
+        "wt": 4.5,
+        "value": 60,
+        "ore": true
+      },
       "stone:8419954": {
         "id": "stone",
         "name": "Stone",
@@ -704,19 +652,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "iron:11581117": {
-        "id": "iron",
-        "name": "Iron",
-        "color": 11581117,
-        "host": 3814960,
-        "glow": 0.1,
-        "shards": 4,
-        "tone": 2,
-        "hard": 5.46,
-        "wt": 4.5,
-        "value": 60,
-        "ore": true
       },
       "cache:16743120": {
         "id": "cache",
@@ -772,27 +707,6 @@
         "ore": true,
         "hazard": true
       },
-      "granite:6183526": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 7.800000000000001,
-        "wt": 0.25,
-        "value": 1.6,
-        "ore": false
-      },
-      "seam:7564653": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 7564653,
-        "hard": 7.800000000000001,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "geode:8388576": {
         "id": "geode",
         "name": "Geode",
@@ -819,26 +733,26 @@
         "value": 900,
         "ore": true
       },
-      "seam:8275759": {
+      "granite:6183526": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 7.800000000000001,
+        "wt": 0.25,
+        "value": 1.6,
+        "ore": false
+      },
+      "seam:7564653": {
         "id": "seam",
         "name": "Mineral Seam",
         "glow": 0.07,
-        "color": 8275759,
-        "hard": 10.92,
+        "color": 7564653,
+        "hard": 7.800000000000001,
         "wt": 2,
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "scoria:7023128": {
-        "id": "scoria",
-        "name": "Scoria",
-        "color": 7023128,
-        "glow": 0.1,
-        "hard": 10.92,
-        "wt": 0.3,
-        "value": 2.2,
-        "ore": false
       },
       "emerald:3133562": {
         "id": "emerald",
@@ -853,6 +767,27 @@
         "value": 1800,
         "ore": true
       },
+      "scoria:7023128": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 10.92,
+        "wt": 0.3,
+        "value": 2.2,
+        "ore": false
+      },
+      "seam:8275759": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 8275759,
+        "hard": 10.92,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
+      },
       "ruby:16726876": {
         "id": "ruby",
         "name": "Ruby",
@@ -866,39 +801,19 @@
         "value": 3600,
         "ore": true
       },
-      "basalt:3814720": {
-        "id": "basalt",
-        "name": "Basalt",
-        "color": 3814720,
-        "glow": 0.03,
+      "relic:16773375": {
+        "id": "relic",
+        "name": "Fuel Recycler",
+        "color": 16773375,
+        "host": 2761784,
+        "glow": 0.95,
+        "shards": 9,
+        "tone": 10,
         "hard": 14.040000000000001,
-        "wt": 0.35,
-        "value": 3,
-        "ore": false
-      },
-      "seam:5721935": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 5721935,
-        "hard": 14.040000000000001,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
-      "magmite:16742936": {
-        "id": "magmite",
-        "name": "Magmite",
-        "color": 16742936,
-        "host": 3023400,
-        "glow": 0.5,
-        "shards": 6,
-        "tone": 8,
-        "hard": 20.28,
-        "wt": 13,
-        "value": 9000,
-        "ore": true
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "relic": true
       },
       "part:10484991": {
         "id": "part",
@@ -914,19 +829,18 @@
         "ore": true,
         "part": true
       },
-      "relic:16773375": {
-        "id": "relic",
-        "name": "Fuel Recycler",
-        "color": 16773375,
-        "host": 2761784,
-        "glow": 0.95,
-        "shards": 9,
-        "tone": 10,
-        "hard": 14.040000000000001,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "relic": true
+      "magmite:16742936": {
+        "id": "magmite",
+        "name": "Magmite",
+        "color": 16742936,
+        "host": 3023400,
+        "glow": 0.5,
+        "shards": 6,
+        "tone": 8,
+        "hard": 20.28,
+        "wt": 13,
+        "value": 9000,
+        "ore": true
       },
       "core:16773792": {
         "id": "core",
@@ -952,37 +866,35 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiviiviiiiviiiiiiiiiiiiiiiiviivviiiiiiviiiviiiiiiiffiiiivvfiiiiiiiiiiivfiiivvifivfviivfiviviiviviiiiviiviiiiiiviviiiifiiiviiivviyyyvyyfvyyyyyyyyvyyyoyyyyyvyyyvyyyyyyyyyyyyyyyyyvyvvyyyyyyyyyyyyoyyyvvovvyyyvyyyyyyoyoyoyoyyyyovyyyyyvyvyyyyyyyvoyyyfyyyyyvyoyyyyyyyyyyvyyvyvevyyyyyyvfvoyyyyyyyyyyyvyvyvvywyyyyywyyywyfvwyyyywyvvyyyyvyywvyyyyyyyyyyvyvyyyywyywyyvyyyyywyyyyyvvyyyyyvyyyyyyyyyyyyyvyyyyyyvyyyyyyyyyyyyyyvvvyvyvyyyyyyyyyyyyyyyyyyyyyvyyvfaawyyyyyyyvyyaayyyyyyyyyyyyfyvyvyyyyyyvyyyyyyvymvyvyyvyyyyyyvyyyyvyyyyyyyyyyvmyvyyyyyvyymvyyyyvyyvykyyyyyyyfymyvyvfyymyyoyyyyyoyyyyyyvmyyvvyynennnvknnnnvnvnvnnnnvnnnnnnnnnnnmnnnnknaamnnnnnnnnnnaannwnnnnmnvnnnnvnmnvnvnnnnnnvnnfvnknnnnvlmnvnnnmnnnnnnnnnvvnmnnnnvnmnnnennaannnnnnnnnnnaannnnnnnvvnnvvnnnnnbnnnnnknnnennnvnnnnvnvnnnnnfnvnbnnnknnnnnvnaaaannnvbnwnnaaaavvnnvnnnnnnbvnnvbonvnnnnnnnnnvnnvvnnnnnvknvnnnnnnnnbnaanvnnnnnnaanaanvnnnnbnaabnvvnvnnvaavfnvnnnnvvlaannnvuuuuuuuvuuouuuuuuuuuuuuvvvuouvuaaluuuuvuvvuvaavuuuuvuuuuuubfuuuuuvuovuvuuuuuuuuuuuvbbkuuvuuuvvuuuuuvuvuvujujuuuvuuuuuuuuuuuvuuuuvuvuvvvouuuuuuuuuuuuuuuvujuaavuuuuuuuuuuaauuuuuuuujuuuuuvuujvaavuuuuvuuuuuaauuuuuuvuvmuaavuueuuuuuuuaauufuvuuuvvuufuuuvuuouuvuuevvuuuuuuuuuaavuauvuuuvuvaauualuuuuvuuvbuvvuuvuuuuuufuuuuuuuuuuuuuuuuvujuueuvuuuubjwwuuuuuuuuuuuuuuuuuuuuuuuvuuuuuuuuuukvuuuufuvuouojfkuuwuuaavuaauukvwuuaaluaauuuofvvvuuuaauujuuuuujuuaauaauuuuuvjuuuuaatvuvuuvufuuvuwuuvuuutuuutuvukuuuuuvukuuuuuuouvuuuujuvuuuuvuuuwuuuwuuuuuuuwuvubuuuuvuuuuuutvaauuuwuvuvuuuaauvuuoluuuvuluuvuuuuluuuuvuvuuufeutvuuaauuaauuuuuuwaauuaauuevvjuufuuujuuuuttuuvuuuwuufuucccccvaacctcccvckvcaacvvcvccctvccccvvtcbvccvecvcccctcccctvmccoccavccccwccvcvvaccvccvvbvvtkcvcvcccctcccclcjcveccccckcvvccccvctcccccvktcfcccccvcvcccvcccmcccccvccccvcvccccccccvcccvccctcaaccccaabccvcaacctcaaccvcvaatwcccctccccaalwoccccckcccbcccccovcccacccccvcccccvacckcccclcccvcvccttcclcccvcctkvccvcaacccckccccccaacccaacvcbaacccccaaccvcaaoccccccccccvkcccvcpvccwcvcvcevcccccqccclccccvpccccccccccvccaacccvaacccccaaccccaacccaacccccvvccccaaccvcvccvpccccccccccaacvcccccccvcaaccccvccvrcvvcaaccjclcpccccaacjccccccvvcccpvcccccccccccvcoccccccccccvvccccccccfcccaacccmcfcccccaavcoccccccccaaofaaaacccccaaelaaaaccccpcopvcfcccwcccvcvccccccccpcccvpccccccocacvccowcocvccacfvcvccccfcccccvcpcccvvcccccaavcaakpcpvvcaaccaaccccpfkccvvcvccccafjccvccccvccacccvvcaavccccccccccaaecccccvlcccaacccccccccccaapvcccgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiiiviiviiiiviiiiiiiiiiiiiiiiviivviiiiiiviiiviiiiiiiffiiiivvfiiiiiiiiiiivfiiivvifivfviivfiviviiviviiiiviiviiiiiiviviiiifiiiviiivviiiiviifviiiiiiiiviiioiiiiiviiiviiiiiiiiiiiiiiiiivivvyyyyyyyyyyyyoyyyvvovvyyyvyyyyyyoyoyoyoyyyyovyyyyyvyvyyyyyyyvoyyyfyyyyyvyoyyyyyyyyyyvyyvyvevyyyyyyvfvoyyyyyyyyyyyvyvyvvywyyyyywyyywyfvwyyyywyvvyyyyvyywvyyyyyyyyyyvyvyyyywyywyyvyyyyywyyyyyvvyyyyyvyyyyyyyyyyyyyvyyyyyyvyyyyyyyyyyyyyyvvvyvyvyyyyyyyyyyyyyyyyyyyyyvyyvfaawyyyyyyyvyyaayyyyyyyyyyyyfyvyvyyyyyyvyyyyyyvymvyvyyvyyyyyyvyyyyvyyyyyyyyyyvmyvyyyyyvyymvyyyyvyyvykyyyyyyyfymyvyvfyymyyoyyyyyoyyyyyyvmyyvvyyyeyyyvkyyyyvyvyvyyyyvyyyyyyyyyyymyyyykyaamyyyyyyyyyyaayywyyyymyvyyyyvymyvyvyyyyyyvyyfvykyyyyvlmyvyyymyyyyyyyyyvvymyyyyvymyyyeyyaayyyyyyyyyyyaayyyyyyyvvyyvvyyyyybyyyyykyyyeyyyvyyyyvyvyyyyyfyvybyyyknnnnnvnaaaannnvbnwnnaaaavvnnvnnnnnnbvnnvbonvnnnnnnnnnvnnvvnnnnnvknvnnnnnnnnbnaanvnnnnnnaanaanvnnnnbnaabnvvnvnnvaavfnvnnnnvvlaannnvnnnnnnnvnnonnnnnnnnnnnnvvvnonvnaalnnnnvnvvnvaavnnnnvnnnnnnbfnnnnnvnovnvnnnnnnnnnnnvbbknnvnnnvvnnnnnvnvnvnjnjnnnvnnnnnnnnnnnvnnnnvnvnvvvonnnnnnnnnnnnnnnvnjnaavnnnnnnnnnnaannnnnnnnjnnnnnvnnjvaavnnnnvnnnnnaannnnnnvnvmnaavnnennnnnnnaannfnvnnnvvnnfnnnvnnonnvnnevvnnnnnnnnnaavnanvnnnvnvaannalnnnnvnnvbnvvnnvnnnnnnfnnnnnnnnnnnnnnnnvnjnnenvnnnnbjwwnnnnnnnnnnnnnnnnnnnnnnnvnnnnnnnnnnkvnnnnfnvnonojfknnwnnaavnaannkvwnnaalnaanuuofvvvuuuaauujuuuuujuuaauaauuuuuvjuuuuaatvuvuuvufuuvuwuuvuuutuuutuvukuuuuuvukuuuuuuouvuuuujuvuuuuvuuuwuuuwuuuuuuuwuvubuuuuvuuuuuutvaauruwuvuvuuuaauvuuoluuuvuluuvuuuuluuuuvuvuuufeutvuuaauuaauuuuuuwaauuaauuevvjuufuuujuuuuttuuvquuwuufuuuuuuuvaauutuuuvukvuaauvvuvuuutvuuuuvvtubvuuveuvuuuutuuuutvmuuouuavuuuuwuuvuvvauuvuuvvbvvtkuvuvuuuutuuuulujuveuuuuukuvvuuuuvutuuuuuvktufuuuuuvuvuuuvuuumuuuuuvuuuuvuvuuuuuuuuvuuuvuuutuaauuuuaabuuvuaauutuaauuvuvaatwuuuutuuuuaalwouuuuukuuubuuuuuovuuuauuuuuvuuuuuvauukuuuuluuuvuvuuttuuluuuvuutkvuuvuaauuuukuuuuuuaauuuaauvubaauuuuuaauuvuaaouuuuuuuuuuvkuuuvupvuuwuvuvuevuuuuuvuuuluuuuvpuuuuuuuuuuvuuaauuuvaauuuuuaauuuuaauuuaauuuuuvvuuuuaauuvuvuuvpuugggggggggggggddddddddddddd"
   },
   {
     "planet": 3,
-    "coreDepth": 215,
+    "coreDepth": 202,
     "cols": 13,
     "rowsFrom": -1,
-    "rowsTo": 216,
+    "rowsTo": 203,
     "counts": {
-      "(empty)": 405,
-      "dirt": 99,
-      "seam": 352,
-      "copper": 42,
-      "stone": 327,
-      "iron": 44,
-      "silver": 29,
+      "(empty)": 377,
+      "dirt": 179,
+      "seam": 322,
+      "copper": 40,
+      "iron": 43,
+      "stone": 529,
+      "silver": 26,
       "cache": 11,
       "gold": 24,
-      "gas": 24,
-      "granite": 203,
+      "gas": 23,
       "geode": 17,
       "amethyst": 18,
-      "scoria": 399,
-      "emerald": 14,
+      "granite": 412,
+      "emerald": 12,
+      "relic": 1,
       "ruby": 25,
-      "basalt": 753,
-      "magmite": 16,
+      "scoria": 562,
+      "magmite": 15,
       "part": 1,
       "coreite": 2,
-      "relic": 1,
-      "umbrite": 2,
       "core": 13,
       "bedrock": 13
     },
@@ -1021,6 +933,19 @@
         "value": 25,
         "ore": true
       },
+      "iron:11581117": {
+        "id": "iron",
+        "name": "Iron",
+        "color": 11581117,
+        "host": 3814960,
+        "glow": 0.1,
+        "shards": 4,
+        "tone": 2,
+        "hard": 6.44,
+        "wt": 4.5,
+        "value": 60,
+        "ore": true
+      },
       "stone:8419954": {
         "id": "stone",
         "name": "Stone",
@@ -1041,19 +966,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "iron:11581117": {
-        "id": "iron",
-        "name": "Iron",
-        "color": 11581117,
-        "host": 3814960,
-        "glow": 0.1,
-        "shards": 4,
-        "tone": 2,
-        "hard": 6.44,
-        "wt": 4.5,
-        "value": 60,
-        "ore": true
       },
       "silver:14213352": {
         "id": "silver",
@@ -1109,27 +1021,6 @@
         "ore": true,
         "hazard": true
       },
-      "granite:6183526": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 9.200000000000001,
-        "wt": 0.25,
-        "value": 1.6,
-        "ore": false
-      },
-      "seam:7564653": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 7564653,
-        "hard": 9.200000000000001,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "geode:8388576": {
         "id": "geode",
         "name": "Geode",
@@ -1156,6 +1047,67 @@
         "value": 900,
         "ore": true
       },
+      "granite:6183526": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 9.200000000000001,
+        "wt": 0.25,
+        "value": 1.6,
+        "ore": false
+      },
+      "seam:7564653": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 7564653,
+        "hard": 9.200000000000001,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
+      },
+      "emerald:3133562": {
+        "id": "emerald",
+        "name": "Emerald",
+        "color": 3133562,
+        "host": 3095096,
+        "glow": 0.3,
+        "shards": 5,
+        "tone": 6,
+        "hard": 15.64,
+        "wt": 8.5,
+        "value": 1800,
+        "ore": true
+      },
+      "relic:16773375": {
+        "id": "relic",
+        "name": "Thermal Lattice",
+        "color": 16773375,
+        "host": 2761784,
+        "glow": 0.95,
+        "shards": 9,
+        "tone": 10,
+        "hard": 16.560000000000002,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "relic": true
+      },
+      "ruby:16726876": {
+        "id": "ruby",
+        "name": "Ruby",
+        "color": 16726876,
+        "host": 3354682,
+        "glow": 0.32,
+        "shards": 6,
+        "tone": 7,
+        "hard": 18.400000000000002,
+        "wt": 10,
+        "value": 3600,
+        "ore": true
+      },
       "scoria:7023128": {
         "id": "scoria",
         "name": "Scoria",
@@ -1176,53 +1128,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
-        "shards": 5,
-        "tone": 6,
-        "hard": 15.64,
-        "wt": 8.5,
-        "value": 1800,
-        "ore": true
-      },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 18.400000000000002,
-        "wt": 10,
-        "value": 3600,
-        "ore": true
-      },
-      "seam:5721935": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 5721935,
-        "hard": 16.560000000000002,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
-      "basalt:3814720": {
-        "id": "basalt",
-        "name": "Basalt",
-        "color": 3814720,
-        "glow": 0.03,
-        "hard": 16.560000000000002,
-        "wt": 0.35,
-        "value": 3,
-        "ore": false
       },
       "magmite:16742936": {
         "id": "magmite",
@@ -1264,33 +1169,6 @@
         "value": 22000,
         "ore": true
       },
-      "relic:16773375": {
-        "id": "relic",
-        "name": "Thermal Lattice",
-        "color": 16773375,
-        "host": 2761784,
-        "glow": 0.95,
-        "shards": 9,
-        "tone": 10,
-        "hard": 16.560000000000002,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "relic": true
-      },
-      "umbrite:10320895": {
-        "id": "umbrite",
-        "name": "Umbrite",
-        "color": 10320895,
-        "host": 2367283,
-        "glow": 0.58,
-        "shards": 7,
-        "tone": 10,
-        "hard": 35.88,
-        "wt": 18,
-        "value": 54000,
-        "ore": true
-      },
       "core:16773792": {
         "id": "core",
         "name": "Planet Core",
@@ -1315,7 +1193,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiivivviiiiiivvivviiviiiiiiiviiiiiiiiiiiiiviiiiiiiiiifiviviiiviiiiviifiiifiiivviiffiiviiiiiiiiiivviiifiifiiiiiiiiviviiiiiivfiiviiyyyyyyyyyyyyyyyyyvyvoyovvyyyyyofyvyyyyvyyyyyyyyyyyyvyyyoyvyyyvyyyyyyyyyyyyyyyfyovyyyoyyyyyyyyvyvyyyvoyvvyyyyyoyyyyvoyyyyfyyoyyyyyyyvyvyyyyyyyvvyyyyyyyyoyyyoyyyyywyyyyywyyyoyyyyyvyyyyyyyyywyyvyyyyvwyyvyyyyyvyyaayyyyywvyvfyaavyyyyyyyyyyyyyyyyweyyyyyvyyyyyyyyyyywyyyyyyywaayyyyyywyyyyaavyyyvyvyyyyyyaayyyyyyyeyyyaayyyyeyywfyyyyyyyyvyyywyyvyfaayyvmyyvvyyyaayymyyymyyyyyvvyyvaaaayyymyvfyyaaaavyvyykvyyymoyvyfyyyyyyvyymyyyyyyvyyaayvyyyvymvyyaayyyyyaayyfyyvoyyyaaannonnvnnnnannnnnnvnnmknvnnnwnnnnnnmnnmvnnaannnnaaannnvaannnnaaannvnnvvnnvmnmnnnnnfnnnvnnnmononnvnnnnnwnnnmvvmnnnvnnnnfnnnnnnlnvvnnnvkvnnnnnmnnnnvnnbvaavfnnnnnbnnnaannnnnvbaannvnnnnnnnnaannovnvvnbnnnovnaanknnnvnnnnnaannnnvvnnmnnaannnnvnnnnknaannnnnwonnaaaavnnnnnvnnaaaannvnnnnnvnnaannnvvnnvvnnaannnaanenlnlnbnnnaannnnvvvnnnnbuuuuuaauuuuluuuuuuaauuuuuaauuuvuuuuuvuaauuuuvuuuvuuaakbaavuuuuboaauuaauuuuuuubvuuouuluuuuuuuuvuufvuuuuuuuuuvvuuaauuuuuvuvvuuaavuuvuaaaavuuuuuuuuaaaauuuuuuvkujuuvuuuuvuuuuuuujuvvvuuuumuvuuaaaaufueuuuuuaaaauuuuuuwuuvuujaauuuvvvuuuuuaauaauujuuvuuukuaauuuvuuukemuuuvuaauuaauuuuumfaauuaauuuuuuuuuvuuvuuauuuuuvuvuvuuavuouvuaauuuuuuouuuuaauuukvuuaauoaauuuuauvaauuaauuuvauuueaaaauuvvvueuuaaaavuuuujuuoujaavvukjuuuwolaauuuuvjouuaauuaauuuwuvuaaujaauuuaavukuuvvuuuuaauuuuuuuuvuuutvvtuuuouvvutuuvvuuuuuuuuuuuuuuuuuutvavuuvuukuuulvakuuuuuuuaauouuluuvuuuaauvuufuvuuuuaauvuufuvtuutaavuuuuuvuvuuuuvvuouuuuvuuuutvuuuejutuuuuuuafuuuvuuuuuluauuutuvuuaauuuuuuuuuuuaauouvoctccvcvccfcfccccccvcccccccccaafvaacccccccaacbaacccccaavcvvvccccfvaaccfccccctckaatvaaaacccbcaavcaaaaovckcvcaackccaavvcccaacccvaaccvcccccccccvcvcbctcvctccvcvccvvcccvccccccccvccvccvtcvcccccvvctcccccffcccccccccccoccccccvwcacccccclltcckacccccccvvcccccvccccccctcctaaccaaccccaaaaatcaaccccaaavvcvcccvccctcccccvccccccclcccccccvcccvccvocccvcvbccwcccvvcccccpcpcwpccccccccccccccocvcccecaccccccpcccccacccccccvaacccccvvccccaaocccpccccccvccccctccccccccccccclcaacvaavcccccpaaccaackvcccccccccvaaavcvcccmvccaaaaaccaaccccccvaaccaaccvccccvcaaccccaaaaakcaaccccaaaaaaavcccccvcaacaaccccccccaacvccpclcccccccccctevccvccvccfccccccccccmcvckwpcccccccccvvaaclccaaavcccaaccccaaapccccccvclccaccccvckqcvccaccccvcwckcccccccccvcvbcvccwccvcccvaaaacccfvccccaaaacccccjcccfvcvcccccvvcccccccccocaavccvaapcccvaacvccaavccccaaaavbaaccvccaaaavcaaccccpccccpcaacvpcvvcclvvaaccvmoccaacccjccvcwcvaaccvcvvvccvccvcccccccccvvcvcccccaaaafhcccvcccaaaaccccccccvaaaaccmcaavccaaaacvccaaccvwcvccovcccccccfcccpcccccccccccvcfccvtcvcvccccvcvcccccvccpcctaaccvccvccfhcaaccccvaaccccccccaccaacccccvccacbcccccoaacwcccccccvcaacrbcvvcaaccvcaacvcccaacovcaafaaccaacccccccaavvaacccvccccvccckcjvcccccccvccpvccvvccvvvcvccfvccccccccccccccccccaaaawcaaccccwaaaaccaaczvccvccczccvjcvccccvccccvccvcwccccvcbcvvcgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiiivivviiiiiivvivviiviiiiiiiviiiiiiiiiiiiiviiiiiiiiiifiviviiiviiiiviifiiifiiivviiffiiviiiiiiiiiivviiifiifiiiiiiiiviviiiiiivfiiviiiiiiiiiiiiiiiiiiivivoiovviiiiiofiviiiiviiiiiiiiiiiiviiioiviiiviiiiiiiiiiiiiiifioviiioiiiiiiiiviviiivoivvyyyyyoyyyyvoyyyyfyyoyyyyyyyvyvyyyyyyyvvyyyyyyyyoyyyoyyyyywyyyyywyyyoyyyyyvyyyyyyyyywyyvyyyyvwyyvyyyyyvyyaayyyyywvyvfyaavyyyyyyyyyyyyyyyyweyyyyyvyyyyyyyyyyywyyyyyyywaayyyyyywyyyyaavyyyvyvyyyyyyaayyyyyyyeyyyaayyyyeyywfyyyyyyyyvyyywyyvyfaayyvmyyvvyyyaayymyyymyyyyyvvyyvaaaayyymyvfyyaaaavyvyykvyyymoyvyfyyyyyyvyymyyyyyyvyyaayvyyyvymvyyaayyyyyaayyfyyvoyyyaaayyoyyvyyyyayyyyyyvyymkyvyyywyyyyyymyymvyyaayyyyaaayyyvaayyyyaaayyvyyvvyyvmymyyyyyfyyyvyyymoyoyyvyyyyywyyymvvmyyyvyyyyfyyyyyylyvvyyyvkvyyyyymyyyyvyybvaavfyyyyybyyyaayyyyyvbaayyvyyyyyyyyaayyovyvvybyyyovyaaykyyyvyyyyyaayyyyvvyymyyaayyyyvyyyykyaayyyyywoyyaaaavyyyyyvyyaaaayyvyyyyyvyyaayyyvvyyvvyyaayyyaayeylylybyyyaayyyyvvvyyyybyyyyyaayyyylyyyyyyaayyyyyaayyyvyyyyyvyaayyyyvyyyvyyaakbaavyyyyboaayyaayyyyyyybvyyoyylyyyyyyyyvyyfvyyyyyyyyyvvyyaayyynnvnvvnnaavnnvnaaaavnnnnnnnnaaaannnnnnvknjnnvnnnnvnnnnnnnjnvvvnnnnmnvnnaaaanfnennnnnaaaannnnnnwnnvnnjaannnvvvnnnnnaanaannjnnvnnnknaannnvnnnkemnnnvnaannaannnnnmfaannaannnnnnnnnvnnvnnannnnnvnvnvnnavnonvnaannnnnnonnnnaannnkvnnaanoaannnnanvaannaannnvannneaaaannvvvnennaaaavnnnnjnnonjaavvnkjnnnwolaannnnvjonnaannaannnwnvnaanjaannnaavnknnvvnnnnaannnnnnnnvrnntvvtnnnonvvntnnvvnnnnnnnnnnnnnnnnnntvavnnvnnknnnlvaknnnnnnnaanonnlnnvnnnaanvnnfnvnnnnaanvnnfnvtnntaavnnnnnvnvnnnnvvnonnnnvnnnntvnnnejntnnnnnnafnnnvnnnnnlnannntnvnnaannnnnnnnnnnaanonvontnnvnvnnfnfnnnnnnvnnnnnnnnnaafvaannnnnnnaanbaannnnnaavnvvvnnnnfvaannfnnnnntnkaatvaaaannnbnaavnaaaaovnknvnaanknnaavvnnnaannnvaannvnnnnnnnnnvnvnbntnvntnnvnvnnvvnnnvnnnnuuuuvuuvuuvtuvuuuuuvvutuuuuuffuuuuuuuuuuuouuuuuuvwuauuuuuulltuukauuuuuuuvvuuuuuvuuuuuuutuutaauuaauuuuaaaaatuaauuuuaaavvuvuuuvuuutuuuuuvuuuuuuuluuuuuuuvuuuvuuvouuuvuvbuuwuuuvvuuuuupupuwpuuuuuuuuuuuuuuouvuuueuauuuuuupuuuuuauuuuuuuqaauuuuuvvuuuuaaouuupuuuuuuvuuuuutuuuuuuuuuuuuuluaauvaavuuuuupaauuaaukvuuuuuuuuuvaaavuvuuumvuuaaaaauuaauuuuuuvaauuaauuvuuuuvuaauuuuaaaaakuaauuuuaaaaaaavuuuuuvuaauaauuuuuuuuaauvuupuluuuuuuuuuutevuuvuuvuufuuuuuuuuuumuvukwpuuuuuuuuuvvaauluuaaavuuuaauuuuaaapuuuuuuvuluuauuuuvukuuvuuauuuuvuwukuuuuuuuuuvuvbuvuuwuuvuuuvaaaauuufvuuuuaaaauuuuujuuufvuvuuuuuvvuuuuuuuuuouaavuuvaapuuuvaauvuuaavuuuuaaaavbaauuvuuaaaavuaauuuupuuuupuaauvpuvvuulvvaauuvmouuaauuujuuvuwuvaauuvuvvvuuvuuvuuuuuuuuuvvuvuuuuuaaaafhuuuvuuuaaaauuuuuuuuvaaaauumuaavuuaaaauvuuaauuvwuvuuovuuuuuuufuuupuuuuuuuuuuuvufuuvtuvuvuuuuvuvuuuuuvuupuutaauuvuuvuufhuaauuuuvaauuuuuuuuauuaauuuuuvuuaubuuuuuoaauwuuuuuuuvuaaubbgggggggggggggddddddddddddd"
   },
   {
     "planet": 4,
@@ -1325,23 +1203,22 @@
     "rowsTo": 251,
     "counts": {
       "(empty)": 253,
-      "dirt": 96,
+      "dirt": 213,
       "seam": 413,
       "copper": 56,
-      "stone": 309,
       "iron": 59,
       "silver": 46,
+      "stone": 659,
       "cache": 17,
       "gas": 38,
       "gold": 28,
-      "granite": 217,
       "geode": 89,
       "amethyst": 26,
-      "scoria": 437,
       "emerald": 24,
+      "granite": 571,
       "ruby": 28,
-      "basalt": 1087,
       "magmite": 23,
+      "scoria": 703,
       "coreite": 9,
       "part": 1,
       "umbrite": 5,
@@ -1385,16 +1262,6 @@
         "value": 25,
         "ore": true
       },
-      "stone:8419954": {
-        "id": "stone",
-        "name": "Stone",
-        "color": 8419954,
-        "glow": 0.02,
-        "hard": 5.088,
-        "wt": 0.2,
-        "value": 1,
-        "ore": false
-      },
       "iron:11581117": {
         "id": "iron",
         "name": "Iron",
@@ -1408,17 +1275,6 @@
         "value": 60,
         "ore": true
       },
-      "seam:9406327": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 9406327,
-        "hard": 5.088,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "silver:14213352": {
         "id": "silver",
         "name": "Silver",
@@ -1431,6 +1287,27 @@
         "wt": 6,
         "value": 150,
         "ore": true
+      },
+      "seam:9406327": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 9406327,
+        "hard": 5.088,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
+      },
+      "stone:8419954": {
+        "id": "stone",
+        "name": "Stone",
+        "color": 8419954,
+        "glow": 0.02,
+        "hard": 5.088,
+        "wt": 0.2,
+        "value": 1,
+        "ore": false
       },
       "cache:16743120": {
         "id": "cache",
@@ -1473,27 +1350,6 @@
         "value": 420,
         "ore": true
       },
-      "granite:6183526": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 10.600000000000001,
-        "wt": 0.25,
-        "value": 1.6,
-        "ore": false
-      },
-      "seam:7564653": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 7564653,
-        "hard": 10.600000000000001,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "geode:8388576": {
         "id": "geode",
         "name": "Geode",
@@ -1520,6 +1376,66 @@
         "value": 900,
         "ore": true
       },
+      "emerald:3133562": {
+        "id": "emerald",
+        "name": "Emerald",
+        "color": 3133562,
+        "host": 3095096,
+        "glow": 0.3,
+        "shards": 5,
+        "tone": 6,
+        "hard": 18.02,
+        "wt": 8.5,
+        "value": 1800,
+        "ore": true
+      },
+      "granite:6183526": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 10.600000000000001,
+        "wt": 0.25,
+        "value": 1.6,
+        "ore": false
+      },
+      "seam:7564653": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 7564653,
+        "hard": 10.600000000000001,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
+      },
+      "ruby:16726876": {
+        "id": "ruby",
+        "name": "Ruby",
+        "color": 16726876,
+        "host": 3354682,
+        "glow": 0.32,
+        "shards": 6,
+        "tone": 7,
+        "hard": 21.200000000000003,
+        "wt": 10,
+        "value": 3600,
+        "ore": true
+      },
+      "magmite:16742936": {
+        "id": "magmite",
+        "name": "Magmite",
+        "color": 16742936,
+        "host": 3023400,
+        "glow": 0.5,
+        "shards": 6,
+        "tone": 8,
+        "hard": 27.560000000000002,
+        "wt": 13,
+        "value": 9000,
+        "ore": true
+      },
       "scoria:7023128": {
         "id": "scoria",
         "name": "Scoria",
@@ -1540,66 +1456,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
-        "shards": 5,
-        "tone": 6,
-        "hard": 18.02,
-        "wt": 8.5,
-        "value": 1800,
-        "ore": true
-      },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 21.200000000000003,
-        "wt": 10,
-        "value": 3600,
-        "ore": true
-      },
-      "basalt:3814720": {
-        "id": "basalt",
-        "name": "Basalt",
-        "color": 3814720,
-        "glow": 0.03,
-        "hard": 19.080000000000002,
-        "wt": 0.35,
-        "value": 3,
-        "ore": false
-      },
-      "seam:5721935": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 5721935,
-        "hard": 19.080000000000002,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
-      "magmite:16742936": {
-        "id": "magmite",
-        "name": "Magmite",
-        "color": 16742936,
-        "host": 3023400,
-        "glow": 0.5,
-        "shards": 6,
-        "tone": 8,
-        "hard": 27.560000000000002,
-        "wt": 13,
-        "value": 9000,
-        "ore": true
       },
       "coreite:6750192": {
         "id": "coreite",
@@ -1692,38 +1548,37 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiviiiiiiiviiiiiiviviivivivviiviviiviiiiiiiiiviiiiviiiiififiviffiiiivififiviiiiiiiiiiiiviiviiiiifiiiiiiififivifiviiiiifiiiviiviviiffyyfyyyyyyyyyoooyyyvyvyyyyyyyyvoyyyyyyyvvooyfyvvyyvyyyovvyyoyvyyvvyvyyyyyyvyvyyvoyyyyyyyyyyyyyofyyoyyyyyvyyyyoyyoyvvyyyyyvyvyoyoyyyyoyyvyoyyvoyyyyyvyvyyyyyyyyyyyvvyyyoywvyyyvyyyyvyyyyyoyyvyyvvyyyyyyyeyvyyyyyyfyfwwywvywyeyyyyyyvvyyyyyyyyyyyyyyyyvyyyvyyyyyyvyyyyyyyaayvyyyyyyvyyaayvyyvyywyaaywyvvyyyyyyaayywyyyvyyyyyyyfwyyyyywyyyyfvyyywyyyykyyfvykyyyyvvyyyvyyyyymyvyyyyyyyvmvymyymvyyvyyvmyyyyvyyyyaayyfyawyvyyyaavyymaaaymyyvyyyyyoaaywvomyfyymyaavyyyyyvyyyyaannnnnnnnnnnvnnnofkwvvnnnfnnnvnnnnknnnvonnnnnnaavnnnnnnvmnnaannnnnnnnmnnvnnnvnnnnnnnvvnennnllonnnnnmvnavnnfnvnnnmnvannnvonenvnkvnnfnnnvnnnnwnnbnnvnnnvnvnnonnnnnvnnolnnnnnnnnnnnaannvnvnwnnknaannbnnnnnlnwnnnnvnnnvnnevnnnnnvnnvlnnnnvnnnnvnvvkmknnvnnvnnnnnnnnnnkvbnvnnbvnfnnnnbnbnnonnnnvlnnnnnnlnonvbnnbnnnnnnnblknnvnnnnvvnvnnvnkuuuuubulluuubuueuuuuuuuuvvuuluuuuubbouuuuuubvullulumvfubuuuuvuluuuuuuluubuuuuvuuuvuvvuuuuauuuuuuwuuuuuaujulufuuuvvuuuuuuuoujuuvvuuuvufuuuuubuauuukuuuuvuuuauuuuujuuuuuvuukuuvvvuuuuuuuuvuuuuljuuuuvvuuuuuvulvuvuuuujuvuvuluuuuuuueuuuuuuuuuuuuuuwuuvuauuuvuvvvuuwualufjuuuuaauuuuubuvuuuaajvouuuvuulumulvuuuvuuuuuuuuvbuuvuevuuuuuuuwluveuuuuuuuuleuulvuuuuuuujkluuuuluuluouuulvuuuaauuvuuuuuuumaauvkuvmuuvaauuoujuuwubuaauujvvuouuuuuuuluuuuvuuukuuuuuuukvuuuuaajuuuuvmutuvaatuuuuuuuuutuuuutuuutuuuututukluvouuuuluvvulauuuuuuuuuuuuauuuuaauluuvuufuuuaauuuuvvutuuuvuvuuuuuvuuuuuuuuutuvuuuvuufaaouuuuuuvuuuaavuuuvutulvuuvaauuuuuuvuuvvaauuuwuueuuutaauuuuuuuuuuuaavuuccclcvccccaavccvccccvccaacvwcvtfcvvcctccctccttccccccctvcccccccvcclcwccccckcvcclvcvccccecccccccfllcvcccvckccccccccccccvccccccvclcccccccccvccccwcvvcccccccccccccaatcaaccvcccvaavcaaocccccccbccccctvcccccvcvcccccccccclcccccvcvavccvccccvvcvaaavccccccccctaafcwjcccccvcaacvccvcccccaaavccccvcvkcaaacvccccaacctaaccmcccaacccccccccccelcccckclcvpfcccccccpcccvkcpvcvpvcccpcoccvccccccvcaalvecccccccwaacccccvcaacccccccocccaacccccccccvcccccvccfccccccccvplwccccvvcpvccvaacccccfcccvcaaccoccvcpockcvcvvcccccvccvclcvvccocoaalccccccocccaaccccccwccccvcvcaacccvccpcccpaacvcvcccaacokccccvcccaaccccclvccccaacvccccccccwaacccvcccctlccwccvcccvcccpccckcccclccvccccvccpvcmccclccvvvccccvfvccccckccccccccccvccvcccccvvvcwcccoccccwcltkcccvcccvpvvccpvcccccclvvvccccccocclccccvvcckcccvcclcccfccpcccvcvccccccctcjvlccccvcjcclpcccccccccccvfpcklpccaaccvlcpclccaaacccvcwcvcwaaaaacccccmaacaaaaccbvccaacccccccwcaacccccvvvcccaavcccvccaacbccpjcceccaavccjccvccaapccvhhlccccaavccvcchbccccccwcoaavclmcccfcccaaccvccccccccccecccclhcvcfpwccccccccjcccccvcccvqchcchcccllvcccvccaaaacvckcvcccaaaacccccfccvaacjcfcccccccaacccvchcccvcccvccccccvvccllcccccccccvcccccavocccvccccchajcaaaavcccccccvaaaacvlctccwjaacvcvccaavccaacccchcaackcclvlcvccaavccccccclvcaaccccclvcccccvatwccjcolcfccaaalccocwaacvcaaccccccaavcccocccvccctvvccccccvccccvvcfceccccccfccvkccwcvmjvcvlzvcccccccccvvwccccccvccccczccaacvccccccvlcaacfcvkckccmcvcccccccvccwcoccvcvcccccvvccccccczcvccccccccccwlccccccccccckccvvcvcccvcccccccccvvcccvccvcczcccccccccccaaccccpbcccccaaccvccccccccmvaacccccccccccaakcccccccvocmccckcccccccccclccffclccvlcvaaccccclvccccaaccccfcccjcvcccccmccaccccvcrcclcjavovcccccbvccccccvccccvvcccvcczlcaacccccvcccccaaclcctlcccccoccxvcfccvcccccocccvaaaacfcccvcclaaaacccclccvcgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiviiiiiiiviiiiiiviviivivivviiviviiviiiiiiiiiviiiiviiiiififiviffiiiivififiviiiiiiiiiiiiviiviiiiifiiiiiiififivifiviiiiifiiiviiviviiffiifiiiiiiiiioooiiiviviiiiiiiivoiiiiiiivvooifivviiviiiovviioiviivviviiiiiiviviivoiiiiiiiiiiiiiofiioiiiiiviiiioiioivviiiiivivioioiiiioiivioiivoiiiiiviviiiiiiiiiiivviiioiwvyyyvyyyyvyyyyyoyyvyyvvyyyyyyyeyvyyyyyyfyfwwywvywyeyyyyyyvvyyyyyyyyyyyyyyyyvyyyvyyyyyyvyyyyyyyaayvyyyyyyvyyaayvyyvyywyaaywyvvyyyyyyaayywyyyvyyyyyyyfwyyyyywyyyyfvyyywyyyykyyfvykyyyyvvyyyvyyyyymyvyyyyyyyvmvymyymvyyvyyvmyyyyvyyyyaayyfyawyvyyyaavyymaaaymyyvyyyyyoaaywvomyfyymyaavyyyyyvyyyyaayyyyyyyyyyyvyyyofkwvvyyyfyyyvyyyykyyyvoyyyyyyaavyyyyyyvmyyaayyyyyyyymyyvyyyvyyyyyyyvvyeyyylloyyyyymvyavyyfyvyyymyvayyyvoyeyvykvyyfyyyvyyyywyybyyvyyyvyvyyoyyyyyvyyolyyyyyyyyyyyaayyvyvywyykyaayybyyyyylywyyyyvyyyvyyevyyyyyvyyvlyyyyvyyyyvyvvkmkyyvyyvyyyyyyyyyykvbyvyybvyfyyyybybyyoyyyyvlyyyyyylyoyvbyybyyyyyyyblkyyvyyyyvvyvyyvykyyyyybyllyyybyyeyyyyyyyyvvyylyyyyybboyyyyyybvyllylymvfybyyyyvylyyyyyylyybyyyyvyyyvyvvyyyyayyyyyywyyyyyayjylyfyyyvvyyyyyyyoyjyyvvyyyvyfyyyyybyayyykyyyyvyyyayyyyyjyyyyyvyykyyvvvyyyyyyyyvyyyyljyyyyvvyyyyyvylvyvyyyyjyvyvylyyyyyyyeyyyyyyyyyyyyyywyyvyayyyvyvvvyywyalyfjyyyyaayyyyybyvyyyaajvoyyyvyylymylvyyyvyyyyyyyyvbyyvyevyyyyyyywlyveyyyyyyyyleyylvyyyyyyyjklyyyylyylyonnnlvnnnaannvnnnnnnnmaanvknvmnnvaannonjnnwnbnaannjvvnonnnnnnnlnnnnvnnnknnnnnnnkvnnnnaajnnnnvmntnvaatnnnnnnnnntnnnntnnntnnnntntnklnvonnnnlnvvnlannnnnnnnnnnnannnnaanlnnvnnfnnnaannnnvvntnnnvnvnnnnnvnnnnnnnnntnvnnnvnnfaaonnnnnnvnnnaavnnnvntnlvnnvaannnnnnvnnvvaannnwnnennntaannnnnnnnnnnaavnnnnnlnvnnnnaavnnvnnnnvnnaanvwnvtfnvvnntnnntnnttnnnnnnntvnnnnnnnvnnlnwnnnnnknvnnlvnvnnnnennnnnnnfllnvnnnvnknnnnnnnnnnnnvnnnnnnvnlnnnnnnnnnvnnnnwnvvnnnnnnnnnnnnnaatnaannvnnnvaavnaaonnnnnnnbnnnnntvnnnnnvnvnnnnnnnnnnlnnnnnvnvavnnvnnnnvvnvaaavnnnnnnnnntaafnwjnnnnnvnaanvnnvnnnnnaaavnnnnvnvknaaanvnnnnaanntaannmnnnaannnnnnnnnnnelnnnnknlnvpfnnnnnnnpnnnvknpvnvpvnnnpnonnvnnnnnnvnaalvennnnnnnwaannnnnvnaannnnnnnonnnaannnnnnnnnvnnnnnvnnfnnnnnnnnvplwnnnnvvnpvnnvaannnnnfnnnvnaannonnvnponknvnvvnnnnnvnnvnlnvvnnonoaalnnnnnnonnnaannnnnnwnnnnvnvnaannnvnnpnnnpaanvnvnnnaanoknnnnvnnnaannnnnlvnnnnaanvnnnuuuuuwaauuuvuuuutluuwuuvuuuvuuupuuukuuuuluuvuuuuvuupvumuuuluuvvvuuuuvfvuuuuukuuuuuuuuuuvuuvuuuuuvvvuwuuuouuuuwultkuuuvuuuvpvvuupvuuuuuulvvvuuuuuuouuluuuuvvuukuuuvuuluuufuupuuuvuvuuuuuuutujvluuuuvujuulpuuuuuuuuuuuvfpuklpuuaauuvlupuluuaaauuuvuwuvuwaaaaauuuuumaauaaaauubvuuaauuuuuuuwuaauuuuuvvvuuuaavuuuvuuaaubuupjuueuuaavuujuuvuuaapuuvhhluuuuaavuuvuuhbuuuuuuwuoaavulmuuufuuuaauuvuuuuuuuuuueuuuulhuvufpwuuuuuuuujuuuuuvuuuvquhuuhuuullvuuuvuuaaaauvukuvuuuaaaauuuuufuuvaaujufuuuuuuuaauuuvuhuuuvuuuvuuuuuuvvuulluuuuuuuuuvuuuuuavouuuvuuuuuhajuaaaavuuuuuuuvaaaauvlutuuwjaauvuvuuaavuuaauuuuhuaaukuulvluvuuaavuuuuuuulvuaauuuuulvuuuuuvatwuujuolufuuaaaluuouwaauvuaauuuuuuaavuuuouuuvuuutvvuuuuuuvuuuuvvufueuuuuuufuuvkuuwuvmjvuvlzvuuuuuuuuuvvwuuuuuuvuuuuuzuuaauvuuuuuuvluaaufuvkukuumuvuuuuuuuvuuwuouuvuvuuuuuvvuuuuuuuzuvuuuuuuuuuuwluuuuuuuuuuukuuvvuvuuuvuuuuuuuuuvvuuuvuuvuuzuuuuuuuuuuuaauuuupbuuuuuaauuvuuuuuuuumvaauuuuuuuuuuuaakuuuuuuuvoumuuukuuuuuuuuuuluuffuluuvluvaauuuuulvuuuuaauuuufuuujuvuuuuumuuauuuuvuruulujavovuuuuubvuuuuuuvuuuuvvuuuvuuzluaauuuuuvuuuuuaauluutluuuuuouuxvufuuvuuuuuouuuvaaaaufuuuvuulaaaauuuuluuvugggggggggggggddddddddddddd"
   },
   {
     "planet": 5,
-    "coreDepth": 285,
+    "coreDepth": 298,
     "cols": 13,
     "rowsFrom": -1,
-    "rowsTo": 286,
+    "rowsTo": 299,
     "counts": {
-      "(empty)": 255,
-      "seam": 481,
-      "dirt": 104,
-      "copper": 51,
-      "stone": 328,
-      "iron": 46,
+      "(empty)": 279,
+      "seam": 498,
+      "dirt": 270,
+      "copper": 54,
+      "iron": 48,
       "silver": 35,
-      "gas": 85,
-      "gold": 31,
-      "granite": 224,
-      "cache": 13,
-      "amethyst": 35,
-      "geode": 27,
-      "scoria": 450,
-      "emerald": 37,
+      "stone": 807,
+      "gas": 93,
+      "gold": 32,
+      "cache": 15,
+      "amethyst": 36,
+      "geode": 29,
+      "emerald": 39,
       "ruby": 19,
-      "basalt": 1445,
-      "magmite": 22,
-      "relic": 1,
-      "coreite": 10,
-      "umbrite": 10,
-      "part": 1,
+      "granite": 718,
+      "magmite": 24,
+      "coreite": 11,
+      "scoria": 857,
+      "umbrite": 13,
       "solmarrow": 8,
+      "relic": 1,
+      "part": 1,
       "core": 13,
       "bedrock": 13
     },
@@ -1762,27 +1617,6 @@
         "value": 25,
         "ore": true
       },
-      "stone:8419954": {
-        "id": "stone",
-        "name": "Stone",
-        "color": 8419954,
-        "glow": 0.02,
-        "hard": 5.760000000000001,
-        "wt": 0.2,
-        "value": 1,
-        "ore": false
-      },
-      "seam:9406327": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 9406327,
-        "hard": 5.760000000000001,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "iron:11581117": {
         "id": "iron",
         "name": "Iron",
@@ -1808,6 +1642,27 @@
         "wt": 6,
         "value": 150,
         "ore": true
+      },
+      "stone:8419954": {
+        "id": "stone",
+        "name": "Stone",
+        "color": 8419954,
+        "glow": 0.02,
+        "hard": 5.760000000000001,
+        "wt": 0.2,
+        "value": 1,
+        "ore": false
+      },
+      "seam:9406327": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 9406327,
+        "hard": 5.760000000000001,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
       },
       "gas:13954602": {
         "id": "gas",
@@ -1835,27 +1690,6 @@
         "wt": 9,
         "value": 420,
         "ore": true
-      },
-      "granite:6183526": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 12.000000000000002,
-        "wt": 0.25,
-        "value": 1.6,
-        "ore": false
-      },
-      "seam:7564653": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 7564653,
-        "hard": 12.000000000000002,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
       },
       "cache:16743120": {
         "id": "cache",
@@ -1897,27 +1731,6 @@
         "value": 6200,
         "ore": true
       },
-      "scoria:7023128": {
-        "id": "scoria",
-        "name": "Scoria",
-        "color": 7023128,
-        "glow": 0.1,
-        "hard": 16.800000000000004,
-        "wt": 0.3,
-        "value": 2.2,
-        "ore": false
-      },
-      "seam:8275759": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 8275759,
-        "hard": 16.800000000000004,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "emerald:3133562": {
         "id": "emerald",
         "name": "Emerald",
@@ -1944,22 +1757,22 @@
         "value": 3600,
         "ore": true
       },
-      "basalt:3814720": {
-        "id": "basalt",
-        "name": "Basalt",
-        "color": 3814720,
-        "glow": 0.03,
-        "hard": 21.6,
-        "wt": 0.35,
-        "value": 3,
+      "granite:6183526": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 12.000000000000002,
+        "wt": 0.25,
+        "value": 1.6,
         "ore": false
       },
-      "seam:5721935": {
+      "seam:7564653": {
         "id": "seam",
         "name": "Mineral Seam",
         "glow": 0.07,
-        "color": 5721935,
-        "hard": 21.6,
+        "color": 7564653,
+        "hard": 12.000000000000002,
         "wt": 2,
         "value": 26,
         "ore": false,
@@ -1978,20 +1791,6 @@
         "value": 9000,
         "ore": true
       },
-      "relic:16773375": {
-        "id": "relic",
-        "name": "Prospector's Eye",
-        "color": 16773375,
-        "host": 2761784,
-        "glow": 0.95,
-        "shards": 9,
-        "tone": 10,
-        "hard": 21.6,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "relic": true
-      },
       "coreite:6750192": {
         "id": "coreite",
         "name": "Coreite",
@@ -2004,6 +1803,27 @@
         "wt": 16,
         "value": 22000,
         "ore": true
+      },
+      "scoria:7023128": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 16.800000000000004,
+        "wt": 0.3,
+        "value": 2.2,
+        "ore": false
+      },
+      "seam:8275759": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 8275759,
+        "hard": 16.800000000000004,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
       },
       "umbrite:10320895": {
         "id": "umbrite",
@@ -2018,6 +1838,33 @@
         "value": 54000,
         "ore": true
       },
+      "solmarrow:16773296": {
+        "id": "solmarrow",
+        "name": "Solmarrow",
+        "color": 16773296,
+        "host": 3813926,
+        "glow": 0.72,
+        "shards": 8,
+        "tone": 10,
+        "hard": 55.20000000000001,
+        "wt": 21,
+        "value": 132000,
+        "ore": true
+      },
+      "relic:16773375": {
+        "id": "relic",
+        "name": "Prospector's Eye",
+        "color": 16773375,
+        "host": 2761784,
+        "glow": 0.95,
+        "shards": 9,
+        "tone": 10,
+        "hard": 21.6,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "relic": true
+      },
       "part:10484991": {
         "id": "part",
         "name": "Plasma Injector",
@@ -2031,19 +1878,6 @@
         "value": 0,
         "ore": true,
         "part": true
-      },
-      "solmarrow:16773296": {
-        "id": "solmarrow",
-        "name": "Solmarrow",
-        "color": 16773296,
-        "host": 3813926,
-        "glow": 0.72,
-        "shards": 8,
-        "tone": 10,
-        "hard": 55.20000000000001,
-        "wt": 21,
-        "value": 132000,
-        "ore": true
       },
       "core:16773792": {
         "id": "core",
@@ -2069,6 +1903,6 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaavivviiiiiiiviiiiiiviviiviviiiiiviviiiiiviiiiviiiiiiiiiiiiviiivfiviviiiiiiiiiiffiiviiifiiiiiiviiiiiiiiiiiiiiiiiifiiiiiiivivifiiiiiiyyyyyyfyfyyyyvyvyyvyovoyyyvyyyvyyvoyyyfyyvyyyyyyyyvyyyyyyvovyyyyoyyyyyyyyvyyvyyyyyyyyyyyyyyyofyyyvyyyyyyyyyyyyyyyyyvyyyyyyvvvyyyvyyyoyyyyyvyyvyyyyvyyyvyyyfyvyyyyvwvwyvyyyyyyyyyyyyyyvywyyyyoyyyyyyyvyyywyvfywvyyywyyvyvyyyvvyywyyyyvyyvyyyfyvyyyyywyywyyyyyyyyyyyyvyyyyyyywfyvyvyyyyvyvyyyfyvyyovyyyyyywyavvyvvyyyyyyyayyyyyyyyyyyyyyvyykyyyyyvwvkmyyvvmvyyvvyyvyymyyykyyyyyvyvvyyyyyyyyyyykyyyykyyyvkyaayymyvyymfyyaayyyvyomoyyvaayyyyyyvyyyyaayymyyyyyyyyvkvyvyyvyyynnnnvnnvnnnknknnvnmnnennfannkvnnnnnenmawnnvnmnnnnnnavvnmnnvnmvnnannnnnvnnfvnnnnonnnonknvnwnnnnnnvnnnvvnnnnnnnvnvnnnnnnnnnnmmvnmnmnnvvmvnnnnnnnvnnnvnbnvnnnnnlnnnnnvnnnnnnnvnnnnknvnnvannbnnvnfnnfvawnnnkvfvnnnvnnnnnnnnvnnnbnnnvnnnnvknnnvennnnnnvnnnnvvbnolnnnnbnnnvnnvnonnnnnnnnnnnnnnknnnvnnbvnknnnnnkobnnnnnnnnaannnnbnnnnknaannnuluuuuaauuuuuuvuuuuaavuuuuuvuuuvuuvuuuvuuvuuvvubuuuuuuuuuuluuuuuuuuuvvbuuvvwouvuubuuouuvvuuuuuuuuuvuuvuuufuuuvuuuuuuuvuujuujjuuvuumuuuuufujuvukuuuuuumububufuuuuuuuuuuuuuujvuuvvuuuuuuaauuvukuuuvjuaauuubukuuveuaauvuuuuuvuuuaauuuououvuuuujuuueuujvaajuuuuuuuujjaauuuufuvkuuuuuuuwvuouubuuuuuvuujuuvuuuvuvuvuuuvuuuuukvuuuvuvvuuuuuuuuuuuuuuufuukuuwvuuuuuvuuovuuuwuuuuuuuuaauvuujuvuuujaakuuukuuuujumukuaavjuuluuvubuaauuuuuuvuumuuuuuuuuuuukuvujujluuuujuuuuuuuuuuuuuuuuuuuuuuuuutuvuuuuuuuuuuuuvuuuvvuuuuuuuaauvouuuuuwuuaauubuuuuuuvuubtuuuukaauuvuuuuvuuuaafuuuuvuuuuutuuvuuuvvuuutuuvuuuvuvuuuuufuuuuuvubuvuuvuuuaauvuuuuuuuvvaakuuuutuuukuuuaauuaaukvuvuuaavuaauvucccccccccvccccvccckccccocccccccclwccclcvkccjctctcobccccccccccwcccccccfcccvccocccaaccvcccccjccaacvkvcccccveccccccctccccvcctccvccccckctttccctcaavccccccccocaacaavwccccvcccbaacocccccfcvccvelcccctvccccvccvcccccccccvcccccccccccccccvccjcocccvvcvvccccvccvccccccccvcccccvwtcbclvcccvccccccccccvvckccmctccccccclccvcvkcccvccaavccccwcccccaacccccccftckvcaaccvcccvccccaacvvccckwvvvvcccccbcpvcccltccvcccccccckpccvcccccccccpccccpccjcccccccccccccaccccvcccccccaccvpcvccppcvvckccccvpcccccccvckcccckccccckccccfvccceloccvcaacccccccfvccaaccccckcccvcaabvcwckccvjcaacccccccvccvcvcvccackvcvcccccccaaaccaaccccccoaaccaacvcvvfcckcccmccbcpcacwvccrccccvcaccvfccpcccccccpcbvcccccvccvccvpoccccccccccvcvvcfccbccckvccvccvcccccvcccjccccccccvcaaaacccccccvcaaaacecccccccccccvccccvccccpcvcjcccaavvccpccvcccaavcccccccvccvcccccaacocccvcccccaapcvcccccvaaaaccpccccccaaaacccvcccckvcccaacvccovvccccaacccccaacckccccccccaaccvcccocccccccccvccccacccvccccvcccacccvchcvcvaacvcccccccvcaackcccccccccccvcccvccccccccccckccccmcccccccccccccvchccbcvvjccvaacccccccchvcaalcccccvcvcccvaacccvcccfcccaacccvmphvccccccccccvccvvcckccolwcccvfcccccckmvcccccvccchccvbchvcccchcccccccccjcckmaaccjcccaacvcaaclccccaacccaaccccccvccccaakcvccbccccjcccvccwccvczcccccccccccjvcvcaacvvccvvccccaakckcccccvccvccccccccvcckzccccccvvaacccccvvvvccaavzcccvcccccccccccaaccccbccccccaaccvccccccvvvchcochcccccvocccpccccccvcccktccccccvcccccccccccckcvczcccccclcccccccccpkcccvbccccclfccjccvccccccccccmcccvcczcccvcccccvccceccvccccckcccccacccwcvlcccclacvccaafvcfkvccvcvaacckcccccfccvcbcaavccccccccqcaavccvjozccccczcvcccjzcccccccvccvaacccvvccvcccaaclkccccvccvccclcccvccccccccccccccccecaaaaaacvcccccaaaaaaccczccccccvccczccccccvvckwccccckcccccccfcvolccbccvcfwcccccvccwvvclvvccvcccvccccccvcvcaacfccaavvcccaaccccaavcccjpvccccvcvccfccccvccccvcccxcccckcfcvmcccvcccvvcccccccchccvockcocccvcckcccccccocccaaaacccccccccaaaacvcvccccccvvvcccvvccccccccccccvaaccccaacccxkaacccxaacvvcccccocccccjkcckccccxckccccccwvccvccfoccccccccvvcvcvccaavcvccccccmkaacvbcvcccvkccvccfccxcvccpcvcvcxcccevcccvvcvvcclcvcccccccxcvcccvcccvcvccccvcccvcccccvccccvcvccccxaafcaakvccclcaaccaakcccmccccvccccfcccccccvcccvvccecccovcaaccckcccccccaavlckcckcccvccvvjvcccccckcvccccpcccccccccgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaavivviiiiiiiviiiiiiviviiviviiiiiviviiiiiviiiiviiiiiiiiiiiiviiivfiviviiiiiiiiiiffiiviiifiiiiiiviiiiiiiiiiiiiiiiiifiiiiiiivivifiiiiiiiiiiiififiiiiviviiviovoiiiviiiviivoiiifiiviiiiiiiiviiiiiivoviiiioiiiiiiiiviiviiiiiiiiiiiiiiiofiiiviiiiiiiiiiiiiiiiiviiiiiivvviiiviiioiiiiiviiviiiiviiiviiifiviiiivwvwiviiiiiiiiiiiiiiviwiiiioiiiiiiiviiiwivfiwviiiwiiviviiivvyywyyyyvyyvyyyfyvyyyyywyywyyyyyyyyyyyyvyyyyyyywfyvyvyyyyvyvyyyfyvyyovyyyyyywyavvyvvyyyyyyyayyyyyyyyyyyyyyvyykyyyyyvwvkmyyvvmvyyvvyyvyymyyykyyyyyvyvvyyyyyyyyyyykyyyykyyyvkyaayymyvyymfyyaayyyvyomoyyvaayyyyyyvyyyyaayymyyyyyyyyvkvyvyyvyyyyyyyvyyvyyykykyyvymyyeyyfayykvyyyyyeymawyyvymyyyyyyavvymyyvymvyyayyyyyvyyfvyyyyoyyyoykyvywyyyyyyvyyyvvyyyyyyyvyvyyyyyyyyyymmvymymyyvvmvyyyyyyyvyyyvybyvyyyyylyyyyyvyyyyyyyvyyyykyvyyvayybyyvyfyyfvawyyykvfvyyyvyyyyyyyyvyyybyyyvyyyyvkyyyveyyyyyyvyyyyvvbyolyyyybyyyvyyvyoyyyyyyyyyyyyyykyyyvyybvykyyyyykobyyyyyyyyaayyyybyyyykyaayyyylyyyyaayyyyyyvyyyyaavyyyyyvyyyvyyvyyyvyyvyyvvybyyyyyyyyyylyyyyyyyyyvvbyyvvwoyvyybyyoyyvvyyyyyyyyyvyyvyyyfyyyvyyyyyyyvyyjyyjjyyvyymyyyyyfyjyvykyyyyyymybybyfyyyyyyyyyyyyyyjvyyvvyyyyyyaayyvykyyyvjyaayyybykyyveyaayvyyyyyvyyyaayyyoyoyvyyyyjyyyeyyjvaajyyyyyyyyjjaayyyyfyvkyyyyyyywvyoyybyyyyyvyyjyyvyyyvyvyvyyyvyyyyykvyyyvyvvyyyyyyyyyyyyyyyfyykyywvyyyyyvyyovyyywyyyyyyyyaayvyyjyvyyyjaakyyykyyyyjymykyaavjyylyyvybyaayyyyyyvyymyyyyyyyyyyykyvyjyjlyyyyjyyyyyyyyyyyyyyyyyyyyyyyyytyvyyyyyyyyyyyyvyyyvvyyyyyyyaayvoyyyyywyyaayybyyyyyyvyybtyyyykaayyvyyyyvyyyaafyyyyvyyyyytyyvyyyvvyyytyyvyyyvyvyyyyyfyyyyyvybyvyyvynnaanvnnnnnnnvvaaknnnntnnnknnnaannaankvnvnnaavnaanvnnnnnnnnnnvnnnnvnnnknnnnonnnnnnnnlwnnnlnvknnjntntnobnnnnnnnnnnwnnnnnnnfnnnvnnonnnaannvnnnnnjnnaanvkvnnnnnvennnnnnntnnnnvnntnnvnnnnnkntttnnntnaavnnnnnnnnonaanaavwnnnnvnnnbaanonnnnnfnvnnvelnnnntvnnnnvnnvnnnnnnnnnvnnnnnnnnnnnnnnnvnnjnonnnvvnvvnnnnvnnvnnnnnnnnvnnnnnvwtnbnlvnnnvnnnnnnnnnnvvnknnmntnnnnnnnlnnvnvknnnvnnaavnnnnwnnnnnaannnnnnnftnkvnaannvnnnvnnnnaanvvnnnkwvvvvnnnnnbnpvnnnltnnvnnnnnnnnkpnnvnnnnnnnnnpnnnnpnnjnnnnnnnnnnnnnannnnvnnnnnnnannvpnvnnppnvvnknnnnvpnnnnnnnvnknnnnknnnnnknnnnfvnnnelonnvnaannnnnnnfvnnaannnnnknnnvnaabvnwnknnvjnaannnnnnnvnnvnvnvnnankvnvnnnnnnnaaannaannnnnnoaannaanvnvvfnnknnnmnnbnpnanwvnnnnnnnvnannvfnnpnnnnnnnpnbvnnnnnvnnvnnvponnnnnnnnnnvnvvnfnnbnnnkvnnvnnvnnnnnvnnnjnnnnnnnnvnaaaannnnnnnvnaaaanennnnnnnnnnnvnnnnvnnnnpnvnjnnnaavvnnpnnvnnnaavnnnnnnnvnnvnnnnnaanonnnvnnnnnaapnvnnnnnvaaaannpnnnnnnaaaannnvnnnnkvnnnaanvnnovvnnnnaannnnnaannknnnnnnnnaannvnnnonnnnnnnnnvnnnnannnvnnnnvnnnannnvnhnvnvaanvnnnnnnnvnaanknnnnnnnnnnnvnnnvnnnnnnnnnnnknnnnmnnnnnnnnnnnnnvnhnnbnvvjnnvaannnuuuuuhvuaaluuuuuvuvuuuvaauuuvuuufuuuaauuuvmphvuuuuuuuuuuvuuvvuukuuolwuuuvfuuuuuukmvuuuuuvuuuhuuvbuhvuuuuhuuuuuuuuujuukmaauujuuuaauvuaauluuuuaauuuaauuuuuuvuuuuaakuvuubuuuujuuuvuuwuuvuzuuuuuuuuuuujvuvuaauvvuuvvuuuuaakukuuuuuvuuvuuuuuuuuvuukzuuuuuuvvaauuuuuvvvvuuaavzuuuvuuuuuuuuuuuaauuuubuuuuuuaauuvuuuuuuvvvuhuouhuuuuuvouuupuuuuuuvuuuktuuuuuuvuuuuuuuuuuuukuvuzuuuuuuluuuuuuuuupkuuuvbuuuuulfuujuuvuuuuuuuuuumuuuvuuzuuuvuuuuuvuuueuuvuuuuukuuuuuauuuwuvluuuulauvuuaafvufkvuuvuvaauukuuuuufuuvubuaavuuuuuuuuuuaavuuvjozuuuuuzuvuuujzuuuuuuuvuuvaauuuvvuuvuuuaaulkuuuuvuuvuuuluuuvuuuuuuuuuuuuuuuueuaaaaaauvuuuuuaaaaaauuuzuuuuuuvuuuzuuuuuuvvukwuuuuukuuuuuuufuvoluubuuvufwuuuuuvuuwvvulvvuuvuuuvuuuuuuvuvuaaufuuaavvuuuaauuuuaavuuujpvuuuuvuvuufuuuuvuuuuvuuuxuuuukufuvmuuuvuuuvvuuuuuuuuhuuvoukuouuuvuukuuuuuuuouuuaaaauuuuuuuuuaaaauvuvuuuuuuvvvuuuvvuuuuuuuuuuuuvaauuuuaauuuxkaauuuxaauvvuuuuuouuuuujkuukuuuuxukuuuuuuwvuuruufouuuuuuuuvvuvuvuuaavuvuuuuuumkaauvbuvuuuvkuuvuufuuxuvuupuvuvuxuuuevuuuvvuvvuuluvuuuuuuuxuvuuuvuuuvuvuquuvuuuvuuuuuvuuuuvuvuuuuxaafuaakvuuuluaauuaakuuumuuuuvuuuufuuuuuuuvuuuvvuueuuuovuaauuukuuuuuuuaavlukuukuuuvuuvvjvuuuuuukuvuuuupuuuuuuuuuuuzvepuzvujvuuuuuvuvkuuuufuukuuuvuuuuuuuuuvvuupuvuuauuuuvbluuuvkauuaaufaauuuuuuuaakuaauuouuuuuohuujuuuuuvvkuuuuuumuuufuuzaauukuuuuuuuuaaevuuuuuukkuuvaauvaaauluuvvaauuaaagggggggggggggddddddddddddd"
   }
 ]

@@ -157,7 +157,18 @@ const LADDER_EXTENSION = { coreite: new Set(['umbrite', 'solmarrow']) };
    rule rather than as an OVERWRITERS entry for the same reason as the ladder:
    "rock may become a seam" is narrower and therefore worth more than "seams
    may replace anything". */
-for (const r of H.ROCKS) LADDER_EXTENSION[r.id] = new Set(['seam']);
+/* M5, 2026-09-10: the rock bands stopped being fixed metres and became
+   fractions of each world's own core depth, so a cell that was granite at 60 m
+   on planet 0 is scoria now. That is a rock becoming a DIFFERENT ROCK, and it
+   is the only thing that change can do - it moved no ore, because ore is
+   gated on its own depth table and rolled before any band is consulted.
+
+   Stated as rock-for-rock rather than by widening OVERWRITERS, and paired with
+   the assertion below that the set of cells holding ORE is bit-identical to
+   the frozen baseline, which is the property this whole test exists to defend.
+   The frozen file itself is untouched. */
+const ROCK_IDS = new Set(H.ROCKS.map((r) => r.id));
+for (const r of H.ROCKS) LADDER_EXTENSION[r.id] = new Set(['seam', ...ROCK_IDS]);
 
 test('pockets and caves only overwrite cells, never reshuffle the ore stream', () => {
   /* Two different kinds of legal change, counted apart.
@@ -168,7 +179,7 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
      whole category wholesale and is SUPPOSED to be common. Counting them
      together meant seams tripped the pocket ceiling, which would have read as
      "pockets have gone wrong" for a change that had nothing to do with them. */
-  let same = 0, overwritten = 0, extended = 0;
+  let same = 0, overwritten = 0, extended = 0, shortened = 0;
   for (const snap of PRE) {
     H.setWorld(snap.planet);
     H.g.dug = new Set();
@@ -179,7 +190,28 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
         const b = H.blockAt(x, d);
         const now = b ? b.id : '(empty)';
         const at = 'planet ' + snap.planet + ' (' + x + ',' + d + ')';
+        /* The invariant underneath everything else: a cell that held ore in
+           the frozen world still holds ore, and a cell that did not still does
+           not. Every legal change above is a change of KIND within one of
+           those two camps. */
+        /* M5 also moved every core upward, so cells that held ore in the
+           frozen world are now the core itself or the bedrock under it. That
+           is the world getting shorter, not the ore stream moving. */
+        /* The world got shorter AND the core moved up, so cells that were the
+           core are now ordinary rock above it, and cells that were ore are now
+           the core or the bedrock under it. Both are the same fact. */
+        if ((now === 'core' || now === 'bedrock') && d >= H.coreDepth(snap.planet)) { shortened++; continue; }
+        if ((was === 'core' || was === 'bedrock') && d < H.coreDepth(snap.planet)) { shortened++; continue; }
+        const wasOre = !!(H.DEF[was] && H.isOre(H.DEF[was]));
+        const nowOre = !!(b && b.ore && H.DEF[now] && H.isOre(H.DEF[now]));
+        if (wasOre !== nowOre && !OVERWRITERS.has(now) && was !== 'seam' && now !== 'seam') {
+          assert.fail(at + ': ' + was + ' became ' + now + ' - the ore stream moved');
+        }
         if (now === was) { same++; continue; }
+        /* A rock that became a different rock is M5 re-banding the world, and
+           it is counted apart from the ladder and seam conversions: those are
+           claims about the ORE stream and have a ceiling for that reason. */
+        if (ROCK_IDS.has(was) && ROCK_IDS.has(now)) { shortened++; continue; }
         const ladder = LADDER_EXTENSION[was];
         if (ladder && ladder.has(now)) extended++;
         else if (OVERWRITERS.has(now)) overwritten++;
@@ -192,7 +224,11 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
     }
     assert.equal(i, snap.grid.length, 'planet ' + snap.planet + ' grid length drifted');
   }
-  const total = same + overwritten + extended;
+  /* `shortened` is in the denominator: those cells are still part of the
+     world being compared, they just changed because M5 moved the core and the
+     bands. Leaving them out shrank the total and made the pocket share read
+     twice what it is. */
+  const total = same + overwritten + extended + shortened;
   /* guard against the test passing because nothing generates any more */
   assert.ok(overwritten > 200, 'pockets and caves generated almost nothing: ' + overwritten);
   assert.ok(overwritten / total < 0.12,
@@ -228,9 +264,9 @@ test('caves stay below CAVE_MIN_DEPTH and never eat the core', () => {
    block you would feel it coming and it would just be a tax. */
 test('gas breaks faster than the rock it hides in, and pays nothing', () => {
   for (let d = H.GAS.min; d <= 300; d++)
-    assert.ok(H.GAS.hard < H.baseRock(d).hard,
-      'gas (' + H.GAS.hard + ') is not softer than ' + H.baseRock(d).id +
-      ' (' + H.baseRock(d).hard + ') at ' + d + ' m');
+    assert.ok(H.GAS.hard < H.baseRock(d, 0).hard,
+      'gas (' + H.GAS.hard + ') is not softer than ' + H.baseRock(d, 0).id +
+      ' (' + H.baseRock(d, 0).hard + ') at ' + d + ' m');
   assert.equal(H.GAS.value, 0, 'gas must never be worth credits');
   assert.equal(H.GAS.wt, 0, 'gas must never take cargo weight');
   assert.ok(H.GAS_HULL_DAMAGE > 0 && H.GAS_HULL_DAMAGE < H.HULL_MAX / 3,
@@ -412,7 +448,7 @@ test('a collapsed cell comes back as rubble, never as the ore it held', () => {
   assert.equal(now.ore, false);
 
   /* hardness rides on the band it sits in, and is easier than that band */
-  assert.ok(now.hard < H.baseRock(d).hard * H.hardMult(0),
+  assert.ok(now.hard < H.baseRock(d, 0).hard * H.hardMult(0),
     'clearing rubble should be easier than cutting fresh rock');
   assert.ok(now.hard > 0);
 
@@ -435,22 +471,22 @@ test('rubble never appears on its own, only where something put it', () => {
 });
 
 test('the tremor band is reachable on the planet everyone starts on', () => {
-  assert.ok(H.TREMOR_DEPTH > H.HEAT_DEPTH,
+  assert.ok(H.tremorDepth(0) > H.heatDepth(0),
     'tremors must be a THIRD band, not a second thing happening at the heat line');
-  assert.ok(H.TREMOR_DEPTH < H.coreDepth(0) - 15,
+  assert.ok(H.tremorDepth(0) < H.coreDepth(0) - 8,
     'the unstable band would be unreachable or vestigial on planet 0: ' +
-    H.TREMOR_DEPTH + ' against a core at ' + H.coreDepth(0));
+    H.tremorDepth(0) + ' against a core at ' + H.coreDepth(0));
 });
 
 test('a tremor takes more of the tunnel the deeper you are, but stays bounded', () => {
   let prev = 0;
-  for (let d = H.TREMOR_DEPTH; d < 600; d += 5) {
-    const n = H.tremorCells(d);
+  for (let d = H.tremorDepth(0); d < 600; d += 5) {
+    const n = H.tremorCells(d, 0);
     assert.ok(n >= prev, 'collapse size went backwards at ' + d + ' m');
     assert.ok(n >= 1 && n <= 12, n + ' cells at ' + d + ' m is outside any sane range');
     prev = n;
   }
-  assert.ok(H.tremorCells(600) > H.tremorCells(H.TREMOR_DEPTH),
+  assert.ok(H.tremorCells(600, 0) > H.tremorCells(H.tremorDepth(0), 0),
     'depth should make tremors worse or the band has no gradient');
   assert.ok(H.TREMOR_SAFE_RADIUS >= 2, 'a tremor must never land next to the ship');
   assert.ok(H.TREMOR_WARN > 1.5, 'the player needs time to read the warning');
@@ -467,17 +503,19 @@ test('rubble is coloured as the band it sits in, not one fixed grey', () => {
     H.g.rubble = new Set([H.key(3, d)]);
     return H.blockAt(3, d);
   };
-  /* dirt at 5 m against scoria at 90 m: two very different bands */
-  const shallow = at(5), deep = at(90);
+  /* dirt at 3 m against scoria at 45 m: two very different bands, both
+     inside leg 0's world, which now ends at 58 m */
+  const shallow = at(3), deep = at(45);
   assert.notEqual(shallow.color, deep.color,
     'rubble is one flat colour everywhere, so it reads as imported rock');
 
   /* and it sits between the band and the neutral fill rather than being either.
-     Kept above coreDepth(0): bedrock is resolved before rubble is, correctly,
-     since there is no tunnel down there to collapse. */
-  for (const d of [5, 30, 60, 90, 108]) {
+     Kept above coreDepth(0), which M5 moved to 58 m: bedrock is resolved
+     before rubble is, correctly, since there is no tunnel down there to
+     collapse. The old depths of 90 and 108 are below the world now. */
+  for (const d of [3, 12, 25, 40, 55]) {
     const b = at(d);
-    const band = H.baseRock(d).color;
+    const band = H.baseRock(d, 0).color;
     assert.notEqual(b.color, band, 'rubble at ' + d + ' m is indistinguishable from fresh rock');
     assert.notEqual(b.color, H.RUBBLE.color, 'rubble at ' + d + ' m ignored its band');
     assert.equal(b.color, H.mixHex(band, H.RUBBLE.color, 0.5));

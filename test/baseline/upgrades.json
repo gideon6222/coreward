@@ -350,33 +350,33 @@
       "27m light · 121% view",
       "30m light · 122% view"
     ],
-    "mat": "amethyst",
+    "mat": "copper",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "amethyst",
+        "id": "copper",
         "need": 2
       },
       {
-        "id": "amethyst",
+        "id": "copper",
         "need": 4
       },
       {
-        "id": "amethyst",
+        "id": "copper",
         "need": 6
       },
       {
-        "id": "amethyst",
+        "id": "copper",
         "need": 8
       },
       {
-        "id": "amethyst",
+        "id": "copper",
         "need": 10
       },
       {
-        "id": "amethyst",
+        "id": "copper",
         "need": 12
       }
     ],
@@ -440,18 +440,18 @@
   },
   "auto": {
     "name": "Autopilot",
-    "base": 6400,
+    "base": 4900,
     "mul": 1.55,
     "max": 6,
     "tiers": null,
     "costs": [
-      6400,
-      9920,
-      15376,
-      23833,
-      36941,
-      57258,
-      88750
+      4900,
+      7595,
+      11772,
+      18247,
+      28283,
+      43838,
+      67950
     ],
     "effects": [
       "Not installed",
@@ -680,17 +680,17 @@
   },
   "drone": {
     "name": "Repair Drone",
-    "base": 5600,
+    "base": 4700,
     "mul": 1.5,
     "max": 5,
     "tiers": null,
     "costs": [
-      5600,
-      8400,
-      12600,
-      18900,
-      28350,
-      42525
+      4700,
+      7050,
+      10575,
+      15863,
+      23794,
+      35691
     ],
     "effects": [
       "Not installed",

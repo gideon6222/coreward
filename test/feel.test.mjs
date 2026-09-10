@@ -57,7 +57,7 @@ test('feel constants are unchanged', () => {
       digPerHardness: H.FUEL_DIG_PER_HARDNESS, hullRegen: H.HULL_REGEN
     },
     heat: {
-      depth: H.HEAT_DEPTH, ramp: H.HEAT_RAMP,
+      depth: H.heatDepth(0), ramp: H.HEAT_RAMP,
       exponent: H.HEAT_EXPONENT, rate: H.HEAT_RATE
     },
     soak: { rise: H.SOAK_RISE, fall: H.SOAK_FALL, maxMult: H.SOAK_MAX_MULT },
@@ -69,13 +69,13 @@ test('feel constants are unchanged', () => {
    numbers. The design intent is "lingering is the gamble". ---- */
 
 test('soak builds while deep and bleeds off above the threshold', () => {
-  const deep = H.HEAT_DEPTH + 20;
-  const shallow = H.HEAT_DEPTH - 20;
-  assert.ok(H.soakAfter(0, deep, 1) > 0, 'must build below the heat threshold');
-  assert.equal(H.soakAfter(0, shallow, 1), 0, 'must not build above it, and must not go negative');
+  const deep = H.heatDepth(0) + 20;
+  const shallow = H.heatDepth(0) - 20;
+  assert.ok(H.soakAfter(0, deep, 1, 1, H.heatDepth(0)) > 0, 'must build below the heat threshold');
+  assert.equal(H.soakAfter(0, shallow, 1, 1, H.heatDepth(0)), 0, 'must not build above it, and must not go negative');
   assert.ok(H.soakAfter(0.5, shallow, 1) < 0.5, 'must bleed off above it');
-  assert.ok(H.soakAfter(1, deep, 999) <= 1, 'must clamp at fully soaked');
-  assert.equal(H.soakAfter(0, deep, 0), 0, 'a zero-length frame changes nothing');
+  assert.ok(H.soakAfter(1, deep, 999, 1, H.heatDepth(0)) <= 1, 'must clamp at fully soaked');
+  assert.equal(H.soakAfter(0, deep, 0, 1, H.heatDepth(0)), 0, 'a zero-length frame changes nothing');
 });
 
 test('recovering is faster than soaking, so a dip in and out is cheap', () => {
@@ -92,27 +92,27 @@ test('soak escalates heat damage without replacing depth as the driver', () => {
   assert.ok(hot > cold, 'a soaked hull must take more damage');
   assert.ok(Math.abs(hot / cold - H.SOAK_MAX_MULT) < 1e-9, 'full soak must apply exactly the stated multiplier');
   /* depth still dominates: shallow-and-soaked must beat deep-and-cold */
-  assert.ok(H.heatDamagePerSecond(80, 0, 1) < H.heatDamagePerSecond(110, 0, 0),
+  assert.ok(H.heatDamagePerSecond(80, 0, 1) < H.heatDamagePerSecond(110, 0, 0, H.heatDepth(0)),
     'depth must still matter more than dwell time');
   /* and soak cannot conjure damage where there is none */
-  assert.equal(H.heatDamagePerSecond(H.HEAT_DEPTH - 1, 0, 1), 0, 'no heat above the threshold, however soaked');
+  assert.equal(H.heatDamagePerSecond(H.heatDepth(0) - 1, 0, 1), 0, 'no heat above the threshold, however soaked');
 });
 
 /* The world has to explain the mechanic. If the rock band and the heat
    threshold ever drift apart again, crossing into danger stops being visible
    and the player is back to reading a number that is not on screen. */
 test('the scoria band starts exactly at the heat threshold', () => {
-  assert.equal(H.GRANITE_TO_SCORIA, H.HEAT_DEPTH,
+  assert.equal(H.graniteToScoria(0), H.heatDepth(0),
     'the rock must change on the same metre the heat starts');
-  assert.equal(H.baseRock(H.HEAT_DEPTH - 1).id, 'granite', 'still safe rock just above the line');
-  assert.equal(H.baseRock(H.HEAT_DEPTH).id, 'scoria', 'hot rock from the line down');
+  assert.equal(H.baseRock(H.heatDepth(0) - 1, 0).id, 'granite', 'still safe rock just above the line');
+  assert.equal(H.baseRock(H.heatDepth(0), 0).id, 'scoria', 'hot rock from the line down');
 });
 
 test('the world tint announces the zone faster than the danger builds', () => {
-  assert.equal(H.heatT(H.HEAT_DEPTH), 0, 'no tint above the line');
-  assert.equal(H.heatT(0), 0);
-  assert.ok(H.heatT(H.HEAT_DEPTH + 10) > 0.3, 'the shift must be obvious within a few blocks');
-  assert.equal(H.heatT(200), 1, 'and clamp');
+  assert.equal(H.heatT(H.heatDepth(0), H.heatDepth(0)), 0, 'no tint above the line');
+  assert.equal(H.heatT(0, H.heatDepth(0)), 0);
+  assert.ok(H.heatT(H.heatDepth(0) + 10, H.heatDepth(0)) > 0.3, 'the shift must be obvious within a few blocks');
+  assert.equal(H.heatT(200, H.heatDepth(0)), 1, 'and clamp');
   /* tint ramps over ~26 m of digging; soak takes 40 s. The world should say
      "you are somewhere dangerous" well before the hull says "and it is
      costing you". */
@@ -120,7 +120,7 @@ test('the world tint announces the zone faster than the danger builds', () => {
 });
 
 test('every rock band is reachable, and they get harder with depth', () => {
-  const bands = [0, 20, 50, 80, 130].map((d) => H.baseRock(d));
+  const bands = [0, 10, 25, 40, 61].map((d) => H.baseRock(d, 0));
   const ids = bands.map((b) => b.id);
   assert.deepEqual(ids, ['dirt', 'stone', 'granite', 'scoria', 'basalt']);
   for (let i = 1; i < bands.length; i++) {
@@ -174,7 +174,11 @@ test('seams are common enough to shape a tunnel, rare enough to be a find', () =
   H.g.dug = new Set();
   H.g.rubble = new Set();
   let rock = 0, seams = 0;
-  for (let d = 0; d < 108; d++)
+  /* Inside the world, not to a fixed 108 m. Leg 0's core is at 58 m now, so
+     the old range spent half its samples on bedrock, which is not rock and
+     never carries a seam - the share read 8.3% for a generator that had not
+     changed. */
+  for (let d = 0; d < H.coreM(); d++)
     for (let x = 0; x < H.W; x++) {
       const b = H.blockAt(x, d);
       if (!b || b.ore) continue;
@@ -194,7 +198,7 @@ test('seams are common enough to shape a tunnel, rare enough to be a find', () =
 
 test('cooling buys time but never immunity', () => {
   const maxShield = 0.72;
-  assert.ok(H.heatDamagePerSecond(110, maxShield, 1) > 0,
+  assert.ok(H.heatDamagePerSecond(110, maxShield, 1, H.heatDepth(0)) > 0,
     'a fully upgraded rig fully soaked at the core must still be losing hull');
   /* the whole point of the rebalance: the pressure is not purchasable away */
   const unprotected = H.heatDamagePerSecond(110, 0, 1);
@@ -210,7 +214,7 @@ test('the curves are unchanged', () => {
     digFuel: at(H.digFuelPerSecond, [1, 2.4, 3.5, 5, 9, 16, 26]),
     heatAtDepth: [0, 0.5, 0.9].map((shield) => ({
       shield,
-      values: at((pd) => H.heatDamagePerSecond(pd, shield), [0, 50, 70, 71, 90, 110, 150, 285])
+      values: at((pd) => H.heatDamagePerSecond(pd, shield, H.heatDepth(0)), [0, 50, 70, 71, 90, 110, 150, 285])
     }))
   });
 });
@@ -346,18 +350,18 @@ test('the autopilot camera is tighter than the play camera', () => {
 });
 
 test('heat only bites below the safe depth, and cooling reduces it', () => {
-  assert.equal(H.heatDamagePerSecond(0, 0), 0);
-  assert.equal(H.heatDamagePerSecond(H.HEAT_DEPTH, 0), 0, 'no damage at exactly the threshold');
-  assert.ok(H.heatDamagePerSecond(H.HEAT_DEPTH + 1, 0) > 0, 'damage must begin past the threshold');
+  assert.equal(H.heatDamagePerSecond(0, 0, 0, H.heatDepth(0)), 0);
+  assert.equal(H.heatDamagePerSecond(H.heatDepth(0), 0, 0, H.heatDepth(0)), 0, 'no damage at exactly the threshold');
+  assert.ok(H.heatDamagePerSecond(H.heatDepth(0) + 1, 0, 0, H.heatDepth(0)) > 0, 'damage must begin past the threshold');
 
   /* accelerating, not linear: the second 40 m must hurt more than the first */
-  const a = H.heatDamagePerSecond(110, 0) - H.heatDamagePerSecond(70, 0);
+  const a = H.heatDamagePerSecond(110, 0) - H.heatDamagePerSecond(70, 0, 0, H.heatDepth(0));
   const b = H.heatDamagePerSecond(150, 0) - H.heatDamagePerSecond(110, 0);
   assert.ok(b > a, 'heat must accelerate with depth');
 
   /* the cooling rig caps at 90%, so it never makes you immune */
-  assert.ok(H.heatDamagePerSecond(150, 0.9) > 0, 'max cooling must still leave some pressure');
-  assert.ok(H.heatDamagePerSecond(150, 0.9) < H.heatDamagePerSecond(150, 0));
+  assert.ok(H.heatDamagePerSecond(150, 0.9, H.heatDepth(0)) > 0, 'max cooling must still leave some pressure');
+  assert.ok(H.heatDamagePerSecond(150, 0.9) < H.heatDamagePerSecond(150, 0, H.heatDepth(0)));
 });
 
 test('digging costs more fuel in harder rock', () => {
@@ -372,17 +376,17 @@ test('digging costs more fuel in harder rock', () => {
    stays the same everywhere on purpose: a trait that also slowed the bleed-off
    would punish twice for one idea, and the surface would stop being a reset. */
 test('the soak rise multiplier speeds building without slowing recovery', () => {
-  const deep = H.HEAT_DEPTH + 30;
-  const normal = H.soakAfter(0, deep, 1);
-  const hot = H.soakAfter(0, deep, 1, 1.6);
+  const deep = H.heatDepth(0) + 30;
+  const normal = H.soakAfter(0, deep, 1, 1, H.heatDepth(0));
+  const hot = H.soakAfter(0, deep, 1, 1.6, H.heatDepth(0));
   assert.ok(hot > normal, 'a higher rise must soak faster: ' + hot + ' vs ' + normal);
   assert.ok(Math.abs(hot - normal * 1.6) < 1e-9, 'rise should scale linearly');
 
-  const shallow = H.HEAT_DEPTH - 10;
-  assert.equal(H.soakAfter(0.5, shallow, 1, 1.6), H.soakAfter(0.5, shallow, 1),
+  const shallow = H.heatDepth(0) - 10;
+  assert.equal(H.soakAfter(0.5, shallow, 1, 1.6, H.heatDepth(0)), H.soakAfter(0.5, shallow, 1, 1, H.heatDepth(0)),
     'the rise multiplier must not touch how fast soak bleeds off');
 
-  assert.equal(H.soakAfter(0, deep, 1), H.soakAfter(0, deep, 1, 1),
+  assert.equal(H.soakAfter(0, deep, 1, 1, H.heatDepth(0)), H.soakAfter(0, deep, 1, 1, H.heatDepth(0)),
     'omitting the multiplier must behave exactly as before it existed');
   assert.ok(H.soakAfter(0.9, deep, 10, 3) <= 1, 'soak must stay clamped at 1');
 });

@@ -1,7 +1,7 @@
 {
-  "line": 50,
-  "repairOre": "amethyst",
-  "perCellAtLine": 0.004067,
+  "line": 26,
+  "repairOre": "gold",
+  "perCellAtLine": 0.004125,
   "perCellAtCore": 0.008,
   "damageFirstFour": [
     {
@@ -33,22 +33,7 @@
     },
     {
       "d": 40,
-      "strain": 0,
-      "quake": false
-    },
-    {
-      "d": 60,
-      "strain": 0.0437,
-      "quake": false
-    },
-    {
-      "d": 80,
-      "strain": 0.151,
-      "quake": false
-    },
-    {
-      "d": 100,
-      "strain": 0.285,
+      "strain": 0.0691,
       "quake": false
     }
   ]

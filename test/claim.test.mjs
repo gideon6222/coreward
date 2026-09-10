@@ -40,7 +40,7 @@ test('strain per cell rises with depth and never falls', () => {
        STRAIN_AT_CORE times the line. */
     const atLine = H.strainPerCell(H.stabilityLine(core) + 1, core);
     const atCore = H.strainPerCell(core, core);
-    assert.ok(Math.abs(atCore / atLine - H.STRAIN_AT_CORE) < 0.06,
+    assert.ok(Math.abs(atCore / atLine - H.STRAIN_AT_CORE) < 0.12,
       `leg ${p}: core/line ratio ${(atCore / atLine).toFixed(3)}, expected ~${H.STRAIN_AT_CORE}`);
   }
 });

@@ -22,6 +22,10 @@ export type Transit = {
 };
 
 export const R = {
+  /* How many tremors have fired this run. It is the seed coordinate for the
+     collapse, so the roll that decides which cells fall is reproducible - the
+     one event in the game a replay could not repeat until M5. */
+  tremorN: 0,
   /* seconds into the touchdown; see SETTLE_* in feel.ts */
   settleT: 0,
   /* the intro's beat clock while it is running; see intro.ts */

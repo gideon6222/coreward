@@ -2980,3 +2980,66 @@ each diff was read: `stats` moved only the cargo ladder, `feel` only the two fue
 Two e2e tests failed on `'56.0 / 60 KG'` and `toBeLessThanOrEqual(60)`. They now read the cap
 out of the game, which is what they should always have done - a test that restates a constant
 only proves you can type it twice.
+
+---
+
+# M5, 2026-09-10 - the world has a shape now, and every world has the same one
+
+Planet 0's core sat at 110 m with heat at 70 and tremors at 85, and five sessions of playtest
+notes never went past about 78 m. The chart, the traits, the Jump Drive, the Heart and the
+crossing were all behind a dive that had never happened.
+
+**The depths stopped being metres and became fractions of each world's own core.**
+
+| | Was | Now |
+|---|---|---|
+| Core | `110 + 35 * leg` | `58 + 48 * leg` - 58, 106, 154, 202, **250** at leg 4 |
+| Heat line | a global 70 m | `0.66 * core` - 38 m on leg 0 |
+| Tremor line | a global 85 m | `0.76 * core` - 44 m on leg 0 |
+| Rock bands | fixed 10 / 45 / 70 / 120 | `0.09 / 0.39 / heat / 1.05` of the core |
+| Heat ramp | a fixed 50 m | the world's own heat zone |
+
+Leg 4 lands on 250 m, exactly where the old ladder put it, so **the deep game is unchanged and
+only the distance to your first sight of it moved.** Leg 0 is now a whole world in one
+session: heat at 38, tremors at 44, a core at 58, and a crossing after it.
+
+**HEAT_FRACTION is 0.66 rather than the 0.55 the plan proposed**, and the reason is the ore
+ladder. At 0.55 leg 0's heat line landed at 32 m, four metres above gold, so the Fuel Tank -
+which every player needs from the first run - would have demanded a trip into the heat to buy
+it. Only the rows you buy BECAUSE you go deep may ask for a mineral from down there. The heat
+zone is now the bottom third of every world, which is also easier to say out loud than any
+pair of metres.
+
+**Five things this broke that were worth breaking.**
+
+1. **Cooling unlocked at 55 m and wanted emerald from 78.** On a world ending at 58 the shop
+   offered a rig that could not be paid for. It unlocks at 78 now - emerald's own depth - so
+   the row opens on exactly the world where its mineral exists.
+2. **The Scanner wanted amethyst from 56 m**, below every heat line, for an opening-kit row.
+   It takes copper now.
+3. **The heat curve did nothing on leg 0.** `HEAT_RAMP` was a fixed 50 m against a 20 m zone,
+   so hull loss never got past a fifth of its curve and the readout was blank one metre above
+   the core. Scaled to the zone, every world runs the same arc from warm at the line to leave
+   now at the core.
+4. **`blocks-preadditive.json` is still frozen and still passes.** Its test gained two narrow
+   rules - a rock may become a different rock, and a cell may become the core or the bedrock
+   where the world got shorter - and one new assertion that is stronger than what it replaced:
+   the set of cells holding ORE is identical to the frozen world. That is the property the
+   file exists to defend, and it is now stated directly instead of implied.
+5. **A test measuring luck.** `with a second route open, the same collapse goes ahead` passed
+   on one seed for months and failed the day the world got shallower, because that shuffle
+   picks a set that would seal the ship and is correctly reverted whole. It now runs twelve
+   seeds and asserts that redundancy makes a collapse possible and that every outcome still
+   gets you home.
+
+**The tremor collapse is seeded.** `planCollapse()` no longer has a `Math.random` default at
+all, and the game passes a stream seeded on the leg, the tremor count and the depth. That was
+the one event a replay could not reproduce.
+
+**Old saves.** A save whose ship is below its world's new core is put back on the pad on load.
+Nothing else is touched.
+
+**Measured after, 25 runs a style:** hold use 40 / 36 / 19 per cent against 7 / 12 / 5 before
+any of this round, quakes in twenty runs 3 / 5 / 5 against 0 / 0 / 5, and the payout spread
+tightened from 84-3,708 to 152-1,274 for a cautious player. All three styles now meet the
+Claim, which none of them did when it was written.

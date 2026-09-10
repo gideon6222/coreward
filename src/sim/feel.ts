@@ -687,7 +687,10 @@ export const SETTLE_DONE = 0.12;
 /* Hard ceiling on the whole thing. It plays on every crossing and every
    CONTINUE, and the second time you see it, it is a wait. */
 export const SETTLE_MAX = 2.0;
-export const HEAT_DEPTH = 70;               /* metres before heat begins */
+/* Was a global 70. It is now the world's own heat line, so every function
+   below takes the depth it should compare against rather than reaching for a
+   constant that is only true of one leg. See heatDepth() in config.ts. */
+export const HEAT_DEPTH_LEGACY = 70;       /* what a pre-M5 save was played on */
 export const HEAT_RAMP = 50;
 export const HEAT_EXPONENT = 1.3;
 export const HEAT_RATE = 4.5;
@@ -714,21 +717,28 @@ export const SOAK_MAX_MULT = 2.5;   /* damage multiplier when fully soaked */
    than the soak ramp on purpose - the world should announce the zone
    immediately, while the danger itself builds over time. */
 export const HEAT_TINT_RAMP = 26;
-export const heatT = (pd: number) => clamp01((pd - HEAT_DEPTH) / HEAT_TINT_RAMP);
+export const heatT = (pd: number, heat: number, ramp = HEAT_TINT_RAMP) =>
+  clamp01((pd - heat) / Math.max(6, ramp));
 
 /* `rise` is the planet's soak multiplier (Searing runs hot). Only the build
    side scales - bleeding off at the surface is the same everywhere, because a
    trait that also slowed recovery would punish twice for one idea. */
-export function soakAfter(soak: number, pd: number, dt: number, rise = 1): number {
-  const rate = pd > HEAT_DEPTH ? SOAK_RISE * rise : -SOAK_FALL;
+export function soakAfter(soak: number, pd: number, dt: number, rise = 1, heat = HEAT_DEPTH_LEGACY): number {
+  const rate = pd > heat ? SOAK_RISE * rise : -SOAK_FALL;
   return clamp01(soak + rate * dt);
 }
 
 /* Hull loss per second at a given depth, after the cooling rig's shield and
    scaled by how long you have been down there. Zero above HEAT_DEPTH. */
-export function heatDamagePerSecond(pd: number, shield: number, soak = 0): number {
-  if (pd <= HEAT_DEPTH) return 0;
-  const ex = (pd - HEAT_DEPTH) / HEAT_RAMP;
+export function heatDamagePerSecond(pd: number, shield: number, soak = 0,
+                                    heat = HEAT_DEPTH_LEGACY, ramp = HEAT_RAMP): number {
+  if (pd <= heat) return 0;
+  /* The ramp is the world's own heat zone, not a fixed 50 m. On leg 0 the zone
+     is twenty metres deep, so a fixed ramp meant the hull loss never got past
+     a fifth of its curve and the first world's danger line did nothing at all -
+     the readout stayed blank at one metre above the core. Scaled, every world
+     delivers the same arc from "warm" at the line to "leave now" at the core. */
+  const ex = (pd - heat) / Math.max(8, ramp);
   const escalation = 1 + clamp01(soak) * (SOAK_MAX_MULT - 1);
   return Math.pow(ex, HEAT_EXPONENT) * HEAT_RATE * (1 - shield) * escalation;
 }

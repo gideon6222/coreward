@@ -27,3 +27,12 @@ export function rnd(x: number, y: number, p: number) {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
+
+/* A reproducible stream of rolls from one seed, for the places that need
+   several numbers in a row rather than one per cell. Each call advances a
+   counter that goes into both coordinates, so successive values are unrelated
+   to each other in the way rnd() is over a grid. */
+export function stream(a: number, b: number, p: number): () => number {
+  let i = 0;
+  return () => { i++; return rnd(a + i * 7, b + i * 31, p); };
+}

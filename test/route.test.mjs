@@ -208,7 +208,7 @@ function seeded(n) {
 }
 
 test('a collapse takes tunnel from above the ship, never from beside it', () => {
-  cavern(100);
+  cavern(40);
   const taken = H.planCollapse(4, seeded(7));
   assert.equal(taken.length, 4);
   for (const k of taken) {
@@ -222,7 +222,7 @@ test('a collapse takes tunnel from above the ship, never from beside it', () => 
 });
 
 test('collapsed cells become solid again and cost fuel to re-clear', () => {
-  cavern(100);
+  cavern(40);
   const taken = H.planCollapse(3, seeded(11));
   for (const k of taken) {
     const [x, d] = k.split(',').map(Number);
@@ -237,7 +237,7 @@ test('collapsed cells become solid again and cost fuel to re-clear', () => {
 test('a tremor never seals the ship in', () => {
   /* A single-width shaft is the worst case: every cell in it is load-bearing,
      so any collapse at all disconnects the ship from the pad. */
-  shaft(100);
+  shaft(50);
   const before = new Set(H.g.dug);
   const taken = H.planCollapse(4, seeded(3));
   assert.equal(taken.length, 0,
@@ -248,7 +248,7 @@ test('a tremor never seals the ship in', () => {
 
   /* and it holds for every seed, not just a lucky one */
   for (let seed = 1; seed <= 60; seed++) {
-    shaft(100);
+    shaft(50);
     assert.equal(H.planCollapse(4, seeded(seed)).length, 0, 'seed ' + seed + ' sealed the ship in');
     assert.ok(H.findRoute(), 'seed ' + seed + ' left the ship without a route');
   }
@@ -257,11 +257,22 @@ test('a tremor never seals the ship in', () => {
 
 test('with a second route open, the same collapse goes ahead', () => {
   /* two parallel shafts joined at the bottom: now cells are expendable */
-  shaft(100);
-  for (let d = -1; d <= 100; d++) H.g.dug.add(H.key(H.START_X + 1, d));
-  const taken = H.planCollapse(4, seeded(3));
-  assert.ok(taken.length > 0, 'a redundant tunnel should be able to absorb a collapse');
-  assert.ok(H.findRoute(), 'and the ship still gets home');
+  shaft(50);
+  for (let d = -1; d <= 50; d++) H.g.dug.add(H.key(H.START_X + 1, d));
+  /* Over a spread of seeds rather than one. A particular shuffle can still
+     pick a set that would seal the ship and be reverted whole - that is the
+     guarantee working, not a failure - so the property is that redundancy
+     makes a collapse POSSIBLE, and that every outcome still gets you home.
+     Asserted on one seed this passed for two years and then failed the day the
+     world got shallower, which is a test measuring luck. */
+  let went = 0;
+  for (let seed = 1; seed <= 12; seed++) {
+    shaft(50);
+    for (let d = -1; d <= 50; d++) H.g.dug.add(H.key(H.START_X + 1, d));
+    if (H.planCollapse(4, seeded(seed)).length > 0) went++;
+    assert.ok(H.findRoute(), 'seed ' + seed + ': the ship still gets home');
+  }
+  assert.ok(went > 0, 'a redundant tunnel should be able to absorb a collapse');
   clearWorld();
 });
 
@@ -270,7 +281,7 @@ test('with a second route open, the same collapse goes ahead', () => {
 test('across many shapes and seeds, a collapse never strands the ship', () => {
   let applied = 0;
   for (let seed = 1; seed <= 40; seed++) {
-    cavern(60 + (seed % 40));
+    cavern(28 + (seed % 20));
     for (let round = 0; round < 6; round++) {
       applied += H.planCollapse(3 + (seed % 5), seeded(seed * 31 + round)).length;
       assert.ok(H.findRoute(),
@@ -284,7 +295,7 @@ test('across many shapes and seeds, a collapse never strands the ship', () => {
 });
 
 test('a collapse is bounded by how much tunnel there is', () => {
-  shaft(90);
+  shaft(50);
   for (let d = -1; d <= 90; d++) H.g.dug.add(H.key(H.START_X + 1, d));
   const taken = H.planCollapse(500, seeded(5));
   assert.ok(taken.length === 0 || taken.length < 500,
@@ -295,9 +306,9 @@ test('a collapse is bounded by how much tunnel there is', () => {
 test('the shuffle actually shuffles', () => {
   /* sort(() => rand() - 0.5) is the classic non-shuffle: it leaves the array
      close to where it started. Two different seeds should disagree. */
-  cavern(100);
+  cavern(40);
   const a = H.planCollapse(6, seeded(1));
-  cavern(100);
+  cavern(40);
   const b = H.planCollapse(6, seeded(999));
   assert.ok(a.length === 6 && b.length === 6, 'both collapses should have gone ahead');
   assert.notDeepEqual(a.slice().sort(), b.slice().sort(),

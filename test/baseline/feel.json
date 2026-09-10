@@ -52,7 +52,7 @@
     "hullRegen": 30
   },
   "heat": {
-    "depth": 70,
+    "depth": 38,
     "ramp": 50,
     "exponent": 1.3,
     "rate": 4.5
