@@ -657,6 +657,29 @@ export const FUEL_PER_MOVE = 0.8;           /* per second while flying */
 export const FUEL_DIG_BASE = 1.0;           /* per second while drilling */
 export const FUEL_DIG_PER_HARDNESS = 0.09;
 export const HULL_REGEN = 30;               /* per second, at the surface */
+
+/* ---------- the settle ----------
+
+   Playtest: *"I want the ship to be shown lowering itself onto the landing pad
+   right before the player takes over."*
+
+   The arrival used to be asserted rather than shown: the descent flashed and
+   the next frame was a ship parked on a pad with the HUD up. This is the last
+   few metres of it, in the game's own scene.
+
+   Metres above the pad it starts from, and the rate it closes at. The rate is
+   an approach() smoothing like everything else in the game rather than a
+   scripted curve, so it settles the way the camera and the needles do - it
+   should look like the game, not like a cutscene bolted to the front of it. */
+export const SETTLE_FROM = 5.5;
+export const SETTLE_RATE = asExpRate(3.4);
+/* Close enough to be down. Approach smoothing never quite arrives, and waiting
+   for zero would hold the controls off for a fraction of a metre nobody can
+   see. */
+export const SETTLE_DONE = 0.12;
+/* Hard ceiling on the whole thing. It plays on every crossing and every
+   CONTINUE, and the second time you see it, it is a wait. */
+export const SETTLE_MAX = 2.0;
 export const HEAT_DEPTH = 70;               /* metres before heat begins */
 export const HEAT_RAMP = 50;
 export const HEAT_EXPONENT = 1.3;

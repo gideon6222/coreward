@@ -3,7 +3,7 @@ import { chartFor, type Destination } from './chart';
 import { coreDepth, planetName, paletteOf, TRAIT_OF, skyLo } from './config';
 import { R } from './runtime';
 import { sfx } from './audio';
-import { goSurface, stopDigging } from './actions';
+import { goSurface, stopDigging , beginSettle} from './actions';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { syncDrops } from './drops';
 import { resetLight } from './lightmap';
@@ -136,7 +136,9 @@ export function arrive() {
   resetLight();
   goSurface();
   syncBlocks(true);
-  g.mode = 'play';
+  /* AFTER goSurface, which owns where the ship belongs; this owns the last few
+     metres of getting there. It sets the mode, so nothing else should. */
+  beginSettle();
   save();
 }
 

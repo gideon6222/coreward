@@ -319,6 +319,44 @@ export function rockRelief(m: THREE.MeshStandardMaterial) {
      lives entirely in how the lamp rakes across a surface, which a desktop
      screenshot of a static frame understates. */
   m.normalScale = new THREE.Vector2(2.6, 2.6);
+  tuneRock(m);
+}
+
+/* The two channels that make the ground itself change between worlds, rather
+   than just its colour - see Palette in config.ts.
+
+   `rough` decides whether the lamp catches the stone or is swallowed by it,
+   which does more to tell two worlds apart than hue does: ice reads as ice
+   because it has a highlight, ash reads as ash because nothing on it does.
+   `bump` scales the relief, weathered against fractured.
+
+   Applied to every rock material that exists, and re-applied on a planet
+   change - a material built on Verdax and reused on Cryon would otherwise
+   carry Verdax's surface. */
+const rockMats = new Set<THREE.MeshStandardMaterial>();
+let surfRough = 1, surfBump = 1;
+
+/* Clamped, and the floor is the interesting half. Below about 0.78 a warm
+   lamp's specular starts to dominate the diffuse term, and the rock takes the
+   LIGHT'S colour instead of its own - Cryon at 0.62 came out khaki instead of
+   ice, which is the palette losing an argument with a highlight. The ceiling
+   is 1.0 because that is as rough as the material model goes. */
+const ROUGH_MIN = 0.78;
+
+function tuneRock(m: THREE.MeshStandardMaterial) {
+  rockMats.add(m);
+  m.roughness = Math.max(ROUGH_MIN, Math.min(1, surfRough));
+  m.normalScale.set(2.6 * surfBump, 2.6 * surfBump);
+}
+
+export function setRockSurface(rough: number, bump: number) {
+  if (rough === surfRough && bump === surfBump) return;
+  surfRough = rough; surfBump = bump;
+  for (const m of rockMats) {
+    m.roughness = Math.max(ROUGH_MIN, Math.min(1, rough));
+    m.normalScale.set(2.6 * bump, 2.6 * bump);
+    m.needsUpdate = true;
+  }
 }
 /* Something for metal to reflect.
 

@@ -118,6 +118,22 @@ const SCENES = {
     step: `__cw.advance(SECS);`
   },
 
+  /* The touchdown on its own: skip everything and watch the last few metres
+     onto the pad, which is the part a still frame cannot show. */
+  settle: {
+    secs: 0.16,
+    frames: 10,
+    setup: `
+      localStorage.clear();
+      __cw.g.won = true;
+      __cw.showIntro();
+      const sk = document.getElementById('introSkip');
+      if (sk) sk.click();
+      __cw.advance(6);
+    `,
+    step: `__cw.advance(SECS);`
+  },
+
   /* New Game Plus: the intro again, but with a way out of it. */
   ngplus: {
     secs: 1.2,
@@ -160,6 +176,35 @@ const SCENES = {
       document.getElementById('btnShop').click();
     `,
     step: `__cw.advance(SECS);`
+  },
+
+  /* The ground on four different worlds, side by side: what a wall looks like
+     is the whole point of the growth and the surface channels. */
+  ground: {
+    secs: 0.1,
+    frames: 4,
+    enter: true,
+    setup: `
+      window.__w = [0, 2, 5, 9];
+      window.__i = 0;
+      window.__show = (w) => {
+        __cw.g.world = w; __cw.g.planet = w; __cw.g.trait = 'stable';
+        __cw.g.coreOff = 0; __cw.g.rich = 1;
+        const dug = [];
+        for (let d = 0; d <= 30; d++) dug.push('6,' + d);
+        for (let x = 2; x <= 10; x++) dug.push(x + ',18');
+        __cw.g.dug = new Set(dug);
+        __cw.g.px = 6; __cw.g.pd = 14;
+        __cw.resetBlocks();
+        __cw.advance(0.4);
+      };
+      __show(__w[0]);
+    `,
+    step: `
+      __i++;
+      __show(__w[__i % __w.length]);
+      __cw.advance(SECS);
+    `
   },
 
   /* Flying down a shaft: the case the lighting work was all about. */

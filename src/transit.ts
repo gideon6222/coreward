@@ -314,6 +314,9 @@ let launchT = 0;
 let launchDur = 0;
 let launchWorld = -1;
 const LAUNCH_BOOST = 5.5;   /* multiple of cruise speed at the peak of the burn */
+/* How far the nose is tipped away from the camera while cruising. A quarter
+   turn is dead astern; this is a little under, for the three-quarter view. */
+const CRUISE_PITCH = -1.16;
 
 export function isShowcase() { return showing; }
 export function isLanding() { return landWorld >= 0; }
@@ -442,11 +445,25 @@ export function stepShowcase(dt: number, clock: number) {
      so rotation PI points it the way it is going - a ship crossing open space
      with its drill at the deck reads as falling. */
   player.visible = true;
-  player.position.set(-0.75 + Math.sin(clock * 0.5) * 0.10,
-                      -0.55 + Math.sin(clock * 0.8) * 0.09, 0);
-  rig.rotation.z = Math.PI + Math.sin(clock * 0.45) * 0.08;
-  rig.rotation.y = Math.sin(clock * 0.33) * 0.14;
-  rig.rotation.x = -0.26;
+  player.position.set(-0.62 + Math.sin(clock * 0.5) * 0.10,
+                      -0.42 + Math.sin(clock * 0.8) * 0.09, 0);
+  /* NOSE-FIRST, seen from behind.
+
+     Playtest: *"can you make it look like the ship is actually flying toward
+     the planets rather than always facing us ... it should point the drill end
+     toward what it is flying to."* It was flying broadside - the drill pointed
+     up the screen while the worlds receded into it, two directions at once,
+     and the eye believes the one it can measure. The ship looked parked.
+
+     At rotation zero the drill points at the floor (local -Y - FACE_ANGLE has
+     down at zero), so pointing it into the screen is taking -Y to -Z, which is
+     a quarter turn about X. CRUISE_PITCH is a little short of that quarter
+     turn on purpose: dead-on would show the engine bells and nothing else, and
+     a few degrees off gives the three-quarter rear view that reads as a
+     machine rather than as a circle. */
+  rig.rotation.z = Math.PI + Math.sin(clock * 0.45) * 0.06;
+  rig.rotation.y = Math.sin(clock * 0.33) * 0.10;
+  rig.rotation.x = CRUISE_PITCH + Math.sin(clock * 0.4) * 0.05;
   for (const f of flames) {
     f.cone.scale.set(1.0, 1.25 + Math.sin(clock * 8) * 0.2, 1.0);
     f.glow.scale.setScalar(1.1 + Math.sin(clock * 6) * 0.18);
@@ -465,8 +482,11 @@ export function stepShowcase(dt: number, clock: number) {
     /* Thrown back in the seat: the ship sits lower and pitches up under the
        burn, and recovers as it falls off. */
     const kick = Math.sin(u * Math.PI);
-    player.position.y -= kick * 0.35;
-    rig.rotation.x -= kick * 0.22;
+    player.position.y -= kick * 0.30;
+    /* Further over under thrust, not up: a ship accelerating along its own axis
+       digs its nose in. Lifting it would point the drill away from where it is
+       going at exactly the moment it is going there hardest. */
+    rig.rotation.x -= kick * 0.16;
     for (const f of flames) {
       f.cone.scale.set(1.0 + kick * 0.5, 1.25 + kick * 2.2, 1.0 + kick * 0.5);
       f.glow.scale.setScalar(1.1 + kick * 1.5);
@@ -505,9 +525,15 @@ function stepLanding(dt: number, clock: number) {
   l.grp.scale.setScalar(16 + e * 26);
   l.body.rotation.y = clock * 0.05;
 
-  /* The ship pitches over into the descent and the drive lights up. */
-  rig.rotation.x = -0.26 + e * 0.5;
-  player.position.y = -0.55 + e * 0.5;
+  /* Turning INTO it. The cruise attitude points the drill into the screen;
+     the world is ahead and drifting to centre, so the ship rolls level and
+     tips a little further down as it commits - and by the end it is pointed at
+     the surface it is about to touch. A ship that kept its cruise attitude all
+     the way down arrives flying sideways into a planet. */
+  rig.rotation.x = CRUISE_PITCH - e * 0.30;
+  rig.rotation.z = Math.PI + (1 - e) * Math.sin(clock * 0.45) * 0.06;
+  rig.rotation.y = (1 - e) * Math.sin(clock * 0.33) * 0.10;
+  player.position.set((1 - e) * -0.62, -0.42 + e * 0.30, 0);
 
   /* Atmosphere: the world's own sky takes the frame over the last stretch. */
   const glow = Math.max(0, (t - 0.62) / 0.38);

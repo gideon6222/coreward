@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { beginGrowth, addGrowth, finishGrowth } from './growth';
 import { W } from './config';
 import { key } from './util';
 import { g } from './state';
@@ -349,6 +350,7 @@ function rebuild() {
   markLightDirty();
   for (const p of pools.values()) { p.bodies = 0; p.details = 0; }
   oreGlows.length = 0;
+  beginGrowth();
 
   const row = lastRow === null ? Math.floor(g.pd) : lastRow;
   const d0 = Math.max(0, row - 13), d1 = row + 15;
@@ -366,6 +368,9 @@ function rebuild() {
       const px = worldX(x), py = -d;
 
       if (!b.ore) {
+        /* What grows on this world, if anything does at this depth. Decoration
+           on the cell, never a kind of cell - see growth.ts. */
+        addGrowth(x, d, px, py, ao);
         scratch.position.set(px, py, 0);
         placeCell(px, py);
         scratch.updateMatrix();
@@ -458,6 +463,7 @@ function rebuild() {
     if (p.body.instanceColor) p.body.instanceColor.needsUpdate = true;
     if (p.detail.instanceColor) p.detail.instanceColor.needsUpdate = true;
   }
+  finishGrowth();
   haloMesh.count = oreGlows.length;
   if (haloMesh.instanceColor) haloMesh.instanceColor.needsUpdate = true;
 }

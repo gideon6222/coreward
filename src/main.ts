@@ -5,7 +5,7 @@ import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './config';
 import { g, S, save, load, hasSave } from './state';
 import { R } from './runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
-import { syncBlocks } from './blocks';
+import { syncBlocks, resetBlockCache } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware } from './ship';
@@ -16,7 +16,7 @@ import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
-import { setCoreHandler, breakCore } from './actions';
+import { setCoreHandler, breakCore, beginSettle } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
@@ -88,7 +88,16 @@ setStartHandler((fresh: boolean) => {
   }
   g.fuel = S.fuelCap();
   g.hull = S.hullCap();
-  g.mode = 'play';
+  /* The flight ends above the pad and the ship comes down the last few metres
+     under its own thrust - but ONLY if the pad is where it belongs.
+
+     A save can be mid-run: quit at ninety metres with a full hold and CONTINUE
+     has to put you back at ninety metres. Settling unconditionally moved that
+     ship to the surface, which loses the player's position and is worse than
+     that - it makes quitting and reloading a free ride home with the cargo,
+     which is the trip the whole game is about making. */
+  if (g.pd <= 0.5) beginSettle();
+  else g.mode = 'play';
   updateHUD();
   save();
 });
@@ -146,6 +155,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,
     /* What is actually on the shelf right now, so a test can ask for "the
        sealed case" rather than naming one that may not be stocked. */
+    /* Force a full terrain rebuild - for looking at a world's ground without
+       flying to it. */
+    resetBlocks: () => { resetBlockCache(); syncBlocks(true); },
     shelfKeys: () => shelfStock(g.best.depth).map((u) => u.key),
     sealedKey: () => {
       const s = shelfStock(g.best.depth).filter((u) => g.best.depth < u.unlock);

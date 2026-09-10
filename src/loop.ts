@@ -23,7 +23,7 @@ import {
   LANE_PULL, DIG_ALIGNED,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
-} from './feel';
+, SETTLE_RATE, SETTLE_DONE, SETTLE_MAX} from './feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, renderWorld } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
@@ -211,6 +211,28 @@ export function tick(raw: number, draw = true) {
       sell();
       R.shake = SHAKE_LANDING;
       flash('rgba(110,220,255,.22)', 240);
+    }
+  } else if (g.mode === 'settle') {
+    /* The touchdown. The ship closes on the pad on the same approach()
+       smoothing the camera and the needles use, so it reads as the game
+       arriving rather than as a scripted move.
+
+       On `raw` rather than `dt`: nothing here is simulation, and hit-stop
+       cannot be in flight before the player has the controls anyway.
+
+       The timeout is not belt-and-braces - approach() is asymptotic and never
+       reaches its target, so something has to decide when close is down. */
+    R.settleT += raw;
+    g.pd = approach(g.pd, -1, SETTLE_RATE, raw);
+    thrustLevel = 1;
+    if (Math.abs(g.pd + 1) < SETTLE_DONE || R.settleT >= SETTLE_MAX) {
+      g.pd = -1;
+      g.mode = 'play';
+      R.wasAtSurface = true;
+      /* Dust off the pad as the weight goes on. */
+      spray(worldX(g.px), -g.pd - 0.4, 0xcfc0a4, 26, 3.4, 0.8);
+      sfx.supply();
+      R.shake = Math.max(R.shake, 0.28);
     }
   } else if (g.mode === 'play') {
     /* The only clock the run log keeps. It runs in play and nowhere else, so

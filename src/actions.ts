@@ -19,7 +19,7 @@ import { setMark } from './mark';
 import { setDrillTier, setUpgradeHardware } from './ship';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
-import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX } from './feel';
+import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './feel';
 import type { Dir, SupplyKey } from './types';
 import { mergeLog, blankLog } from './telemetry';
 
@@ -93,6 +93,23 @@ export function sell() {
   sfx.sell();
   toast('Sold haul for ◈ ' + v.toLocaleString());
   save();
+}
+
+/* Come down on the pad instead of appearing on it.
+
+   Called after goSurface() has already put the ship at the pad, and it lifts
+   it back off: goSurface owns where the ship BELONGS and this owns the last
+   few metres of getting there. Doing it the other way round - settling first,
+   then letting goSurface teleport - is the version that looks like a bug.
+
+   The controls are dead for the duration, because a player who can fly during
+   a landing animation will, and then the animation is fighting them. */
+export function beginSettle() {
+  g.pd = -1 - SETTLE_FROM;
+  R.settleT = 0;
+  R.held = null;
+  R.vx = 0; R.vy = 0;
+  g.mode = 'settle';
 }
 
 export function goSurface() {

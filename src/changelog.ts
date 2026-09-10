@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.23.0';
+export const VERSION = '0.24.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.24.0', date: '2026-09-09', title: 'Ground of its own',
+    notes: [
+      'The ship flies nose-first now - you see it from behind, drill pointed at wherever it is going.',
+      'It lowers itself onto the pad under its own thrust before you get the controls.',
+      'Every world has its own ground: moss, frost, plants, oil, ash or salt, on rock that is rougher or glassier depending where you are.',
+      'Continuing a run that was already underground puts you back where you were, not on the pad.'
+    ]
+  },
   {
     version: '0.23.0', date: '2026-09-09', title: 'Three ways in',
     notes: [

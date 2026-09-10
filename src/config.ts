@@ -61,43 +61,83 @@ export interface Palette {
   haze: number; dust: number;
   /* the silhouettes behind the tunnels */
   para: number;
+
+  /* ---- how the ground is MADE, not just what colour it is ----
+
+     A tint is one channel, and one channel is why every world still read as
+     the same stone under a different light. Playtest: *"I want the actual dirt
+     and rocks to change color and texture with each planet."*
+
+     `rough` scales the rock's roughness: under 1 is glassy - ice, slag, wet
+     stone - and over 1 is matte and dusty. It is the difference between rock
+     that catches the lamp and rock that swallows it, and it changes what the
+     whole world looks like far more than the hue does.
+
+     `bump` scales the normal map. Low is weathered and rounded, high is sharp
+     and fractured. */
+  rough: number;
+  bump: number;
+
+  /* What lives, settles or leaks on the rock face here - see growth.ts. One
+     signature per world, so a wall is enough to tell you where you are. */
+  growth: GrowthKind;
+  /* the colour of it, which is usually NOT the rock's */
+  growthColor: number;
 }
+
+/* Moss and plants want damp near the surface, frost does not care, oil seeps
+   from deep. A growth that ignores depth is wallpaper. */
+export type GrowthKind = 'moss' | 'frost' | 'plant' | 'oil' | 'ash' | 'salt' | 'none';
 
 /* Twelve, cycling with the names. Verdax is first and is deliberately the
    least tinted: it is the world the game teaches you on, and everything after
    it should read as a departure from it. */
 const PALETTES: Palette[] = [
   /* Verdax - the baseline. Warm neutral stone under a blue sky. */
-  { rock: 0x8a7f6a, mix: 0.10, fog: 0x07080d, haze: 0xffb46a, dust: 0xd8c4a2, para: 0x1a1f2b },
+  { rock: 0x8a7f6a, mix: 0.10, fog: 0x07080d, haze: 0xffb46a, dust: 0xd8c4a2, para: 0x1a1f2b,
+    rough: 1.00, bump: 1.00, growth: 'moss', growthColor: 0x5f8f3a },
   /* Rustmoor - oxidised iron, everything the colour of old blood. */
-  { rock: 0xa8542a, mix: 0.44, fog: 0x1a0805, haze: 0xff9048, dust: 0xe0a070, para: 0x2a1410 },
+  { rock: 0xa8542a, mix: 0.44, fog: 0x1a0805, haze: 0xff9048, dust: 0xe0a070, para: 0x2a1410,
+    rough: 1.15, bump: 1.25, growth: 'oil', growthColor: 0x2a2018 },
   /* Cryon - blue ice, and the coldest air in the game. */
-  { rock: 0x7fc6d8, mix: 0.41, fog: 0x04121a, haze: 0x9fe0ff, dust: 0xcce8f4, para: 0x162630 },
+  { rock: 0x7fc6d8, mix: 0.41, fog: 0x04121a, haze: 0x9fe0ff, dust: 0xcce8f4, para: 0x162630,
+    rough: 0.62, bump: 0.80, growth: 'frost', growthColor: 0xcfeaff },
   /* Ashvault - burnt violet rock, ash in the air. */
-  { rock: 0x6a4a78, mix: 0.43, fog: 0x0c0612, haze: 0xd8a0ff, dust: 0xc0a8cc, para: 0x201828 },
+  { rock: 0x6a4a78, mix: 0.43, fog: 0x0c0612, haze: 0xd8a0ff, dust: 0xc0a8cc, para: 0x201828,
+    rough: 1.20, bump: 1.10, growth: 'ash', growthColor: 0x6a5f72 },
   /* Kryllon - deep indigo, lit like a storm. */
-  { rock: 0x4a58b0, mix: 0.41, fog: 0x040720, haze: 0x8ea8ff, dust: 0xa8b4e8, para: 0x161c34 },
+  { rock: 0x4a58b0, mix: 0.41, fog: 0x040720, haze: 0x8ea8ff, dust: 0xa8b4e8, para: 0x161c34,
+    rough: 0.80, bump: 1.15, growth: 'salt', growthColor: 0xb9c6f0 },
   /* Tessivar - green stone, the one world that feels alive. */
-  { rock: 0x4f8a52, mix: 0.41, fog: 0x05120a, haze: 0xa8e88a, dust: 0xc0d8a0, para: 0x18261a },
+  { rock: 0x4f8a52, mix: 0.41, fog: 0x05120a, haze: 0xa8e88a, dust: 0xc0d8a0, para: 0x18261a,
+    rough: 1.05, bump: 0.90, growth: 'plant', growthColor: 0x6fbf4a },
   /* Obrinth - rose quartz and hot pink light. */
-  { rock: 0xb05880, mix: 0.43, fog: 0x160610, haze: 0xff9ad0, dust: 0xe8b4cc, para: 0x2a1622 },
+  { rock: 0xb05880, mix: 0.43, fog: 0x160610, haze: 0xff9ad0, dust: 0xe8b4cc, para: 0x2a1622,
+    rough: 0.72, bump: 1.05, growth: 'salt', growthColor: 0xf0b8d8 },
   /* Palewell - bone and pale teal. Bleached. */
-  { rock: 0xa8b4a8, mix: 0.39, fog: 0x0a1210, haze: 0xc8f0e0, dust: 0xe0e8dc, para: 0x1c2624 },
+  { rock: 0xa8b4a8, mix: 0.39, fog: 0x0a1210, haze: 0xc8f0e0, dust: 0xe0e8dc, para: 0x1c2624,
+    rough: 0.90, bump: 0.85, growth: 'moss', growthColor: 0x8fc0a0 },
   /* Serrik - amber and ochre, a desert underground. */
-  { rock: 0xc08a3a, mix: 0.43, fog: 0x140c04, haze: 0xffc878, dust: 0xf0d4a0, para: 0x282014 },
+  { rock: 0xc08a3a, mix: 0.43, fog: 0x140c04, haze: 0xffc878, dust: 0xf0d4a0, para: 0x282014,
+    rough: 1.25, bump: 1.20, growth: 'ash', growthColor: 0xd8a86a },
   /* Vantomir - slate and steel, the bleakest of them. */
-  { rock: 0x6a7a90, mix: 0.41, fog: 0x060a10, haze: 0xa8c4e8, dust: 0xc4d0dc, para: 0x1a2028 },
+  { rock: 0x6a7a90, mix: 0.41, fog: 0x060a10, haze: 0xa8c4e8, dust: 0xc4d0dc, para: 0x1a2028,
+    rough: 1.10, bump: 1.15, growth: 'oil', growthColor: 0x1c2430 },
   /* Halcyne - olive and old gold. */
-  { rock: 0x8aa030, mix: 0.41, fog: 0x0c1004, haze: 0xd8e888, dust: 0xd0dca0, para: 0x1e240f },
+  { rock: 0x8aa030, mix: 0.41, fog: 0x0c1004, haze: 0xd8e888, dust: 0xd0dca0, para: 0x1e240f,
+    rough: 1.00, bump: 0.95, growth: 'plant', growthColor: 0xb8c04a },
   /* Dross - almost black, lit violet. The last name before the list cycles,
      and the darkest place in the game. */
-  { rock: 0x3a3040, mix: 0.44, fog: 0x050308, haze: 0xb088e0, dust: 0xa898b8, para: 0x14101a }
+  { rock: 0x3a3040, mix: 0.44, fog: 0x050308, haze: 0xb088e0, dust: 0xa898b8, para: 0x14101a,
+    rough: 1.30, bump: 1.30, growth: 'ash', growthColor: 0x4a3f56 }
 ];
 
 /* The Heart's own palette: black rock, red air, nothing else like it in the
    game. It is the last place you will ever go and it has to look like it. */
 const HEART_PAL: Palette =
-  { rock: 0x2a0808, mix: 0.55, fog: 0x140000, haze: 0xff5028, dust: 0xff8858, para: 0x1c0604 };
+  { rock: 0x2a0808, mix: 0.55, fog: 0x140000, haze: 0xff5028, dust: 0xff8858, para: 0x1c0604,
+    /* Glassy and sharp: slag rather than stone, and nothing grows on it. */
+    rough: 0.55, bump: 1.45, growth: 'none', growthColor: 0x000000 };
 
 export const paletteOf = (i: number): Palette =>
   i === 9999 ? HEART_PAL : PALETTES[i % PALETTES.length];
@@ -106,6 +146,22 @@ export const paletteOf = (i: number): Palette =>
    The chart uses it to spread world ids over the whole set rather than over
    whatever range the leg happens to be in. */
 export const PLANET_COUNT = PALETTES.length;
+
+/* Where each kind belongs, in metres. Moss and plants want the damp near the
+   surface; frost does not care; oil seeps from deep. A growth that ignores
+   depth is wallpaper. */
+export const GROWTH_BAND: Record<GrowthKind, { from: number; to: number; chance: number }> = {
+  moss:  { from: 0, to: 45, chance: 0.30 },
+  plant: { from: 0, to: 34, chance: 0.24 },
+  frost: { from: 0, to: 999, chance: 0.26 },
+  salt:  { from: 12, to: 999, chance: 0.22 },
+  ash:   { from: 8, to: 999, chance: 0.28 },
+  /* Deep, and rarer - it should read as something the world is doing rather
+     than as a surface finish. */
+  oil:   { from: 40, to: 999, chance: 0.20 },
+  none:  { from: 0, to: 0, chance: 0 }
+};
+
 
 export const planetName = (i: number) => {
   /* The Heart is not on the list and never cycles - see HEART_WORLD in

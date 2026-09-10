@@ -80,7 +80,8 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
 | `src/loop.ts` | `frame()`. The one big function |
 | `src/ambience.ts` | **Pure.** What a world DOES in the air: per-trait emission timing |
-| `src/intro.ts` | **Pure.** The first-run intro: its beats, their shots and their timing |
+| `src/growth.ts` | What lives on the rock: moss, frost, plants, oil, ash, salt |
+| `src/intro.ts` | **Pure.** The first-run intro: its beats and their timing |
 | `src/titleui.ts` | The title screen and the intro, wired to the DOM |
 | `src/chart.ts` | **Pure.** The navigation chart: which three worlds are offered at a leg |
 | `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
@@ -133,6 +134,12 @@ changes.
 put a core 18 m shallower than the ladder would, and anything placed against the leg's baseline
 then generates below the floor of the world it is on - unreachable, and silently, because
 nothing looks for a relic it cannot see.
+
+**The settle only runs when the pad is where the ship BELONGS.** A save can be mid-run, and
+`beginSettle()` moves the ship to the pad - so calling it unconditionally on CONTINUE put a
+player who quit at ninety metres back on the surface. That loses their position and, worse,
+makes quit-and-reload a free ride home with a full hold, which is the trip the game is about
+making. `main.ts` checks `g.pd <= 0.5` first. Five e2e specs caught this at once.
 
 **Per-cell maps carry no planet in their keys.** `dug`, `rubble`, `damage` and `drops` must all
 be cleared together on a planet change, or the new world inherits the old one's holes.

@@ -199,7 +199,12 @@ async function enterGame(page: Page) {
   await page.evaluate(async () => {
     const cw = (window as any).__cw;
     if (!cw || !cw.advance) return;
-    for (let i = 0; i < 30 && document.body.classList.contains('crossing'); i++) {
+    /* Past the touchdown as well as the flight: the ship now comes down onto
+       the pad in the game's own scene before the controls wake, so `crossing`
+       clearing is no longer the same thing as being able to play. */
+    const busy = () => document.body.classList.contains('crossing') ||
+      (window as any).__cw.g.mode !== 'play';
+    for (let i = 0; i < 40 && busy(); i++) {
       cw.advance(1);
       await new Promise((r) => requestAnimationFrame(r));
     }
@@ -1644,6 +1649,17 @@ test('breaking a core opens the chart, and the crossing lands you somewhere else
   await page.evaluate(() => (window as any).__cw.advance(1));
   await expect(page.locator('#skipCross'), 'the skip button outlived the crossing')
     .toHaveClass(/hidden/);
+
+  /* And the touchdown, which is part of arriving rather than something after
+     it: the ship comes down onto the pad before the controls wake. */
+  await page.evaluate(async () => {
+    const cw = (window as any).__cw;
+    for (let i = 0; i < 20 && cw.g.mode !== 'play'; i++) {
+      cw.advance(0.5);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    cw.startClock();
+  });
 
   const after = await page.evaluate(() => {
     const w = (window as any).__cw;

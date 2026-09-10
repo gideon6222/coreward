@@ -22,6 +22,8 @@ export type Transit = {
 };
 
 export const R = {
+  /* seconds into the touchdown; see SETTLE_* in feel.ts */
+  settleT: 0,
   /* the intro's beat clock while it is running; see intro.ts */
   intro: null as { i: number; t: number; landing: boolean; done: boolean } | null,
   /* the per-world ambience clock; see ambience.ts */
