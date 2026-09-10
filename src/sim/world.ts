@@ -5,7 +5,7 @@ import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
 import { key, mixHex } from './util';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
-import type { Block, SupplyKey } from './types';
+import type { Block, SupplyKey } from '../types';
 
 export function rnd(x: number, y: number, p: number) {
   let h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(p | 0, 1442695041);

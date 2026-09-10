@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { W, worldX } from './config';
-import { blockAt } from './world';
-import { solveVis, shiftField, castShadows, subOpts } from './light';
+import { W, worldX } from './sim/config';
+import { blockAt } from './sim/world';
+import { solveVis, shiftField, castShadows, subOpts } from './sim/light';
 import { chainCompile } from './shader';
 import { LM_ATT, LM_PINCH, LM_SEEP, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_DARK_START, LM_DARK_RAMP, LM_POOL_POW, LM_GAIN, LM_CONTRAST,
@@ -10,7 +10,7 @@ import { LM_ATT, LM_PINCH, LM_SEEP, LM_SMOOTH, LM_FLOOR_DEEP,
          LM_AIR_EDGE0, LM_AIR_EDGE1, LM_GLOW_FLOOR, LM_GLOW_POW, LM_FORWARD,
          LM_AIR_AMBIENT, LM_SHAFT, LM_SHAFT_POW, LM_SHAFT_RANGE,
          LM_DUST_DEPTH, LM_DUST_RAMP, LM_DUST_GRAIN, LM_DUST_SCALE,
-         LM_DUST_DRIFT } from './feel';
+         LM_DUST_DRIFT } from './sim/feel';
 
 /* The grid the solver works on, and the bridge from it to every shader.
 

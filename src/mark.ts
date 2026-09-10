@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { W } from './config';
+import { W } from './sim/config';
 import { scene } from './scene';
 
 /* The deepest-reach marker.

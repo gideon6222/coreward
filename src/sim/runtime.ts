@@ -10,7 +10,7 @@
    skyTick) stay local to loop.ts, and per-module caches (lastRow, pHead,
    resetArmed) stay with their module. */
 
-import type { Dir, Dig, Flight } from './types';
+import type { Dir, Dig, Flight } from '../types';
 import { blankLog } from './telemetry';
 
 /* The crossing between worlds, while it is running. Null the rest of the

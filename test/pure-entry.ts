@@ -5,15 +5,15 @@
    can run under node at all. Keep it that way: if importing this ever starts
    pulling in a renderer, the split has leaked. */
 
-export * from '../src/config';
-export * from '../src/util';
-export * from '../src/state';
-export * from '../src/world';
-export * from '../src/feel';
-export * from '../src/fly';
-export * from '../src/telemetry';
-export * from '../src/light';
-export * from '../src/chart';
-export * from '../src/drive';
-export * from '../src/ambience';
-export * from '../src/intro';
+export * from '../src/sim/config';
+export * from '../src/sim/util';
+export * from '../src/sim/state';
+export * from '../src/sim/world';
+export * from '../src/sim/feel';
+export * from '../src/sim/fly';
+export * from '../src/sim/telemetry';
+export * from '../src/sim/light';
+export * from '../src/sim/chart';
+export * from '../src/sim/drive';
+export * from '../src/sim/ambience';
+export * from '../src/sim/intro';

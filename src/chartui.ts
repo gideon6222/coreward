@@ -1,7 +1,7 @@
-import { g, save, setWorld } from './state';
-import { chartFor, type Destination } from './chart';
-import { coreDepth, planetName, paletteOf, TRAIT_OF, skyLo } from './config';
-import { R } from './runtime';
+import { g, save, setWorld } from './sim/state';
+import { chartFor, type Destination } from './sim/chart';
+import { coreDepth, planetName, paletteOf, TRAIT_OF, skyLo } from './sim/config';
+import { R } from './sim/runtime';
 import { sfx } from './audio';
 import { goSurface, stopDigging , beginSettle} from './actions';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
@@ -9,7 +9,7 @@ import { syncDrops } from './drops';
 import { resetLight } from './lightmap';
 import { beginTransit, endTransit } from './transit';
 import { partFor, partName, driveComplete, DRIVE_SLOTS,
-         HEART_WORLD, HEART_TRAIT, HEART_CORE_OFF, HEART_RICH } from './drive';
+         HEART_WORLD, HEART_TRAIT, HEART_CORE_OFF, HEART_RICH } from './sim/drive';
 
 /* The chart's own elements, looked up on demand rather than added to the `ui`
    map. That map is built at boot and asserts every id exists; these live in a

@@ -10,7 +10,7 @@
    spans [cx-0.5, cx+0.5] on each axis and the column containing a point p is
    Math.round(p). */
 
-import type { Dir } from './types';
+import type { Dir } from '../types';
 
 /* Which way the hull points, as a rotation about z, and the heading that goes
    with one.

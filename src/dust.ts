@@ -3,7 +3,7 @@ import { scene } from './scene';
 import { LM_DECL_SRC, lmUniforms } from './lightmap';
 import { DUST_COUNT, DUST_BOX_W, DUST_BOX_H, DUST_SIZE, DUST_SIZE_VARY,
          DUST_LIT_POW, DUST_FLOOR, DUST_RISE, DUST_SWAY, DUST_GAIN,
-         LM_DUST_DEPTH, LM_DUST_RAMP, LM_DARK_START, LM_DARK_RAMP } from './feel';
+         LM_DUST_DEPTH, LM_DUST_RAMP, LM_DARK_START, LM_DARK_RAMP } from './sim/feel';
 
 /* Dust hanging in the air, lit by the ship's lamp.
 

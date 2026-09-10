@@ -1,10 +1,10 @@
-import { g, save, hasSave } from './state';
-import { R } from './runtime';
+import { g, save, hasSave } from './sim/state';
+import { R } from './sim/runtime';
 import { sfx } from './audio';
 import { hardReset } from './actions';
 import { beginShowcase, endShowcase, beginLanding, beginLaunch, isLanding } from './transit';
-import { BEATS, newIntro, skip as skipIntro, advance as stepBeat, LANDING_SECS } from './intro';
-import { planetName, coreDepth, skyLo } from './config';
+import { BEATS, newIntro, skip as skipIntro, advance as stepBeat, LANDING_SECS } from './sim/intro';
+import { planetName, coreDepth, skyLo } from './sim/config';
 import { buildNotes, updateHUD, flash } from './ui';
 
 /* The title screen and the intro, wired up.

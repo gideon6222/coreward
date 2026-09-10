@@ -1,4 +1,4 @@
-import type { Trait } from './types';
+import type { Trait } from '../types';
 
 /* What a world DOES, as opposed to what colour it is.
 

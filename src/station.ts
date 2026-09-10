@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
 import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat } from './ship';
 import { asMetal } from './materials';
-import { UPGRADES, shelfState, shelfStock } from './config';
-import { g } from './state';
+import { UPGRADES, shelfState, shelfStock } from './sim/config';
+import { g } from './sim/state';
 import type { UpgradeKey } from './types';
 
 /* The Outfitter, as a room you are standing in.

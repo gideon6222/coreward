@@ -468,4 +468,4 @@ scene.add(player);
 /* FACE_ANGLE moved to fly.ts, which is pure - it is geometry rather than art,
    and the autopilot's heading has to be testable against it. Re-exported here
    so the model's orientation still has one obvious place to look. */
-export { FACE_ANGLE } from './fly';
+export { FACE_ANGLE } from './sim/fly';

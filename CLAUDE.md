@@ -50,22 +50,31 @@ The standard web stack from `WEB.md` in the notes. Coreward-specific pins and ch
 
 ### Files
 
+**`src/sim/` is the simulation and has no renderer in it** (INDEX.md standing rule 2). It is
+what `test/pure-entry.ts` bundles for the goldens, so it must keep running under node with no
+three.js, no DOM and no audio context. `test/sim-boundary.test.mjs` enforces that by reading
+the files: no three, nothing but `import type` crossing out of the directory, no renderer or
+input globals, and no unseeded roll. Persistence is deliberately inside the wall, the same way
+`save.gd` sits in `src/sim/` in the Godot games. Everything else in `src/` is presentation and
+may import freely from `src/sim/`, never the other way.
+
 | Path | What it is |
 |---|---|
 | `index.html` | Shell: all CSS, HUD, d-pad, kit and ordnance buttons, the station screen, error overlay, SW registration |
 | `src/main.ts` | Boot sequence only |
 | `src/types.ts` | Domain types. Type-only, emits nothing |
 | `src/env.d.ts` | Ambient declarations for the Vite `define` build stamp |
-| `src/config.ts` | Tuning constants and pure functions over them. Imports only types |
-| `src/util.ts` | `key`, `clamp`, `mixHex`. Imports nothing |
-| `src/runtime.ts` | `R`, the mutable loop state that crosses modules. Imports nothing |
-| `src/state.ts` | `g`, derived stats `S`, relic perks, save/load |
-| `src/light.ts` | **Pure.** The lighting solvers: the flood through open cells and the shadow ray fan |
+| `src/sim/config.ts` | Tuning constants and pure functions over them. Imports only types |
+| `src/sim/util.ts` | `key`, `clamp`, `mixHex`. Imports nothing |
+| `src/sim/runtime.ts` | `R`, the mutable loop state that crosses modules. Imports nothing |
+| `src/sim/state.ts` | `g`, derived stats `S`, relic perks, save/load |
+| `src/sim/telemetry.ts` | The run log: numbers to balance against, accumulated as `+=` and summarised only when a panel opens |
+| `src/sim/light.ts` | The lighting solvers: the flood through open cells and the shadow ray fan |
 | `src/lightmap.ts` | The solved field as a texture, the shader injection, and the haze quad |
 | `src/shader.ts` | `chainCompile`, the one way anything patches a stock three shader |
-| `src/feel.ts` | Every number that decides how it *feels*, plus the pure reducers (`tremorTick`, `chargeAfter`, `soakAfter`) |
-| `src/world.ts` | Generation, `blockAt`, `findRoute`, `planCollapse`, `cachePrize` |
-| `src/fly.ts` | **Pure.** Collision, thrust, and the hull's facing geometry (`FACE_ANGLE`, `headingFor`). No renderer, fully unit-tested |
+| `src/sim/feel.ts` | Every number that decides how it *feels*, plus the pure reducers (`tremorTick`, `chargeAfter`, `soakAfter`) |
+| `src/sim/world.ts` | Generation, `blockAt`, `findRoute`, `planCollapse`, `cachePrize` |
+| `src/sim/fly.ts` | Collision, thrust, and the hull's facing geometry (`FACE_ANGLE`, `headingFor`). No renderer, fully unit-tested |
 | `src/scene.ts` | Renderer, camera, lights, fog, backdrop, `resize()` |
 | `src/materials.ts` | Shared geometry and materials, rock displacement shader, procedural textures |
 | `src/blocks.ts` | Instanced terrain, pools keyed by block id, haloes, `beginDig`/`dropBlock` |
@@ -83,17 +92,18 @@ The standard web stack from `WEB.md` in the notes. Coreward-specific pins and ch
 | `src/input.ts` | All d-pad, keyboard and button wiring |
 | `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
 | `src/loop.ts` | `frame()`. The one big function |
-| `src/ambience.ts` | **Pure.** What a world DOES in the air: per-trait emission timing |
-| `src/intro.ts` | **Pure.** The first-run intro: its beats, their shots and their timing |
+| `src/sim/ambience.ts` | What a world DOES in the air: per-trait emission timing |
+| `src/sim/intro.ts` | The first-run intro: its beats, their shots and their timing |
 | `src/titleui.ts` | The title screen and the intro, wired to the DOM |
-| `src/chart.ts` | **Pure.** The navigation chart: which three worlds are offered at a leg |
+| `src/sim/chart.ts` | The navigation chart: which three worlds are offered at a leg |
 | `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
-| `src/drive.ts` | **Pure.** The Jump Drive, its five components, and the Heart |
+| `src/sim/drive.ts` | The Jump Drive, its five components, and the Heart |
 | `src/transit.ts` | The crossing between worlds. Its own scene |
 | `src/changelog.ts` | Version and the player-facing what's-new list |
 
-**Import direction is one-way and load-bearing:** types → config → util → runtime → state →
-feel/fly/world/light → shader → lightmap → renderer modules → ui → actions → loop. `actions.ts`
+**Import direction is one-way and load-bearing:** types → `src/sim` (config → util → runtime →
+state → feel/fly/world/light/chart/drive/ambience/intro) → shader → lightmap → renderer
+modules → ui → actions → loop. `actions.ts`
 deliberately does *not* import from `loop.ts`; `FACE_VEC` is duplicated there instead, because a cycle that only works
 because of when each binding happens to be read is a trap for whoever moves a call next.
 
@@ -382,6 +392,8 @@ cannot tell you whether hit-stop still lands.
 
 ```
 npm install
+npm run check      # THE GATE before any commit touching src/ or test/:
+                   # typecheck, tests, build, size, e2e, in the order that fails fastest
 npm run dev        # vite dev server, no service worker
 npm run build      # production build into dist/
 npm run typecheck  # tsc --noEmit, app and e2e

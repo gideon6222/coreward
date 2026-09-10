@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { scene } from './scene';
-import { paletteOf, GROWTH_BAND, type GrowthKind } from './config';
+import { paletteOf, GROWTH_BAND, type GrowthKind } from './sim/config';
 import { setRockSurface } from './materials';
 import { applyLightUnlit } from './lightmap';
-import { g } from './state';
-import { rnd } from './world';
+import { g } from './sim/state';
+import { rnd } from './sim/world';
 
 /* What lives, settles or leaks on the rock face.
 

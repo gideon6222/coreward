@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { W } from './config';
+import { W } from './sim/config';
 import { scene } from './scene';
 import { applyLightUnlit } from './lightmap';
-import { rnd } from './world';
-import { mixHex } from './util';
+import { rnd } from './sim/world';
+import { mixHex } from './sim/util';
 
 /* Distant rock, behind the tunnels.
 

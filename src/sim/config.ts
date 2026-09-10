@@ -1,6 +1,6 @@
 /* Tuning constants and the pure functions over them. Imports only types. */
 
-import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost, Relic } from './types';
+import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost, Relic } from '../types';
 import { zoomForScan } from './feel';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current

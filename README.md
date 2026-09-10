@@ -33,6 +33,7 @@ The d-pad digs and flies. Hold a direction to keep going.
 
 ```
 npm install
+npm run check      # everything CI runs, in the order that fails fastest
 npm run dev        # dev server
 npm test           # golden tests
 npm run typecheck  # tsc --noEmit

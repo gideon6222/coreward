@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { W } from './config';
-import { S } from './state';
-import { LAMP_DECAY, LAMP_INTENSITY } from './feel';
-import { R } from './runtime';
+import { W } from './sim/config';
+import { S } from './sim/state';
+import { LAMP_DECAY, LAMP_INTENSITY } from './sim/feel';
+import { R } from './sim/runtime';
 import { applyLightUnlit, haze } from './lightmap';
 
 export const scene = new THREE.Scene();

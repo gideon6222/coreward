@@ -23,8 +23,8 @@
    is also directly readable from a test, which is how the heat assertion
    survived the bars being deleted. */
 
-import { clamp } from './util';
-import { asExpRate } from './feel';
+import { clamp } from './sim/util';
+import { asExpRate } from './sim/feel';
 
 /* How fast a needle chases its reading.
 

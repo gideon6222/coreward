@@ -1,9 +1,9 @@
-import { coreDepth, planetName, traitOf, SUPPLIES, RELIC_OF } from './config';
+import { coreDepth, planetName, traitOf, SUPPLIES, RELIC_OF } from './sim/config';
 import { atTitle, showTitle } from './titleui';
 import { relicDistance } from './relic';
-import { g , coreM, worldTrait} from './state';
-import { haulValue } from './world';
-import { R } from './runtime';
+import { g , coreM, worldTrait} from './sim/state';
+import { haulValue } from './sim/world';
+import { R } from './sim/runtime';
 import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
 import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation } from './station';
 import type { Dir } from './types';

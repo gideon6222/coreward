@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { W, paletteOf } from './config';
-import { mixHex } from './util';
+import { W, paletteOf } from './sim/config';
+import { mixHex } from './sim/util';
 /* Re-exported so the renderer modules keep one import for "geometry of a cell". */
-export { worldX } from './config';
+export { worldX } from './sim/config';
 import { renderer } from './scene';
 import { applyLight } from './lightmap';
 import { chainCompile } from './shader';

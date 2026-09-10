@@ -1,19 +1,19 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult, costOf, matCost , TRAIT_OF} from './config';
+         coreDepth, planetName, traitOf, valueMult, costOf, matCost , TRAIT_OF} from './sim/config';
 import { setGauges } from './gauges';
-import { clamp } from './util';
-import { g, S, save , coreM, valueM, worldTrait} from './state';
-import { heatDamagePerSecond } from './feel';
+import { clamp } from './sim/util';
+import { g, S, save , coreM, valueM, worldTrait} from './sim/state';
+import { heatDamagePerSecond } from './sim/feel';
 import type { Upgrade } from './types';
 import { VERSION, CHANGELOG } from './changelog';
-import { haulValue } from './world';
+import { haulValue } from './sim/world';
 import { lamp } from './scene';
 import { setDrillTier, setUpgradeHardware } from './ship';
 import { sfx, audioState } from './audio';
-import { summarise, mergeLog, loadLog, type Row } from './telemetry';
-import { R } from './runtime';
+import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
+import { R } from './sim/runtime';
 import { selectedBay, refreshBays } from './station';
-import { PARTS, DRIVE_SLOTS } from './drive';
+import { PARTS, DRIVE_SLOTS } from './sim/drive';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
    ones the game cannot run without: throwing here reaches the on-screen

@@ -1,9 +1,9 @@
 /* Boot. Every imported module's top-level setup runs before this file's
    body, which is what the single-file version got for free by being written
    top to bottom. */
-import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './config';
-import { g, S, save, load, hasSave } from './state';
-import { R } from './runtime';
+import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './sim/config';
+import { g, S, save, load, hasSave } from './sim/state';
+import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
 import { setMark } from './mark';

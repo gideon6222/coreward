@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { ambienceTick } from './ambience';
-import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './drive';
+import { ambienceTick } from './sim/ambience';
+import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './sim/drive';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo,
-         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH, paletteOf } from './config';
-import { clamp, key, mixHex } from './util';
-import { g, S, save , coreM, valueM, worldTrait} from './state';
-import { blockAt } from './world';
-import { R } from './runtime';
+         GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH, paletteOf } from './sim/config';
+import { clamp, key, mixHex } from './sim/util';
+import { g, S, save , coreM, valueM, worldTrait} from './sim/state';
+import { blockAt } from './sim/world';
+import { R } from './sim/runtime';
 import type { Dir } from './types';
 import {
   FREEZE_ORE, FREEZE_ROCK,
@@ -23,7 +23,7 @@ import {
   LANE_PULL, DIG_ALIGNED,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
-, SETTLE_RATE, SETTLE_DONE, SETTLE_MAX} from './feel';
+, SETTLE_RATE, SETTLE_DONE, SETTLE_MAX} from './sim/feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, renderWorld } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
@@ -32,7 +32,7 @@ import { spray, stepParticles, starMat, sunSprite } from './particles';
 import { stepDust } from './dust';
 import { leaveDrop, stepDrops } from './drops';
 import { stepBeam } from './beam';
-import { moveAndCollide, thrust, laneVel, headingFor } from './fly';
+import { moveAndCollide, thrust, laneVel, headingFor } from './sim/fly';
 import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } from './ship';
 import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
@@ -46,7 +46,7 @@ import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
 import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
          landingT, isLanding } from './transit';
-import { introTick, beatT } from './intro';
+import { introTick, beatT } from './sim/intro';
 import { endIntro, paintBeat, beginIntroLanding, titleLanding, finishLanding } from './titleui';
 import { arrive } from './chartui';
 

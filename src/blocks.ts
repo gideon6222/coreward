@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { beginGrowth, addGrowth, finishGrowth } from './growth';
-import { W } from './config';
-import { key } from './util';
-import { g } from './state';
-import { rnd, blockAt } from './world';
+import { W } from './sim/config';
+import { key } from './sim/util';
+import { g } from './sim/state';
+import { rnd, blockAt } from './sim/world';
 import { scene } from './scene';
 import { crackGeo, crackMat, mat, shade, tintRock, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, rockRelief, ROCK_BUMP } from './materials';

@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { isHeart } from './drive';
+import { isHeart } from './sim/drive';
 import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
          PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE,
          GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE,
-         coreDepth, planetName, traitOf, valueMult , OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS} from './config';
-import { clamp, key } from './util';
-import { g, S, save , coreM, worldTrait} from './state';
-import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './world';
-import { R } from './runtime';
+         coreDepth, planetName, traitOf, valueMult , OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS} from './sim/config';
+import { clamp, key } from './sim/util';
+import { g, S, save , coreM, worldTrait} from './sim/state';
+import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './sim/world';
+import { R } from './sim/runtime';
 import { lamp } from './scene';
 import { worldX } from './materials';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
@@ -19,9 +19,9 @@ import { setMark } from './mark';
 import { setDrillTier, setUpgradeHardware } from './ship';
 import { ui, toast, flash, atSurface, updateKit } from './ui';
 import { sfx } from './audio';
-import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './feel';
+import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './sim/feel';
 import type { Dir, SupplyKey } from './types';
-import { mergeLog, blankLog } from './telemetry';
+import { mergeLog, blankLog } from './sim/telemetry';
 
 /* Stop drilling, and remember how far through the block you were.
 

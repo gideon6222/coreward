@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"test/**/*.test.mjs\"",
+    "check": "npm run typecheck && npm test && npm run build && npm run size && npm run e2e",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "e2e": "playwright test",
     "size": "node scripts/check-bundle-size.mjs",

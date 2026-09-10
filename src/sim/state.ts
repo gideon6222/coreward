@@ -3,7 +3,7 @@ import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
 import { R } from './runtime';
-import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from './types';
+import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from '../types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
 /* The whole game state. One mutable singleton, read by nearly every module. */

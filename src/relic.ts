@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { W, relicAt, RELIC_COLOR } from './config';
-import { g, S } from './state';
+import { W, relicAt, RELIC_COLOR } from './sim/config';
+import { g, S } from './sim/state';
 import { scene } from './scene';
 import { worldX } from './materials';
 

@@ -3,6 +3,37 @@
 Written 2026-09-09, against v0.16.0. **The plan, not a history.** Rewrite in place as
 things land; the changelog is where the record goes.
 
+This file was `DESIGN.md` until 2026-09-09. It is `PLAN.md` because that is the name
+`INDEX.md` tells a resuming session to open, and nothing pointed at the old name from
+anywhere, so three rounds of plan sat where the process could not find them.
+
+## Milestones
+
+The first unticked box is where work resumes.
+
+- [x] **1. Planet identity** - twelve palettes on rock, fog, haze, dust and silhouette (0.17.0)
+- [x] **2. The chart and the transit** - choosing where to go, and flying there (0.18.0)
+- [x] **3. The Jump Drive and the Heart** - components, the manifest, the final world (0.18.0)
+- [x] **4. Upgrades** - five more, taking the shop to fifteen cases (0.19.0)
+- [x] **5. Consumables** - Overdrive, Bulwark Field, Survey Pulse (0.19.0)
+- [x] **6. Per-trait ambience** - each world emits something of its own (0.20.0)
+- [x] **Round two** - the title screen and first-run intro (0.21.0), flying in (0.22.0), three
+      ways in and a shop that fits (0.23.0)
+- [x] **Round three** - nose-first flight, a real touchdown, ground per world (0.24.0)
+- [x] **Framework conformance** - the pure modules moved to `src/sim/` and the wall is a test
+      rather than a comment. See `CLAUDE.md` under Files
+- [ ] **A playtest, before anything is built on top of these three.** The shallow-versus-deep
+      balance on the chart, tuned by one person looking at it. The nine-second crossing, which
+      may be four seconds too long by the twentieth planet. Whether the per-trait ambience is
+      dense enough to tell a Volatile world from a Stable one while flying past
+- [ ] **Seed the tremor collapse.** `planCollapse()` takes `rand: () => number = Math.random`
+      and the shipping game takes the default, so the one thing a replay cannot reproduce is
+      the collapse that decides whether the way out is still open. The tests already inject a
+      seeded stream; the game does not. INDEX.md standing rule: nothing that affects state
+      rolls an unseeded die
+- [ ] **Caches that hand out a temporary effect** instead of goods, aimed at whatever
+      bottleneck the player is actually in
+
 The ask, in his words:
 
 > "can you write out a plan to expand the game, add additional upgrades and power ups, make

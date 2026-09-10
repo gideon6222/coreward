@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
 import { player, rig, flames } from './ship';
-import { paletteOf, skyHi, skyLo } from './config';
+import { paletteOf, skyHi, skyLo } from './sim/config';
 import { glowTex } from './materials';
 import planetNormalUrl from './textures/planet-normal.webp';
 

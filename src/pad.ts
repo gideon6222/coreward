@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { START_X } from './config';
+import { START_X } from './sim/config';
 import { scene } from './scene';
 import { makeGlow, worldX, asMetal, gritTex, hazardTex } from './materials';
 import { applyLight } from './lightmap';

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { DEF } from './config';
-import { g } from './state';
+import { DEF } from './sim/config';
+import { g } from './sim/state';
 import { scene } from './scene';
 import { applyLight } from './lightmap';
 import { shardGeo, worldX } from './materials';
-import { key } from './util';
+import { key } from './sim/util';
 
 /* Ore left lying where it fell.
 
