@@ -434,6 +434,107 @@ mixes by depth, danger and zone off one scheduler, which a recording cannot do.
 
 ---
 
+## Round three: point the ship where it is going, land it, and dress the rock
+
+The ask:
+
+> "can you make it look like the ship is actually flying toward the planets rather than always
+> facing us in the intro and flying scenes? it should point the drill end toward what it is
+> flying to. when the screen cuts from the ship flying to it being on the planet, and you have
+> a short landing sequence before the player can take control of the ship? I want the ship to
+> be shown lowering itself onto the landing pad right before the player takes over. I also
+> want the actual dirt and rocks to change color and texture with each planet. add additional
+> details like moss patches, frost, plants, oil."
+
+---
+
+### 1. Fly nose-first, not broadside
+
+Right now the flight sets `rig.rotation.z = PI` and leaves it there, which points the drill up
+the screen. The ship is flying "up" past worlds that are receding into the distance - two
+different directions at once, and the eye reads the one it can measure, so the ship looks like
+it is holding station while the scenery slides by.
+
+**The drill has to point at the thing it is going to.** In practice that is a three-quarter
+rear view: the ship seen from behind and slightly above, drill into the screen, drive toward
+the camera. Which is also better-looking, because the thrusters are the lit end and they end
+up facing us.
+
+The geometry: at rotation zero the drill points at the floor - local `-Y`, because
+`FACE_ANGLE.down` is 0 - so pointing it into the screen means taking `-Y` to `-Z`.
+
+*Challenges.* `rig.rotation` is an Euler in XYZ order and it is the same node the game and the
+station use, so the flight has to set it and put it back rather than assume a resting value.
+And "into the screen" is not one fixed angle once the ship starts turning toward a world it is
+about to land on - the descent has to rotate from the cruise attitude to a nose-down one, or
+the ship arrives flying sideways into a planet. Verified on a filmstrip, because an orientation
+is exactly the thing a still frame can lie about.
+
+---
+
+### 2. Land the thing before handing it over
+
+At the moment the descent fills the screen with the planet's surface, flashes, and the next
+frame is a ship parked on a pad with the HUD up. The arrival is asserted rather than shown.
+
+**A short settle, in the game's own scene.** The ship comes in above the pad with the drive
+lit, drops the last few metres under thrust, touches down, the gear takes the weight, dust goes
+up - and *then* the controls come alive.
+
+- A mode of its own (`settle`), because during it the d-pad must do nothing. A player who can
+  fly during a landing animation will, and then the animation is fighting them.
+- Two seconds at most. It happens on every crossing and every CONTINUE, and the second time
+  you see it, it is a wait.
+- It reuses the drop the game already has: the ship eases from a few metres up to the pad on
+  the same `approach()` smoothing everything else uses, so it looks like the game rather than
+  like a cutscene bolted to it.
+
+*Challenges.* Input has to be locked without freezing the frame loop - the world still has to
+render. The e2e polls for mode `play` as the signal that the way in has finished, so a new mode
+in front of it lands on every spec at once; that is the third time this session, and the
+answer is the same as before, drive it on the tick seam rather than the wall clock. And
+`goSurface()` currently teleports the ship to the pad, so the settle has to run *after* it and
+own the ship's position for its duration.
+
+---
+
+### 3. The ground itself, per world
+
+The palettes tint rock colour. That is one channel, and it is why every world still reads as
+the same stone under a different light.
+
+**Three more channels, all per palette:**
+
+| | |
+|---|---|
+| **roughness** | ice is smooth and catches the lamp; ash is matte and eats it |
+| **relief** | how hard the normal map bites - weathered against sharp |
+| **growth** | what lives, settles or leaks on the rock face |
+
+The growth is the visible one, and it is the ask: **moss patches, frost, plants, oil**, plus
+ash drifts and salt crusts to fill the twelve. One signature per world, scattered on a fraction
+of rock faces, so a world is recognisable from a single wall rather than from the horizon.
+
+Placed like the seam flecks already are - small instanced quads at `z 0.5`, in front of the
+rock face and behind everything else - because that geometry is already proven and already
+inside the draw budget. **One instanced mesh for all of it, not one per world**, so it is a
+single extra draw call; the count at 96 m is 66 of 150.
+
+*Challenges, and the first one is the one that eats a day if it is got wrong.*
+
+**Every roll must be on its own seed offset.** `CLAUDE.md` is explicit: consuming an existing
+roll shifts every ore at every depth on every planet, and the diff looks like three lines.
+Growth rolls on `(x + 91, d + 29, planet + 131)` and touches nothing else.
+
+**It must not change a single block id.** Growth is decoration drawn on top of a cell, not a
+cell type, so `test/baseline/blocks-preadditive.json` stays green - and that is the proof, not
+the intention.
+
+**Depth bands.** Moss and plants belong near the surface where the damp is; frost belongs
+anywhere on a cold world; oil seeps deep. A growth that ignores depth is wallpaper.
+
+---
+
 ## Order of work
 
 Each slice ships on its own: typecheck, golden tests, build, size guard, e2e, CI, deploy.
