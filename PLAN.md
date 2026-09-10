@@ -484,10 +484,13 @@ depth, danger and zone off one scheduler, and nothing available can do that.
 
 ### Phase 2: the look
 
-- [ ] **M7 — The UV fix and the mineral surfaces.** The new technique, then the six imported
+- [~] **M7 — The UV fix and the mineral surfaces.** The new technique, then the six imported
       normal and roughness pairs, then the hull normal. Filmed on a cavern, before and after.
       Writes `assets/CREDITS.md`, which this repo has never had, and backfills the four
       textures already in `src/textures/` that are recorded nowhere.
+      **UV fix and CREDITS.md done 2026-09-10. The six surfaces are not in:** the fetch
+      works, the JPEG-to-WebP downscale does not (sharp-cli returned a 342-byte solid
+      colour). See the M7 section in `NOTES.md` for what is needed.
 - [ ] **M8 — Haptics, the debrief and the record book.** The three POLISH lines this game has
       never had, in one pass because they are all "what happens when a run ends".
 - [ ] **M9 — The screens as pictures.** Every screen at 460x996, the shop, the chart, the

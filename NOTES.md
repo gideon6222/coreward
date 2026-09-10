@@ -3077,3 +3077,41 @@ distance.
 Six design tests, all properties: the front only ever rises, it ends in exactly one of two
 ways and stays ended, the grade never overshoots 1, and everything at or below the front is
 gone while nothing above it is.
+
+---
+
+# M7, 2026-09-10 - the UV bug, and an honest stop on the mineral surfaces
+
+**The technique this round was supposed to introduce turned out to be a bug fix.**
+`src/materials.ts` set `vec2 rockUv = wpos.xy` for every face of every cell. That is correct
+only for a face pointing at the camera. A tunnel floor or ceiling has its extent in X and Z
+and was being sampled with (x, y), where y barely changes across the whole face - so one axis
+of texture variation collapsed and the surface read as a flat band rather than stone. Every
+horizontal tunnel, every cavern floor and every ledge underside in the game was smeared, and
+it stayed invisible for as long as play was a straight vertical shaft.
+
+The fix picks the projection plane per face from the box's own unperturbed normal:
+`abs(normal)` chooses between `wpos.xy`, `wpos.zy` and `wpos.xz`. This is triplanar mapping's
+right-sized form for this geometry - the terrain is a flat-shaded box with hard ninety-degree
+edges, so there is no seam for a three-way blend to hide and no need for whiteout normal
+blending. **Zero bundle, zero draw calls, no extra texture fetches**, a handful of scalar
+compares at vertex frequency. The e2e tests that read the compiled shaders back out of WebGL
+still pass, which is what proves the injection is intact.
+
+**The mineral surfaces stopped short, and here is exactly where.** The asset scout's shortlist
+is good and `assets.py get ambientcg Granite002A` fetches correctly now that the Kenney search
+bug is fixed. What does not work is the conversion step: the fetched maps are 342 KB and
+507 KB of 1K JPEG, and `npx sharp-cli` produced a 342-byte WebP from them - a solid colour -
+whichever combination of resize and quality flags was used. Rather than wire a broken texture
+in or spend the milestone on a converter, the fetch was reverted and this is written down.
+
+What is needed before the six surfaces land: a working JPEG-to-WebP downscale to 384 px, and
+about 55 KB of bundle for each pair against a 752 KB total. Both are known quantities.
+`bodyMat` is already built per block id in `blocks.ts`, so per-band maps need no material
+restructuring when the conversion works.
+
+**`assets/CREDITS.md` exists now**, backfilled from the commits that added the four textures
+and two fonts. Three of the four rows cannot name their exact ambientCG id: those maps were
+imported before the credits file existed and their commits describe what the maps are without
+saying which material they came from. All are CC0 from ambientCG, which is what matters for
+shipping, and the file says so plainly rather than inventing ids.

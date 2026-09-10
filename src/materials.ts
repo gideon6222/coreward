@@ -195,7 +195,30 @@ export function displaceLikeRock(m: THREE.Material, bump: number) {
              reads plastic with a picture of rock printed on it. Each is guarded
              because the same displacement is used on materials that carry only
              some of them. */
-          vec2 rockUv = wpos.xy * ${ROCK_NORMAL_SCALE.toFixed(4)};
+          /* And project each FACE on its own plane rather than projecting the
+             whole world on XY.
+
+             wpos.xy is correct only for a face pointing at the camera. A tunnel
+             floor or ceiling has its extent in X and Z and was being sampled
+             with (x, y), where y barely changes across the whole face - so one
+             axis of texture variation collapsed and the surface read as a flat
+             band instead of stone. Every horizontal tunnel, every cavern floor
+             and every ledge underside in the game was smeared, and it was
+             invisible for as long as play was a straight vertical shaft.
+
+             This is triplanar mapping's right-sized form for this geometry. The
+             terrain is a flat-shaded box with hard ninety-degree edges, so
+             there is no seam for a three-way blend to hide and no need for
+             whiteout normal blending: one plane per face, picked from the box's
+             own unperturbed normal, which is still object-space-correct because
+             the displacement above only ever writes the transformed position. Cost is a
+             handful of scalar compares at vertex frequency, no extra texture
+             fetches, and nothing added to the bundle. */
+          vec3 an = abs(normal);
+          vec2 rockPlane = (an.z >= an.x && an.z >= an.y) ? wpos.xy
+                         : (an.x >= an.y)                 ? wpos.zy
+                         :                                  wpos.xz;
+          vec2 rockUv = rockPlane * ${ROCK_NORMAL_SCALE.toFixed(4)};
           #ifdef USE_NORMALMAP
             vNormalMapUv = rockUv;
           #endif
