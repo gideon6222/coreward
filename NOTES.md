@@ -3143,3 +3143,26 @@ and a screen you have to dismiss that often stops being information.
 **The record book.** The pause sheet already had deepest and best haul. It now also carries
 the fastest core, how many worlds have been broken, and the Jump Drive at n / 5. `R.worldT`
 counts from landing to the core breaking, which is the only new state any of it needed.
+
+---
+
+# M9, 2026-09-10 - the surface, re-shot
+
+M2 recorded that the Claim's three structures were half outside the frame, because the surface
+camera was composed on the ship and the pad before there was a yard to include. `CRAFT.md`:
+re-shoot after any change to a length, since framing calibrated on old dimensions is wrong.
+The surface got wider.
+
+`CAM_SURFACE_BACK` (3.2) and `CAM_SURFACE_LIFT` (1.15) are the whole fix. They are driven off
+depth rather than off a mode flag, so the camera eases back as the ship rises and eases in as
+it falls, and they are clamped to the top eight metres so **not one underground framing
+constant moves** - those were calibrated over five sessions of lighting work and are the last
+thing that should be disturbed by a change about the surface.
+
+**What the sheet shows now**, honestly: all three structures stand clear of the dirt line, the
+lean and the settle read across the four damage steps, and there is headroom above the derrick.
+What it still does not show is a good composition - the yard is cramped against the pad and the
+derrick's lattice still competes with the pad's own ladder twenty pixels away, even with the
+winch house on top of it. Spreading them apart is the obvious next move and it does not fit:
+the frame is portrait and anything further out leaves it. That wants art direction rather than
+another constant, and it is the first thing to look at when the next visual pass runs.

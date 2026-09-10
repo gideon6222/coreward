@@ -114,6 +114,16 @@ export const CAM_BOOST_DECAY = asExpRate(4);
 export const BANK_INTO_MOVE = asExpRate(8);
 export const BANK_SETTLE = asExpRate(6);
 export const FACE_TURN_RATE = asExpRate(14);
+/* How far the camera pulls back and lifts when the ship is at the surface.
+
+   The pad used to be the only thing up here. M2 put a refinery, a derrick and
+   a shed beside it, and the shot - calibrated when the surface was one
+   platform wide - left the refinery at the frame edge and the shed behind the
+   platform. These two numbers are the whole fix, they only apply in the top
+   eight metres, and they leave every underground framing constant untouched. */
+export const CAM_SURFACE_BACK = 3.2;
+export const CAM_SURFACE_LIFT = 1.15;
+
 export const CAM_Y_OFFSET = 0.8;    /* look slightly below the ship */
 
 /* ---------- how far you can see ----------

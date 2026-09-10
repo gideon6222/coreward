@@ -14,7 +14,8 @@ import {
   SHAKE_CRACK, SHAKE_ROCK, SHAKE_ORE, SHAKE_LANDING, SHAKE_DECAY,
   SQUASH_DIG, SQUASH_BREAK, SQUASH_DECAY, SQUASH_SCALE,
   CAM_FOLLOW_PLAY, CAM_FOLLOW_PLAY_Y, CAM_FOLLOW_FLY, CAM_FOLLOW_FLY_Y,
-  CAM_ZOOM_RATE, CAM_Y_OFFSET, CAM_BOOST_DECAY, BANK_INTO_MOVE, BANK_SETTLE,
+  CAM_ZOOM_RATE, CAM_Y_OFFSET, CAM_BOOST_DECAY, CAM_SURFACE_BACK, CAM_SURFACE_LIFT,
+  BANK_INTO_MOVE, BANK_SETTLE,
   FACE_TURN_RATE,
   AMBIENT_SURFACE, AMBIENT_DEEP, LIGHT_FALL_POW, FOG_SURFACE, FOG_GAIN, FOG_COLOR_RUSH,
   RIM_SURFACE, RIM_DEEP, LAMP_INTENSITY, LM_RANGE_MULT,
@@ -862,14 +863,24 @@ export function tick(raw: number, draw = true) {
   /* The Scanner decides how much world is framed; see zoomForScan in feel.ts.
      Applied here rather than in resize() because the level changes in the shop
      and the camera's own lerp then turns the purchase into a visible zoom. */
-  const zNow = R.camZ * zoomForScan(g.up.scan) + camZBoost;
+  /* At the surface the camera pulls back and lifts, because the surface got
+     wider in M2 and the shot was composed before there was a yard to include.
+     `CRAFT.md`: re-shoot after any change to a length, since framing calibrated
+     on old dimensions is wrong.
+
+     Driven off depth rather than off a mode flag so it eases in and out as the
+     ship rises and falls, and clamped to the top eight metres so nothing about
+     the underground framing - which was calibrated over five sessions of
+     lighting work - moves at all. */
+  const surfaceT = clamp(1 - g.pd / 8, 0, 1);
+  const zNow = (R.camZ + surfaceT * CAM_SURFACE_BACK) * zoomForScan(g.up.scan) + camZBoost;
   const halfW = Math.tan((camera.fov * Math.PI) / 360) * zNow * camera.aspect;
   const lim = Math.max(0, W / 2 - halfW);
   const flying = g.mode === 'fly';
   const kx = flying ? CAM_FOLLOW_FLY : CAM_FOLLOW_PLAY;
   const ky = flying ? CAM_FOLLOW_FLY_Y : CAM_FOLLOW_PLAY_Y;
   camera.position.x = approach(camera.position.x, clamp(px, -lim, lim), kx, raw);
-  camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET, ky, raw);
+  camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET + surfaceT * CAM_SURFACE_LIFT, ky, raw);
   camera.position.z = approach(camera.position.z, zNow, CAM_ZOOM_RATE, raw);
   /* Parallax reads the camera AFTER the follow but BEFORE the shake, or the
      background jitters independently of the foreground and the illusion that
