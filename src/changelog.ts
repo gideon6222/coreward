@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.25.0';
+export const VERSION = '0.25.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.25.1', date: '2026-09-10', title: 'A way out of a bad boot',
+    notes: [
+      'If the game ever fails to start, the error screen now shows where it broke and offers a button to clear the save and reload.',
+      'A hold carrying something the gift table cannot price no longer stops the game from starting.'
+    ]
+  },
   {
     version: '0.25.0', date: '2026-09-10', title: 'A claim you can lose',
     notes: [

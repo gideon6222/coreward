@@ -18,9 +18,47 @@
     e.textContent += m + '\n\n';
     var b = document.getElementById('boot');
     if (b) b.classList.add('hidden');
+    addRecovery();
+  }
+  /* A way out of a broken save without a console.
+
+     A phone has no devtools, so a save that crashes the boot is a game that
+     cannot be started again - the only fix was to clear site data through
+     browser settings, which nobody should have to go looking for. This button
+     appears the first time anything is reported, and asks before it acts,
+     because it throws away real progress. It clears the service worker too: a
+     boot crash and a stale cached bundle look identical from here, and
+     clearing only one of them means doing this twice. */
+  function addRecovery(){
+    if (document.getElementById('errFix')) return;
+    var e = document.getElementById('err');
+    var b = document.createElement('button');
+    b.id = 'errFix';
+    b.textContent = 'CLEAR SAVE AND RELOAD';
+    b.setAttribute('style', 'display:block;margin:18px 0 0;padding:12px 16px;font:inherit;' +
+      'color:#ffd9d9;background:#4a1414;border:1px solid #a33;border-radius:8px;');
+    b.onclick = function(){
+      if (!confirm('This erases your credits, upgrades, shards and tunnels. It cannot be undone.')) return;
+      try { localStorage.removeItem('coreward.v2'); localStorage.removeItem('coreward.v1'); } catch (x) {}
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        navigator.serviceWorker.getRegistrations().then(function(rs){
+          rs.forEach(function(r){ r.unregister(); });
+          location.reload();
+        }, function(){ location.reload(); });
+      } else { location.reload(); }
+    };
+    e.appendChild(b);
   }
   window.addEventListener('error', function(e){
-    showErr('ERROR: ' + (e.message || e) + '\n' + (e.filename || '') + ':' + (e.lineno || ''));
+    /* The STACK, not only the message.
+
+       This handler exists to make a phone crash readable and it was throwing
+       away the one field that says WHERE. The first real boot crash it caught,
+       on 2026-09-10, produced a message that could not be placed from here at
+       all: a message names what broke, a stack names what called it. */
+    var st = (e.error && e.error.stack) ? String(e.error.stack).split('\n').slice(0, 6).join('\n') : '';
+    showErr('ERROR: ' + (e.message || e) + '\n' + (e.filename || '') + ':' + (e.lineno || '') +
+            (st ? '\n' + st : ''));
   });
   window.addEventListener('unhandledrejection', function(e){
     showErr('PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));

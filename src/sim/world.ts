@@ -123,7 +123,24 @@ export function blockAt(x: number, d: number): Block | null {
 
 export const haulValue = () => {
   let v = 0;
-  for (const k in g.cargo) v += g.cargo[k] * DEF[k].value;
+  for (const k in g.cargo) {
+    /* Anything the sale table does not know about is worth nothing rather than
+       fatal. DEF covers every ore, rock, geode, gas pocket, cache, seam and
+       rubble - but the core, the bedrock, a relic and a drive component are
+       built inline in blockAt() and are not in it, so a single one of those
+       reaching the hold turned every call to this into
+       "Cannot read properties of undefined (reading 'value')".
+
+       This is called from updateHUD, which runs every frame, so that is not a
+       bad sale - it is a save that cannot be loaded. The econ probe hit exactly
+       this by digging into a core, and the game deserves the same guard. */
+    const def = DEF[k];
+    const n = g.cargo[k];
+    /* And a count that is not a real number contributes nothing rather than
+       turning the whole haul into NaN, which the HUD then prints. Found by the
+       test below rather than by a player, which is the right order. */
+    if (def && Number.isFinite(n)) v += n * def.value;
+  }
   return Math.round(v * valueM());
 };
 
