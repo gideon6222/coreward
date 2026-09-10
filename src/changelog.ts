@@ -16,9 +16,31 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.24.0';
+export const VERSION = '0.25.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.25.0', date: '2026-09-10', title: 'A claim you can lose',
+    notes: [
+      'You own a claim on the surface now: a refinery, a fuel derrick and a store shed beside the pad.',
+      'Digging deep shakes the ground they stand on. When it gives, they take the damage - and you cannot fly them to safety.',
+      'A damaged refinery pays less for every haul, a damaged derrick fills your tank short, a damaged shed spills what is in it.',
+      'A quake also cracks the world open, and a shaken world pays more. Going deep is a bet, not a tax.',
+      'Repairs need credits and a mineral that only exists below the line that breaks them.',
+      'Breaking a core no longer opens a menu. The world starts closing from the bottom and you have ninety seconds to climb out of it.',
+      'Miss the clock and you are towed. The world still breaks - it costs you the hold, never the run.',
+      'The first world is a whole world now: heat at 38 m, tremors at 44, and a core at 58 that you can reach in one sitting.',
+      'Every world has the same shape - danger in the bottom third - instead of two fixed depths that meant different things on every planet.',
+      'The shop was repriced against the depth each row unlocks at, so the first sale no longer buys four upgrades.',
+      'The hold is smaller and the drill is thirstier, so a seam of ore is worth more than you can carry and a corridor of dirt runs your tank dry.',
+      'Every rock face is textured on its own plane. Tunnel floors, cavern ceilings and ledges were smeared and are stone now.',
+      'The phone buzzes when you cut, strike ore, take a hit, or feel the ground go. There is a toggle in the pause screen.',
+      'A run tells you what it paid, how it stood against your record, and the cheapest thing you still cannot afford.',
+      'The pause screen keeps your fastest core, how many worlds you have broken, and the drive at n of five.',
+      'The chart offers different worlds each day.',
+      'Every trait changes a rule now: Stable pays for a clean run, a charge reaches further on Volatile, the lamp carries on Hollow, Crystalline pays more but fights back, and Searing cuts easier while it starts on you sooner.'
+    ]
+  },
   {
     version: '0.24.0', date: '2026-09-09', title: 'Ground of its own',
     notes: [
