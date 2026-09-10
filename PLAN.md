@@ -498,9 +498,9 @@ depth, danger and zone off one scheduler, and nothing available can do that.
 
 ### Phase 3: what it becomes
 
-- [ ] **M10 — The daily Drift.** The chart's offer seeded by the date as well as the run, so
+- [x] **M10 — The daily Drift.** The chart's offer seeded by the date as well as the run, so
       there is a reason to open it tomorrow.
-- [ ] **M11 — Trait signatures with teeth.** Each trait changes a rule, not only the picture:
+- [x] **M11 — Trait signatures with teeth.** Each trait changes a rule, not only the picture:
       Hollow's caverns carry light and hide long falls, Volatile's gas answers the bomb,
       Crystalline's veins pay on a chain, Searing raises the heat line, Stable pays a premium
       for a clean run.

@@ -3,32 +3,39 @@
     {
       "id": "stable",
       "name": "Stable",
-      "blurb": "Nothing unusual in the crust. A good place to learn the ground."
+      "blurb": "Nothing unusual in the crust. A whole hull is worth money here.",
+      "cleanBonus": 0.15
     },
     {
       "id": "volatile",
       "name": "Volatile",
-      "blurb": "Gas pockets riddle the rock, and they hit harder here.",
+      "blurb": "Gas riddles the rock and hits harder - but a charge carries further.",
       "gas": 2.2,
-      "gasDamage": 1.35
+      "gasDamage": 1.35,
+      "blastR": 1.4
     },
     {
       "id": "hollow",
       "name": "Hollow",
-      "blurb": "Cave systems run through it. Quick to cross, little to mine.",
-      "cave": 2.4
+      "blurb": "Cave systems run through it. Light carries; there is little to mine.",
+      "cave": 2.4,
+      "reach": 1.35
     },
     {
       "id": "crystalline",
       "name": "Crystalline",
-      "blurb": "Geode seams everywhere, for anyone willing to dig sideways.",
-      "geode": 3
+      "blurb": "Geode seams everywhere and a better price - but the rock fights back.",
+      "geode": 3,
+      "payout": 1.18,
+      "hard": 1.2
     },
     {
       "id": "searing",
       "name": "Searing",
-      "blurb": "The rock holds its heat. Soak builds far faster than it should.",
-      "soak": 1.6
+      "blurb": "The rock holds its heat - softer to cut, and it starts on you sooner.",
+      "soak": 1.6,
+      "heatUp": 0.86,
+      "hard": 0.84
     }
   ],
   "assignment": [

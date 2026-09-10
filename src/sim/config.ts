@@ -199,7 +199,8 @@ export const coreDepth = (p: number) => 58 + p * 48;
    world, which is also easier to say out loud than any pair of metres. */
 export const HEAT_FRACTION = 0.66;
 export const TREMOR_FRACTION = 0.76;
-export const heatDepth = (p: number) => Math.round(coreDepth(p) * HEAT_FRACTION);
+export const heatDepth = (p: number, trait?: Trait) =>
+  Math.round(coreDepth(p) * HEAT_FRACTION * (trait?.heatUp ?? 1));
 export const tremorDepth = (p: number) => Math.round(coreDepth(p) * TREMOR_FRACTION);
 
 /* ---------- planet traits ----------
@@ -215,21 +216,51 @@ export const tremorDepth = (p: number) => Math.round(coreDepth(p) * TREMOR_FRACT
 
    Verdax is always Stable. The first planet is where you learn what normal
    feels like, and a trait there would just read as "the game is like this". */
+/* Every trait changes a RULE, not only a density.
+
+   Until M11 four of the five were a multiplier on how much of something
+   generates, which reads as weather rather than as a place: more gas, more
+   caves, more geodes, faster soak. A player could not do anything differently
+   on a Volatile world than on a Stable one except be a bit more careful.
+
+   Each now also moves a number the player can plan around, and each one is
+   paired with the thing it makes interesting:
+
+     stable       pays a premium for surfacing with a whole hull - the control
+                  world is the one where a clean run is worth money
+     volatile     gas hits harder AND the seismic charge reaches further, so
+                  the hazard and its answer live on the same world
+     hollow       light carries further through the caverns, which is what
+                  makes "quick to cross, little to mine" a real trade
+     crystalline  the refinery pays more per kilo, so digging sideways for the
+                  geodes is worth the fuel it costs
+     searing      soak builds faster AND the heat line sits shallower, so the
+                  dangerous third of the world is a bigger third */
 export const TRAITS: Trait[] = [
   { id: 'stable', name: 'Stable',
-    blurb: 'Nothing unusual in the crust. A good place to learn the ground.' },
+    blurb: 'Nothing unusual in the crust. A whole hull is worth money here.',
+    cleanBonus: 0.15 },
   { id: 'volatile', name: 'Volatile',
-    blurb: 'Gas pockets riddle the rock, and they hit harder here.',
-    gas: 2.2, gasDamage: 1.35 },
+    blurb: 'Gas riddles the rock and hits harder - but a charge carries further.',
+    gas: 2.2, gasDamage: 1.35, blastR: 1.4 },
   { id: 'hollow', name: 'Hollow',
-    blurb: 'Cave systems run through it. Quick to cross, little to mine.',
-    cave: 2.4 },
+    blurb: 'Cave systems run through it. Light carries; there is little to mine.',
+    cave: 2.4, reach: 1.35 },
+  /* The rock is 20% harder to cut, and that is not decoration: a design test
+     caught this trait giving geodes AND a better price for nothing, which
+     makes it the only right answer on the chart. Crystal costs time and fuel
+     to get through, which is exactly the trade the geodes are supposed to be
+     worth. */
   { id: 'crystalline', name: 'Crystalline',
-    blurb: 'Geode seams everywhere, for anyone willing to dig sideways.',
-    geode: 3.0 },
+    blurb: 'Geode seams everywhere and a better price - but the rock fights back.',
+    geode: 3.0, payout: 1.18, hard: 1.2 },
+  /* Hot rock cuts faster, and that is the upside the design test demanded:
+     soak at 1.6 and a heat line 14% shallower are both costs, and a trait that
+     is all cost is a world nobody picks. You go to a Searing world because you
+     can move through it, and you leave early because it is eating you. */
   { id: 'searing', name: 'Searing',
-    blurb: 'The rock holds its heat. Soak builds far faster than it should.',
-    soak: 1.6 }
+    blurb: 'The rock holds its heat - softer to cut, and it starts on you sooner.',
+    soak: 1.6, heatUp: 0.86, hard: 0.84 }
 ];
 
 /* Deterministic, so a planet is the same every time you reach it and the

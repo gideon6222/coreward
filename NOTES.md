@@ -3166,3 +3166,42 @@ derrick's lattice still competes with the pad's own ladder twenty pixels away, e
 winch house on top of it. Spreading them apart is the obvious next move and it does not fit:
 the frame is portrait and anything further out leaves it. That wants art direction rather than
 another constant, and it is the first thing to look at when the next visual pass runs.
+
+---
+
+# M10 and M11, 2026-09-10 - a chart that changes daily, and traits that change a rule
+
+**M10, the daily Drift.** `chartFor(leg, day)` takes the day - days since the epoch in UTC, so
+it turns over at one instant for everyone and never half-turns across a timezone - and folds
+it into the world identities. The places on offer are different tomorrow, which is a reason to
+open the game again that costs nothing to run and nothing to store.
+
+**What the date deliberately does not touch is the trait rotation.** A player who needs a
+Searing world for the Thermal Core must never wait more than one leg for one, and hanging that
+on the calendar would make the goal strandable on the wrong day. Five tests hold the line: the
+worlds change day to day, the kinds never do, every trait still appears within one leg on
+every day tested, the same day and leg always give the same chart, and the day boundary is UTC
+and turns over exactly once. `driftDay()` takes an injectable `now`, because a test that reads
+the real clock fails one day in a thousand.
+
+**M11, traits with teeth.** Four of the five traits were a multiplier on how much of something
+generates - more gas, more caves, more geodes, faster soak - which reads as weather rather than
+as a place. There was nothing a player could DO differently on a Volatile world.
+
+| Trait | Was | Also does now |
+|---|---|---|
+| Stable | nothing at all | pays 15% more for surfacing with a whole hull |
+| Volatile | more gas, harder hits | the seismic charge reaches 40% further |
+| Hollow | more caves | the lamp carries 35% further |
+| Crystalline | more geodes | the refinery pays 18% more, and the rock is 20% harder |
+| Searing | soak builds faster | the heat line starts 14% shallower, and the rock cuts 16% easier |
+
+**Two of those rows were written by a test.** `no trait is strictly better than another` first
+failed on Crystalline, which had geodes AND a better price for no cost, making it the only
+right answer on the chart - hence the harder rock. It then failed on Searing, which had two
+costs and no upside, which is a world nobody would ever pick - hence the softer rock. Neither
+was noticed by reading the table; both were caught within seconds of the rule being stated as
+an assertion.
+
+The blocks golden moved by exactly one thing: `hard` values on Searing and Crystalline legs,
+scaled by 0.84 and 1.2. No block id changed anywhere.

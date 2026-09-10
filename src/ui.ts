@@ -148,7 +148,7 @@ export function updateHUD() {
      something the player has to be told. */
   /* The readout has to use the same world-scaled curve the loop does, or the
      number on the hull bar disagrees with the hull. */
-  const heatLine = heatDepth(g.planet);
+  const heatLine = heatDepth(g.planet, worldTrait());
   const drain = heatDamagePerSecond(g.pd, S.shield(), g.soak, heatLine, coreM() - heatLine);
   const cooking = drain > 0;
   ui.hullTxt.classList.toggle('hot', cooking);

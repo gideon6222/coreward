@@ -136,7 +136,7 @@ export const S = {
   /* capped below 1 on purpose - a fully upgraded rig buys time, it does
      not make deep water safe. See the soak note in feel.ts. */
   shield: () => Math.min(0.72, g.up.cool * 0.09),
-  light: () => 8 + g.up.scan * 2.4 + (relic('eye') ? 3 : 0),
+  light: () => (8 + g.up.scan * 2.4 + (relic('eye') ? 3 : 0)) * (worldTrait().reach ?? 1),
   /* Rounded before clamping. 0.5 - 8*0.05 is 0.09999999999999998 in binary
      floating point, which showed up in the golden baseline as a cut of
      9.999999999999998% - true, useless, and the kind of diff that trains you
@@ -144,7 +144,7 @@ export const S = {
   towCut: () => Math.max(0.05,
     Math.round((0.5 - g.up.tow * 0.05 - (relic('rights') ? 0.1 : 0)) * 1000) / 1000),
   autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075),
-  bombR: () => bombRadius(g.up.bomb),
+  bombR: () => bombRadius(g.up.bomb) * (worldTrait().blastR ?? 1),
   laserLen: () => laserRange(g.up.laser),
 
   /* ---------- the second wave ---------- */
@@ -341,7 +341,13 @@ export function padFuel(): number {
 
 /* What the refinery pays for a haul, before the assay relics' bonus. */
 export function claimPayout(v: number): number {
-  return Math.round(v * payoutMult(g.claim));
+  /* Three multipliers, all of them things the player chose: the refinery's
+     condition, which they let happen; the world's own trait, which they picked
+     off the chart; and the clean-run bonus on a Stable world, which is the
+     control world finally having a reason to be picked. */
+  const t = worldTrait();
+  const clean = (t.cleanBonus && g.hull >= S.hullCap() - 0.5) ? 1 + t.cleanBonus : 1;
+  return Math.round(v * payoutMult(g.claim) * (t.payout ?? 1) * clean);
 }
 
 /* Everything a new world starts with. The Claim does not travel: its condition

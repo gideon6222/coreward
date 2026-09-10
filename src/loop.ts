@@ -570,7 +570,7 @@ export function tick(raw: number, draw = true) {
        and the hold do not stop mattering because the core went. */
     R.worldT += dt;
     const breaching = stepBreachHere(dt);
-    const heatLine = heatDepth(g.planet);
+    const heatLine = heatDepth(g.planet, worldTrait());
     const heatSpan = coreM() - heatLine;
     g.soak = soakAfter(g.soak, g.pd, dt, worldTrait().soak || 1, heatLine);
     if (g.pd > heatLine) {
@@ -602,7 +602,7 @@ export function tick(raw: number, draw = true) {
 
     /* Two metres of hysteresis, so hovering on the line cannot spam the
        warning every time the camera lerp nudges you across it. */
-    if (R.wasHot && g.pd < heatDepth(g.planet) - 2) R.wasHot = false;
+    if (R.wasHot && g.pd < heatDepth(g.planet, worldTrait()) - 2) R.wasHot = false;
 
     /* ---------- personal best ----------
        Updated live so it survives a tow, but the marker line stays where it
@@ -656,7 +656,7 @@ export function tick(raw: number, draw = true) {
      failing hull or a full heat soak is worse, so the alarm layer answers to
      both without either drowning the other. */
   setMood(
-    heatT(g.pd, heatDepth(g.planet), (coreM() - heatDepth(g.planet)) * 0.55),
+    heatT(g.pd, heatDepth(g.planet, worldTrait()), (coreM() - heatDepth(g.planet, worldTrait())) * 0.55),
     g.pd > tremorDepth(g.planet) && g.mode === 'play' ? 1 : 0,
     Math.max(clamp((45 - g.hull) / 45, 0, 1), clamp((g.soak - 0.6) / 0.4, 0, 1))
   );
@@ -803,7 +803,7 @@ export function tick(raw: number, draw = true) {
      max rather than adding means a breach that starts in the heat zone does
      not double-expose the picture. */
   const hot = Math.max(
-    heatT(g.pd, heatDepth(g.planet), (coreM() - heatDepth(g.planet)) * 0.55),
+    heatT(g.pd, heatDepth(g.planet, worldTrait()), (coreM() - heatDepth(g.planet, worldTrait())) * 0.55),
     R.breach ? breachHeat(R.breach) : 0);
   const hi = lerpHex(skyHi(g.world), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
   const lo = lerpHex(skyLo(g.world), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);

@@ -13,7 +13,7 @@ export function blockAt(x: number, d: number): Block | null {
   const cd = coreM();
   if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(g.planet), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
-  const hm = hardMult(g.planet);
+  const hm = hardMult(g.planet) * (worldTrait().hard ?? 1);
 
   /* The relic, before anything that could hide it. It is one cell on the whole
      planet and it must not lose a coin flip to a cave. */

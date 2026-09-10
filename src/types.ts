@@ -125,6 +125,15 @@ export interface Trait {
   geode?: number;
   cave?: number;
   soak?: number;
+  /* M11: the half of a trait that changes a rule rather than a density. Every
+     one is optional and every one defaults to "no change", so a trait that
+     wants to be pure weather still can be. */
+  cleanBonus?: number;   /* extra on the sale for surfacing with a full hull */
+  blastR?: number;       /* multiplier on the seismic charge's radius */
+  reach?: number;        /* multiplier on how far the lamp's light carries */
+  payout?: number;       /* multiplier on what the refinery pays per haul */
+  heatUp?: number;       /* multiplier on this world's heat line - under 1 is shallower */
+  hard?: number;         /* multiplier on how hard this world's rock is to cut */
 }
 
 export interface Upgrade {

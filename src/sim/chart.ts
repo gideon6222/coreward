@@ -73,7 +73,24 @@ const SHAPES = [
    needs a Searing world for the Thermal Core must never have to wait more than
    one leg for one to appear, or the goal can strand the game. There is a test
    that walks two hundred legs and asserts it. */
-export function chartFor(leg: number): Destination[] {
+/* The day, as a number, for the daily Drift.
+
+   The chart's IDENTITIES rotate with the date so the worlds on offer are
+   different tomorrow - a reason to open the game again that costs nothing to
+   run and nothing to store. What does NOT move is the trait rotation: a player
+   who needs a Searing world for the Thermal Core must never wait more than one
+   leg for one, and hanging that on the calendar would make the goal strandable
+   on the wrong day. The date changes what the places are called and what the
+   rock is like; it never changes which kinds are on offer.
+
+   Days since the epoch in UTC, so it turns over at the same instant for
+   everyone and never half-turns over across a timezone. Injectable, because a
+   test that reads the real clock is a test that fails one day in a thousand. */
+export function driftDay(now = Date.now()): number {
+  return Math.floor(now / 86400000);
+}
+
+export function chartFor(leg: number, day = driftDay()): Destination[] {
   const n = TRAITS.length;
   const out: Destination[] = [];
   for (let k = 0; k < CHART_SIZE; k++) {
@@ -82,7 +99,7 @@ export function chartFor(leg: number): Destination[] {
     /* Identity is independent of the trait, so a Searing world is not always
        called the same thing - the chart should feel like a map of somewhere,
        not a menu of five options wearing hats. */
-    const world = Math.floor(h(leg * 31 + k * 7) * PLANET_COUNT * 4) + leg;
+    const world = Math.floor(h(leg * 31 + k * 7 + day * 977) * PLANET_COUNT * 4) + leg;
     out.push({ world, trait: trait.id, coreOff: s.coreOff, rich: s.rich, fuel: s.fuel });
   }
   return out;
