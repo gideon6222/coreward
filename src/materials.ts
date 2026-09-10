@@ -11,6 +11,10 @@ import { chainCompile } from './shader';
    through the bundler also hashes the filename, which is what lets the service
    worker cache it forever and still pick up a replacement. */
 import rockNormalUrl from './textures/rock-normal.webp';
+import dirtNormalUrl from './textures/dirt-normal.webp';
+import dirtRoughUrl from './textures/dirt-rough.webp';
+import gravelNormalUrl from './textures/gravel-normal.webp';
+import gravelRoughUrl from './textures/gravel-rough.webp';
 import rockGritUrl from './textures/rock-grit.webp';
 import rockRoughUrl from './textures/rock-rough.webp';
 
@@ -263,6 +267,37 @@ const tiled = (url: string, srgb = false) => {
 };
 
 const rockNormal = tiled(rockNormalUrl);
+
+/* A surface per band, rather than one stone for the whole world.
+
+   Playtest: *"update the look and feel of the dirt and rock. I want it to feel
+   much more realistic."* Every band shared one normal and one roughness map,
+   so dirt at four metres and basalt at fifty were the same surface in a
+   different colour - and colour is the one thing this game deliberately does
+   NOT use to tell materials apart, because twelve palettes are already
+   spending it.
+
+   ambientCG Ground110 for the loose soil at the top of the world and Gravel043
+   for the stone band under it, both normal and roughness only, both 384 px
+   WebP at 25-39 KB. Granite, scoria and basalt keep Rock035, which is what
+   they were always closest to.
+
+   Each pair was checked after conversion for actual variance rather than
+   trusted: the same pass rejected ambientCG Metal038 for the hull, whose
+   normal map came back with a standard deviation of 0.4 - a real file, and
+   very nearly flat. */
+const dirtNormal = tiled(dirtNormalUrl);
+const dirtRough = tiled(dirtRoughUrl);
+const gravelNormal = tiled(gravelNormalUrl);
+const gravelRough = tiled(gravelRoughUrl);
+
+/* Which surface belongs to which band. Anything not named here falls through
+   to the original rock pair, so a new block id is never accidentally invisible
+   - it just looks like stone until someone decides otherwise. */
+const BAND_SURFACE: Record<string, { n: THREE.Texture; r: THREE.Texture }> = {
+  dirt: { n: dirtNormal, r: dirtRough },
+  stone: { n: gravelNormal, r: gravelRough }
+};
 /* Greyscale, and that is the point: it multiplies the palette colour rather
    than replacing it. The photograph supplies the grain, the pitting and the
    mineral speckle; the hand-tuned band colour still decides what KIND of rock
@@ -327,9 +362,10 @@ export function mat(color: number, glow?: number, grain = true, vcol = false) {
    change - everything downstream is stock three. Done in the same injection as
    the displacement, because that is where the world position is already in
    hand and computing it twice invites the two drifting apart. */
-export function rockRelief(m: THREE.MeshStandardMaterial) {
-  m.normalMap = rockNormal;
-  m.roughnessMap = rockRough;
+export function rockRelief(m: THREE.MeshStandardMaterial, band?: string) {
+  const surf = (band && BAND_SURFACE[band]) || { n: rockNormal, r: rockRough };
+  m.normalMap = surf.n;
+  m.roughnessMap = surf.r;
   /* Higher than a normal map usually wants, and measured rather than guessed:
      at 0.45 the effect was invisible against flat shading, and at 3.0 it read
      clearly with the facets still completely intact. The reason it takes so

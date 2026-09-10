@@ -3241,3 +3241,39 @@ landing already ends with the destination's sky washing out the frame, so a whit
 starts in that wash and holds across the swap, and `SETTLE_FROM` went from 5.5 to 9.5 with
 `SETTLE_MAX` from 2.0 to 3.2 - the descent onto the pad is now long enough to watch. The half
 he could not see was always there and was over before the flash had faded.
+
+---
+
+# 2026-09-10, the asset pipeline actually works now
+
+The blocker recorded in M7 - "the fetch works and the conversion does not" - is solved, and
+the solution is a different tool rather than a fix to the old one. **Python Pillow**, which is
+already on this machine:
+
+```
+python -c "from PIL import Image; im=Image.open(SRC).convert('RGB'); \
+  im.resize((384,384), Image.LANCZOS).save(DST, format='WEBP', quality=75, method=6)"
+```
+
+Verified end to end on a real ambientCG file rather than a synthetic one: `Ground110`'s 1K
+normal map (2.28 MB JPEG) becomes a 384x384 WebP of 38,688 bytes with a luminance standard
+deviation of 14.8 and a range of 63 to 210 - a real image, next to the archive's own measured
+baseline of about 45 KB for a 384 px normal. `sharp-cli` was not diagnosed and is not claimed
+fixed; a working tool was found instead, which was the actual ask.
+
+**Every conversion is now checked for variance before it is wired in**, and the first pass
+proved why: ambientCG `Metal038`, the scratched steel picked for the ship hull, converted to a
+462-byte file with a standard deviation of 0.4. That is a real file and very nearly flat - the
+source has almost no relief, so it was the wrong pick rather than a broken conversion. It was
+dropped. Without the check it would have shipped as an invisible improvement.
+
+**A surface per band.** Every rock band shared one normal and one roughness map, so dirt at
+four metres and basalt at fifty were the same surface in a different colour - and colour is the
+one thing this game deliberately does not use to tell materials apart, because twelve palettes
+already spend it. `Ground110` is the loose soil at the top of the world, `Gravel043` the stone
+band under it, and granite, scoria and basalt keep `Rock035`. `bodyMat` was already built per
+block id, so this needed no restructuring: `rockRelief()` takes the band and looks it up, and
+anything unnamed falls through to stone rather than to nothing.
+
+The bundle went from 761 KB to 886 KB, deliberately, and the four new files each have their
+own budget line.

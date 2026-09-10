@@ -8,7 +8,7 @@
     },
     {
       "name": "index",
-      "bytes": 166095,
+      "bytes": 169509,
       "tolerancePercent": 12
     },
     {
@@ -20,6 +20,26 @@
       "name": "rock-normal.webp",
       "bytes": 46516,
       "tolerancePercent": 0.5
+    },
+    {
+      "name": "dirt-normal.webp",
+      "bytes": 38688,
+      "tolerancePercent": 10
+    },
+    {
+      "name": "dirt-rough.webp",
+      "bytes": 35054,
+      "tolerancePercent": 10
+    },
+    {
+      "name": "gravel-rough.webp",
+      "bytes": 29506,
+      "tolerancePercent": 10
+    },
+    {
+      "name": "gravel-normal.webp",
+      "bytes": 24662,
+      "tolerancePercent": 10
     },
     {
       "name": "rock-grit.webp",

@@ -86,7 +86,7 @@ function poolFor(b: Block): Pool {
     map: mat(0xffffff, 0).map, vertexColors: true,
     metalness: 0, roughness: 1.0
   });
-  rockRelief(bodyMat);
+  rockRelief(bodyMat, b.id);
   displaceLikeRock(bodyMat, ROCK_BUMP[b.id] ?? 0.2);
   applyLight(bodyMat);
   const body = new THREE.InstancedMesh(chunkFor(b.id), bodyMat, MAX_CELLS);
