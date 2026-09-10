@@ -3,6 +3,7 @@ import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
 import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat,
          setUpgradeHardware, fitImportedHardware } from './ship';
 import { loadShipParts } from './shipparts';
+import { makeHeader, GROUP_ORDER, GROUP_COLOR, type GroupName } from './stationsigns';
 import { asMetal } from './materials';
 import { UPGRADES, shelfState, shelfStock } from './sim/config';
 import { g } from './sim/state';
@@ -312,16 +313,34 @@ function layout(n: number): { slots: Slot[]; scale: number } {
     const row = Math.floor(i / 2);
     slots.push([col * 1.18, top - row * step, -1.2, col * -0.5]);
   }
-  /* Anything left goes on the back wall, spread to fit whatever the count is. */
+  /* Anything left goes on a rack BELOW the columns, spread to fit.
+
+     It used to hang at the top of the room, which was fine while the shelf was
+     laid out in table order and nothing about the sequence meant anything. Once
+     the shelf is sorted by group, the slot order IS the reading order - and an
+     overflow rack above the columns put the last group at the top of the
+     screen, so the room read ordnance, rig, survival, instruments. Below the
+     columns it reads in the order it is sorted in. */
   const rest = n - inCols;
+  const floor = MID - ((perCol - 1) * step) / 2;
   for (let i = 0; i < rest; i++) {
     const t = rest === 1 ? 0.5 : i / (rest - 1);
-    slots.push([-1.52 + t * 3.04, 2.88, -2.3, 0]);
+    slots.push([-1.52 + t * 3.04, floor - 0.92, -2.0, 0]);
   }
   /* Bigger when there are fewer of them. Four cases at the size fifteen need
      is a wall of empty shelf. */
   const scale = n <= 8 ? 1.18 : n <= 11 ? 1.06 : 1;
   return { slots, scale };
+}
+
+/* One header per group, built once and moved with its band. Hidden when the
+   group has nothing stocked, which in the first hour is most of them. */
+const headers = new Map<GroupName, ReturnType<typeof makeHeader>>();
+for (const gname of GROUP_ORDER) {
+  const h = makeHeader(gname);
+  h.setVisible(false);
+  stationScene.add(h.group);
+  headers.set(gname, h);
 }
 
 /* Built once per upgrade; only the POSITIONS change when the shelf does. */
@@ -409,9 +428,49 @@ export function refreshBays() {
      case appears the run after you first reach its depth, and the room has to
      make space for it. `shelfStock` is the single source of what is stocked -
      see the note on it in config.ts about the CRAFT.md rule this corrects. */
-  const stock = shelfStock(g.best.depth);
+  const raw = shelfStock(g.best.depth);
+  /* Sorted by GROUP, not by table order.
+
+     The four groups are the design's own structure and the room was throwing
+     them away at the last step: a drill sat next to a cooling rig sat next to a
+     scanner, so what the shop looked like had nothing to do with how it is
+     organised. Deep Rock's rig is the reference - a separate, named place per
+     function - and this is the version of it a portrait phone can hold. */
+  const stock = raw.slice().sort((a, b) =>
+    GROUP_ORDER.indexOf(a.group as GroupName) - GROUP_ORDER.indexOf(b.group as GroupName));
   const shown = new Set(stock.map((u) => u.key));
   const { slots, scale } = layout(stock.length);
+
+  /* Where each group's band begins, so a header can sit over it. */
+  const bandTop = new Map<GroupName, number>();
+  stock.forEach((u, i) => {
+    const gn = u.group as GroupName;
+    if (!bandTop.has(gn) && slots[i]) bandTop.set(gn, slots[i][1]);
+  });
+  for (const gname of GROUP_ORDER) {
+    const h = headers.get(gname)!;
+    const y = bandTop.get(gname);
+    if (y === undefined) { h.setVisible(false); continue; }
+    h.setVisible(true);
+    /* Above the first case of the band and a little behind it. */
+    /* Over the left column and clear ABOVE its first case, not level with it.
+
+       A wide banner across the middle of the room reads well in a mockup and
+       is unreadable in the game: the ship stands in the centre and the two
+       columns of cases stand in front, so most of the word ends up behind
+       something. The filmstrip showed SURVIVAL as "URVIVAL" and INSTRUMENTS as
+       "NSTRU...S". A short plate sitting in the gap above its own band is
+       legible because nothing is in that gap. */
+    /* IN FRONT of the cases, not behind them.
+
+       Three placements were tried behind the shelf and every one was clipped
+       by the left column - the filmstrip showed SURVIVAL as "VIVAL" and
+       INSTRUMENTS as "TRUMEN". A header is signage: the thing it labels is
+       allowed to be behind it, and nothing in the room should be allowed in
+       front of it. */
+    h.place(-0.62, y + 0.44 * scale, -0.55, scale * 0.86);
+  }
+
   stock.forEach((u, i) => {
     const bay = bays.find((b) => b.key === u.key);
     if (!bay) return;

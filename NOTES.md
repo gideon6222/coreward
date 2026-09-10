@@ -3320,3 +3320,41 @@ failures were real:
 
 The 1% tolerance on the `three` chunk is what made both of these visible. It is the tightest
 budget in the file and it has now earned itself twice.
+
+---
+
+# 2026-09-10, the Outfitter reorganised
+
+Playtest: *"reorganize the shop so they are layed out more intuitively"* and *"make it feel
+more like a space station with different colors textures and lights."*
+
+**The shelf was sorted in table order**, so a drill sat next to a cooling rig sat next to a
+scanner. The four groups the whole design is built on - rig, survival, instruments, ordnance -
+were invisible in the room that exists to show them. Deep Rock Galactic's Space Rig is the
+sourced reference: every function at a separate, named place rather than on one wall of
+terminals. Sorting by group and heading each band is that idea at the scale a portrait phone
+can hold.
+
+Each band gets a lit header in its own colour and an emissive rule running the width of the
+room - amber for the rig, red for survival, cyan for instruments, violet for ordnance, each
+chosen from what that colour already means elsewhere in this game. An unlit plane carrying a
+colour reads as a lit fitting for a fraction of what a real light costs, which is the whole
+technique.
+
+**Four placements were needed and the filmstrip found every fault.**
+
+1. The overflow rack hung at the TOP of the room, which was fine while the shelf order meant
+   nothing. Sorted by group, the slot order IS the reading order, and the room read ordnance,
+   rig, survival, instruments. The rack moved below the columns.
+2. A wide banner across the middle read well in the abstract and was unreadable in the game:
+   the ship stands in the centre and two columns of cases stand in front, so the sheet showed
+   SURVIVAL as "URVIVAL".
+3. Moved left and it went off the edge - "R" and "N1".
+4. Moved back in and it was still clipped by the left column, because it was BEHIND the
+   shelf. A header is signage: what it labels may be behind it and nothing may be in front of
+   it. At z -0.55, in front of the cases, all four read.
+
+And then the label was truncated - INSTRUMENTS as INSTRUMEN - which is **this repo's own
+round-two lesson arriving again**: `drawPlate()` drew at a fixed size with no width limit and
+"SALVAGE MAGNET" ran off its plate, and the fix recorded then was to measure and shrink rather
+than to shorten the name. The header now measures and steps the size down until it fits.
