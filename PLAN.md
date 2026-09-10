@@ -1,38 +1,527 @@
-# Coreward — the expansion plan
+# Coreward — the plan
 
-Written 2026-09-09, against v0.16.0. **The plan, not a history.** Rewrite in place as
-things land; the changelog is where the record goes.
+Round four, written 2026-09-10 against v0.24.0. **The plan, not a history.** Rewrite in place
+as things land; the changelog is where the record goes. Rounds one to three are in the
+appendix at the bottom, shipped.
 
 This file was `DESIGN.md` until 2026-09-09. It is `PLAN.md` because that is the name
-`INDEX.md` tells a resuming session to open, and nothing pointed at the old name from
-anywhere, so three rounds of plan sat where the process could not find them.
+`INDEX.md` tells a resuming session to open.
+
+---
+
+## Summary
+
+**Fantasy:** a contracted driller working the Verdax Drift, cutting a world apart from the
+inside to buy his way out of it.
+**Loop:** dive, cut, fill the hold, climb out before the world takes it back, sell, buy one
+rung, go deeper.
+**Engine:** web, three.js. Decided 2026-09-10 on measurement rather than habit: the game runs
+well on the S26 Ultra installed as a PWA, the only platform limit it has met is 400x larger
+than it needs, and a Godot rewrite is 12,716 lines of working game thrown away for a benefit
+you have said you do not want yet.
+**Reference:** none. Original. Genre neighbours are Motherload, SteamWorld Dig 1 and 2, Dome
+Keeper and Mr. Driller, researched 2026-09-10 and cited where a mechanism is borrowed.
+**New technique:** per-face axis-selected UV projection on the rock (a right-sized triplanar).
+Fixes a real bug and is the first thing that will make caverns look like stone.
+**What you keep:** one relic per planet, the five Jump Drive components, and the record book.
+
+### The three faults, measured
+
+Everything below is derived from the shipped game, through the same bundle the golden tests
+use. The probes are in the milestone list so they become permanent.
+
+**Fault 1 — everything at stake is the ship.** Fuel, heat, hull and tremors all threaten one
+object, and the worst outcome is a tow that costs a percentage of one haul. There is nothing
+you can lose that you are not holding. Dome Keeper's designer names this exactly: depth is
+worth something when it is dangerous to a system you are *not* touching. Coreward has no
+second system. This is why *"it feels free"* survived a reprice: the price was never the
+problem, the absence of a second thing to lose was.
+
+**Fault 2 — the first sale defuses the first hour.** Measured, planet 0, no upgrades:
+
+| Band | Ore cells per 1,000 | Value per kg | One 60 kg hold |
+|---|---|---|---|
+| 5–20 m | 57 | 11.1 | 666 cr |
+| 20–35 m | 45 | 20.4 | 1,223 cr |
+| 35–50 m | 45 | 36.0 | 2,161 cr |
+| 50–70 m | 41 | 78.4 | 4,703 cr |
+| 70–85 m | 27 | 115.3 | 6,916 cr |
+| 85–110 m | 55 | 162.8 | 9,770 cr |
+
+Against that, the first rung of every ladder: Thrusters 100, Cargo 110, Drill 130, Scanner
+140, Fuel Tank 480, Cooling 1,000. **The first hold you ever sell buys four upgrades**, and
+the two that answer the game's two pressures cost less than a second hold. There is no point
+in the opening where you want something you cannot have, which is the whole of *"I can afford
+upgrades pretty early on for fuel and cooling so neither is a risk."*
+
+**Fault 3 — half the game is behind a wall you have never reached.** Planet 0's core is at
+**110 m**. Heat starts at 70, tremors at 85. Across five sessions every note you have written
+has been about the first sixty metres and the surface. So the chart, the traits, the Jump
+Drive, the Heart, the crossing and the twelve palettes — everything built in rounds one to
+three — sits behind one 110 m dive that has never happened. It is not undiscovered content,
+it is unplayed content, and the fix is not to build more of it.
+
+### What this round does about them
+
+1. **A second system: the Claim.** Something at the surface that depth threatens and the ship
+   cannot protect. Section below.
+2. **An economy measured rather than assumed**, with a probe that reports the run at which
+   each upgrade is bought and a test that fails when the opening goes free again.
+3. **The first world compressed** so heat, tremors, a core break, the chart and a crossing all
+   happen in the first session, and the hazard depths scale per world instead of sitting on
+   global constants.
+4. **An art pass that starts with a bug**: the rock's texture projection is wrong on every
+   face that is not facing the camera, which is every floor, ceiling and cavern wall.
+5. **The things POLISH.md asks for that this game has never had**: haptics, a run debrief, a
+   record book.
+
+### Your asks, expanded
+
+Numbered because you asked for the whole game overhauled, and these are the standing ones
+that this round finally answers rather than works around.
+
+1. *"it feels free"* / *"there isn't really a risk or reward yet"* → the Claim, plus a
+   measured opening. Fault 1 and 2.
+2. *"think about a larger point to the game, or secondary objective"* → the record book and
+   the Claim's ledger, on top of the relics and the drive that already exist.
+3. *"make the graphics look more realistic and detailed, more gritty"* → the UV fix, then the
+   imported mineral surfaces, then a second normal-mapped surface on the ship.
+4. *"make it so upgrades show visual changes on the ship"* → extended to the Claim, which
+   visibly grows and visibly breaks.
+5. *"use pre-made assets wherever you can"* → the asset table below, with the misses named.
+6. *"add a log to see how fast things drain and whether the cost is worth the benefit"* → the
+   telemetry panel gets the two questions it cannot currently answer: what a run was worth per
+   minute, and which upgrade paid for itself.
+7. *"is there a way to see how far I have gone"* (implied by the depth marker you asked for)
+   → the record book, kept across worlds.
+
+### My additions, marked as mine
+
+- **The core breach becomes an escape.** Breaking a core currently opens a menu. It should
+  start the world coming apart around you with the shaft collapsing behind you, and the chart
+  should open once you are out. The best moment in the game is currently a dialog box.
+- **Ore has a shape on the ground.** Fault 2's real cause is that every kilo is the same
+  decision. Heavy-and-cheap versus light-and-dear only matters when the hold is nearly full,
+  so the hold should fill sooner and the manifest should let you dump a mineral by name.
+- **A reason to come back tomorrow**: the Drift's worlds are seeded from a daily seed as well
+  as the run seed, so the chart's offer changes day to day.
+---
+
+## Systems
+
+### 1. The Claim — the second thing you can lose
+
+**The idea in one line.** You do not own the ship, you own a claim on the surface: a
+refinery, a fuel derrick and a store shed standing beside the pad. Cutting the world apart
+shakes the ground it stands on.
+
+**Why this and not another hazard.** Every pressure in the game today points at the ship, so
+every one of them is answered by the same reflex, which is to fly up. A system you are not
+touching is the mechanism the best game in this genre uses to stop mining being a treadmill,
+and it is the missing half of *"it feels free"*. It also gives credits a second place to go,
+which matters because a purely geometric upgrade ladder makes every amount you earn
+irrelevant to the amount before it.
+
+**State it owns** (`src/sim/claim.ts`, saved per world, cleared on a core break):
+
+| Field | What it is |
+|---|---|
+| `strain` | 0–1, how far the world has been pushed. Rises with cells removed below the stability line |
+| `integrity` | 0–100 on each of three structures: refinery, derrick, shed |
+| `stored` | ore left in the shed rather than sold, at a better price later |
+
+**Rules.**
+
+- **Strain rises from your own digging, below the stability line only.** Per cell removed,
+  scaled by how far below the line it is. Dwelling costs nothing on its own — heat already
+  charges for that, and two systems charging for the same verb is one system.
+- **Strain is spent, not survived.** At 1.0 a surface quake fires: each structure rolls
+  against its own exposure and takes damage, strain drops to 0.35, and the world is a little
+  richer afterwards (`rich` rises 4%). The world is being broken open, and that is worth
+  something. *This is the bet: a shaken world pays more.*
+- **Damage is a discount, never a wall.** A damaged refinery pays less per kilo. A damaged
+  derrick refuels slower. A damaged shed loses a fraction of what is stored. None of them
+  stops a run, and none of them can make a save unwinnable, per `CRAFT.md`.
+- **Repair costs credits and one deep material.** The material for repairing the refinery is
+  found below the stability line, so the thing that fixes the surface is only found in the
+  place that breaks it. `CRAFT.md`: gate an upgrade behind a place, not a price.
+- **The shed is the greed dial you hold yourself.** Store ore instead of selling and it is
+  worth 1.4x at the end of the world, if the shed is still standing when you break the core.
+
+**Numbers, first pass, to be replaced by whatever the probe says.** Strain per cell at the
+line 0.004, doubling by the core; quake at 1.0; refinery damage 12–30; refinery payout
+penalty 0.35 x damage fraction; repair 900 cr plus 4 units of the deep material; shed
+multiplier 1.4 and shed loss 20% of stored per quake at full damage.
+
+**The test.** `test_claim`: strain is monotonic in cells removed and zero above the line; a
+quake never reduces payout below 0.5x; the repair material's generation depth is below the
+stability line at every leg; and the invariance test `CRAFT.md` asks for — same world, same
+digging, different starting bank, same strain.
+
+**How it is shown.** The Claim is geometry on the pad you fly past every time you surface, and
+it is the only place the gauge lives. No new HUD element: `CRAFT.md` says a HUD is a claim
+about what the player should think about, and this is a thing you should think about when you
+are up, not while you are cutting. A quake is a shot: the camera shakes at the surface, dust
+comes off the structures, and one of them is visibly bent afterwards.
+
+---
+
+### 2. The economy, measured
+
+**The fault, restated in one number.** The first hold you sell pays 1,223 credits. The first
+rung of Thrusters, Cargo, Drill and Scanner together cost 480.
+
+**The rebuild.**
+
+- **Price every pressure-answering upgrade against the depth where its pressure begins**, not
+  against the first haul. Fuel Tank and Cooling Rig rung 1 land at roughly three holds from
+  the band where fuel and heat first bite, not one.
+- **Flatten the multiplier and lengthen the ladder.** A 2.0x step means the last rung costs
+  more than the first eight together, which is why maxing is 245,000 credits and nobody will
+  ever see it. 1.55x is already recorded here as hyper-inflationary. Target 1.35–1.45 with
+  more rungs and a real top.
+- **Give credits a sink that is not a rung**: Claim repair, shed storage, and transit fuel.
+- **The rule the shop obeys**: everything unlocked, plus exactly one teaser, the shallowest
+  thing still out of reach. Already the rule, now asserted at every leg rather than at one.
+
+**The tool, and this is the milestone that matters.** `scripts/econ.mjs`: run a scripted
+player through the pure layer — dive to the best band reachable, fill, climb, sell, buy the
+best affordable rung, repeat — and report the run number and the wall-clock minute at which
+each upgrade is bought, for three play styles (cautious, greedy, optimal). `CRAFT.md`:
+measure a progression by simulating play, never by dividing a late price by early income.
+
+**The test.** `test_econ`: the first sale buys at most one rung; Fuel Tank and Cooling are not
+affordable before 60% of the depth where their pressure starts; every upgrade is bought by
+leg 6 under the optimal style; and the spread between cautious and greedy is at least 25%,
+because when every style scores the same, the finding is that the game has no decision in it.
+
+---
+
+### 3. The first world, compressed
+
+**The fault.** Planet 0's core is at 110 m with heat at 70 and tremors at 85, and five
+sessions of play have never gone past about 78 m. Everything from the chart onward is
+unplayed rather than unbuilt.
+
+**The change.** The three thresholds stop being global constants and become functions of the
+leg, anchored to that world's core:
+
+| | Now | Proposed leg 0 | Relation |
+|---|---|---|---|
+| Core | 110 m | 58 m | `core(leg) = 58 + 28 * leg` |
+| Heat line | 70 m | 32 m | `heat = round(0.55 * core)` |
+| Tremor line | 85 m | 44 m | `tremor = round(0.76 * core)` |
+
+So the first world teaches heat at 32 m, teaches tremors at 44 m, and ends at 58 m — a core
+break, a chart, a crossing and a trait inside the first session. Leg 1's core is at 86 m, and
+by leg 4 the numbers are where they are today.
+
+**The invariant survives, as a relation instead of a constant.** `GRANITE_TO_SCORIA ===
+HEAT_DEPTH` becomes `graniteToScoria(leg) === heatDepth(leg)`, and the test asserts it at
+every leg rather than at one. The four things that land on the same metre still land on the
+same metre.
+
+**Existing saves.** The depths are written into the save the first time a world is entered, so
+the world you are standing on keeps the numbers it was generated with. A save cannot end up
+with its ship below a core that moved.
+
+---
+
+### 4. Breaking the core becomes the best moment instead of a dialog
+
+Today: the core breaks, a modal opens, you pick the next world. The most cinematic beat in the
+game is a box with a button.
+
+**The breach.** The core cracks, and the world starts coming apart from the bottom up:
+
+1. A hard shake, the lamp cuts to emergency red, and the ambient goes to ember.
+2. **Ninety seconds on the clock**, shown as the shaft filling from below rather than as a
+   number. Tremors every 6–9 s instead of every 27.
+3. Collapse propagates upward through dug cells behind you, so the route you cut is the route
+   that closes. The pathfinder guarantee stays: `CRAFT.md` says never let a hazard take the
+   run, so the collapse can never seal the last open route to the surface, and there is a test.
+4. Reach the pad and the transit plays as it does now, with the world breaking apart behind
+   you rather than receding intact.
+5. Fail to reach it and you are towed for the usual cut — you lose the hold, not the run, and
+   the world still breaks.
+
+**Why it earns its cost.** It is one clock, reusing the tremor system, the collapse system,
+the tow and the transit, and it converts the moment the game is named after into something you
+survive. It also makes the shed a real decision: everything stored is sold at the breach.
+
+---
+
+### 5. The hold becomes a decision
+
+`CRAFT.md`: a weight cap is what turns "which is worth more" into a decision — but only in the
+minutes when it binds. Today the hold is 60 kg and the ore that fills it is chosen for you by
+what you happened to fly through.
+
+- **Dump by mineral from the manifest.** One tap on a row jettisons that mineral. It is the
+  action the manifest has been describing for four versions without offering.
+- **Widen the weight spread** so heavy-and-cheap genuinely competes with light-and-dear. Keep
+  the value spread on a premium under 2x per the recorded measurement, and put the variety in
+  weight instead.
+- **The hold fills sooner and the climb is where you pay for it**, which is Motherload's
+  weight-versus-fuel tradeoff, the one mechanism in that game everybody remembers.
+
+---
+
+### 6. Everything POLISH.md asks for that this game has never had
+
+- **Haptics.** There is not one `navigator.vibrate` call in the repo. Android Chrome supports
+  it, it is three lines behind a settings toggle, and `POLISH.md` requires every action to
+  fire visual, audio, camera and haptic together. Cutting a block, a strike, a quake, a
+  purchase, a tow.
+- **A run debrief.** A run currently ends by folding numbers into a total. It should show what
+  the run paid, the depth reached against the record, what was left on the ground, and the one
+  thing you were closest to affording — `POLISH.md`'s "a run that ended one decision short".
+- **A record book.** Deepest metre, best haul, fastest core, worlds broken, relics held,
+  components carried. A collection that does not decay, kept across worlds, reachable from the
+  pause screen beside the patch notes.
+- **The tremor roll gets seeded.** `planCollapse()` takes `rand: () => number = Math.random`
+  and the shipping game takes the default, so the one event a replay cannot reproduce is the
+  one that decides whether the way out is open. It moves onto the world's seeded stream.
+
+---
+
+## Presentation
+
+### The rock, starting with a bug
+
+`src/materials.ts:198` sets `vec2 rockUv = wpos.xy` for **every face of every cell**. That is
+correct only for faces pointing at the camera. A tunnel floor or ceiling has its extent in X
+and Z and is being sampled with (x, y), so one whole axis of texture variation collapses and
+the surface reads as a flat band rather than stone. Every horizontal tunnel, every cavern
+floor and every ledge underside in the game is currently smeared.
+
+**The fix is the round's new technique**: pick the projection plane per face in the vertex
+shader from the box's own normal — `abs(normal)` decides between `wpos.xy`, `wpos.zy` and
+`wpos.xz`. This is triplanar mapping's right-sized form for this geometry: the terrain is a
+flat-shaded box with hard 90-degree edges, so there is no seam for a three-way blend to hide,
+and a full blend would triple the texture fetches for nothing. Cost: 0 KB of bundle, 0 draw
+calls, a handful of scalar compares at vertex frequency. Sources are in the research note;
+the canonical ones are GPU Gems 3 chapter 1 and Ben Golus on triplanar normal mapping.
+
+Filmed on a horizontal tunnel and a cavern before and after, because a texture artefact under
+a moving lamp does not show in a still.
+
+### The rest of the art pass
+
+- **More mineral surfaces**, normal and roughness only, never colour, so twelve palettes keep
+  deciding colour. Table below.
+- **A normal map on the hull.** The ship is the object on screen for the entire game at full
+  size, and it is the one large surface with no relief on it. `CRAFT.md`: "cartoony" means
+  under-lit and under-textured, and a normal map on the largest surface does more than a model
+  swap.
+- **The Claim as geometry**, built from imported industrial props rather than modelled, since
+  it stands at full size on screen every time you surface and it is exactly what the assets
+  rule is for.
+- **The breach as a grade**: ember ambient, red lamp, dust density up, the vignette closing.
+  One palette shift driven by one number, not five separate effects.
+
+---
+
+---
+
+## Assets
+
+Hunted 2026-09-10 against `ASSETS.md`. The rule is a measurement, not a preference: import
+what the player reads at its real size, model in code what is judged on silhouette at thirty
+pixels. Everything below is CC0 or OFL unless stated, and every import is **normal and
+roughness only, never a colour map**, because twelve palettes keep deciding colour.
+
+### The budget decision that comes first
+
+There is **no glTF loader in the bundle today** — the ship, the pad and every prop are coded.
+The first model import therefore costs `GLTFLoader` once, roughly 15 to 20 KB minified and
+gzipped, before a single model's bytes. Today's totals: 747.2 KB overall, and the `index`
+chunk is already at 151.1 KB against a 144.4 KB budget, drifting +4.61%.
+
+**So the loader and the props are lazy-loaded, not bundled.** They are surface geometry, and
+the surface is not the first thing on screen: the game is interactive before the pad's
+detail arrives, the loader lands in its own chunk, and the size guard gets a new budget line
+for it rather than a raised one on `index`. If that proves awkward, the fallback is to keep
+the Claim coded and spend the import budget only on textures, which cost no loader at all.
+
+### Surfaces — the textures, which need no loader
+
+| Need | Source | Id | Licence | Fetch | Into |
+|---|---|---|---|---|---|
+| Granite | ambientCG | `Granite002A` | CC0 | `python assets.py get ambientcg Granite002A --res 1K --maps NormalGL,Roughness` | `src/textures/` |
+| Basalt, and obsidian by reuse | ambientCG | `Rock035` | CC0 | `python assets.py get ambientcg Rock035 --res 1K --maps NormalGL,Roughness` | `src/textures/` |
+| Ice | ambientCG | `Snow006` | CC0 | `python assets.py get ambientcg Snow006 --res 1K --maps NormalGL,Roughness` | `src/textures/` |
+| Sandstone | ambientCG | `Rock029` | CC0 | `python assets.py get ambientcg Rock029 --res 1K --maps NormalGL,Roughness` | `src/textures/` |
+| Marble | Poly Haven | `marble_cliff_05` | CC0 | `python assets.py get polyhaven marble_cliff_05 --res 1k` | `src/textures/` |
+| Crystal, and salt by reuse | ambientCG | `Onyx006` | CC0 | `python assets.py get ambientcg Onyx006 --res 1K --maps NormalGL,Roughness` | `src/textures/` |
+
+Each becomes a WebP pair and a palette-driven material variant through the existing
+`src/materials.ts` path. No new code path, no loader, and they are the reason the UV fix goes
+first: a better normal map projected wrong is still smeared.
+
+### Props and the ship
+
+| Need | Verdict |
+|---|---|
+| **The drill ship** | **Stays coded.** Nothing CC0 is a purpose-built mining vessel at a sane size, and this is the hero object on screen for the whole game. The search is the answer, not a redirection |
+| **The landing pad and the Claim** | Import. On screen at full size every time you surface, which is exactly what the rule is for. Kenney `factory-kit` (crates, pipes, catwalks), `space-station-kit` (antennae, panels, lights), `modular-space-kit` (platform tiles) |
+| **Drill tier, visibly** | PolyPizza `8uBbH7Dvmb`, Kay Lousberg's Drill, CC0, 1,198 tris, as the nose attachment that changes per tier |
+| **Thruster and plating tiers** | Kenney `space-kit` parts, **only if** the zip turns out to contain glTF. It is an unversioned Kenney pack, which historically means OBJ or FBX, and nothing here converts those |
+
+**Verify before relying on any of them**: only the versioned zips (`factory-kit_3.0`,
+`city-kit-industrial_2.0`, `modular-space-kit_1.0`) are likely to be current-format re-exports.
+The milestone opens the zip and looks before the plan promises anything.
+
+**This shortlist is provisional, and here is why.** The hunt found that
+`gamedev-notes/scripts/assets.py` could not search Kenney at all: its listing regex matched
+only double-quoted links, and Kenney's pages emit single quotes — measured at 55 single-quoted
+against 6 double-quoted on one category page, so about a tenth of the library was visible and
+the rest was reported as absent. It is fixed now, and the very first re-run surfaced
+**`modular-cave-kit`**, which nothing in the original shortlist knew existed and which is the
+most obviously relevant pack in the library to a game made of caves. M2 re-runs the search
+before importing anything.
+
+Every imported mesh has its baked atlas stripped at load and a `MeshStandardMaterial` coloured
+from the palette assigned instead, roughness about 0.8 and metallic 0 unless the piece is meant
+to read as bare metal. That keeps a Kenney crate and the coded ship under one lighting model.
+
+### Interface
+
+| Need | Source | Id | Licence | Note |
+|---|---|---|---|---|
+| HUD frames, gauge and bar plates | Kenney | `ui-pack-sci-fi` | CC0 | 768 KB zip, a handful of sprites reach `dist/` |
+| Ten icons | Lucide | `fuel`, `flame`, `package`, `coins`, `drill`, `zap`, `bomb`, `radar`, `anchor`, `rocket` | ISC | One stroke family, tinted by `currentColor`, so the palette still decides. There is no tow-truck glyph, `anchor` is the tow |
+| Display face | Google Fonts | `Orbitron` 700/900 | OFL-1.1 | Wide, geometric, industrial |
+| Numerals | Google Fonts | `Share Tech Mono` 400 | OFL-1.1 | A readout face for the gauges, about 20 KB |
+
+Both faces join the existing two in the Workbox precache glob, or an installed app falls back
+to a system face offline.
+
+### Sound
+
+Eight CC0 sounds from Freesound, fetched as HQ OGG previews: drilling loop `634322`, rock
+break `524312`, ore pickup `646673`, thruster loop `347576`, hull damage `682736`, tremor
+rumble `483287`, purchase click `839832`, alarm `584287`.
+
+These replace the synthesised **effects**, where a produced sample is simply better. **The
+music stays synthesised**, and this is now a measured answer rather than an inherited one: the
+scout searched OpenGameArt and Freesound for a bed, a tension layer and a danger layer at one
+tempo and key, and no CC0 library indexes stems as a matched set. The score mixes live by
+depth, danger and zone off one scheduler, and nothing available can do that.
+
+### The misses, plainly
+
+- No distinct CC0 basalt, obsidian or salt scan. Handled by reusing one normal map and
+  separating them in code by roughness and palette.
+- No CC0 drill ship worth importing. The ship stays code.
+- No CC0 layered music stems anywhere searched. The score stays code.
+- `assets/CREDITS.md` does not exist in this repo yet, and the four textures already in
+  `src/textures/` are not recorded anywhere. `POLISH.md` requires it. M7 writes it and
+  backfills those four.
+
+---
+
+## Tests and tools
+
+| Layer | What is added |
+|---|---|
+| Probes | `scripts/econ.mjs` (three play styles, run-by-run purchase report), `scripts/claim.mjs` (strain per style over a world) |
+| Golden | Claim strain and quake sequence for a fixed seed; the per-leg threshold table |
+| Design | `test_econ` and `test_claim` above; the per-leg `granite === heat` relation at every leg |
+| Boundary | `test/sim-boundary.test.mjs` already guards `src/sim`; `claim.ts` goes inside it |
+| Smoke | The breach: core break, clock, collapse behind, reach the pad, chart opens. And the tow path out of a failed breach |
+| Filmstrip | New scenarios `breach`, `quake`, `cavern` (the UV fix), `debrief` |
+| Phone | The six questions in `TESTING.md` after the breach lands, because it is the one new thing that is all motion |
+
+---
+
+## Polish budget
+
+`POLISH.md` lines this round pays for, and where:
+
+- First sixty seconds, a win in the first minute → M3 (economy) and M5 (compressed world).
+- Haptics on every action → M8.
+- Ambient motion in the idle state → the Claim's structures, M2.
+- The shop is a place with the real object in it → already true; the Claim extends it, M2.
+- A run that ended one decision short → the debrief, M8.
+- A meta-goal that does not decay → the record book, M8.
+- Every screen looked at as a picture at the phone's aspect → M9, before the ship.
+
+---
 
 ## Milestones
 
-The first unticked box is where work resumes.
+### Phase 1: the faults
 
-- [x] **1. Planet identity** - twelve palettes on rock, fog, haze, dust and silhouette (0.17.0)
-- [x] **2. The chart and the transit** - choosing where to go, and flying there (0.18.0)
-- [x] **3. The Jump Drive and the Heart** - components, the manifest, the final world (0.18.0)
-- [x] **4. Upgrades** - five more, taking the shop to fifteen cases (0.19.0)
-- [x] **5. Consumables** - Overdrive, Bulwark Field, Survey Pulse (0.19.0)
-- [x] **6. Per-trait ambience** - each world emits something of its own (0.20.0)
-- [x] **Round two** - the title screen and first-run intro (0.21.0), flying in (0.22.0), three
-      ways in and a shop that fits (0.23.0)
-- [x] **Round three** - nose-first flight, a real touchdown, ground per world (0.24.0)
-- [x] **Framework conformance** - the pure modules moved to `src/sim/` and the wall is a test
-      rather than a comment. See `CLAUDE.md` under Files
-- [ ] **A playtest, before anything is built on top of these three.** The shallow-versus-deep
-      balance on the chart, tuned by one person looking at it. The nine-second crossing, which
-      may be four seconds too long by the twentieth planet. Whether the per-trait ambience is
-      dense enough to tell a Volatile world from a Stable one while flying past
-- [ ] **Seed the tremor collapse.** `planCollapse()` takes `rand: () => number = Math.random`
-      and the shipping game takes the default, so the one thing a replay cannot reproduce is
-      the collapse that decides whether the way out is still open. The tests already inject a
-      seeded stream; the game does not. INDEX.md standing rule: nothing that affects state
-      rolls an unseeded die
-- [ ] **Caches that hand out a temporary effect** instead of goods, aimed at whatever
-      bottleneck the player is actually in
+- [ ] **M1 — Measure before changing anything.** `scripts/econ.mjs` and the three play styles,
+      reporting the run at which each upgrade is bought. No behaviour change. The report goes
+      in `NOTES.md` and is the baseline every later number is argued against.
+- [ ] **M2 — The Claim, as a place.** `src/sim/claim.ts`, strain, quakes, three structures,
+      repair, the shed. `test_claim`, the strain golden, a filmed quake. The geometry comes
+      with the first model import this repo has ever done, so this milestone also opens the
+      Kenney zips to check they contain glTF at all, puts `GLTFLoader` and the props in a
+      lazy chunk rather than in `index`, and adds a budget line for that chunk. If the zips
+      turn out to be OBJ or FBX, the Claim is coded and the milestone still lands.
+- [ ] **M3 — The economy rebuilt on M1's numbers.** New curve, pressure-priced rungs, credits
+      sink. `test_econ`. The probe report before and after, in `NOTES.md`.
+- [ ] **M4 — The hold as a decision.** Dump by mineral, widened weight spread, manifest tap.
+- [ ] **M5 — The first world compressed.** Per-leg thresholds, save migration, the invariant as
+      a relation asserted at every leg.
+- [ ] **M6 — The breach.** The clock, the collapse behind you, the tow path, the chart after.
+      Filmed. This is the one to send a video of.
+
+### Phase 2: the look
+
+- [ ] **M7 — The UV fix and the mineral surfaces.** The new technique, then the six imported
+      normal and roughness pairs, then the hull normal. Filmed on a cavern, before and after.
+      Writes `assets/CREDITS.md`, which this repo has never had, and backfills the four
+      textures already in `src/textures/` that are recorded nowhere.
+- [ ] **M8 — Haptics, the debrief and the record book.** The three POLISH lines this game has
+      never had, in one pass because they are all "what happens when a run ends".
+- [ ] **M9 — The screens as pictures.** Every screen at 460x996, the shop, the chart, the
+      debrief, the record book, the pause sheet. Fix what the picture shows.
+
+### Phase 3: what it becomes
+
+- [ ] **M10 — The daily Drift.** The chart's offer seeded by the date as well as the run, so
+      there is a reason to open it tomorrow.
+- [ ] **M11 — Trait signatures with teeth.** Each trait changes a rule, not only the picture:
+      Hollow's caverns carry light and hide long falls, Volatile's gas answers the bomb,
+      Crystalline's veins pay on a chain, Searing raises the heat line, Stable pays a premium
+      for a clean run.
+
+---
+
+## Second month
+
+The Drift keeps generating worlds after the Heart, so the endgame is already open-ended. What
+it wants next, in rough order: a second ship hull with different arithmetic rather than bigger
+numbers, so the choice is a shape and not a rung; contracts that ask for a named mineral by a
+named depth and pay in Claim repairs; and a wreck to find, which is somebody else's Claim,
+abandoned, with their ledger still in it.
+
+---
+
+## Open decisions I made for you
+
+Each is reversible, each has an alternative, and each goes into `NOTES.md` when it lands.
+
+1. **The Claim is per world and does not travel.** The alternative is one Claim carried
+   across the whole Drift, which makes the arc longer but means one bad world can sour ten.
+2. **A quake makes the world richer.** The alternative is pure downside, which would make
+   depth simply worse and is the thing this round is trying to fix.
+3. **The breach clock is 90 seconds.** Long enough to climb 58 m at level 0 thrust with room
+   for two mistakes. It is the number most likely to be wrong and it is one constant.
+4. **The compressed thresholds keep today's numbers by leg 4** rather than rescaling the whole
+   ladder, so nothing about the deep game changes, only when you first meet it.
+5. **Web, not Godot.** Decided 2026-09-10 on the measurements in the summary.
+
+---
+
+# Appendix: rounds one to three, as planned and shipped
+
+Kept because the reasoning is why the game is shaped the way it is. Everything below has
+shipped; the milestone list at the top is the live one.
 
 The ask, in his words:
 
