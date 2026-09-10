@@ -466,15 +466,15 @@ depth, danger and zone off one scheduler, and nothing available can do that.
       a run ends so the weight cap has never once bound, every ladder is started inside four
       to sixteen minutes at every style, and depth is gated by behaviour rather than by time
       (a greedy player is at 109 m by minute seven).
-- [ ] **M2 — The Claim, as a place.** `src/sim/claim.ts`, strain, quakes, three structures,
+- [x] **M2 — The Claim, as a place.** `src/sim/claim.ts`, strain, quakes, three structures,
       repair, the shed. `test_claim`, the strain golden, a filmed quake. The geometry comes
       with the first model import this repo has ever done, so this milestone also opens the
       Kenney zips to check they contain glTF at all, puts `GLTFLoader` and the props in a
       lazy chunk rather than in `index`, and adds a budget line for that chunk. If the zips
       turn out to be OBJ or FBX, the Claim is coded and the milestone still lands.
-- [ ] **M3 — The economy rebuilt on M1's numbers.** New curve, pressure-priced rungs, credits
+- [x] **M3 — The economy rebuilt on M1's numbers.** New curve, pressure-priced rungs, credits
       sink. `test_econ`. The probe report before and after, in `NOTES.md`.
-- [ ] **M4 — The hold as a decision.** Dump by mineral, widened weight spread, manifest tap.
+- [x] **M4 — The hold as a decision.** Dump by mineral, widened weight spread, manifest tap.
       Promoted by M1 from a refinement to a missing mechanic: a cap that never binds is not a
       decision, and Cargo Hold is currently the first thing every style buys.
 - [ ] **M5 — The first world compressed.** Per-leg thresholds, save migration, the invariant as

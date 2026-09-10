@@ -2929,3 +2929,54 @@ an older and better argument for the opposite - an imported kit brings its own t
 normals and scale next to flat-shaded low-poly terrain with a hand-tuned palette, and the join
 shows in the first frame. Same rule, same game, and the existing decision wins. The import
 budget goes to the mineral surfaces in M7, where a normal map genuinely cannot be hand-written.
+
+---
+
+# M3 and M4, 2026-09-10 - the prices, and the two constraints that never bound
+
+M3 and M4 turned out to be one change, and the probe is what showed it.
+
+**The prices.** Every ladder was 1.8x to 2.3x a rung on a base of 100 to 1,400, so the whole
+shop was affordable in the first few minutes and the top rungs were unreachable for the whole
+game. They are now 1.5x to 1.6x on bases priced against the depth each ladder unlocks at:
+Drill 340, Cargo 320, Thrusters 300, Scanner 700, Fuel Tank 1,100, Magnet 1,200, Tow 1,500,
+Survey 2,600, Charge 3,000, Hull 3,400, Reactor 4,400, Cooling 5,000, Drone 5,600, Autopilot
+6,400, Laser 12,500. Consumables moved up with them, because two design tests immediately and
+correctly caught a Coolant Flush at 1,500 standing in front of a 5,000 Cooling Rig.
+
+**The two constraints.** M1 measured the hold at 5 to 12 per cent full when a run ended. The
+reason was not the cap: it was that a corridor stops when the FUEL runs out. So the question
+was how much a tank can cut, which nothing in the game states anywhere. Measured, at level 0:
+
+| | Before | After |
+|---|---|---|
+| Cells one tank cuts at 20 m | ~90 | ~90 |
+| Cells one tank cuts at 50 m | 26 | ~60 |
+| Ore-free rock that gets you | 66 kg at 20 m, 10 kg at 50 m | under the cap at both |
+| Hold at level 0 | 60 kg, +45 a rung, 465 at max | 45 kg, +10 a rung, 135 at max |
+
+`FUEL_DIG_PER_HARDNESS` was 0.09, so a granite cell at 50 m cost four times a dirt cell at
+20 m. The hold filled itself with weightless dirt in the shallows - granite is 0.25 kg a cell
+against amethyst at 7 - and the tank ran dry before the hold was a quarter full in the deep.
+**Neither constraint bound at the depth it was supposed to.** At 0.035, and with the hold
+brought down to something a tank can actually fill, they swap over around the middle of the
+world: a corridor of dirt runs the tank out, a corridor of ore overflows the hold, and which
+one you are in is the decision.
+
+**Measured after, 30 runs a style:** hold use 19 / 40 / 18 per cent against 7 / 12 / 5 before,
+and rungs bought in thirty runs 13 / 43 / 34 against 19 / 50 / 64. Greedy is still fast, and
+that is left alone deliberately: `CRAFT.md` wants the greedy option to be genuinely better and
+genuinely near the edge, and greedy is the style that takes the tows. The next lever if it is
+still too fast after a playtest is the ore value curve itself, which is a bigger change and
+should not be made twice.
+
+`test/econ.test.mjs` is the gate: a poor corridor empties the tank, a rich seam overflows the
+hold, a ladder that unlocks deeper costs more to start, every multiplier is between 1.3 and
+1.65, and no consumable undercuts the rung it stands in for. Five goldens were re-recorded and
+each diff was read: `stats` moved only the cargo ladder, `feel` only the two fuel constants,
+`feel-curves` only the dig-fuel curve, `upgrades` only base, mul and the derived costs, and
+`supplies` only the six prices.
+
+Two e2e tests failed on `'56.0 / 60 KG'` and `toBeLessThanOrEqual(60)`. They now read the cap
+out of the game, which is what they should always have done - a test that restates a constant
+only proves you can type it twice.

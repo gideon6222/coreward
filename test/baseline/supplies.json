@@ -4,7 +4,7 @@
       "key": "coolant",
       "name": "Coolant Flush",
       "icon": "COOL",
-      "cost": 1500,
+      "cost": 5600,
       "max": 2,
       "blurb": "Dumps accumulated heat soak back to zero. Does not cool the rock.",
       "idle": "no soak"
@@ -13,7 +13,7 @@
       "key": "patch",
       "name": "Hull Patch",
       "icon": "HULL",
-      "cost": 850,
+      "cost": 3900,
       "max": 3,
       "blurb": "Welds 45 hull back on, anywhere.",
       "idle": "hull full"
@@ -22,7 +22,7 @@
       "key": "cell",
       "name": "Fuel Cell",
       "icon": "FUEL",
-      "cost": 600,
+      "cost": 1400,
       "max": 3,
       "blurb": "Burns 55 fuel straight into the tank.",
       "idle": "tank full"
@@ -31,7 +31,7 @@
       "key": "overdrive",
       "name": "Overdrive",
       "icon": "OVR",
-      "cost": 1200,
+      "cost": 1500,
       "max": 2,
       "blurb": "20 seconds of drilling at 1.8x power.",
       "idle": "already running"
@@ -40,7 +40,7 @@
       "key": "bulwark",
       "name": "Bulwark Field",
       "icon": "BWK",
-      "cost": 1400,
+      "cost": 3800,
       "max": 2,
       "blurb": "Absorbs the next 2 impacts outright. Gas, rockfall, anything sudden.",
       "idle": "field is up"
@@ -49,7 +49,7 @@
       "key": "pulse",
       "name": "Survey Pulse",
       "icon": "PLS",
-      "cost": 1100,
+      "cost": 2900,
       "max": 2,
       "blurb": "30 seconds of seeing every vein through the rock.",
       "idle": "pulse is live"

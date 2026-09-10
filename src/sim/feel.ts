@@ -654,8 +654,15 @@ export function chargeAfter(charge: number, dt: number, atPad: boolean, bonus = 
 /* ---------- costs and damage ---------- */
 
 export const FUEL_PER_MOVE = 0.8;           /* per second while flying */
-export const FUEL_DIG_BASE = 1.0;           /* per second while drilling */
-export const FUEL_DIG_PER_HARDNESS = 0.09;
+/* Per second while drilling, and per point of hardness on top.
+   0.09 a point meant a granite cell at 50 m cost four times a dirt cell at
+   20 m, so a full tank cut 90 cells at the top of the world and 26 at the
+   bottom - the hold filled itself with weightless dirt in the shallows and the
+   tank ran dry before the hold was a quarter full in the deep. Neither
+   constraint bound where it was supposed to. At 0.035 the two swap over around
+   the middle of the world, which is where the decision belongs. */
+export const FUEL_DIG_BASE = 0.8;           /* per second while drilling */
+export const FUEL_DIG_PER_HARDNESS = 0.035;
 export const HULL_REGEN = 30;               /* per second, at the surface */
 
 /* ---------- the settle ----------

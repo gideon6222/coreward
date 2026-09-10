@@ -113,7 +113,18 @@ export const relicCount = (id: string) => g.relics.filter((r) => r === id).lengt
 export const S = {
   drill: () => (1 + g.up.drill * 0.95) * (1 + g.shards * 0.08) * (relic('drum') ? 1.1 : 1)
            * (R.odT > 0 ? OVERDRIVE_MULT : 1),
-  cargoCap: () => Math.round((60 + g.up.cargo * 45) * (relic('weave') ? 1.15 : 1)),
+  /* +12 a rung, not +45.
+     M1 measured the hold at 5 to 12 per cent full when a run ends, and M3 found
+     why: the corridor stops when FUEL runs out, never when the hold is full. A
+     full tank pays for roughly forty cells of drilling, which is about sixty
+     kilos of rock, against a cap that reached 465. The hold was eight times the
+     size the fuel could ever fill, so the cap - the thing CRAFT.md names as the
+     source of the "which is worth more" decision - could not bind at any level.
+     A full tank is worth about twenty-five cells of granite, which is roughly
+     forty kilos of rock, so the hold starts at 45 and climbs by 10. At those
+     numbers the two constraints meet: a rich corridor fills the hold, a poor one
+     runs the tank dry, and which one you are in is the decision. */
+  cargoCap: () => Math.round((45 + g.up.cargo * 10) * (relic('weave') ? 1.15 : 1)),
   speed: () => 3.0 + g.up.thrust * 0.7,
   fuelCap: () => 90 + g.up.tank * 40,
   /* the multipliers relics add, read by the frame loop and by feel.ts */

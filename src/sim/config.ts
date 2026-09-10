@@ -535,13 +535,13 @@ export const PULSE_SECS = 30;
 export const PULSE_REACH = 14;
 
 export const SUPPLIES: Supply[] = [
-  { key: 'coolant', name: 'Coolant Flush', icon: 'COOL', cost: 1500, max: 2,
+  { key: 'coolant', name: 'Coolant Flush', icon: 'COOL', cost: 5600, max: 2,
     blurb: 'Dumps accumulated heat soak back to zero. Does not cool the rock.',
     idle: 'no soak' },
-  { key: 'patch', name: 'Hull Patch', icon: 'HULL', cost: 850, max: 3,
+  { key: 'patch', name: 'Hull Patch', icon: 'HULL', cost: 3900, max: 3,
     blurb: 'Welds ' + PATCH_HULL + ' hull back on, anywhere.',
     idle: 'hull full' },
-  { key: 'cell', name: 'Fuel Cell', icon: 'FUEL', cost: 600, max: 3,
+  { key: 'cell', name: 'Fuel Cell', icon: 'FUEL', cost: 1400, max: 3,
     blurb: 'Burns ' + CELL_FUEL + ' fuel straight into the tank.',
     idle: 'tank full' },
 
@@ -559,13 +559,13 @@ export const SUPPLIES: Supply[] = [
      against Hull Plating at 420, Pulse against Deep Survey at 700. Stack limits
      stay at two, so a full kit is a run's worth of decisions and not a
      strategy. */
-  { key: 'overdrive', name: 'Overdrive', icon: 'OVR', cost: 1200, max: 2,
+  { key: 'overdrive', name: 'Overdrive', icon: 'OVR', cost: 1500, max: 2,
     blurb: OVERDRIVE_SECS + ' seconds of drilling at ' + OVERDRIVE_MULT + 'x power.',
     idle: 'already running' },
-  { key: 'bulwark', name: 'Bulwark Field', icon: 'BWK', cost: 1400, max: 2,
+  { key: 'bulwark', name: 'Bulwark Field', icon: 'BWK', cost: 3800, max: 2,
     blurb: 'Absorbs the next ' + BULWARK_HITS + ' impacts outright. Gas, rockfall, anything sudden.',
     idle: 'field is up' },
-  { key: 'pulse', name: 'Survey Pulse', icon: 'PLS', cost: 1100, max: 2,
+  { key: 'pulse', name: 'Survey Pulse', icon: 'PLS', cost: 2900, max: 2,
     blurb: PULSE_SECS + ' seconds of seeing every vein through the rock.',
     idle: 'pulse is live' }
 ];
@@ -576,30 +576,30 @@ export const SUPPLY_OF: Record<string, Supply> = {};
 for (const sup of SUPPLIES) SUPPLY_OF[sup.key] = sup;
 
 export const UPGRADES: Upgrade[] = [
-  { key: 'drill',  name: 'Drill Bit',     base: 130, mul: 2.00, max: 9, mat: 'iron', group: 'rig', unlock: 0,
+  { key: 'drill',  name: 'Drill Bit',     base: 340, mul: 1.55, max: 9, mat: 'iron', group: 'rig', unlock: 0,
     tiers: ['Steel', 'Tungsten', 'Carbide', 'Diamond', 'Ionized', 'Plasma', 'Graviton', 'Singularity', 'Starbreaker', 'Godcore'],
     effect: (l: number) => 'Power ' + (1 + l * 0.95).toFixed(2) + 'x' },
-  { key: 'cargo',  name: 'Cargo Hold',    base: 110, mul: 2.00, max: 9, mat: 'copper', group: 'rig', unlock: 0,
-    effect: (l: number) => (60 + l * 45) + ' kg' },
-  { key: 'thrust', name: 'Thrusters',     base: 100, mul: 1.95, max: 9, mat: 'silver', group: 'rig', unlock: 0,
+  { key: 'cargo',  name: 'Cargo Hold',    base: 320, mul: 1.55, max: 9, mat: 'copper', group: 'rig', unlock: 0,
+    effect: (l: number) => (45 + l * 10) + ' kg' },
+  { key: 'thrust', name: 'Thrusters',     base: 300, mul: 1.55, max: 9, mat: 'silver', group: 'rig', unlock: 0,
     effect: (l: number) => (3.0 + l * 0.7).toFixed(1) + ' cells/s' },
   /* Priced against the depth where running dry actually strands you, not
      against the first haul. The old 200 was pocket change by 36 m. */
-  { key: 'tank',   name: 'Fuel Tank',     base: 480, mul: 2.00, max: 9, mat: 'gold', group: 'survival', unlock: 0,
+  { key: 'tank',   name: 'Fuel Tank',     base: 1100, mul: 1.55, max: 9, mat: 'gold', group: 'survival', unlock: 0,
     effect: (l: number) => (90 + l * 40) + ' fuel' },
   /* The expensive one, and the ladder you save for. Heat starts at 70 m, so
      the first level costs about half a good run from that depth rather than
      one gold block. The shallower multiplier keeps later levels reachable. */
-  { key: 'cool',   name: 'Cooling Rig',   base: 1000, mul: 1.80, max: 9, mat: 'emerald', group: 'survival', unlock: 55,
+  { key: 'cool',   name: 'Cooling Rig',   base: 5000, mul: 1.5, max: 9, mat: 'emerald', group: 'survival', unlock: 55,
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
   /* The effect line names the framing as well as the lamp, because the
      framing is now the part the player actually feels. */
-  { key: 'scan',   name: 'Scanner Array', base: 140, mul: 1.90, max: 9, mat: 'amethyst', group: 'instruments', unlock: 0,
+  { key: 'scan',   name: 'Scanner Array', base: 700, mul: 1.55, max: 9, mat: 'amethyst', group: 'instruments', unlock: 0,
     effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light · ' +
       Math.round(zoomForScan(l) * 100) + '% view' },
-  { key: 'tow',    name: 'Tow Insurance', base: 180, mul: 2.00, max: 8, mat: 'iron', group: 'survival', unlock: 25,
+  { key: 'tow',    name: 'Tow Insurance', base: 1500, mul: 1.5, max: 8, mat: 'iron', group: 'survival', unlock: 25,
     effect: (l: number) => 'Tow takes ' + Math.round(Math.max(0.1, 0.5 - l * 0.05) * 100) + '% of haul' },
-  { key: 'auto',   name: 'Autopilot',     base: 900, mul: 2.20, max: 6, mat: 'ruby', group: 'instruments', unlock: 65,
+  { key: 'auto',   name: 'Autopilot',     base: 6400, mul: 1.55, max: 6, mat: 'ruby', group: 'instruments', unlock: 65,
     effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') },
 
   /* ---------- ordnance ----------
@@ -612,13 +612,13 @@ export const UPGRADES: Upgrade[] = [
      Gated so neither arrives before the player has felt the problem it solves.
      The charge at 40 m, about where hard rock starts costing real time; the
      laser at 90 m, where a shaft is long enough that cutting one is a job. */
-  { key: 'bomb',   name: 'Seismic Charge', base: 1400, mul: 2.30, max: 3, mat: 'iron', group: 'ordnance', unlock: 40,
+  { key: 'bomb',   name: 'Seismic Charge', base: 3000, mul: 1.6, max: 3, mat: 'iron', group: 'ordnance', unlock: 40,
     effect: (l) => (l === 0 ? 'Not installed' : bombCells(l) + ' cells around the target') },
   /* Ruby, not silver. Silver starts at 22 m and the laser unseals at 90, so
      the mineral gate was doing nothing at all behind the depth gate - one of
      the two was decoration. Ruby lives at 105 m, which puts both gates in the
      same neighbourhood, and a ruby laser is the better fiction anyway. */
-  { key: 'laser',  name: 'Cutting Laser',  base: 2800, mul: 2.30, max: 3, mat: 'ruby', group: 'ordnance', unlock: 90,
+  { key: 'laser',  name: 'Cutting Laser',  base: 12500, mul: 1.6, max: 3, mat: 'ruby', group: 'ordnance', unlock: 90,
     effect: (l) => (l === 0 ? 'Not installed' : laserRange(l) + ' cells straight ahead') },
 
   /* ---------- the second wave ----------
@@ -632,13 +632,13 @@ export const UPGRADES: Upgrade[] = [
      "the deep is chewing me up" was always a consumable, never a rig. Gated at
      45 m and on iron, both cheap, because this is the one that makes the
      middle of the game survivable rather than the end of it. */
-  { key: 'hull',   name: 'Hull Plating',   base: 420, mul: 1.95, max: 9, mat: 'silver', group: 'survival', unlock: 45,
+  { key: 'hull',   name: 'Hull Plating',   base: 3400, mul: 1.5, max: 9, mat: 'silver', group: 'survival', unlock: 45,
     effect: (l: number) => (100 + l * 25) + ' hull' },
 
   /* SALVAGE MAGNET. Ore dropped when the hold filled has to be re-approached
      one cell at a time, which is the least interesting minute in the game.
      Radius, not automation: you still have to go back for it. */
-  { key: 'magnet', name: 'Salvage Magnet', base: 260, mul: 1.85, max: 6, mat: 'copper', group: 'rig', unlock: 20,
+  { key: 'magnet', name: 'Salvage Magnet', base: 1200, mul: 1.5, max: 6, mat: 'copper', group: 'rig', unlock: 20,
     effect: (l: number) => (l === 0 ? 'Not installed' : 'Pulls drops from ' + (0.8 + l * 0.55).toFixed(1) + ' cells') },
 
   /* DEEP SURVEY. Distinct from the Scanner, which is light and framing: this
@@ -646,19 +646,19 @@ export const UPGRADES: Upgrade[] = [
      buried Jump Drive component, which is the thing the goal most needs a way
      to find - a component you can only locate by digging the whole world is a
      goal made of patience. */
-  { key: 'survey', name: 'Deep Survey',    base: 700, mul: 2.05, max: 5, mat: 'amethyst', group: 'instruments', unlock: 35,
+  { key: 'survey', name: 'Deep Survey',    base: 2600, mul: 1.55, max: 5, mat: 'amethyst', group: 'instruments', unlock: 35,
     effect: (l: number) => (l === 0 ? 'Not installed' : 'Reads ore ' + (2 + l * 1.6).toFixed(1) + ' m through rock') },
 
   /* REPAIR DRONE. Turns a bad run into a long one instead of a tow. Slow on
      purpose - it must never make heat survivable, only recoverable, so it is
      an order of magnitude under what soak takes at depth. */
-  { key: 'drone',  name: 'Repair Drone',   base: 1100, mul: 2.10, max: 5, mat: 'amethyst', group: 'survival', unlock: 60,
+  { key: 'drone',  name: 'Repair Drone',   base: 5600, mul: 1.5, max: 5, mat: 'amethyst', group: 'survival', unlock: 60,
     effect: (l: number) => (l === 0 ? 'Not installed' : '+' + (l * 0.55).toFixed(2) + ' hull/s underground') },
 
   /* REACTOR. Ordnance had two rungs and no ladder of its own: both weapons ran
      off a meter nothing could improve, so the answer to "I want to use these
      more" was to stop using them. */
-  { key: 'reactor', name: 'Reactor Core',  base: 900, mul: 2.00, max: 5, mat: 'gold', group: 'ordnance', unlock: 50,
+  { key: 'reactor', name: 'Reactor Core',  base: 4400, mul: 1.5, max: 5, mat: 'gold', group: 'ordnance', unlock: 50,
     effect: (l: number) => (l === 0 ? 'Not installed' : '+' + l + ' power · ' + (1 + l * 0.35).toFixed(2) + 'x recharge') }
 ];
 export const costOf = (u: Upgrade, lvl: number) => Math.round(u.base * Math.pow(u.mul, lvl));

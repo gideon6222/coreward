@@ -53,7 +53,7 @@ function fresh(style, ox) {
   });
   H.g.credits = 0; H.g.shards = 0; H.g.relics = []; H.g.relicsTaken = [];
   H.g.cargo = {}; H.g.weight = 0; H.g.dug = new Set(); H.g.stock = {};
-  return { style, ox, shaft: 0, strain: 0, t: 0, runs: 0, bought: [], history: [] };
+  return { style, ox, shaft: 0, strain: 0, best: 0, t: 0, runs: 0, bought: [], history: [] };
 }
 
 /* The cell as the generator really makes it, with its hardness multiplier.
@@ -164,7 +164,14 @@ function simulate(st, depth, dry) {
   if (towed) value = Math.round(value * (1 - H.S.towCut()));
   value = Math.round(value * H.S.saleBonus());
 
-  if (dry) st.shaft = shaft0; else st.strain = strain;
+  if (dry) { st.shaft = shaft0; }
+  else {
+    st.strain = strain;
+    st.best = Math.max(st.best, depth);
+    /* Ore banked at the pad, which is what the material gate spends. Only ore:
+       sell() puts nothing else in the stock. */
+    for (const k in cargo) if (H.isOre(H.DEF[k])) H.g.stock[k] = (H.g.stock[k] || 0) + cargo[k];
+  }
   return { t, value, weight, cap, towed, depth, deepCells, quakes, rate: value / Math.max(t, 1) };
 }
 
@@ -177,7 +184,18 @@ const ORDER = {
 
 function buy(st) {
   const owned = (u) => H.g.up[u.key] || 0;
-  const affordable = H.UPGRADES.filter((u) => owned(u) < u.max && H.costOf(u, owned(u)) <= H.g.credits);
+  /* The shop's real gates, not just the price: a row is sealed until your best
+     depth reaches it, and past level three it wants the mineral the thing is
+     built out of. A probe that ignores either one reports a shop that does not
+     exist. */
+  const affordable = H.UPGRADES.filter((u) => {
+    if (owned(u) >= u.max) return false;
+    if ((u.unlock || 0) > st.best) return false;
+    if (H.costOf(u, owned(u)) > H.g.credits) return false;
+    const mc = H.matCost(u, owned(u));
+    if (mc && (H.g.stock[mc.id] || 0) < mc.need) return false;
+    return true;
+  });
   if (!affordable.length) return null;
   let pick;
   if (st.style === 'optimal') {
@@ -193,6 +211,8 @@ function buy(st) {
     })[0];
   }
   const lvl = owned(pick);
+  const mc = H.matCost(pick, lvl);
+  if (mc) H.g.stock[mc.id] -= mc.need;
   H.g.credits -= H.costOf(pick, lvl);
   H.g.up[pick.key] = lvl + 1;
   return { key: pick.key, name: pick.name, level: lvl + 1, run: st.runs, minute: st.t / 60 };

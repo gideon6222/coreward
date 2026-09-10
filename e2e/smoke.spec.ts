@@ -697,8 +697,10 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
       up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
       best: { depth: 300, haul: 0 },
-      /* 56 of 60 kg: room for nothing worth having */
-      dug, cargo: { amethyst: 8 }, weight: 56, px: 6, pd: 70
+      /* Six amethyst at 7 kg is 42 of the 45 kg a stock hold carries: room for
+         nothing worth having. Written as the ore rather than as a number so
+         that a retune of the hold moves this with it. */
+      dug, cargo: { amethyst: 6 }, weight: 42, px: 6, pd: 70
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -714,7 +716,11 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
      raises no pointerdown, so this cannot start the audio graph and the
      gesture assertions below still mean what they say. */
   await enterGame(page);
-  await expect(page.locator('#cargoTxt')).toHaveText('56.0 / 60 KG');
+  /* Read the cap rather than restating it. It moved from 60 to 45 in M3 and
+     both of these tests failed on the literal, which is the only thing they
+     were really asserting about it. */
+  const cap = await page.evaluate(() => (window as any).__cw.S.cargoCap());
+  await expect(page.locator('#cargoTxt')).toHaveText('42.0 / ' + cap + ' KG');
 
   /* The drill must keep working. On the tick seam - see holdSeam - because
      this needs seventy-five metres of drilling and that is game time, which is
@@ -723,7 +729,7 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
     async () => (await page.evaluate(() => (window as any).__cw.g.pd)) >= 75);
   const kg = () => page.evaluate(() =>
     parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText));
-  expect(await kg(), 'the hold must never exceed its cap').toBeLessThanOrEqual(60);
+  expect(await kg(), 'the hold must never exceed its cap').toBeLessThanOrEqual(cap);
 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
@@ -753,7 +759,8 @@ test('ore left behind is picked up by flying back through it', async ({ page }) 
      raises no pointerdown, so this cannot start the audio graph and the
      gesture assertions below still mean what they say. */
   await enterGame(page);
-  await expect(page.locator('#cargoTxt')).toHaveText('0.0 / 60 KG');
+  await expect(page.locator('#cargoTxt')).toHaveText(
+    '0.0 / ' + (await page.evaluate(() => (window as any).__cw.S.cargoCap())) + ' KG');
 
   await holdUntil(page, 'left', async () => {
     await expect

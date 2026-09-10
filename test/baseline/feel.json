@@ -47,8 +47,8 @@
   },
   "cost": {
     "move": 0.8,
-    "digBase": 1,
-    "digPerHardness": 0.09,
+    "digBase": 0.8,
+    "digPerHardness": 0.035,
     "hullRegen": 30
   },
   "heat": {
