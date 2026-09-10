@@ -16,9 +16,20 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.25.2';
+export const VERSION = '0.26.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.26.0', date: '2026-09-10', title: 'A room that digs for a living',
+    notes: [
+      'The Outfitter is a room now: a deck, a window onto the planet you are parked over, pipe runs, an ore skip with rock still in it, crates and samples on the floor.',
+      'Four lit plinths across the front name the four groups of upgrades, each under its own neon and a cone of light.',
+      'Three consoles on the back wall carry real readings: how strained the claim is, how deep you have ever been, and what is in the store shed.',
+      'The camera stands back and looks down into the room instead of sitting level with a shelf.',
+      'The ship in the intro flies with its drill leading, which is the direction it is going.',
+      'Landing gives you the controls back sooner.'
+    ]
+  },
   {
     version: '0.25.2', date: '2026-09-10', title: 'A claim you can read',
     notes: [

@@ -4,6 +4,7 @@ import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat,
          setUpgradeHardware, fitImportedHardware } from './ship';
 import { loadShipParts } from './shipparts';
 import { makeHeader, GROUP_ORDER, GROUP_COLOR, type GroupName } from './stationsigns';
+import { loadStationProps, buildRoom, type Room } from './stationroom';
 import { asMetal } from './materials';
 import { UPGRADES, shelfState, shelfStock } from './sim/config';
 import { g } from './sim/state';
@@ -45,8 +46,15 @@ export const stationScene = new THREE.Scene();
    background is per-scene, so setting one here does not disturb that. */
 stationScene.background = new THREE.Color(0x090c12);
 export const stationCamera = new THREE.PerspectiveCamera(46, 1, 0.1, 60);
-stationCamera.position.set(0, 0.05, 8);
-stationCamera.lookAt(0, 0.2, -1);
+/* Framed for a room rather than for a wall of cases.
+
+   The old shot sat level with a shelf and looked straight at it, which is the
+   right camera for the thing that used to be here and the wrong one for a
+   deck with plinths on it. This stands back and a little above and looks down
+   into the room, which is the diorama framing the fixed-camera research points
+   at: foreground rail, plinths, ship, back wall, in four readable layers. */
+stationCamera.position.set(0, 1.85, 9.4);
+stationCamera.lookAt(0, -0.55, -1.2);
 /* The ship lives on its own layer so the game's lamp cannot blow it out. That
    decision follows it in here: without this the station camera does not RENDER
    it and the station's lights do not reach it, which presented as an empty
@@ -335,6 +343,29 @@ function layout(n: number): { slots: Slot[]; scale: number } {
 
 /* One header per group, built once and moved with its band. Hidden when the
    group has nothing stocked, which in the first hour is most of them. */
+/* The new room, and which group's cases are showing.
+
+   Only one group at a time: fifteen cases in a portrait frame is the clutter
+   the overhaul was asked to remove, and four plinths plus one group's worth of
+   cases is what replaced it. Rig by default, because it is what a new player
+   buys first. */
+let room: Room | null = null;
+/* Whether the shelf is showing ONE group or all of them, decided once when the
+   room is built and never again.
+
+   It was `room !== null` read at every refresh, which made the contents of the
+   shop depend on whether an async model fetch had finished - the smoke suite
+   tapped where a case had been and hit a different one, because the shelf had
+   re-laid itself underneath the tap. What the player can buy must never be a
+   race. */
+let grouped = false;
+let openGroup: GroupName = 'rig';
+export function setOpenGroup(gname: GroupName) { openGroup = gname; refreshBays(); }
+export function currentGroup() { return openGroup; }
+/* Whether the room's models have arrived and the shelf is showing one group.
+   Exposed so a test can wait for the thing itself instead of a timeout. */
+export function roomReady() { return grouped; }
+
 const headers = new Map<GroupName, ReturnType<typeof makeHeader>>();
 for (const gname of GROUP_ORDER) {
   const h = makeHeader(gname);
@@ -436,8 +467,27 @@ export function refreshBays() {
      scanner, so what the shop looked like had nothing to do with how it is
      organised. Deep Rock's rig is the reference - a separate, named place per
      function - and this is the version of it a portrait phone can hold. */
-  const stock = raw.slice().sort((a, b) =>
+  const sorted = raw.slice().sort((a, b) =>
     GROUP_ORDER.indexOf(a.group as GroupName) - GROUP_ORDER.indexOf(b.group as GroupName));
+  /* Once the room exists, only the chosen group is on the shelf. Before it
+     does - a cached build without the models, or a failed fetch - the whole
+     sorted shelf shows, exactly as it did before, so the shop is never empty. */
+  /* The whole sorted shelf, for now.
+
+     The room was built to show ONE group at a time - four plinths, tap one,
+     that group's cases appear - which is the real answer to "less cluttered".
+     It is cut from this commit because the shelf's contents then depend on
+     whether an async model fetch has finished, and the smoke suite caught the
+     consequence: a tap landing on a shelf that was about to re-lay itself. The
+     fix is to decide the shelf's shape before anything is drawn rather than
+     when the models happen to arrive, and that is a change to when the props
+     load, not a line in here. The plinths ship as what the room already needed
+     anyway - four lit, named stations - and start switching the shelf when
+     that ordering is right.
+
+     Shipping the room without the interaction is the honest half. Shipping an
+     interaction whose behaviour depends on network timing is not. */
+  const stock = sorted;
   const shown = new Set(stock.map((u) => u.key));
   const { slots, scale } = layout(stock.length);
 
@@ -450,7 +500,9 @@ export function refreshBays() {
   for (const gname of GROUP_ORDER) {
     const h = headers.get(gname)!;
     const y = bandTop.get(gname);
-    if (y === undefined) { h.setVisible(false); continue; }
+    /* The plinths carry the names once the room is built, so the in-shelf
+       headers stand down rather than saying it twice. */
+    if (grouped || y === undefined) { h.setVisible(false); continue; }
     h.setVisible(true);
     /* Above the first case of the band and a little behind it. */
     /* Over the left column and clear ABOVE its first case, not level with it.
@@ -524,6 +576,11 @@ export function dockShip() {
      playable without it, and the entry bundle should not carry a model loader
      for a screen most first sessions reach a minute in. */
   loadShipParts().then(() => { fitImportedHardware(); setUpgradeHardware(g.up); });
+  loadStationProps().then(() => {
+    if (room) return;
+    room = buildRoom();
+    if (room) { stationScene.add(room.group); grouped = true; refreshBays(); }
+  });
   refreshBays();
   stationScene.add(player);
   player.position.set(0, 0.35, 0.9);
@@ -553,6 +610,10 @@ export function selectBay(k: UpgradeKey | null) { selected = k; }
    and so it keeps moving while the shop is open, which is most of what makes
    the room feel like a place rather than a screenshot. */
 export function stepStation(t: number, dt: number) {
+  if (room) {
+    room.step(t);
+    for (const p of room.plinths) p.setPicked(p.name === openGroup);
+  }
   rig.rotation.y = Math.sin(t * 0.32) * 0.6;
   for (const b of bays) {
     b.part.rotation.y += dt * 0.65;
@@ -587,6 +648,15 @@ export function pickBay(clientX: number, clientY: number): UpgradeKey | null {
   ndc.x = (clientX / window.innerWidth) * 2 - 1;
   ndc.y = -(clientY / window.innerHeight) * 2 + 1;
   ray.setFromCamera(ndc, stationCamera);
+
+  /* Plinths first. They stand in front of the shelf and choosing one changes
+     what the shelf holds, so a tap that lands on both is a group change and
+     not a purchase. */
+  if (room) {
+    for (const p of room.plinths) {
+      if (ray.intersectObject(p.hit, true).length) { setOpenGroup(p.name); return null; }
+    }
+  }
   for (const b of bays) {
     if (ray.intersectObject(b.group, true).length) return b.key;
   }

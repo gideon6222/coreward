@@ -690,12 +690,18 @@ export const HULL_REGEN = 30;               /* per second, at the surface */
    should look like the game, not like a cutscene bolted to the front of it. */
 /* How high above the pad a landing starts.
 
-   5.5 was a touchdown; 9.5 is an approach you can watch. The crossing hands
+   5.5 was a touchdown you missed; 9.5 was an approach you could watch and also
+   three and a bit seconds during which the game ignored you - the mode is
+   'settle', not 'play', so SHOP and the d-pad are both inert until it lands.
+   That surfaced as a smoke test tapping a shop button that was refusing
+   clicks, which is the mildest possible way to find out. 7.2 over 2.1 seconds
+   keeps the descent visible and gives the controls back before anyone reaches
+   for them. The crossing hands
    over inside a white atmosphere flash and the ship is still descending when
    the game takes the frame back, so this is the half of "show it landing" that
    the player could actually see - the other half was always there and was
    over before the flash had faded. */
-export const SETTLE_FROM = 9.5;
+export const SETTLE_FROM = 7.2;
 export const SETTLE_RATE = asExpRate(3.4);
 /* Close enough to be down. Approach smoothing never quite arrives, and waiting
    for zero would hold the controls off for a fraction of a metre nobody can
@@ -703,7 +709,7 @@ export const SETTLE_RATE = asExpRate(3.4);
 export const SETTLE_DONE = 0.12;
 /* Hard ceiling on the whole thing. It plays on every crossing and every
    CONTINUE, and the second time you see it, it is a wait. */
-export const SETTLE_MAX = 3.2;
+export const SETTLE_MAX = 2.1;
 /* Was a global 70. It is now the world's own heat line, so every function
    below takes the depth it should compare against rather than reaching for a
    constant that is only true of one leg. See heatDepth() in config.ts. */

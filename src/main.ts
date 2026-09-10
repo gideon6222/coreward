@@ -9,7 +9,7 @@ import { syncBlocks, resetBlockCache } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
-import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station';
+import { pickBay, selectBay, selectedBay, bays, stationCamera, roomReady, setOpenGroup, currentGroup } from './station';
 import { el, updateHUD, audioLabels } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
@@ -149,7 +149,7 @@ if (new URLSearchParams(location.search).has('debug')) {
       if (R.intro) { R.intro.i = i; R.intro.t = 0; }
       paintBeat();
     },
-    pickBay, selectBay, selectedBay, bays, stationCamera,
+    pickBay, selectBay, selectedBay, bays, stationCamera, roomReady, setOpenGroup, currentGroup,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

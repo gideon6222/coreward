@@ -303,8 +303,21 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
   await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   await enterGame(page);
+  /* The ship has to be DOWN first. Landing puts the game in 'settle' mode and
+     the shop button refuses clicks until it is 'play' - so a click sent during
+     the descent is silently dropped and everything after it tests a shop that
+     never opened. */
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
   await page.locator('#btnShop').dispatchEvent('click');
   await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
+  /* Wait for the room's models before touching anything.
+
+     The Outfitter now fetches its props on the first visit and the shelf shows
+     one group once they land, so a tap sent before that lands on a shelf that
+     is about to re-lay itself. The game handles this correctly - the mode is
+     frozen at dock, so what is on screen stays put - but a test that taps
+     during the fetch is testing the fetch, not the shop. */
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
 
   /* The Outfitter is a room: one display case per upgrade, and the ship itself
      reparented onto the deck. Asserting the case COUNT is the equivalent of the
