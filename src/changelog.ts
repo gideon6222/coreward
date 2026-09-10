@@ -16,9 +16,21 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.25.1';
+export const VERSION = '0.25.2';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.25.2', date: '2026-09-10', title: 'A claim you can read',
+    notes: [
+      'Each building on the surface now has a lit sign, a window showing what is inside it, and something that moves when it is working.',
+      'The refinery lights up with the hold you are carrying, the derrick pumps while your tank is filling, and the shed sits dark when it is empty.',
+      'The Outfitter is sorted into four departments - rig, survival, instruments, ordnance - each under its own lit header and colour.',
+      'The ship carries real hardware now: a drill collar at the nose from drill 3, generator blocks at the stern from thrust 2 and 6.',
+      'Loose soil and gravel are their own surfaces instead of sharing one stone for the whole world.',
+      'The ship flies with its drill forward in the intro instead of pitched nose-up while the worlds stream past.',
+      'The cut from the crossing to the landing is hidden inside the atmosphere, and the descent onto the pad is long enough to watch.'
+    ]
+  },
   {
     version: '0.25.1', date: '2026-09-10', title: 'A way out of a bad boot',
     notes: [
