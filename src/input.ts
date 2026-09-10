@@ -1,6 +1,14 @@
+import { hap, haptics, setHaptics } from './haptics';
 import { coreDepth, planetName, traitOf, SUPPLIES, RELIC_OF } from './sim/config';
 import { atTitle, showTitle } from './titleui';
 import { relicDistance } from './relic';
+
+/* mm:ss for the fastest-core record. Anything over an hour reads as hours, and
+   nothing in this game should ever reach that. */
+function fmtTime(secs: number) {
+  const m = Math.floor(secs / 60), r = secs % 60;
+  return m + ':' + String(r).padStart(2, '0');
+}
 import { g , coreM, worldTrait} from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
@@ -87,6 +95,10 @@ mustEl('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('h
 
 ui.btnMusic.onclick = () => { audioInit(); setAudio('music', !audioState.music); audioLabels(); };
 ui.btnSfx.onclick = () => { audioInit(); setAudio('sfx', !audioState.sfx); audioLabels(); sfx.ui(); };
+/* Guarded: the toggle is new, and an installed app running an older cached
+   shell has no such button. A missing control must not take the pause sheet
+   down with it. */
+if (ui.btnHaptics) ui.btnHaptics.onclick = () => { setHaptics(!haptics.on); audioLabels(); hap.buy(); };
 
 let resetArmed = 0;
 function disarmReset() {
@@ -122,8 +134,15 @@ mustEl('btnPause').onclick = () => {
     '<div class="val">' + g.relics.length + '</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Records</div>' +
     '<div class="upeff">Deepest ' + g.best.depth + ' m' +
-    (g.best.haul ? ' · best haul ◈ ' + g.best.haul.toLocaleString() : '') + '</div></div>' +
+    (g.best.haul ? ' · best haul ◈ ' + g.best.haul.toLocaleString() : '') +
+    (g.best.fastest ? ' · fastest core ' + fmtTime(g.best.fastest) : '') +
+    (g.best.worlds ? ' · ' + g.best.worlds + ' world' + (g.best.worlds === 1 ? '' : 's') + ' broken' : '') +
+    '</div></div>' +
     '<div class="val">' + g.best.depth + ' m</div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">Jump Drive</div>' +
+    '<div class="upeff">' + (g.drive.length === 5 ? 'Complete · the Heart is on the chart'
+      : 'One piece on each kind of world') + '</div></div>' +
+    '<div class="val">' + g.drive.length + ' / 5</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Core Shards</div>' +
     '<div class="upeff">Planets destroyed · +' + (g.shards * 8) + '% drill power</div></div>' +
     '<div class="val">' + g.shards + '</div></div>';

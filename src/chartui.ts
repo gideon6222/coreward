@@ -130,6 +130,7 @@ export function arrive() {
   g.dug = new Set();
   g.rubble = new Set();
   resetClaim();
+  R.worldT = 0;
   g.damage = {};
   g.drops = {}; syncDrops();
   for (const k of Array.from(meshes.keys())) dropBlock(k);

@@ -37,6 +37,7 @@ import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } f
 import { padLights, beam } from './pad';
 import { updateClaim } from './claimyard';
 import { breachHeat } from './sim/breach';
+import { hap } from './haptics';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
@@ -349,6 +350,9 @@ export function tick(raw: number, draw = true) {
         dropBlock(k);
         spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 52 : 24, b.ore ? 6.5 : 4, 0.85);
         sfx.digStop();
+        /* POLISH.md: one event, four channels. The shake and the freeze are on
+           the next two lines and the sound is on the one above. */
+        if (b.ore) hap.ore(); else hap.cut();
         freeze = b.ore ? FREEZE_ORE : FREEZE_ROCK;
         R.shake = Math.max(R.shake, b.ore ? SHAKE_ORE : SHAKE_ROCK);
         R.squash = SQUASH_BREAK;
@@ -563,6 +567,7 @@ export function tick(raw: number, draw = true) {
     /* The breach owns the world while it is running: its own tremor cadence,
        its own grade. Everything else in this block still applies - fuel, heat
        and the hold do not stop mattering because the core went. */
+    R.worldT += dt;
     const breaching = stepBreachHere(dt);
     const heatLine = heatDepth(g.planet);
     const heatSpan = coreM() - heatLine;

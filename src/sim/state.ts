@@ -100,7 +100,7 @@ export const g: {
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
   cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [],
   log: blankLog(),
-  best: { depth: 0, haul: 0 },
+  best: { depth: 0, haul: 0, fastest: 0, worlds: 0 },
   claim: newClaim(),
   mode: 'play'
 };

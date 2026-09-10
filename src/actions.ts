@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { isHeart } from './sim/drive';
-import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF, PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE, GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS, tremorDepth } from './sim/config';
+import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF, PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE, GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS, tremorDepth, UPGRADES, costOf } from './sim/config';
 import { clamp, key, stream } from './sim/util';
 import { newBreach, stepBreach } from './sim/breach';
+import { hap } from './haptics';
 import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './sim/world';
 import { R } from './sim/runtime';
@@ -91,7 +92,8 @@ export function sell() {
   }
   g.cargo = {}; g.weight = 0;
   sfx.sell();
-  toast('Sold haul for ◈ ' + v.toLocaleString());
+  hap.buy();
+  toast(debrief(paid));
   save();
 }
 
@@ -418,6 +420,35 @@ export function tow(reason: string) {
     'CONTINUE', () => {});
 }
 
+/* The run report.
+
+   `POLISH.md` asks for a reason to play again in five minutes, and names one:
+   a run that ended one decision short. A run used to end with "Sold haul for
+   X", which says what happened and nothing about what to do next.
+
+   Three facts, in the order they matter: what it paid, how it stood against
+   the record that run could have broken, and the cheapest thing you still
+   cannot afford - which is the sentence that sends you back down. Deliberately
+   one toast rather than a modal: a run ends every couple of minutes and a
+   screen you have to dismiss that often stops being information. */
+export function debrief(paid: number): string {
+  const bits = ['◈ ' + paid.toLocaleString()];
+  if (g.pd < g.best.depth) bits.push('best ' + g.best.depth + ' m');
+  /* The nearest thing out of reach, by price, among what the shop will
+     actually sell you right now. */
+  let want: { name: string; short: number } | null = null;
+  for (const u of UPGRADES) {
+    const lvl = g.up[u.key as keyof typeof g.up] || 0;
+    if (lvl >= u.max || (u.unlock || 0) > g.best.depth) continue;
+    const short = costOf(u, lvl) - g.credits;
+    if (short <= 0) continue;
+    if (!want || short < want.short) want = { name: u.name, short };
+  }
+  if (want) bits.push(want.name + ' in ' + want.short.toLocaleString());
+  else bits.push('everything on the shelf is affordable');
+  return bits.join('  ·  ');
+}
+
 export function showEvent(title: string, bodyTxt: string, btnTxt: string, cb: () => void) {
   g.mode = 'event';
   ui.evTitle.textContent = title;
@@ -441,10 +472,17 @@ export function breakCore() {
   spray(x, y, 0xff7a18, 200, 15, 3.0);
   flash('rgba(255,255,255,.95)', 700);
   sfx.boom();
+  hap.boom();
   R.shake = SHAKE_BOOM;
   const heart = isHeart(g.world);
   setTimeout(() => {
     g.shards++;
+    /* The records this world just set. Kept here rather than in the breach,
+       because the core is what the record is about - whether you got out with
+       the hold is a different question and the tow already answers it. */
+    g.best.worlds = (g.best.worlds || 0) + 1;
+    const secs = Math.round(R.worldT);
+    if (secs > 0 && (!g.best.fastest || secs < g.best.fastest)) g.best.fastest = secs;
     /* The core is broken and the world is gone. Anything still buried in it is
        gone with it - which is what makes a Jump Drive component worth going
        and looking for rather than something you pick up eventually. */

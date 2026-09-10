@@ -101,6 +101,11 @@ export type Kit = Record<SupplyKey, number>;
 export interface Best {
   depth: number;   /* deepest metre ever reached, on any planet */
   haul: number;    /* most valuable single sale */
+  /* Seconds from landing on a world to breaking its core, and how many worlds
+     have been broken. A collection that does not decay, which POLISH.md asks
+     every game for and this one only half had. */
+  fastest?: number;
+  worlds?: number;
 }
 
 /* A planet's personality.

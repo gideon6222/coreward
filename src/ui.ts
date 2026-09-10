@@ -11,6 +11,7 @@ import { setDrillTier, setUpgradeHardware } from './ship';
 import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
 import { R } from './sim/runtime';
+import { hap, haptics, setHaptics } from './haptics';
 import { selectedBay, refreshBays } from './station';
 import { PARTS, DRIVE_SLOTS } from './sim/drive';
 
@@ -33,6 +34,9 @@ export const ui = {
   vault: mustEl('vault'),
   pause: mustEl('pause'), pauseStats: mustEl('pauseStats'), btnReset: mustEl('btnReset'),
   btnMusic: mustEl('btnMusic'), btnSfx: mustEl('btnSfx'), heat: mustEl('heat'),
+  /* el(), not mustEl(): the toggle is new and a save loaded into an older
+     cached shell must not take the whole HUD down with it. */
+  btnHaptics: el('btnHaptics'),
   alarm: mustEl('alarm'), hullTxt: mustEl('hullTxt'),
   vignette: mustEl('vignette'),
   flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto'),
@@ -415,6 +419,10 @@ export function buildSupplies() {
 }
 
 export function audioLabels() {
+  if (ui.btnHaptics) {
+    ui.btnHaptics.textContent = 'HAPTICS  ' + (haptics.on ? 'ON' : 'OFF');
+    ui.btnHaptics.classList.toggle('off', !haptics.on);
+  }
   ui.btnMusic.textContent = 'MUSIC  ' + (audioState.music ? 'ON' : 'OFF');
   ui.btnSfx.textContent = 'SOUND  ' + (audioState.sfx ? 'ON' : 'OFF');
   ui.btnMusic.classList.toggle('off', !audioState.music);
@@ -437,6 +445,7 @@ export function onQuake() {
   const c = g.claim;
   R.shake = Math.max(R.shake, 1.35);
   sfx.rumble();
+  hap.quake();
   const worst = (['refinery', 'derrick', 'shed'] as const)
     .map((k) => ({ k, v: c[k] }))
     .sort((a, b) => a.v - b.v)[0];

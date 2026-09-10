@@ -3115,3 +3115,31 @@ and two fonts. Three of the four rows cannot name their exact ambientCG id: thos
 imported before the credits file existed and their commits describe what the maps are without
 saying which material they came from. All are CC0 from ambientCG, which is what matters for
 shipping, and the file says so plainly rather than inventing ids.
+
+---
+
+# M8, 2026-09-10 - haptics, the debrief and the record book
+
+Three `POLISH.md` lines this game had never had.
+
+**Haptics.** There was not one `navigator.vibrate` call in six versions, so every event in the
+game fired three of the four channels POLISH asks for. `src/haptics.ts` is the whole API and
+it is deliberately small: named events rather than durations at the call sites, so the
+vocabulary lives in one place. A cut is 12 ms, ore 22, damage two quick taps, a surface quake
+90-60-45, a core coming apart 120-50-80-40-60. Past about 60 ms a phone buzzes rather than
+taps, which reads as a notification rather than as the game, so only the two events that ARE
+interruptions are allowed to be long. Absent on iOS Safari and it simply no-ops; a toggle sits
+beside the audio ones and persists; every call is wrapped, because a vibrate on a page that
+has never been tapped throws in some builds.
+
+**The debrief.** A run used to end with "Sold haul for X", which says what happened and
+nothing about what to do next. It now reads `◈ 4,120 · best 47 m · Hull Plating in 1,180` -
+what it paid, how it stood against the record that run could have broken, and **the cheapest
+thing on the shelf you still cannot afford**, which is the sentence that sends you back down.
+POLISH names exactly this: a reason to play again in five minutes is a run that ended one
+decision short. One toast rather than a modal on purpose - a run ends every couple of minutes
+and a screen you have to dismiss that often stops being information.
+
+**The record book.** The pause sheet already had deepest and best haul. It now also carries
+the fastest core, how many worlds have been broken, and the Jump Drive at n / 5. `R.worldT`
+counts from landing to the core breaking, which is the only new state any of it needed.
