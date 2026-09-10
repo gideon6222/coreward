@@ -45,7 +45,7 @@ import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showE
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
 import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
-         landingT } from './transit';
+         landingT, isLanding } from './transit';
 import { introTick, beatT } from './intro';
 import { endIntro, paintBeat, beginIntroLanding, titleLanding, finishLanding } from './titleui';
 import { arrive } from './chartui';
@@ -126,6 +126,23 @@ export function frame(now: number) {
 export function stopClock() {
   if (raf) cancelAnimationFrame(raf);
   raf = 0;
+}
+
+/* Give it back.
+
+   The seam could stop the clock and not restart it, which was fine while
+   `advance()` was only ever used by tests that drove everything themselves
+   from that point on. The moment one test helper advanced a few seconds and
+   then handed back to a spec that holds a d-pad in real time, the game was
+   frozen and six specs failed at once - a stopped clock looks exactly like a
+   game that will not move.
+
+   `last` is reset here, or the first frame after resuming carries every
+   millisecond spent stopped and the ship teleports. */
+export function startClock() {
+  if (raf) return;
+  last = performance.now();
+  raf = requestAnimationFrame(frame);
 }
 
 /* Run `seconds` of game time as fixed steps, as fast as the CPU allows.
@@ -632,7 +649,10 @@ export function tick(raw: number, draw = true) {
       stepShowcase(raw, clock);
       /* A CONTINUE landing has no caption clock of its own - it is over when
          the flight says it is. */
-      if (titleLanding() && landingT() >= 1) finishLanding();
+      /* Not while it is still burning: isLanding() is false during the launch,
+         and landingT() reads 1 from the previous descent, so testing the
+         fraction alone would end the sequence on its first frame. */
+      if (titleLanding() && isLanding() && landingT() >= 1) finishLanding();
     }
     tickToast(raw);
     if (draw) renderTransit();

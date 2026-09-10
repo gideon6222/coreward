@@ -11,7 +11,7 @@ import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware } from './ship';
 import { pickBay, selectBay, selectedBay, bays, stationCamera } from './station';
 import { el, updateHUD, audioLabels } from './ui';
-import { frame, tick, advance, stopClock } from './loop';
+import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
@@ -117,7 +117,7 @@ requestAnimationFrame(frame);
    usually means to make: DEPTH 0 m is true at pd 0.0 and at pd 0.49. */
 if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as { __cw: unknown }).__cw = {
-    tick, advance, stopClock, g, S, R,
+    tick, advance, stopClock, startClock, g, S, R,
     /* The renderer's own handles, for tuning an art pass live. Every lighting
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */

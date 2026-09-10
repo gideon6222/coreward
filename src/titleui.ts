@@ -2,7 +2,7 @@ import { g, save, hasSave } from './state';
 import { R } from './runtime';
 import { sfx } from './audio';
 import { hardReset } from './actions';
-import { beginShowcase, endShowcase, beginLanding, isLanding } from './transit';
+import { beginShowcase, endShowcase, beginLanding, beginLaunch, isLanding } from './transit';
 import { BEATS, newIntro, skip as skipIntro, advance as stepBeat, LANDING_SECS } from './intro';
 import { planetName, coreDepth, skyLo } from './config';
 import { buildNotes, updateHUD, flash } from './ui';
@@ -76,6 +76,23 @@ export function showIntro() {
   el('title').classList.add('hidden');
   el('intro').classList.remove('hidden');
   document.body.classList.add('crossing');
+
+  /* THE SKIP BUTTON IS FOR PEOPLE WHO HAVE FINISHED THE GAME.
+
+     Playtest: *"if you are starting a new run, do the full intro ... if they
+     have beaten the game and are doing a new game plus run, do the full intro
+     but provide a skip button."*
+
+     Which is the right shape, and it is worth saying why it is not the usual
+     "always let them skip". A cutscene you cannot skip is a tax on every
+     REPLAY - and until the Heart is broken there has been no replay. A first
+     run sees it once, which is the one time it is doing its job; a run started
+     after winning has seen it, and gets the way out.
+
+     Tapping still steps through it on any run, so nobody is ever stuck
+     watching a line they have finished reading. */
+  el('introSkip').classList.toggle('hidden', !g.won);
+
   const dots = el('introDots');
   dots.innerHTML = BEATS.map(() => '<i></i>').join('');
   paintBeat();
@@ -138,7 +155,10 @@ let landingInto: boolean | null = null;
 function startGame(fresh: boolean) {
   el('title').classList.add('hidden');
   landingInto = fresh;
-  beginLanding(g.world, LANDING_SECS);
+  /* Take off, THEN fly there. beginLaunch runs the burn and hands over to the
+     landing itself, so this asks for a destination rather than sequencing
+     phases - see the note in transit.ts. */
+  beginLaunch(g.world);
 }
 
 /* Called by the frame loop when a CONTINUE landing finishes. */
@@ -152,7 +172,10 @@ export function finishLanding() {
 
 /* Is a title-screen landing in flight? The intro has its own clock and its own
    end, so the loop has to be able to tell the two apart. */
-export function titleLanding() { return landingInto !== null && isLanding(); }
+/* True from the moment CONTINUE is pressed until the ship is on the ground.
+   It has to cover the LAUNCH as well as the landing: `landingInto` is set at
+   the launch and the loop only stops watching once the whole thing is over. */
+export function titleLanding() { return landingInto !== null; }
 
 export function wireTitle() {
   el('btnContinue').onclick = () => { sfx.ui(); startGame(false); };
@@ -174,8 +197,17 @@ export function wireTitle() {
   el('introSkip').onclick = (e) => {
     e.stopPropagation();
     sfx.ui();
+    /* Skips the CAPTIONS and nothing else. Playtest: *"if that is pressed,
+       skip the main part of the intro but still have the ship fly to the
+       planet."*
+
+       So it hands over to the descent and the frame loop flies it down -
+       exactly as running out of captions does. This used to call endIntro()
+       straight after, which threw away the arrival with the words and dropped
+       the player onto the pad from nowhere. `skip` sets the landing; the loop
+       watches for it; there is one route to the ground. */
     skipIntro(st);
-    endIntro();
+    beginIntroLanding();
   };
 
   /* Tap anywhere else to go to the next beat. On a phone the natural thing to

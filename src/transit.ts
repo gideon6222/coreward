@@ -305,6 +305,16 @@ let landWorld = -1;
 let landT = 0;
 let landDur = 1;
 
+/* The launch. CONTINUE does not begin in mid-flight: playtest, *"I want the
+   ship to take off and fly to the planet they were on last."* So there is a
+   burn first - the drive lights, the stars stretch and rush, and the worlds
+   ahead close much faster - and then it settles into the crossing and comes
+   down. It is the difference between resuming a journey and starting one. */
+let launchT = 0;
+let launchDur = 0;
+let launchWorld = -1;
+const LAUNCH_BOOST = 5.5;   /* multiple of cruise speed at the peak of the burn */
+
 export function isShowcase() { return showing; }
 export function isLanding() { return landWorld >= 0; }
 /* 0..1 through the landing, for the caller that has to know when it is over. */
@@ -389,6 +399,7 @@ export function endShowcase() {
   if (!showing) return;
   showing = false;
   landWorld = -1;
+  launchWorld = -1;
   gameScene.add(player);
   player.scale.setScalar(1);
   rig.rotation.set(0, 0, 0);
@@ -401,7 +412,19 @@ export function endShowcase() {
 
 /* Stop flying past and come down on one. Used by the end of the intro and by
    CONTINUE, which is the same event from two places. */
+/* Burn, then cruise, then come down - all from one call, because the caller
+   should be asking for "go to this world", not sequencing three phases. */
+export function beginLaunch(world: number, secs = 2.6) {
+  launchWorld = world;
+  launchT = 0;
+  launchDur = secs;
+  landWorld = -1;
+}
+
+export function isLaunching() { return launchWorld >= 0; }
+
 export function beginLanding(world: number, secs = 4.5) {
+  launchWorld = -1;
   landWorld = world;
   landT = 0;
   landDur = secs;
@@ -431,7 +454,27 @@ export function stepShowcase(dt: number, clock: number) {
 
   if (landWorld >= 0) { stepLanding(dt, clock); return; }
 
-  flyDist += FLY_SPEED * dt;
+  /* The burn. Speed peaks early and falls away, which is what an engine
+     lighting feels like - a constant fast scroll reads as a different cruise
+     speed rather than as acceleration. */
+  let boost = 1;
+  if (launchWorld >= 0) {
+    launchT += dt;
+    const u = Math.min(1, launchT / launchDur);
+    boost = 1 + (LAUNCH_BOOST - 1) * Math.sin(u * Math.PI) ** 0.7;
+    /* Thrown back in the seat: the ship sits lower and pitches up under the
+       burn, and recovers as it falls off. */
+    const kick = Math.sin(u * Math.PI);
+    player.position.y -= kick * 0.35;
+    rig.rotation.x -= kick * 0.22;
+    for (const f of flames) {
+      f.cone.scale.set(1.0 + kick * 0.5, 1.25 + kick * 2.2, 1.0 + kick * 0.5);
+      f.glow.scale.setScalar(1.1 + kick * 1.5);
+    }
+    if (launchT >= launchDur) beginLanding(launchWorld);
+  }
+
+  flyDist += FLY_SPEED * boost * dt;
   for (let i = 0; i < flyPool.length; i++) {
     const f = flyPool[i];
     const z = f.z + flyDist;
@@ -446,7 +489,7 @@ export function stepShowcase(dt: number, clock: number) {
     f.body.rotation.y = clock * f.spin;
   }
 
-  streamStars(clock, 1);
+  streamStars(clock, 1, boost);
 }
 
 function stepLanding(dt: number, clock: number) {
@@ -471,14 +514,24 @@ function stepLanding(dt: number, clock: number) {
   const sky = new THREE.Color(skyLo(landWorld)).multiplyScalar(0.05 + glow * 0.95);
   (transitScene.background as THREE.Color).lerp(sky, Math.min(1, dt * 4));
 
-  streamStars(clock, 1 - glow);
+  streamStars(clock, 1 - glow, 1);
 }
 
-function streamStars(clock: number, alpha: number) {
+/* `boost` stretches the starfield during a burn. Accumulated rather than
+   derived from `clock`, or changing the speed would make the whole field jump
+   to a different place in its cycle instead of speeding up from where it
+   was. */
+let starScroll = 0;
+function streamStars(clock: number, alpha: number, boost = 1) {
+  starScroll += boost * 0.28;
   for (let L = 0; L < starLayers.length; L++) {
     const sp = (3 - L) * 16;
-    starLayers[L].position.z = (clock * sp) % 90;
+    starLayers[L].position.z = (starScroll * sp) % 90;
     (starLayers[L].material as THREE.PointsMaterial).opacity = (0.9 - L * 0.22) * alpha;
+    /* Points cannot stretch, so speed reads as brightness instead - the field
+       flares under the burn and settles back. */
+    (starLayers[L].material as THREE.PointsMaterial).size =
+      (1.5 - L * 0.4) * (1 + (boost - 1) * 0.35);
   }
 }
 

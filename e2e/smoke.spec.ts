@@ -128,7 +128,16 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', (e) => {
     throw new Error('uncaught page error: ' + e.message);
   });
-  await page.goto('/');
+  /* ?debug for every spec, not just the ones that reach into the game.
+
+     The seam only ADDS `window.__cw`; it changes no behaviour, and nothing
+     asserts its absence. What it buys is that enterGame can run the way in on
+     the tick seam instead of waiting out a four-and-a-half second descent in
+     real time - which, times twenty-five specs, took the suite from 2.7
+     minutes to 5.0 and would have taken CI past twelve. Same reason the deep
+     holds moved off the wall clock: a slow machine must not be what a test is
+     measuring. */
+  await page.goto('/?debug');
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
   await enterGame(page);
 });
@@ -148,27 +157,58 @@ async function enterGame(page: Page) {
   const intro = page.locator('#intro');
   const title = page.locator('#title');
   if (!(await intro.getAttribute('class'))?.includes('hidden')) {
-    await page.locator('#introSkip').dispatchEvent('click');
+    /* The skip button only exists on a run started after the game has been
+       beaten - a first run watches it, which is the whole point of it. So a
+       test cannot rely on the button being there.
+
+       Tapping steps a caption on any run, and running out of captions hands
+       over to the descent, so tapping through is the route that always works.
+       One more tap than there are beats, because the last one is what ends
+       them. */
+    const skip = page.locator('#introSkip');
+    const canSkip = !(await skip.getAttribute('class'))?.includes('hidden');
+    if (canSkip) {
+      await skip.dispatchEvent('click');
+    } else {
+      for (let i = 0; i < 10; i++) {
+        await intro.dispatchEvent('click');
+        if ((await intro.getAttribute('class'))?.includes('hidden')) break;
+      }
+    }
   } else if (!(await title.getAttribute('class'))?.includes('hidden')) {
     /* CONTINUE when there is a save, NEW GAME when there is not - and NEW GAME
        from a fresh context needs no confirm, because there is nothing to
        lose. */
     const cont = page.locator('#btnContinue');
-    const useCont = !(await cont.getAttribute('class'))?.includes('hidden');
+    /* Disabled rather than hidden now - CONTINUE is greyed on a save-less
+       run, not removed. */
+    const useCont = !(await cont.isDisabled());
     await page.locator(useCont ? '#btnContinue' : '#btnNewGame').dispatchEvent('click');
-    if (!useCont) await page.locator('#introSkip').dispatchEvent('click');
+    if (!useCont) await enterGame(page);
   }
-  await expect(intro, 'the intro never closed').toHaveClass(/hidden/);
-  await expect(title, 'the title never closed').toHaveClass(/hidden/);
-
   /* Both routes in now end by FLYING DOWN to the world, which is four and a
      half seconds of game time before play starts. Waiting for that on the wall
      clock is the mistake that put CI red the last time - the runner has no GPU,
      so game seconds cost more real ones there than here. Run it out on the
      seam where it is available. */
-  await page.evaluate(() => {
+  /* Advanced UNTIL it is done, not for a fixed guess. The first version ran
+     advance(7) against a launch of 2.6 s and a descent of 4.5 s, which is 7.1 -
+     it missed by a tenth of a second and hung on the poll. A number that has
+     to be kept in step with two constants in another file will fall out of
+     step with them; asking whether it has finished cannot. */
+  await page.evaluate(async () => {
     const cw = (window as any).__cw;
-    if (cw && cw.advance) cw.advance(7);
+    if (!cw || !cw.advance) return;
+    for (let i = 0; i < 30 && document.body.classList.contains('crossing'); i++) {
+      cw.advance(1);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    /* HAND THE CLOCK BACK. advance() stops the real-time loop so a caller can
+       drive it, and every spec after this one holds a d-pad and waits for the
+       world to move. Without this the game is frozen from here on, which looks
+       exactly like a game that will not move - six specs failed that way at
+       once. */
+    cw.startClock();
   });
 
   /* Waited for on a DOM signal, not on the debug seam.
@@ -191,6 +231,13 @@ async function enterGame(page: Page) {
     .poll(() => page.evaluate(() => (window as any).__cw?.g?.mode ?? 'play'),
           { timeout: 10_000 })
     .toBe('play');
+
+  /* Asserted AFTER the wait, not before it. Tapping through the captions sets
+     the descent going but the screen is not hidden until the next frame runs,
+     so checking straight after the last tap failed on a flag that had not been
+     read yet - a race against the frame loop rather than a real state. */
+  await expect(intro, 'the intro never closed').toHaveClass(/hidden/);
+  await expect(title, 'the title never closed').toHaveClass(/hidden/);
 }
 
 test('boots without hitting the error overlay', async ({ page }) => {
@@ -1613,4 +1660,107 @@ test('breaking a core opens the chart, and the crossing lands you somewhere else
   expect(after.world, 'arrived at the world it left').not.toBe(before.world);
   expect(after.dug, 'the new world inherited the old one\'s tunnels').toBe(0);
   expect(after.name, 'the HUD still names the old world').not.toBe(before.name);
+});
+
+test('the three ways in behave differently, and New Game Plus can skip', async ({ page }) => {
+  /* Playtest: *"if you are starting a new run, do the full intro. if you are
+     continuing a game, I want the ship to take off and fly to the planet they
+     were on last. if they have beaten the game and are doing a new game plus
+     run, do the full intro but provide a skip button. if that is pressed, skip
+     the main part of the intro but still have the ship fly to the planet."*
+
+     Four claims, and the interesting one is the last: a skip that also skipped
+     the arrival would drop the player onto the pad out of nowhere. */
+  /* A genuinely fresh player. The beforeEach has already crossed the way in
+     once, which wrote a save - so this has to clear it AND stop the outgoing
+     page writing the live state back on unload, which is the trap CLAUDE.md
+     records about seeding saves. */
+  await page.evaluate(() => {
+    localStorage.clear();
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  /* 1. A FIRST RUN gets the intro and no way out of it. It is only a tax on a
+        replay, and there has not been one yet. */
+  await expect(page.locator('#intro'), 'a first run should open on the intro')
+    .not.toHaveClass(/hidden/);
+  await expect(page.locator('#introSkip'),
+    'a first run must not offer a skip - it has never seen this').toHaveClass(/hidden/);
+
+  await enterGame(page);
+
+  /* 2. CONTINUE takes off and flies, rather than cutting into the game. The
+        launch is its own phase before the descent, so the crossing is still up
+        well after the click. */
+  await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.g.world = 3; cw.g.planet = 3; cw.g.best.depth = 90;
+    cw.showTitle();
+  });
+  await expect(page.locator('#btnContinue'), 'a save exists, so CONTINUE is live')
+    .toBeEnabled();
+  await page.locator('#btnContinue').dispatchEvent('click');
+
+  const flying = await page.evaluate(() => {
+    (window as any).__cw.advance(1.0);
+    return {
+      crossing: document.body.classList.contains('crossing'),
+      mode: (window as any).__cw.g.mode
+    };
+  });
+  expect(flying.crossing, 'CONTINUE cut straight into the game instead of flying there')
+    .toBe(true);
+  expect(flying.mode).not.toBe('play');
+
+  /* And it arrives on the world the save was on, not on Verdax. */
+  await page.evaluate(async () => {
+    const cw = (window as any).__cw;
+    for (let i = 0; i < 30 && document.body.classList.contains('crossing'); i++) {
+      cw.advance(1);
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  });
+  expect(await page.evaluate(() => (window as any).__cw.g.world),
+    'CONTINUE landed on the wrong world').toBe(3);
+
+  /* 3. NEW GAME PLUS: having beaten it, the intro comes back WITH a skip. The
+        flag has to survive the wipe, or the one screen that should know the
+        player has finished the game treats them as a first-timer. */
+  await page.evaluate(() => {
+    (window as any).__cw.g.won = true;
+    (window as any).__cw.showTitle();
+  });
+  /* NEW GAME asks before it wipes, and Playwright dismisses dialogs by default
+     - so without this the button correctly refuses and the test reads it as
+     the intro failing to open. */
+  page.once('dialog', (d) => d.accept());
+  await page.locator('#btnNewGame').dispatchEvent('click');
+  await expect(page.locator('#intro'), 'New Game did not play the intro')
+    .not.toHaveClass(/hidden/);
+  expect(await page.evaluate(() => (window as any).__cw.g.won),
+    'a reset wiped the fact that the game had been beaten').toBe(true);
+  await expect(page.locator('#introSkip'), 'a New Game Plus run must offer a skip')
+    .not.toHaveClass(/hidden/);
+
+  /* 4. Skipping drops the captions and KEEPS the descent. */
+  await page.locator('#introSkip').dispatchEvent('click');
+  const afterSkip = await page.evaluate(() => {
+    (window as any).__cw.advance(0.6);
+    return {
+      introGone: document.getElementById('intro')!.classList.contains('hidden'),
+      crossing: document.body.classList.contains('crossing'),
+      mode: (window as any).__cw.g.mode
+    };
+  });
+  expect(afterSkip.introGone, 'skip left the captions up').toBe(true);
+  expect(afterSkip.crossing,
+    'skip threw away the arrival as well as the words - the ship should still fly down')
+    .toBe(true);
+  expect(afterSkip.mode).not.toBe('play');
 });

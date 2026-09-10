@@ -454,6 +454,11 @@ export function hardReset() {
   g.kit = { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 };
   g.stock = {};
   g.relics = []; g.relicsTaken = []; g.drive = [];
+  /* `won` deliberately SURVIVES a reset. It is not progress, it is something
+     you did, and starting another run does not undo it - which is also what
+     makes a New Game Plus knowable: the intro reads this to decide whether to
+     offer a skip. Wiping it here would mean a player who has beaten the game
+     is treated as a first-timer by the one screen that should know better. */
   g.drops = {}; syncDrops();
   g.damage = {};
   g.dug = new Set();

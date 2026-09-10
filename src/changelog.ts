@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.22.0';
+export const VERSION = '0.23.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.23.0', date: '2026-09-09', title: 'Three ways in',
+    notes: [
+      'A first run watches the intro through - it only plays once, and it is the once that counts.',
+      'Continue now takes off: the drive lights, the stars streak past, and the ship flies to the world you left.',
+      'Beaten the game? A new run gives you a skip button - and taking it still flies you down to the planet.'
+    ]
+  },
   {
     version: '0.22.0', date: '2026-09-09', title: 'Flying in',
     notes: [

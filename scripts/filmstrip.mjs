@@ -118,6 +118,35 @@ const SCENES = {
     step: `__cw.advance(SECS);`
   },
 
+  /* New Game Plus: the intro again, but with a way out of it. */
+  ngplus: {
+    secs: 1.2,
+    frames: 10,
+    setup: `
+      localStorage.clear();
+      __cw.g.won = true;
+      __cw.showIntro();
+    `,
+    step: `__cw.advance(SECS);`
+  },
+
+  /* The same run with the skip taken on the second frame: the captions go, the
+     descent does not. */
+  ngskip: {
+    secs: 0.7,
+    frames: 10,
+    setup: `
+      localStorage.clear();
+      __cw.g.won = true;
+      __cw.showIntro();
+    `,
+    step: `
+      const sk = document.getElementById('introSkip');
+      if (sk && !sk.classList.contains('hidden') && !document.getElementById('intro').classList.contains('hidden')) sk.click();
+      __cw.advance(SECS);
+    `
+  },
+
   /* The shop as a NEW player sees it - which is the one the "cluttered" note
      was about, and the one that is easy to never look at. */
   shopnew: {
