@@ -13,7 +13,8 @@
     "e2e": "playwright test",
     "size": "node scripts/check-bundle-size.mjs",
     "size:update": "node scripts/check-bundle-size.mjs --update",
-    "film": "node scripts/filmstrip.mjs"
+    "film": "node scripts/filmstrip.mjs",
+    "econ": "node scripts/econ.mjs"
   },
   "dependencies": {
     "three": "0.166.0"

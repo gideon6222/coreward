@@ -48,6 +48,12 @@ problem, the absence of a second thing to lose was.
 | 70–85 m | 27 | 115.3 | 6,916 cr |
 | 85–110 m | 55 | 162.8 | 9,770 cr |
 
+That table is an upper bound: it prices a hold of pure ore. **M1 has since measured the real
+thing** and it is worse rather than better — a first run pays 114 to 311 credits because most
+of what you cut is in the way rather than worth money, and yet *every ladder in the shop is
+started inside the first four to sixteen minutes whatever style you play*. The M1 section in
+`NOTES.md` has the table.
+
 Against that, the first rung of every ladder: Thrusters 100, Cargo 110, Drill 130, Scanner
 140, Fuel Tank 480, Cooling 1,000. **The first hold you ever sell buys four upgrades**, and
 the two that answer the game's two pressures cost less than a second hold. There is no point
@@ -453,9 +459,13 @@ depth, danger and zone off one scheduler, and nothing available can do that.
 
 ### Phase 1: the faults
 
-- [ ] **M1 — Measure before changing anything.** `scripts/econ.mjs` and the three play styles,
+- [x] **M1 — Measure before changing anything.** `scripts/econ.mjs` and the three play styles,
       reporting the run at which each upgrade is bought. No behaviour change. The report goes
       in `NOTES.md` and is the baseline every later number is argued against.
+      **Done 2026-09-10.** Three findings the plan did not have: the hold is 11-14% full when
+      a run ends so the weight cap has never once bound, every ladder is started inside four
+      to sixteen minutes at every style, and depth is gated by behaviour rather than by time
+      (a greedy player is at 109 m by minute seven).
 - [ ] **M2 — The Claim, as a place.** `src/sim/claim.ts`, strain, quakes, three structures,
       repair, the shed. `test_claim`, the strain golden, a filmed quake. The geometry comes
       with the first model import this repo has ever done, so this milestone also opens the
@@ -465,6 +475,8 @@ depth, danger and zone off one scheduler, and nothing available can do that.
 - [ ] **M3 — The economy rebuilt on M1's numbers.** New curve, pressure-priced rungs, credits
       sink. `test_econ`. The probe report before and after, in `NOTES.md`.
 - [ ] **M4 — The hold as a decision.** Dump by mineral, widened weight spread, manifest tap.
+      Promoted by M1 from a refinement to a missing mechanic: a cap that never binds is not a
+      decision, and Cargo Hold is currently the first thing every style buys.
 - [ ] **M5 — The first world compressed.** Per-leg thresholds, save migration, the invariant as
       a relation asserted at every leg.
 - [ ] **M6 — The breach.** The clock, the collapse behind you, the tow path, the chart after.

@@ -2815,3 +2815,58 @@ To preview a branch on the phone anyway - useful for something risky or purely
 visual - run `npm run preview -- --host 0.0.0.0` and open the PC's LAN address.
 No service worker over plain http, so it will not test offline behaviour, but it
 is fine for checking feel. Requires being on the same wifi.
+
+---
+
+# M1, 2026-09-10 - the economy, measured
+
+`scripts/econ.mjs` (`npm run econ`) drives the real pure layer - the shipping generator,
+ore table, prices, hardness, fuel and heat rules - through a scripted player, for three
+play styles across five corridor offsets, and reports the run and the minute at which each
+upgrade is first bought. It models only what lives in the frame loop: a straight reused
+shaft, a corridor at the bottom, and every broken block going into the hold, which is what
+the game really does. No tremors, gas or caches.
+
+Five offsets rather than one because the first version reported eight consecutive run
+payouts of 142, 275, 537, 452, 2029, 170, 192 and 3708, which is `CRAFT.md`'s 25% layout
+swing showing up as a 40x one.
+
+**Baseline, planet 0, core at 110 m, heat at 70 m, tremors at 85 m, 20 runs per style:**
+
+| Style | Run 1 pays | Every ladder started by | Median hold use | Payout spread | Rungs in 20 runs |
+|---|---|---|---|---|---|
+| cautious | 114 cr | minute 5.8 | 11% | 84 - 3,708 | 11 |
+| greedy | 311 cr | minute 16.1 | 14% | 200 - 7,448 | 19 |
+| optimal | 3,140 cr | minute 4.0 | 14% | 1,196 - 11,059 | 75 |
+
+**Four findings, in the order they matter.**
+
+**1. Every ladder in the shop is started inside the first four to sixteen minutes, whatever
+you do.** An optimal player has a rung of all fifteen by minute four. That is the whole of
+*"I can afford upgrades pretty early on for fuel and cooling so neither is a risk"*, and it
+is worse than the complaint: it is not two ladders, it is all of them.
+
+**2. The hold is 11 to 14 per cent full when a run ends.** The weight cap is what `CRAFT.md`
+names as the thing that turns "which is worth more" into a decision, and it has never once
+bound in any simulated run at any style. The cap is not badly tuned, the mechanic is absent.
+Cargo Hold is also the first thing every style buys, so the game's opening move is to enlarge
+a container that was never full.
+
+**3. The spread between styles is enormous, which is the good news.** Optimal earns 27x
+cautious on run one and ends with 75 rungs against 11. `CRAFT.md` warns that when every style
+scores the same the finding is that the game has no decision in it - the opposite is true
+here. The decision exists and the game never tells you it does, and nothing punishes the
+cautious answer.
+
+**4. Depth is not gated by time, it is gated by behaviour.** A greedy player reaches the core
+depth at 109 m by minute seven. Five sessions of play have never passed about 78 m. Nothing
+in the game asks you to go down, so a careful player never does, and the entire second half
+sits behind that.
+
+**What this changes in the plan.** M3 keeps its shape and gets its numbers from here. M4 is
+promoted from a refinement to a missing mechanic: a cap that never binds is not a decision.
+And the summary table at the top of `PLAN.md`, which said one hold from 20-35 m pays 1,223
+credits, is an upper bound rather than a measurement - it assumed a hold of pure ore. The real
+run-one payout is 114 to 311 credits because most of what you cut is in the way rather than
+worth money. The conclusion is unchanged and the reason is better: the ladders are cheap
+against income that arrives in one or two runs regardless.
