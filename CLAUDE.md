@@ -8,16 +8,20 @@ Repo: github.com/gideon6222/coreward
 Target: Samsung S26 Ultra, Chrome, portrait, installed to the home screen.
 Current version: see `src/changelog.ts` — that file is the player-facing history.
 
-**The shared knowledge base is `../gamedev-notes`** (`C:\dev\gamedev-notes`). Read
-`PIPELINE.md` there for the stack, shipping and the measured limits; `CRAFT.md` for design
-lessons; `ASSETS.md` before importing anything. **This file is only for what is true of
-Coreward specifically** — anything general belongs in the notes repo, not duplicated here.
+@../gamedev-notes/INDEX.md
+
+The shared knowledge base is `C:\dev\gamedev-notes` (`INDEX.md` above). For this web game
+read `WEB.md` there for the stack, shipping and the measured limits, `CRAFT.md` for design,
+`ASSETS.md` before importing anything, and `techniques/three-js-traps.md` and
+`techniques/coreward-*.md` for the deep write-ups that came out of this game. **This file is
+only for what is true of Coreward specifically.** Record general lessons with
+`/record-lesson`, never by editing the notes' topic files from here.
 
 ---
 
 ## Stack
 
-The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
+The standard web stack from `WEB.md` in the notes. Coreward-specific pins and choices:
 
 - **three.js pinned to exactly `0.166.0`**, with `@types/three` at the same version. Not a
   caret range: the lighting values below are calibrated to it, and three ships no
@@ -80,8 +84,7 @@ The standard stack from `PIPELINE.md`. Coreward-specific pins and choices:
 | `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
 | `src/loop.ts` | `frame()`. The one big function |
 | `src/ambience.ts` | **Pure.** What a world DOES in the air: per-trait emission timing |
-| `src/growth.ts` | What lives on the rock: moss, frost, plants, oil, ash, salt |
-| `src/intro.ts` | **Pure.** The first-run intro: its beats and their timing |
+| `src/intro.ts` | **Pure.** The first-run intro: its beats, their shots and their timing |
 | `src/titleui.ts` | The title screen and the intro, wired to the DOM |
 | `src/chart.ts` | **Pure.** The navigation chart: which three worlds are offered at a leg |
 | `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
@@ -134,12 +137,6 @@ changes.
 put a core 18 m shallower than the ladder would, and anything placed against the leg's baseline
 then generates below the floor of the world it is on - unreachable, and silently, because
 nothing looks for a relic it cannot see.
-
-**The settle only runs when the pad is where the ship BELONGS.** A save can be mid-run, and
-`beginSettle()` moves the ship to the pad - so calling it unconditionally on CONTINUE put a
-player who quit at ninety metres back on the surface. That loses their position and, worse,
-makes quit-and-reload a free ride home with a full hold, which is the trip the game is about
-making. `main.ts` checks `g.pd <= 0.5` first. Five e2e specs caught this at once.
 
 **Per-cell maps carry no planet in their keys.** `dug`, `rubble`, `damage` and `drops` must all
 be cleared together on a planet change, or the new world inherits the old one's holes.
