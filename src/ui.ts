@@ -2,7 +2,7 @@ import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LAS
          coreDepth, planetName, traitOf, valueMult, costOf, matCost , TRAIT_OF} from './sim/config';
 import { setGauges } from './gauges';
 import { clamp } from './sim/util';
-import { g, S, save , coreM, valueM, worldTrait} from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, padFuel } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
 import type { Upgrade } from './types';
 import { VERSION, CHANGELOG } from './changelog';
@@ -367,7 +367,7 @@ function buildUpgradeRow(u: Upgrade) {
     g.credits -= c;
     if (mat) g.stock[mat.id] = have - mat.need;
     g.up[u.key]++;
-    if (u.key === 'tank') g.fuel = S.fuelCap();
+    if (u.key === 'tank') g.fuel = padFuel();
     if (u.key === 'scan') lamp.distance = S.light();
     if (u.key === 'drill') setDrillTier(g.up.drill);
     /* Every upgrade may bolt something on, not just the drill. */
@@ -417,4 +417,27 @@ export function audioLabels() {
   ui.btnSfx.textContent = 'SOUND  ' + (audioState.sfx ? 'ON' : 'OFF');
   ui.btnMusic.classList.toggle('off', !audioState.music);
   ui.btnSfx.classList.toggle('off', !audioState.sfx);
+}
+
+
+/* ---------- a quake at the surface ----------
+
+   Fired from wherever the cell was removed, which is usually a hundred metres
+   from the thing that just broke. So the feedback has to travel: a rumble you
+   hear underground, a shake through the whole frame, and a line that names
+   what took the damage. The damage itself is visible the next time you surface,
+   which is the point - you cannot fly up to protect it and you do not get to
+   watch it happen.
+
+   `CRAFT.md`: fire visual, audio and camera as one event. Haptics join this in
+   M8, where every event in the game gets them at once. */
+export function onQuake() {
+  const c = g.claim;
+  R.shake = Math.max(R.shake, 1.35);
+  sfx.rumble();
+  const worst = (['refinery', 'derrick', 'shed'] as const)
+    .map((k) => ({ k, v: c[k] }))
+    .sort((a, b) => a.v - b.v)[0];
+  const name = { refinery: 'Refinery', derrick: 'Derrick', shed: 'Shed' }[worst.k];
+  toast('The claim was shaken · ' + name + ' at ' + Math.round(worst.v) + '%');
 }

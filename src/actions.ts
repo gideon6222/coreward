@@ -5,7 +5,7 @@ import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF,
          GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE,
          coreDepth, planetName, traitOf, valueMult , OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS} from './sim/config';
 import { clamp, key } from './sim/util';
-import { g, S, save , coreM, worldTrait} from './sim/state';
+import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
@@ -17,7 +17,7 @@ import { takeDrop, syncDrops, leaveDrop } from './drops';
 import { fireBeam } from './beam';
 import { setMark } from './mark';
 import { setDrillTier, setUpgradeHardware } from './ship';
-import { ui, toast, flash, atSurface, updateKit } from './ui';
+import { ui, toast, flash, atSurface, updateKit, onQuake } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './sim/feel';
 import type { Dir, SupplyKey } from './types';
@@ -66,7 +66,9 @@ export function stopDigging() {
 export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
-  const paid = Math.round(v * S.saleBonus());
+  /* The refinery takes its own condition out of the price before the assay
+     relics add theirs. */
+  const paid = Math.round(claimPayout(v) * S.saleBonus());
   g.credits += paid;
   /* A run ends when it is banked. Fold it into the all-time totals and start a
      fresh one, so "this run" in the log means what a player means by it. */
@@ -124,7 +126,7 @@ export function goSurface() {
   R.vx = 0; R.vy = 0; R.flight = null;
   /* landing on the pad must not re-trigger the sale that just happened */
   R.wasAtSurface = true;
-  g.fuel = S.fuelCap(); g.hull = S.hullCap(); g.soak = 0; g.charge = CHARGE_MAX;
+  g.fuel = padFuel(); g.hull = S.hullCap(); g.soak = 0; g.charge = CHARGE_MAX;
   R.hullCause = 'heat';
   R.wasHot = false;
   R.tremorT = 0; R.tremorWarn = 0;
@@ -267,7 +269,7 @@ function pickAt(x: number, d: number): boolean {
    the planet core, which is the climax of a planet and has to be drilled by
    hand rather than deleted from four metres away. */
 function breakCells(cells: number[][]) {
-  let taken = 0, dropped = 0, gassed = 0;
+  let taken = 0, dropped = 0, gassed = 0, quaked = false;
   for (const c of cells) {
     const x = c[0], d = c[1];
     if (x < 0 || x >= W || d < 0 || d > coreM()) continue;
@@ -275,6 +277,7 @@ function breakCells(cells: number[][]) {
     if (!b || b.hard === Infinity || b.core) continue;
 
     g.dug.add(key(x, d));
+    if (digStrain(d)) quaked = true;
     dropBlock(key(x, d));
     spray(worldX(x), -d, b.color, b.ore ? 26 : 12, 5, 0.7);
 
@@ -294,6 +297,9 @@ function breakCells(cells: number[][]) {
     }
   }
   syncBlocks(true);
+  /* One blast is one quake however many cells it took, or a bomb through the
+     deep rock would fire three in a row and read as a bug. */
+  if (quaked) onQuake();
   save();
   return { taken, dropped, gassed };
 }
@@ -480,6 +486,7 @@ export function hardReset() {
   g.damage = {};
   g.dug = new Set();
   g.rubble = new Set();
+  resetClaim();
   g.cargo = {}; g.weight = 0;
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();

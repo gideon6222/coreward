@@ -3,6 +3,8 @@ import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
 import { R } from './runtime';
+import { newClaim, loadClaim, afterCell, applyQuake, refuelMult, payoutMult,
+         RICH_PER_QUAKE, type ClaimState, type Structure } from './claim';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from '../types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
@@ -79,6 +81,10 @@ export const g: {
      actually saw on the rock face. */
   damage: Cargo;
   best: Best;
+  /* The surface claim for the world you are ON. Per world and left behind when
+     a core breaks, so its condition is an arc inside a world rather than a
+     scar carried across the whole Drift. See claim.ts. */
+  claim: ClaimState;
   mode: Mode;
 } = {
   planet: 0, credits: 0, shards: 0,
@@ -95,6 +101,7 @@ export const g: {
   cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [],
   log: blankLog(),
   best: { depth: 0, haul: 0 },
+  claim: newClaim(),
   mode: 'play'
 };
 
@@ -193,7 +200,8 @@ export function save() {
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
-      relics: g.relics, relicsTaken: g.relicsTaken, log: g.log
+      relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
+      claim: g.claim
     }));
   } catch (e) { /* ignore */ }
 }
@@ -213,6 +221,8 @@ export function load() {
       Object.assign(g.up, s.up || {});
       Object.assign(g.kit, s.kit || {});
       Object.assign(g.best, s.best || {});
+      /* A save from before the Claim existed loads an intact one. */
+      g.claim = loadClaim(s.claim);
       g.dug = new Set(s.dug || []);
       g.rubble = new Set(s.rubble || []);
       g.drops = s.drops || {};
@@ -280,4 +290,45 @@ export function setWorld(p: number) {
   g.trait = traitOf(p).id;
   g.coreOff = 0;
   g.rich = 1;
+}
+
+
+/* ---------- the Claim, from the game's side ----------
+
+   Three seams, and they are deliberately the only three: a cell is removed, a
+   tank is filled, a haul is sold. Everything else about the Claim is claim.ts's
+   business. */
+
+/* Called for every cell the ship removes, however it was removed - drill, bomb
+   or laser. Returns true if that cell was the one that set off a quake, so the
+   caller can shake the camera and say so; the state change has already
+   happened either way. */
+export function digStrain(d: number): boolean {
+  const r = afterCell(g.claim.strain, d, coreM());
+  g.claim.strain = r.strain;
+  if (!r.quake) return false;
+  applyQuake(g.claim, g.planet);
+  /* A shaken world pays more. This is what makes depth a bet rather than a
+     tax, and it is the whole reason a quake is worth having. */
+  g.rich *= 1 + RICH_PER_QUAKE;
+  return true;
+}
+
+/* What the tank actually fills to at the pad. A wrecked derrick is a shorter
+   tank, not a slower pump: the game refuels instantly at the pad and always
+   has, and a discount you can read off the gauge the moment you land beats a
+   rate you would have to sit and watch. */
+export function padFuel(): number {
+  return Math.round(S.fuelCap() * refuelMult(g.claim));
+}
+
+/* What the refinery pays for a haul, before the assay relics' bonus. */
+export function claimPayout(v: number): number {
+  return Math.round(v * payoutMult(g.claim));
+}
+
+/* Everything a new world starts with. The Claim does not travel: its condition
+   is an arc inside one world, so a bad world cannot sour the ten after it. */
+export function resetClaim(): void {
+  g.claim = newClaim();
 }

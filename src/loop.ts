@@ -5,7 +5,7 @@ import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, rel
          coreDepth, valueMult, skyHi, skyLo,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, TREMOR_DEPTH, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
-import { g, S, save , coreM, valueM, worldTrait} from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel } from './sim/state';
 import { blockAt } from './sim/world';
 import { R } from './sim/runtime';
 import type { Dir } from './types';
@@ -38,7 +38,7 @@ import { padLights, beam } from './pad';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
-import { ui, atSurface, updateHUD, toast, flash, tickToast } from './ui';
+import { ui, atSurface, updateHUD, toast, flash, tickToast, onQuake } from './ui';
 import { stepGauges } from './gauges';
 import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent,
          stopDigging , absorb} from './actions';
@@ -342,6 +342,8 @@ export function tick(raw: number, draw = true) {
            question this row is actually asking. */
         R.run.blocks++; if (b.value >= DROP_MIN_VALUE) R.run.oreBlocks++;
         g.dug.add(k);
+        /* The Claim feels every cell that leaves the world. */
+        if (digStrain(R.digging.d)) onQuake();
         delete g.damage[k];
         dropBlock(k);
         spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 52 : 24, b.ore ? 6.5 : 4, 0.85);
@@ -547,7 +549,7 @@ export function tick(raw: number, draw = true) {
          surface at all - which also means it fires once however slowly the
          ship drifts up onto the pad. */
       const now = atSurface();
-      if (now && !R.wasAtSurface) { sell(); g.fuel = S.fuelCap(); g.hull = S.hullCap(); }
+      if (now && !R.wasAtSurface) { sell(); g.fuel = padFuel(); g.hull = S.hullCap(); }
       R.wasAtSurface = now;
     }
 

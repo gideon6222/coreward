@@ -1,0 +1,55 @@
+{
+  "line": 50,
+  "repairOre": "amethyst",
+  "perCellAtLine": 0.004067,
+  "perCellAtCore": 0.008,
+  "damageFirstFour": [
+    {
+      "refinery": 21,
+      "derrick": 26,
+      "shed": 9
+    },
+    {
+      "refinery": 25,
+      "derrick": 15,
+      "shed": 15
+    },
+    {
+      "refinery": 23,
+      "derrick": 23,
+      "shed": 13
+    },
+    {
+      "refinery": 25,
+      "derrick": 31,
+      "shed": 9
+    }
+  ],
+  "rows": [
+    {
+      "d": 20,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 40,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 60,
+      "strain": 0.0437,
+      "quake": false
+    },
+    {
+      "d": 80,
+      "strain": 0.151,
+      "quake": false
+    },
+    {
+      "d": 100,
+      "strain": 0.285,
+      "quake": false
+    }
+  ]
+}

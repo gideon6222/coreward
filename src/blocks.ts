@@ -3,7 +3,8 @@ import { beginGrowth, addGrowth, finishGrowth } from './growth';
 import { W } from './sim/config';
 import { key } from './sim/util';
 import { g } from './sim/state';
-import { rnd, blockAt } from './sim/world';
+import { blockAt } from './sim/world';
+import { rnd } from './sim/util';
 import { scene } from './scene';
 import { crackGeo, crackMat, mat, shade, tintRock, makeGlow, worldX, boxGeo, pebbleGeo, shardGeo, crateGeo, chunkFor, glowTex,
          displaceLikeRock, rockRelief, ROCK_BUMP } from './materials';

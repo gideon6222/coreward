@@ -4,7 +4,7 @@ import { paletteOf, GROWTH_BAND, type GrowthKind } from './sim/config';
 import { setRockSurface } from './materials';
 import { applyLightUnlit } from './lightmap';
 import { g } from './sim/state';
-import { rnd } from './sim/world';
+import { rnd } from './sim/util';
 
 /* What lives, settles or leaks on the rock face.
 

@@ -1,4 +1,4 @@
-import { g, save, setWorld } from './sim/state';
+import { g, save, setWorld, resetClaim } from './sim/state';
 import { chartFor, type Destination } from './sim/chart';
 import { coreDepth, planetName, paletteOf, TRAIT_OF, skyLo } from './sim/config';
 import { R } from './sim/runtime';
@@ -129,6 +129,7 @@ export function arrive() {
      together or the new world inherits the old one's tunnels. */
   g.dug = new Set();
   g.rubble = new Set();
+  resetClaim();
   g.damage = {};
   g.drops = {}; syncDrops();
   for (const k of Array.from(meshes.keys())) dropBlock(k);
