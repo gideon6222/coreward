@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { renderer, scene as gameScene, SHIP_LAYER } from './scene';
-import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat } from './ship';
+import { player, rig, flames, HW, HW_MAT, augerGeo, augerMat,
+         setUpgradeHardware, fitImportedHardware } from './ship';
+import { loadShipParts } from './shipparts';
 import { asMetal } from './materials';
 import { UPGRADES, shelfState, shelfStock } from './sim/config';
 import { g } from './sim/state';
@@ -458,6 +460,11 @@ export function isDocked() { return docked; }
 export function dockShip() {
   if (docked) return;
   docked = true;
+  /* First time the shop is opened, the imported hardware comes down in its own
+     chunk. Deliberately here and not at boot: it is surface detail, the game is
+     playable without it, and the entry bundle should not carry a model loader
+     for a screen most first sessions reach a minute in. */
+  loadShipParts().then(() => { fitImportedHardware(); setUpgradeHardware(g.up); });
   refreshBays();
   stationScene.add(player);
   player.position.set(0, 0.35, 0.9);

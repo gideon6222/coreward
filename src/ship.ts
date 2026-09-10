@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { scene, SHIP_LAYER } from './scene';
+import { shipPart, partsReady } from './shipparts';
 import { makeGlow, asMetal } from './materials';
 
 /* The drill ship.
@@ -435,6 +436,33 @@ const dish = bolt(dishGeo, trimMat, 0.13, 0.42, -0.08, [Math.PI / 2.6, 0, 0]);
 /* Thrust: a second pair of jets outboard of the originals. */
 const jets = boltRow(jetGeo, steelMat, [[-0.3, 0.26, 0], [0.3, 0.26, 0]]);
 
+/* Imported hardware, hung on the same hardpoints as the coded parts and shown
+   in place of them once it has arrived. Absent until the shop has been opened
+   once, and absent forever if the fetch failed - which is why every one of
+   these is created lazily and why the coded part it replaces is only hidden
+   when its import is actually present. See shipparts.ts. */
+const imported: { collar?: THREE.Object3D; jetA?: THREE.Object3D; jetB?: THREE.Object3D } = {};
+
+export function fitImportedHardware() {
+  if (imported.collar || !partsReady()) return;
+  /* A drill collar at the nose. The turret mesh reads as a machined housing
+     with a barrel through it, which is what a drill mount is. */
+  const collar = shipPart('collar', 0.16);
+  if (collar) {
+    collar.position.set(0, -0.30, 0);
+    collar.rotation.set(Math.PI, 0, 0);
+    imported.collar = collar;
+    rig.add(collar);
+  }
+  /* Two generator blocks either side of the stern, which is where the coded
+     jets already sit. The larger one is the higher tier. */
+  const a = shipPart('thruster', 0.13);
+  if (a) { a.position.set(-0.20, 0.24, 0); imported.jetA = a; rig.add(a); }
+  const b = shipPart('thrusterBig', 0.13);
+  if (b) { b.position.set(0.20, 0.24, 0); imported.jetB = b; rig.add(b); }
+  shipToLayer();
+}
+
 export function setUpgradeHardware(up: Record<string, number>) {
   const on = (m: THREE.Mesh, yes: boolean) => { m.visible = yes; };
   /* Thresholds are spread across each ladder rather than bunched at the top, so
@@ -452,6 +480,14 @@ export function setUpgradeHardware(up: Record<string, number>) {
      change that on its own was not. */
   const d = 1 + Math.min(9, up.drill || 0) * 0.055;
   bit.scale.set(d, 1 + (d - 1) * 0.6, d);
+
+  /* The imported hardware, where it has arrived. Each piece appears at its own
+     tier, so a purchase is a new object on the ship rather than a slightly
+     different colour on an old one - which is the finding from the drill tiers
+     that "did not read" when they were only repainted. */
+  if (imported.collar) imported.collar.visible = (up.drill || 0) >= 3;
+  if (imported.jetA) imported.jetA.visible = (up.thrust || 0) >= 2;
+  if (imported.jetB) imported.jetB.visible = (up.thrust || 0) >= 6;
   shipToLayer();
 }
 

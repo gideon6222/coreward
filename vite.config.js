@@ -56,6 +56,15 @@ export default defineConfig({
               inside any sane tolerance. As its own chunk the game code is
               small enough that losing the loop is an unmissable percentage. */
         manualChunks(id) {
+          /* three's examples are NOT part of the vendor chunk.
+
+             GLTFLoader is imported dynamically so that a model loader is not in
+             the entry bundle for a screen most sessions reach a minute in - and
+             naming it 'three' here defeated exactly that, pulling 82 KB into
+             the chunk every first paint waits on. The size guard caught it as a
+             17% jump on a chunk allowed 1%, which is what that tight tolerance
+             is for. */
+          if (id.includes('node_modules/three/examples')) return;
           if (id.includes('node_modules/three')) return 'three';
         }
       }
@@ -87,7 +96,10 @@ export default defineConfig({
            installed app does not depend on a font CDN, and leaving it out of
            the precache would have thrown that away: offline, the game would
            silently fall back to the system face. */
-        globPatterns: ['**/*.{js,css,html,svg,webmanifest,woff2,webp}'],
+        /* glb joins the list: the imported ship hardware lives in public/models and
+           an installed app that could not fetch it offline would silently lose
+           the parts it had already paid for. */
+        globPatterns: ['**/*.{js,css,html,svg,webmanifest,woff2,webp,glb}'],
         /* the sourcemap is ~2 MB and only devtools ever asks for it */
         globIgnores: ['**/*.map'],
         navigateFallback: 'index.html',

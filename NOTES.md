@@ -3277,3 +3277,46 @@ anything unnamed falls through to stone rather than to nothing.
 
 The bundle went from 761 KB to 886 KB, deliberately, and the four new files each have their
 own budget line.
+
+---
+
+# 2026-09-10, imported ship hardware - and what it cost, named
+
+Playtest: *"change the ship and part models to look more realistic ... make it so each
+upgraded part changes the look as its upgraded. uses pre-made assets like models and textures
+for the different ship parts."*
+
+This repo has imported a ship mesh twice and reverted it twice, both times with measurements:
+the ship is about thirty pixels in play, a repainted drill tier "did not read" and had to
+become spark COUNT instead, and a downloaded mesh arrives with its own topology, normals and
+sense of scale next to flat-shaded terrain on a hand-tuned palette. **Neither finding is
+overturned here.** What changed is the screen: the hangar is where the ship sits large, static
+and lit while nothing else is happening, which is the pad's own argument for importing detail.
+
+So imported hardware goes on the HARDPOINTS - a drill collar at the nose from Kenney's
+`turret_single`, generator blocks either side of the stern from `machine_generator` and
+`machine_generatorLarge` - and the hull stays coded, so the ship you look at is still the ship
+you fly. Each piece appears at its own tier, which is the answer to the drill tiers that "did
+not read" when they were only repainted: a purchase is a new OBJECT on the ship, not a
+slightly different colour on an old one.
+
+Three rules hold it to the house style: the kit's materials and colour atlas are discarded and
+replaced with the project's own convention, the loader is dynamic, and a missing file leaves
+the coded part visible rather than throwing.
+
+**What it cost, and the guard is why the number is here.** Everything ran through
+`gltf-transform optimize --texture-compress webp` first: 26.7 KB to 9.3 KB for the hull,
+39 KB to 11 KB for the turret. Then the size guard failed twice in a row, correctly, and both
+failures were real:
+
+1. **`three` grew 17%** because `manualChunks` names anything under `node_modules/three` as
+   the vendor chunk, which swallowed the dynamically imported GLTFLoader whole - 82 KB into
+   the chunk every first paint waits on, defeating the entire point of importing it lazily.
+   `three/examples` is now excluded from that rule.
+2. **`three` still grew 7.8%** afterwards, because GLTFLoader shares core three utilities that
+   rollup then hoists into the common chunk. That one is unavoidable and is accepted
+   deliberately: **37.6 KB on the critical chunk**, plus a 45 KB GLTFLoader chunk that only
+   loads when the shop is opened, plus 40 KB of models. Total 971.6 KB from 886.5.
+
+The 1% tolerance on the `three` chunk is what made both of these visible. It is the tightest
+budget in the file and it has now earned itself twice.
