@@ -207,6 +207,30 @@ const SCENES = {
     `
   },
 
+  /* The Claim, from intact to wrecked. Four frames because damage is shown as
+     a lean and a settle, and a lean is only legible against the one before it. */
+  claim: {
+    secs: 0.15,
+    frames: 4,
+    enter: true,
+    setup: `
+      window.__lv = [100, 70, 35, 0];
+      window.__i = 0;
+      window.__show = (v) => {
+        __cw.g.px = 6; __cw.g.pd = -1;
+        __cw.g.claim.refinery = v; __cw.g.claim.derrick = v; __cw.g.claim.shed = v;
+        __cw.g.claim.strain = (100 - v) / 100;
+        __cw.advance(0.3);
+      };
+      __show(__lv[0]);
+    `,
+    step: `
+      __i++;
+      __show(__lv[__i % __lv.length]);
+      __cw.advance(SECS);
+    `
+  },
+
   /* Flying down a shaft: the case the lighting work was all about. */
   dig: {
     secs: 0.4,

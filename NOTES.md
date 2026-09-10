@@ -2907,3 +2907,25 @@ frequency that teaches and a severity that punishes, and this is rare AND mild. 
 it is until M5, because M5 moves the stability line from 50 m to 26 m on leg 0, after which
 nearly every cell a player removes is below it. The retune happens there with this probe, not
 by guessing twice.
+
+## M2's yard, and what the film actually showed
+
+The three structures are on the pad, the damage lean and settle read clearly across four
+frames, and the strain lamp works. **The framing does not.** The surface camera is composed on
+the ship and the pad, so the refinery sits at the left edge, the shed is behind the platform
+and the derrick's lattice competes with the pad's own ladder twenty pixels away. The winch
+house and jib were added specifically to separate those two silhouettes and they help, but the
+real problem is that nothing pulled the camera back to include a yard that did not exist when
+the shot was composed.
+
+`CRAFT.md`: re-shoot after any change to a length, because framing calibrated on old
+dimensions is wrong. The surface just got wider. That is M9's job and it is written down there
+rather than fixed in a hurry here, because it is a camera change and camera changes in this
+game have historically needed their own pass.
+
+Also decided here, against the plan: **the structures are modelled in code, not imported.** The
+asset hunt recommended Kenney's station kits for the pad and the yard. `pad.ts` already carries
+an older and better argument for the opposite - an imported kit brings its own topology,
+normals and scale next to flat-shaded low-poly terrain with a hand-tuned palette, and the join
+shows in the first frame. Same rule, same game, and the existing decision wins. The import
+budget goes to the mineral surfaces in M7, where a normal map genuinely cannot be hand-written.

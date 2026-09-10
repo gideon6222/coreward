@@ -35,6 +35,7 @@ import { stepBeam } from './beam';
 import { moveAndCollide, thrust, laneVel, headingFor } from './sim/fly';
 import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } from './ship';
 import { padLights, beam } from './pad';
+import { updateClaim } from './claimyard';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
@@ -862,6 +863,9 @@ export function tick(raw: number, draw = true) {
 
   tickToast(raw);
 
+  /* The surface is drawn every frame even from underground: the lean and the
+     strain lamp are what the player looks for on the way up. */
+  updateClaim(raw);
   updateHUD();
   stepGauges(raw);
   if (draw) renderWorld();
