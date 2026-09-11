@@ -2062,3 +2062,86 @@ test('every case is fully inside the frame, plate and all', async ({ page }) => 
   }
   expect(bad.join('; '), 'a case is not fully on screen').toBe('');
 });
+
+/* Digging a device out of the ground, end to end.
+
+   The headline feature of round six, and everything above it is unit-tested on
+   the pure side: that the crate is somewhere legal, that the shelf refuses to
+   stock what has not been found. What none of that proves is that a crate is
+   actually REACHABLE in a running game and that breaking one does the three
+   things it is supposed to - fit the device, say what it does without pausing,
+   and put the row in the shop. */
+test('a sealed crate in the rock fits the device and stocks the shop', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* Find where the first crate on this world actually is, and confirm it is a
+     real cell of real rock rather than a number in a table. */
+  const where = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.found.length = 0;
+    w.g.up.magnet = 0;
+    const cells = [...w.findCells().entries()].map(([k, f]: any) => ({ k, key: f.key }));
+    const first = cells[0];
+    const [x, d] = first.k.split(',').map(Number);
+    const b = w.blockAt(x, d);
+    return { count: cells.length, key: first.key, x, d, id: b ? b.id : null, hard: b ? b.hard : 0 };
+  });
+  expect(where.count, 'the first world buries nothing at all').toBe(3);
+  expect(where.id, 'the crate cell is not a crate').toBe('schematic');
+  expect(where.hard, 'a crate with no hardness is not a dig').toBeGreaterThan(0);
+
+  /* The banner is not showing yet, and the device is not on the ship. */
+  await expect(page.locator('#found')).not.toHaveClass(/on/);
+
+  /* Break it the way ordnance would, which is the same routine the drill uses.
+     Driving the ship forty metres down a shaft is a different test. */
+  const after = await page.evaluate((c) => {
+    const w = (window as any).__cw;
+    w.grantFind(w.findCells().get(c.x + ',' + c.d).key);
+    w.advance(0.2);
+    return {
+      found: w.g.found.slice(),
+      level: w.g.up[c.key],
+      banner: document.getElementById('found')!.className,
+      name: document.getElementById('foundName')!.textContent,
+      what: document.getElementById('foundWhat')!.textContent,
+      mode: w.g.mode
+    };
+  }, where);
+
+  expect(after.found, 'the device is not in hand').toContain(where.key);
+  expect(after.level, 'a device out of the rock arrives installed, at level one')
+    .toBeGreaterThanOrEqual(1);
+  expect(after.banner, 'no banner').toContain('on');
+  expect(after.name!.length, 'the banner does not name the device').toBeGreaterThan(3);
+  expect(after.what!.length, 'the banner does not say what it does').toBeGreaterThan(20);
+  /* AND THE GAME DID NOT STOP. This is the whole difference between a device
+     and a relic: a relic ends a search and can afford a modal, a device is a
+     verb you are about to use. */
+  expect(after.mode, 'the discovery paused the game').toBe('play');
+
+  /* Four seconds later it is gone on its own, with nothing tapped. */
+  const later = await page.evaluate(() => {
+    (window as any).__cw.advance(5);
+    return document.getElementById('found')!.className;
+  });
+  expect(later, 'the banner never went away').not.toContain('on');
+
+  /* And the crate is no longer in the ground, because the map is keyed on how
+     many devices are in hand. */
+  const gone = await page.evaluate((c) => {
+    const w = (window as any).__cw;
+    return w.findCells().has(c.x + ',' + c.d);
+  }, where);
+  expect(gone, 'the crate is still buried after being opened').toBe(false);
+
+  /* Finally: the Outfitter stocks it now, and did not before. */
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.credits = 9e6; w.g.px = 6; w.g.pd = -1; w.advance(0.5);
+    document.getElementById('btnShop')!.click();
+  });
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+  const shelf = await page.evaluate(() => (window as any).__cw.shelfKeys());
+  expect(shelf, 'the device was found and the shop still will not sell a rung').toContain(where.key);
+});

@@ -7,6 +7,7 @@ import { g, S, save, load, hasSave, coreM } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
+import { findCells, blockAt } from './sim/world';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
@@ -173,6 +174,9 @@ if (new URLSearchParams(location.search).has('debug')) {
        module instance than the one the loop is running, which is the trap this
        whole seam exists to avoid. */
     Box3Ctor: THREE.Box3, Vec3Ctor: THREE.Vector3,
+    /* What is buried on this world, so a test can dig up the real crate rather
+       than a cell it picked out of the air. */
+    findCells, blockAt,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,
