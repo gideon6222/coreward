@@ -1,11 +1,11 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
          RELIC_COLOR, RELIC_HOST, relicAt, relicFor,
-         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn } from './config';
+         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES } from './config';
 import { key, mixHex, rnd } from './util';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
-import { findMap, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
+import { findMap, cacheSupply, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
 import type { Block, SupplyKey } from '../types';
 
 /* The crates buried on the world you are standing on, cached.
@@ -216,8 +216,17 @@ export function cachePrize(x: number, d: number): CachePrize {
   const r2 = rnd(x + 907, d + 313, g.planet + 137);
 
   if (r < 0.55) {
-    /* Coolant is the dearest thing on the shelf, so it is the rarest find. */
-    const id: SupplyKey = r2 < 0.42 ? 'cell' : r2 < 0.8 ? 'patch' : 'coolant';
+    /* Something you have never held, while there is anything left you have
+       never held. The weighted roll below is what a cache always did and is
+       what it goes back to once the kit is complete - at that point the
+       question is which consumable you WANT, not which one you have seen.
+
+       This is what makes the kit a discovery without adding a second hunt to
+       the world: caches were already buried on every world and already handed
+       over consumables, and the only thing missing was the consequence. See
+       the note on supplies in finds.ts. */
+    const fallback: SupplyKey = r2 < 0.42 ? 'cell' : r2 < 0.8 ? 'patch' : 'coolant';
+    const id = cacheSupply(SUPPLIES.map((s2) => s2.key), g.foundKit, fallback) as SupplyKey;
     return { kind: 'supply', id };
   }
 

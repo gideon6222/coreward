@@ -16,9 +16,24 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.28.0';
+export const VERSION = '0.29.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.29.0', date: '2026-09-10', title: 'The drawer under the counter',
+    notes: [
+      'The six supplies are gone from the bottom of the shop. You have to have held one before the Outfitter will sell you another.',
+      'You get the first of each out of a supply cache in the ground - and a cache now hands over something you have never seen before anything you have.',
+      'Finding one announces itself the way a device does, without stopping the game.',
+      'What you have collected lives in a drawer under the counter. Pull the brass handle and it drops open with the crates lit inside; tap one to see what it does and buy another.',
+      'Tap anywhere else to shut it.',
+      'A Bulwark Field absorbs three impacts outright and used to be on sale to a first-hour player. Now it costs knowing it exists.',
+      'The shop screen gave back 120 pixels of room when the grid left, and the framing picked it up on its own.',
+      'The instrument dials no longer ghost through the bottom of the Outfitter.',
+      'The swipe hint retires once you have walked the aisles once.',
+      'Anything you could already buy stays buyable. A consumable you have spent still counts as one you have held.'
+    ]
+  },
   {
     version: '0.28.0', date: '2026-09-10', title: 'Dug up, not bought',
     notes: [

@@ -342,7 +342,20 @@ export function grantCache(x: number, d: number) {
     const sup = SUPPLY_OF[p.id];
     g.kit[p.id] = Math.min(sup.max, g.kit[p.id] + 1);
     R.run.supBought++;
-    toast('Supply cache \u00b7 ' + sup.name);
+    /* The first one of its kind gets the banner rather than the toast.
+
+       A cache handing over a second Fuel Cell is a small good thing and a line
+       of text is the right size for it. A cache handing over a Bulwark Field
+       you have never seen changes what the Outfitter will sell you for the
+       rest of the save, and that deserves the same card a device gets - and
+       for the same reason, it does not pause. See finds.ts. */
+    if (!g.foundKit.includes(p.id)) {
+      g.foundKit.push(p.id);
+      foundBanner(sup.name, sup.blurb, 'supply');
+      hap.boom();
+    } else {
+      toast('Supply cache \u00b7 ' + sup.name);
+    }
   } else if (p.kind === 'mineral') {
     g.stock[p.id] = (g.stock[p.id] || 0) + p.n;
     toast('Supply cache \u00b7 ' + p.n + ' ' + DEF[p.id].name);

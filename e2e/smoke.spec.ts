@@ -138,6 +138,30 @@ async function tapBay(page: Page, key: string) {
     '"; raycast said "' + r.picked + '"; before=' + JSON.stringify(r.before)).toBe(key);
 }
 
+/* Open the drawer, pick a crate, press BUY. The whole path a thumb takes, so a
+   spec asserting "a supply can be bought" is asserting that and not that a
+   function exists. */
+async function buyKit(page: Page, key: string) {
+  await page.evaluate((k) => {
+    const w = (window as any).__cw;
+    if (!w.drawerOpen()) w.roomDrawer().setOpen(true);
+    /* No `advance()` here, and that is not tidiness.
+
+       `advance` calls `stopClock()` and never gives it back, which is fine for
+       a spec that drives every remaining step itself and fatal for one that
+       then holds a d-pad in real time - the game simply stops, with the mode
+       still 'play' and the key still held, which is about as misleading as a
+       symptom gets. It cost a run to find and it is the trap already written
+       down beside `startClock` in loop.ts.
+
+       Nothing here needs time to pass: the selection is set directly rather
+       than raycast, so the drawer's slide does not have to have finished. */
+    w.selectBay(k);
+    w.buildShop();
+  }, key);
+  await page.locator('#shopCard .cbuy').click();
+}
+
 const num = async (loc: Locator) =>
   Number((await loc.innerText()).replace(/[^0-9.]/g, ''));
 
@@ -370,13 +394,18 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
   await expect(page.locator('#shopCard'), 'a sealed case must say what unlocks it')
     .toContainText('Sealed until');
 
-  /* Supplies stay as their own row of chips - one per supply, asserted against
-     the real count for the same reason as the cases above. This one was a
-     literal 3 sitting directly under the literal 10, and fixing only the first
-     of them meant the kit grew from three items to six and failed the same way
-     one line later. */
+  /* The supplies are not on this screen at all any more.
+
+     They were a row of chips in the tray, asserted here by count. They are
+     crates in a drawer under the counter now - found by opening caches rather
+     than bought from the first minute - so the assertion that matters is that
+     the grid is GONE, and that one case exists per supply ready to be revealed
+     as each is found. Asserted against the real count for the same reason as
+     the cases above: a literal goes stale the day the kit changes size. */
+  await expect(page.locator('#supplies')).toHaveCount(0);
   const supplies = await page.evaluate(() => (window as any).__cw.supplyCount);
-  await expect(page.locator('#supplies .up')).toHaveCount(supplies);
+  const crates = await page.evaluate(() => (window as any).__cw.kitCases.length);
+  expect(crates, 'every consumable needs a crate to appear in').toBe(supplies);
   await page.locator('#shopClose').dispatchEvent('click');
 
   await page.locator('#btnManifest').dispatchEvent('click');
@@ -662,14 +691,25 @@ test('a supply can be bought at the pad and spent underground', async ({ page })
      gesture assertions below still mean what they say. */
   await enterGame(page);
 
+  /* Buy the two out of the drawer rather than off a grid.
+
+     The Outfitter will not sell a consumable that has never been held, so this
+     has to say it has held them - which is the feature, stated by a test that
+     previously just bought whatever it liked. `buyKit` opens the drawer, picks
+     the crate and presses the card's button, which is the whole path a thumb
+     takes. */
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    for (const k of ['coolant', 'cell']) if (!w.g.foundKit.includes(k)) w.g.foundKit.push(k);
+  });
   await page.locator('#btnShop').dispatchEvent('click');
-  const rows = page.locator('#supplies .up');
-  await expect(rows.nth(0)).toContainText('Coolant Flush');
-  await expect(rows.nth(2)).toContainText('Fuel Cell');
-  await rows.nth(0).locator('button').click();
-  await rows.nth(2).locator('button').click();
-  await expect(rows.nth(0)).toContainText('1/2');
-  await expect(rows.nth(2)).toContainText('1/3');
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+  await buyKit(page, 'coolant');
+  await expect(page.locator('#shopCard')).toContainText('Coolant Flush');
+  await expect(page.locator('#shopCard')).toContainText('1/2');
+  await buyKit(page, 'cell');
+  await expect(page.locator('#shopCard')).toContainText('Fuel Cell');
+  await expect(page.locator('#shopCard')).toContainText('1/3');
   await page.locator('#shopClose').dispatchEvent('click');
 
   /* hidden at the pad, because the pad already refuels and cools for free */
@@ -2144,4 +2184,195 @@ test('a sealed crate in the rock fits the device and stocks the shop', async ({ 
   await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
   const shelf = await page.evaluate(() => (window as any).__cw.shelfKeys());
   expect(shelf, 'the device was found and the shop still will not sell a rung').toContain(where.key);
+});
+
+/* ---------- the drawer under the counter ----------
+
+   Playtest: *"a secret display case at the bottom of the screen pops open and
+   shows all of the upgrades you have collected and lets you purchase the
+   upgrades there."* */
+test('the drawer opens, holds only what you have found, and sells it', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.credits = 9e6;
+    w.g.foundKit.length = 0;
+    w.g.foundKit.push('cell', 'patch');
+    w.g.px = 6; w.g.pd = -1; w.advance(0.5);
+    document.getElementById('btnShop')!.click();
+  });
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+
+  /* Shut to begin with. A drawer that is already open when you walk up is a
+     shelf, and a shelf is what this replaced. */
+  expect(await page.evaluate(() => (window as any).__cw.drawerOpen())).toBe(false);
+
+  /* Only the two that have ever been held are in it. */
+  const shown = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    return w.kitCases.filter((c: any) => c.group.visible).map((c: any) => c.key);
+  });
+  expect(shown.sort()).toEqual(['cell', 'patch']);
+
+  /* Open it by tapping the handle, the way a thumb does. */
+  const opened = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    /* The CAMERA too, not only the scene.
+
+       The station camera is not a child of the station scene, so
+       `scene.updateMatrixWorld()` does not touch it - and `project()` reads the
+       camera's own matrixWorldInverse. Updating only the scene gave a
+       projection 97 px off, which put the drawer handle inside the tray and
+       made the tap land on the card. It works in the game because rendering a
+       frame updates the camera; it only bites a test that projects without
+       drawing. */
+    w.stationScene.updateMatrixWorld(true);
+    w.stationCamera.updateMatrixWorld(true);
+    const h = w.roomDrawer().hit[1];
+    const p = h.getWorldPosition(new w.Vec3Ctor()).project(w.stationCamera);
+    const x = Math.round((p.x * 0.5 + 0.5) * window.innerWidth);
+    const y = Math.round((-p.y * 0.5 + 0.5) * window.innerHeight);
+    const el = document.elementFromPoint(x, y);
+    if (!el) return { err: 'nothing at ' + x + ',' + y };
+    const tray = document.querySelector('#shop .tray')!.getBoundingClientRect();
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y }));
+    w.advance(3);
+    return { open: w.drawerOpen(), on: el.id || el.className,
+             at: x + ',' + y, tray: Math.round(tray.top), H: window.innerHeight,
+             vis: w.roomDrawer().group.visible, aisle: w.currentAisle() };
+  });
+  expect(opened.err, String(opened.err)).toBeUndefined();
+  expect(opened.open, 'tapping the handle at ' + opened.at + ' hit "' + opened.on +
+    '"; tray starts at ' + opened.tray + ' of ' + opened.H +
+    '; drawer visible=' + opened.vis + ' aisle=' + opened.aisle).toBe(true);
+
+  /* Every crate in it is inside the band the player can see. This is the
+     assertion the two-rows-of-three version failed: the rows overlapped each
+     other AND ran under the tray, and only a bounding box says so. */
+  const bad = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stationScene.updateMatrixWorld(true);
+    w.stationCamera.updateMatrixWorld(true);
+    const top = document.querySelector('#shop .aislebar')!.getBoundingClientRect().bottom;
+    const bot = document.querySelector('#shop .tray')!.getBoundingClientRect().top;
+    const out: string[] = [];
+    for (const c of w.kitCases) {
+      if (!c.group.visible) continue;
+      const b = new w.Box3Ctor().setFromObject(c.group);
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      for (const cx of [b.min.x, b.max.x]) {
+        for (const cy of [b.min.y, b.max.y]) {
+          for (const cz of [b.min.z, b.max.z]) {
+            const p = new w.Vec3Ctor(cx, cy, cz).project(w.stationCamera);
+            const sx = (p.x * 0.5 + 0.5) * window.innerWidth;
+            const sy = (-p.y * 0.5 + 0.5) * window.innerHeight;
+            x0 = Math.min(x0, sx); x1 = Math.max(x1, sx);
+            y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+          }
+        }
+      }
+      if (x0 < 4 || x1 > window.innerWidth - 4) {
+        out.push(c.key + ' off the side (' + Math.round(x0) + '..' + Math.round(x1) + ')');
+      }
+      if (y1 > bot) out.push(c.key + ' under the tray (' + Math.round(y1) + ' past ' + Math.round(bot) + ')');
+      if (y0 < top) out.push(c.key + ' above the band');
+    }
+    return out;
+  });
+  expect(bad.join('; '), 'a crate in the drawer is not on screen').toBe('');
+
+  /* Tap one, and the card offers it. */
+  const picked = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.stationScene.updateMatrixWorld(true);
+    w.stationCamera.updateMatrixWorld(true);
+    const c = w.kitCases.find((k: any) => k.key === 'cell');
+    const p = c.group.getWorldPosition(new w.Vec3Ctor()).project(w.stationCamera);
+    const x = Math.round((p.x * 0.5 + 0.5) * window.innerWidth);
+    const y = Math.round((-p.y * 0.5 + 0.5) * window.innerHeight);
+    const el = document.elementFromPoint(x, y)!;
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y }));
+    w.advance(0.3);
+    return w.selectedBay();
+  });
+  expect(picked, 'tapping a crate did not select it').toBe('cell');
+  await expect(page.locator('#shopCard')).toContainText('Fuel Cell');
+
+  /* And buying works, out of the drawer. */
+  const before = await page.evaluate(() => (window as any).__cw.g.kit.cell);
+  await page.locator('#shopCard .cbuy').click();
+  const after = await page.evaluate(() => (window as any).__cw.g.kit.cell);
+  expect(after, 'buying from the drawer did nothing').toBe(before + 1);
+
+  /* A tap on nothing shuts it, and drops the selection with it - the card must
+     not keep offering something that is no longer on screen.
+
+     NOT a second tap on the handle, which was the first design and does not
+     survive the drawer opening: the handle swings down and forward with the
+     flap, which on a portrait phone puts it under the tray. The control that
+     opens a drawer cannot also be the one that shuts it when opening it is
+     what moves it out of reach. */
+  const shut = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const el = document.getElementById('shopStage')!;
+    const x = Math.round(window.innerWidth * 0.5);
+    const y = Math.round(window.innerHeight * 0.22);
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y }));
+    w.advance(3);
+    return { open: w.drawerOpen(), sel: w.selectedBay(), mode: w.g.mode, at: x + ',' + y };
+  });
+  expect(shut.open, 'the drawer did not shut; tapped ' + shut.at +
+    ' in mode ' + shut.mode).toBe(false);
+  expect(shut.sel, 'shutting the drawer left a crate selected').toBe(null);
+});
+
+test('a supply cache hands over something new, and the Outfitter stocks it', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const got = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.foundKit.length = 0;
+    /* Open a cache the way the drill does. The cell is chosen by asking what
+       each one would pay, because whether a cache pays a supply or a mineral
+       is a hash of where it is. */
+    let hit: { x: number; d: number } | null = null;
+    for (let d = 10; d < 50 && !hit; d++) {
+      for (let x = 0; x < 13; x++) {
+        if (w.cachePrize(x, d).kind === 'supply') { hit = { x, d }; break; }
+      }
+    }
+    if (!hit) return { err: 'no cache cell on this world pays a supply' };
+    w.grantCache(hit.x, hit.d);
+    w.advance(0.2);
+    return {
+      kit: w.g.foundKit.slice(),
+      prize: JSON.stringify(w.cachePrize(hit.x, hit.d)),
+      banner: document.getElementById('found')!.className,
+      head: document.querySelector('#found .fhead')!.textContent,
+      mode: w.g.mode
+    };
+  });
+  expect(got.err, String(got.err)).toBeUndefined();
+  expect(got.kit!.length, 'a cache paid ' + got.prize + ' and nothing was learned').toBe(1);
+  /* The banner, and its own heading - a Fuel Cell must not be announced as
+     DEVICE RECOVERED, which is the fixed line the buried crates use. */
+  expect(got.banner, 'no banner for a consumable nobody had seen').toContain('on');
+  expect(got.head, 'a consumable was announced as a device').toBe('NEW SUPPLY');
+  expect(got.mode, 'the discovery paused the game').toBe('play');
+
+  /* And now it is in the drawer. */
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.credits = 9e6; w.g.px = 6; w.g.pd = -1; w.advance(0.5);
+    document.getElementById('btnShop')!.click();
+  });
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+  const shown = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    return w.kitCases.filter((c: any) => c.group.visible).map((c: any) => c.key);
+  });
+  expect(shown, 'the consumable was found and the drawer is still empty').toEqual(got.kit);
 });

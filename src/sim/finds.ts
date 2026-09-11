@@ -173,3 +173,48 @@ export function findMap(leg: number, coreDepthHere: number, found: string[]): Ma
 export const FIND_COLOR = 0x00ff41;
 export const FIND_HOST = 0x102818;
 export const FIND_HARD = 10;
+
+/* ---------- supplies, which are found the same way for a different reason ----
+
+   Playtest: *"The 6 upgrades at the bottom feel out of place and are too big of
+   an advantage to just purchase. Can you remove all 6 of the upgrades from the
+   bottom of the page. Make it so you have to find them as you dig, then after
+   you find them, you can upgrade them."*
+
+   He is right about both halves, and the second half is the sharper one. Six
+   consumables in a flat grid under the room was a menu that had survived the
+   room being rebuilt around it - and worse, a Bulwark Field is three impacts
+   absorbed outright, sold to a first-hour player for money they will have in
+   ten minutes. A consumable that strong should cost knowing it exists.
+
+   THE MECHANISM WAS ALREADY IN THE GROUND, which is why this is six lines
+   rather than a second system. Supply caches have been buried on every world
+   since the game had caches, and opening one already hands over a consumable.
+   All that was missing was the consequence: the first time a cache gives you
+   something you have never held, you now know what it is, and the Outfitter can
+   stock it from then on.
+
+   That is deliberately softer than the devices' gate. A device is one hashed
+   crate on a world and finding it is an event; a supply turns up in the ordinary
+   run of opening caches, so the kit fills in as a by-product of playing rather
+   than as a hunt. Two gates of the same hardness would make the first hour a
+   scavenger list. */
+
+/* Which supply a cache should hand over.
+
+   Prefers something you have never held, in the table's own order - so the kit
+   fills in cheapest-and-most-useful first and a cache is reliably a discovery
+   while there is anything left to discover. Once you have them all it falls
+   back to the weighted roll the cache always used, because at that point the
+   question is which consumable you want, not which one you have seen.
+
+   `order` is the full supply list in table order and `found` is what you hold;
+   both are passed in rather than imported, so this stays pure and a test can
+   ask what any hypothetical save would be handed. */
+export function cacheSupply(order: string[], found: string[], fallback: string): string {
+  for (const k of order) if (!found.includes(k)) return k;
+  return fallback;
+}
+
+/* Whether the Outfitter will sell this consumable at all yet. */
+export function kitKnown(key: string, found: string[]) { return found.includes(key); }

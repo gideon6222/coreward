@@ -91,3 +91,30 @@ test('a v1 save carrying a beacon keeps its autopilot', () => {
   assert.ok(H.g.up.auto > 0, 'a v1 beacon did not become an autopilot');
   assert.ok(H.g.found.includes('auto'), 'a v1 beacon became an autopilot nobody is allowed to upgrade');
 });
+
+
+test('a save from before the kit was a discovery can still buy all six', () => {
+  store.clear();
+  store.set('coreward.v2', JSON.stringify({
+    planet: 2, credits: 5000, best: { depth: 120 },
+    up: {}, kit: { coolant: 0, patch: 2, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 }
+    /* No `foundKit` key, which is what every save written before today looks
+       like. */
+  }));
+  H.load();
+  /* Every one of them, not only the two still in the hold. A consumable is
+     SPENT, so "do you hold one" is the wrong question - somebody who bought
+     three Hull Patches and used all three has held one, and telling them the
+     Outfitter has never heard of it would be taking something away. */
+  for (const sup of H.SUPPLIES) {
+    assert.ok(H.g.foundKit.includes(sup.key),
+      sup.key + ' was buyable in the save that was loaded and is now unknown');
+  }
+});
+
+test('a new save knows no consumables at all', () => {
+  store.clear();
+  store.set('coreward.v2', JSON.stringify({ planet: 0, credits: 0, foundKit: [] }));
+  H.load();
+  assert.equal(H.g.foundKit.length, 0, 'a save that knows nothing was given something');
+});

@@ -1,9 +1,9 @@
-import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
+import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, SUPPLY_OF, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
 import { setGauges } from './gauges';
 import { clamp } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, padFuel } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
-import type { Upgrade } from './types';
+import type { Upgrade, Supply } from './types';
 import { VERSION, CHANGELOG } from './changelog';
 import { haulValue } from './sim/world';
 import { lamp } from './scene';
@@ -12,7 +12,8 @@ import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
 import { R } from './sim/runtime';
 import { hap, haptics, setHaptics } from './haptics';
-import { selectedBay, refreshBays, paintAisleBar } from './station';
+import { selectedBay, refreshBays, refreshKit, paintAisleBar } from './station';
+
 import { PARTS, DRIVE_SLOTS } from './sim/drive';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
@@ -40,7 +41,7 @@ export const ui = {
   alarm: mustEl('alarm'), hullTxt: mustEl('hullTxt'),
   vignette: mustEl('vignette'),
   flash: mustEl('flash'), btnShop: mustEl('btnShop'), btnAuto: mustEl('btnAuto'),
-  kit: mustEl('kit'), supplies: mustEl('supplies'),
+  kit: mustEl('kit'),
   ordBomb: mustEl('ordBomb'), ordLaser: mustEl('ordLaser'),
   power: mustEl('power'), powerChip: mustEl('powerChip'),
   shopPlanet: mustEl('shopPlanet'),
@@ -109,10 +110,22 @@ export function tickToast(dt: number) {
    Driven off the same tick as the toast rather than a setTimeout, so it runs
    on game time and the filmstrip can hold it still. */
 let foundT = 0;
-export function foundBanner(name: string, what: string) {
+/* `kind` decides the two fixed lines, because a device and a consumable are
+   different promises. A device is bolted on and its ladder opens; a supply is
+   in the hold and the counter will restock it. Saying "FITTED" over a Fuel
+   Cell would be a small lie in the one place the game is teaching. */
+export function foundBanner(name: string, what: string, kind: 'device' | 'supply' = 'device') {
   if (!ui.found || !ui.foundName || !ui.foundWhat) return;
   ui.foundName.textContent = name;
   ui.foundWhat.textContent = what;
+  const head = ui.found.querySelector('.fhead');
+  const fit = ui.found.querySelector('.ffit');
+  if (head) head.textContent = kind === 'device' ? 'DEVICE RECOVERED' : 'NEW SUPPLY';
+  if (fit) {
+    fit.textContent = kind === 'device'
+      ? 'FITTED · UPGRADE IT AT THE OUTFITTER'
+      : 'IN THE HOLD · THE OUTFITTER STOCKS IT NOW';
+  }
   ui.found.classList.add('on');
   foundT = 4.0;
 }
@@ -120,6 +133,35 @@ export function tickFound(dt: number) {
   if (foundT <= 0) return;
   foundT -= dt;
   if (foundT <= 0 && ui.found) ui.found.classList.remove('on');
+}
+
+/* ---------- the aisle hint ----------
+
+   It retires once it has been obeyed. A line of instructions that never goes
+   away is a line of instructions the player stops seeing and the room keeps
+   paying for - and this one sits in the only empty band of a frame that has
+   four other things competing for it. One successful walk down the aisles is
+   proof it landed, and it is persisted, because the second session should not
+   be taught again.
+
+   HERE rather than in input.ts, which is where it was written first. input.ts
+   imports `ui` from this module, so a call the other way is a cycle - and the
+   symptom was not a warning, it was "Cannot access 'k' before initialization"
+   at boot, with the shop simply never opening. A hint is a UI concern and this
+   is the UI module; the cycle was the design telling me where it belonged.
+
+   Read through try/catch for the same reason the haptics toggle is: private
+   browsing can make localStorage throw on access, and a shop that will not
+   open because a hint could not remember itself is a bad trade. */
+const HINT_KEY = 'coreward.hint.aisle';
+let hintSeen = false;
+try { hintSeen = localStorage.getItem(HINT_KEY) === '1'; } catch (e) { /* ignore */ }
+export function aisleHintSeen() { return hintSeen; }
+export function retireHint() {
+  if (hintSeen) return;
+  hintSeen = true;
+  try { localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* ignore */ }
+  ui.shopHint.classList.add('gone');
 }
 
 export function flash(color: string, ms?: number) {
@@ -332,17 +374,19 @@ export function buildShop() {
      whenever anything they show can have changed - which is exactly when this
      runs: opening the shop, and after every purchase. */
   refreshBays();
+  refreshKit();
   /* The dots too, and the arrows with them: buying the last thing in a
      department cannot change which aisles have stock, but FINDING one can, and
      a purchase is the moment the shop is rebuilt either way. */
   paintAisleBar();
   buildCard();
-  buildSupplies();
 }
 
 export function buildCard() {
   const key = selectedBay();
-  ui.shopHint.classList.toggle('gone', !!key);
+  /* Hidden while something is picked, and hidden for good once the player has
+     walked the aisles once - see `retireHint` in input.ts. */
+  ui.shopHint.classList.toggle('gone', !!key || aisleHintSeen());
   ui.shopCard.innerHTML = '';
   if (!key) {
     /* Deliberately empty: the hint line floating over the room already says
@@ -350,9 +394,56 @@ export function buildCard() {
     ui.shopCard.innerHTML = '<div class="cempty">&nbsp;</div>';
     return;
   }
+  const sup = SUPPLY_OF[key];
+  if (sup) { buildSupplyRow(sup); return; }
   const u = UPGRADES.find((x) => x.key === key);
   if (!u) return;
   buildUpgradeRow(u);
+}
+
+/* One consumable, in the same card the upgrades use.
+
+   Playtest: *"a secret display case at the bottom of the screen pops open and
+   shows all of the upgrades you have collected and lets you purchase the
+   upgrades there."*
+
+   The six chips in the tray are gone. They were the last list on this screen,
+   and a Bulwark Field - three impacts absorbed outright - sitting in a grid
+   next to a price is exactly the "too big of an advantage to just purchase"
+   he named. Now you have to have held one, and then you have to open a drawer
+   to buy another.
+
+   The same card as an upgrade on purpose: one place at the bottom of the
+   screen where what you picked explains itself, whether you picked it off a
+   counter or out of a drawer. */
+function buildSupplyRow(sup: Supply) {
+  const held = g.kit[sup.key];
+  const full = held >= sup.max;
+  const row = document.createElement('div');
+  row.className = 'up';
+  row.innerHTML =
+    '<div class="upinfo"><div class="upname">' + sup.name +
+    ' <span class="mult">' + held + '/' + sup.max + '</span></div>' +
+    '<div class="upeff">' + sup.blurb + '</div></div>';
+  ui.shopCard.appendChild(row);
+
+  const bar = document.createElement('div');
+  bar.className = 'crow';
+  const btn = document.createElement('button');
+  btn.className = 'cbuy';
+  btn.textContent = full ? 'HOLD IS FULL' : 'BUY  ◈ ' + sup.cost.toLocaleString();
+  btn.disabled = full || g.credits < sup.cost;
+  btn.onclick = () => {
+    if (full || g.credits < sup.cost) return;
+    g.credits -= sup.cost;
+    g.kit[sup.key]++;
+    sfx.buy();
+    hap.buy();
+    save(); buildShop(); updateHUD();
+    flash('rgba(120,255,200,.25)', 160);
+  };
+  bar.appendChild(btn);
+  ui.shopCard.appendChild(bar);
 }
 
 function buildUpgradeRow(u: Upgrade) {
@@ -414,37 +505,13 @@ function buildUpgradeRow(u: Upgrade) {
   ui.shopCard.appendChild(row);
 }
 
-export function buildSupplies() {
-  ui.supplies.innerHTML = '';
-  const head = document.createElement('div');
-  head.className = 'counter';
-  head.textContent = 'SUPPLIES \u00b7 SPENT UNDERGROUND';
-  ui.supplies.appendChild(head);
-  for (const sup of SUPPLIES) {
-    const held = g.kit[sup.key];
-    const full = held >= sup.max;
-    const row = document.createElement('div');
-    row.className = 'up';
-    row.innerHTML =
-      '<div class="upinfo"><div class="upname">' + sup.name +
-      ' <span class="mult">' + held + '/' + sup.max + '</span></div>' +
-      '<div class="upeff">' + sup.blurb + '</div></div>';
-    const btn = document.createElement('button');
-    btn.className = 'buy';
-    btn.textContent = full ? 'FULL' : '◈ ' + sup.cost.toLocaleString();
-    btn.disabled = full || g.credits < sup.cost;
-    btn.onclick = () => {
-      if (full || g.credits < sup.cost) return;
-      g.credits -= sup.cost;
-      g.kit[sup.key]++;
-      sfx.buy();
-      save(); buildShop(); updateHUD();
-      flash('rgba(120,255,200,.25)', 160);
-    };
-    row.appendChild(btn);
-    ui.supplies.appendChild(row);
-  }
-}
+/* `buildSupplies` is gone with the grid it built.
+
+   It rendered six chips into the tray, which is where they had been since
+   before the Outfitter was a room at all. They are crates in a drawer under
+   the counter now and `refreshKit()` in station.ts draws them, for the same
+   reason `refreshBays` draws the upgrade cases: the room owns what the room
+   shows. */
 
 export function audioLabels() {
   if (ui.btnHaptics) {

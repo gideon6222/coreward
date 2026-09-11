@@ -7,13 +7,14 @@ import { g, S, save, load, hasSave, coreM } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
-import { findCells, blockAt } from './sim/world';
+import { findCells, blockAt, cachePrize } from './sim/world';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
 import { GROUP_ORDER } from './stationsigns';
 import { stationX } from './stationroom';
-import { pickBay, selectBay, selectedBay, bays, stationCamera, stationScene, roomReady, goAisle, stepAisle,
+import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen, roomDrawer,
+         stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
 import { el, updateHUD, audioLabels, buildShop } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
@@ -21,7 +22,7 @@ import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
-import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind } from './actions';
+import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCache } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
@@ -177,6 +178,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* What is buried on this world, so a test can dig up the real crate rather
        than a cell it picked out of the air. */
     findCells, blockAt,
+    drawerOpen, roomDrawer, kitCases, refreshKit,
+    /* So a spec can open a cache the way the drill does, and ask what a given
+       cell would pay before it opens one. */
+    cachePrize, grantCache,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

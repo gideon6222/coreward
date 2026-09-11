@@ -222,3 +222,41 @@ test('the depth gate still holds for the upgrades that are sold', () => {
     }
   }
 });
+
+/* ---------- the kit, which is found rather than bought ---------- */
+
+test('a cache hands over something you have never held, while there is one', () => {
+  const order = H.SUPPLIES.map((s) => s.key);
+  /* Nothing held: the first in table order. */
+  assert.equal(H.cacheSupply(order, [], 'cell'), order[0]);
+  /* Hold the first two: the third. */
+  assert.equal(H.cacheSupply(order, order.slice(0, 2), 'cell'), order[2]);
+  /* Hold everything: back to the weighted roll the cache always used, because
+     at that point the question is which one you WANT. */
+  assert.equal(H.cacheSupply(order, order.slice(), 'patch'), 'patch');
+  assert.equal(H.cacheSupply(order, order.slice(), 'coolant'), 'coolant');
+});
+
+test('opening caches fills the kit in a finite number of caches', () => {
+  const order = H.SUPPLIES.map((s) => s.key);
+  const held = [];
+  for (let i = 0; i < order.length; i++) {
+    const got = H.cacheSupply(order, held, 'cell');
+    assert.ok(!held.includes(got), 'a cache handed over a duplicate while something was still unknown');
+    held.push(got);
+  }
+  assert.equal(held.length, order.length, 'the kit never completes');
+  /* And the order is the table's, which is cheapest-and-plainest first: a
+     first-hour player meets the Fuel Cell before the Bulwark Field. */
+  assert.deepEqual(held, order);
+});
+
+test('the six consumables are not all cheap, which is why they are gated', () => {
+  /* The reason this became a discovery at all: a Bulwark Field absorbs three
+     impacts outright and was on sale next to a price from the first minute.
+     Asserted so a future repricing cannot quietly make the gate pointless. */
+  const bul = H.SUPPLY_OF.bulwark;
+  const hull = H.UPGRADES.find((u) => u.key === 'hull');
+  assert.ok(bul.cost > H.costOf(hull, 0),
+    'the Bulwark Field is cheaper than the first rung of the ladder it stands in for');
+});

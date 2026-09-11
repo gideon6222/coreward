@@ -12,7 +12,7 @@ function fmtTime(secs: number) {
 import { g , coreM, worldTrait} from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
-import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
+import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, retireHint } from './ui';
 import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation,
          stepAisle, paintAisleBar, markSeen } from './station';
 import type { Dir } from './types';
@@ -107,8 +107,8 @@ mustEl('shopClose').onclick = () => {
 const SWIPE_PX = 42;
 let swipeX = 0, swipeY = 0, swiping = false;
 
-mustEl('aisleL').onclick = () => { if (stepAisle(-1)) sfx.ui(); };
-mustEl('aisleR').onclick = () => { if (stepAisle(1)) sfx.ui(); };
+mustEl('aisleL').onclick = () => { if (stepAisle(-1)) { sfx.ui(); retireHint(); } };
+mustEl('aisleR').onclick = () => { if (stepAisle(1)) { sfx.ui(); retireHint(); } };
 
 document.addEventListener('pointerdown', (e) => {
   if (g.mode !== 'shop') return;
@@ -127,7 +127,7 @@ document.addEventListener('pointerup', (e) => {
   if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 1.4) {
     /* Drag LEFT to walk right, the way a map or a carousel moves - the content
        follows the finger rather than the camera doing. */
-    if (stepAisle(dx < 0 ? 1 : -1)) sfx.ui();
+    if (stepAisle(dx < 0 ? 1 : -1)) { sfx.ui(); retireHint(); }
     return;
   }
   /* Not a swipe: it is a tap, and taps pick a case. Resolved on the way UP

@@ -438,15 +438,21 @@
      would otherwise sit on top of it. They are hidden while docked rather than
      covered, because a depth readout over a hangar is just wrong. */
   body.docked #hud, body.docked #actions, body.docked #ctrl,
-  body.docked #kit, body.docked #ord{display:none;}
+  body.docked #kit, body.docked #ord, body.docked #cluster{display:none;}
   .screen.room > *{pointer-events:auto;}
   /* The hint sits in the middle of the stage, which is the one band of the
      room with nothing in it: the gap between the wall rack and the counter.
      At the bottom it lay across the counter plates and at the top it lay
      across the aisle's neon sign, and both of those are things it is asking
      you to look at. */
-  .stage{flex:1 1 auto; pointer-events:none; display:flex; align-items:flex-end;
-    justify-content:center; padding-bottom:118px;}
+  /* The hint sits at the TOP of the stage, in the strip between the aisle bar
+     and the department's sign. It has been at the bottom (across the counter
+     plates) and in the middle (across the rack) and both of those are things it
+     is asking you to look at; this is the one band of the room that is empty at
+     every station. It also goes away for good once a swipe has landed - see
+     `hintSeen` in input.ts. */
+  .stage{flex:1 1 auto; pointer-events:none; display:flex; align-items:flex-start;
+    justify-content:center; padding-top:4px;}
   .hintline{
     font-size:10.5px; letter-spacing:.16em; color:var(--dim); opacity:.85;
     text-shadow:0 2px 10px #000; transition:opacity .3s;
@@ -952,9 +958,12 @@
   <!-- pointer-events:none, so a tap lands on the bay behind it -->
   <div class="stage" id="shopStage"><div class="hintline" id="shopHint">SWIPE TO WALK THE AISLES</div></div>
 
+  <!-- The supplies grid is gone from here. They are crates in a drawer under
+       the counter now: found by opening caches, and bought by pulling the
+       drawer open. A shorter tray also gives the room back 120 px of screen,
+       which the framing picks up on its own because it measures. -->
   <div class="tray">
     <div id="shopCard" class="card"></div>
-    <div id="supplies"></div>
     <div class="undock"><button id="shopClose" class="wide">UNDOCK</button></div>
   </div>
 </div>

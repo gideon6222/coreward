@@ -1,4 +1,4 @@
-import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
+import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, matTotalFor,
          bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
@@ -72,6 +72,9 @@ export const g: {
      `drive`, a list that only grows - and like `drive`, it is the thing that
      decides what the Outfitter is even allowed to sell you. See finds.ts. */
   found: string[];
+  /* Consumables ever held. The Outfitter will not sell one you have never had
+     in your hands - see the note on supplies in finds.ts. */
+  foundKit: string[];
   /* balance telemetry: all time in the save, this run in memory only */
   log: Log;
   /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
@@ -103,7 +106,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
-  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [],
+  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [], foundKit: [],
   log: blankLog(),
   best: { depth: 0, haul: 0, fastest: 0, worlds: 0 },
   claim: newClaim(),
@@ -217,7 +220,7 @@ export function save() {
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
       relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
-      found: g.found,
+      found: g.found, foundKit: g.foundKit,
       claim: g.claim
     }));
   } catch (e) { /* ignore */ }
@@ -270,6 +273,19 @@ export function load() {
       for (const k of FOUND_KEYS) {
         if ((g.up[k] || 0) > 0 && !g.found.includes(k)) g.found.push(k);
       }
+      /* The same clause for the kit, and it has to be WIDER than the devices'.
+
+         A consumable is spent, so "do you hold one" is not the question -
+         somebody who bought three Hull Patches and used all three has held one
+         and must not be told the Outfitter has never heard of it. Any save
+         written before today is a save whose owner could buy every consumable
+         freely, so every consumable in it counts as known. New saves write the
+         list properly and this never fires for them again. */
+      if (Array.isArray(s.foundKit)) {
+        g.foundKit = s.foundKit.slice();
+      } else {
+        g.foundKit = SUPPLIES.map((sup) => sup.key);
+      }
       /* loadLog defaults every field, so a save from before the log existed
          comes back zeroed rather than full of undefined that render as NaN. */
       g.log = loadLog(s.log);
@@ -297,6 +313,9 @@ export function load() {
       if ((g.up[k] || 0) > 0 && !g.found.includes(k)) g.found.push(k);
     }
     g.stock = grandfatherStock();
+    /* Same as the v2 path: a save from before the kit was a discovery is a
+       save whose owner could buy all six. */
+    g.foundKit = SUPPLIES.map((sup) => sup.key);
     save();
   } catch (e) { /* corrupt save, start fresh */ }
 }

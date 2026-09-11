@@ -849,6 +849,71 @@ behind it is a bright line and this renderer will never have bloom.
       note below
 - [ ] **S6 The phone pass** - judged at 1080x2340, with the light count measured
 
+## S7: the kit becomes a discovery too
+
+From his read of 0.28.0:
+
+> *"The 6 upgrades at the bottom feel out of place and are too big of an
+> advantage to just purchase. Can you remove all 6 of the upgrades from the
+> bottom of the page. Make it so you have to find them as you dig, then after
+> you find them, you can upgrade them. They will only show up in the shop after
+> they are found. A secret display case at the bottom of the screen pops open
+> and shows all of the upgrades you have collected and lets you purchase the
+> upgrades there."*
+
+Both halves right, and the second is the sharper one. A Bulwark Field absorbs
+three impacts outright and was on sale to a first-hour player for money they
+would have in ten minutes.
+
+**The mechanism was already in the ground.** Supply caches have been buried on
+every world since the game had caches, and opening one already handed over a
+consumable. The only thing missing was the consequence: the first one of a kind
+you are given is the one that teaches the Outfitter it exists. So a cache now
+prefers something you have never held, and the kit fills in as a by-product of
+playing rather than as a second hunt - deliberately softer than the devices'
+gate, because two gates of the same hardness would make the first hour a
+scavenger list.
+
+**The drawer.** A brass front in the counter with a handle, which drops on a
+hinge while a lit shelf slides out. Three things make it read as a drawer
+rather than a panel that appears: the front hinges rather than fading, the
+shelf slides while it does, and the inside is dark until it opens. One drawer,
+moved to whichever counter is in frame, for the same reason there are two
+roaming lights rather than eight.
+
+- [x] **S7** - the kit is found, not bought, and lives in a drawer
+
+### What the measurements missed again, and what caught it
+
+Three faults, three different detectors, and the pattern is the same as S1-S5.
+
+**Two rows of three does not fit.** Measured: the drawer has 117 px of band
+between the counter cases and the tray, and two rows of crates with plates want
+about 160. They overlapped each other and ran under the tray. One row of six,
+read by coloured lid and four-letter code, with the card expanding whichever
+one you tap.
+
+**The counter's light and the drawer wanted the same sixty pixels.** The strip
+was on the counter's front lip, which is where a drawer is; the brass front
+came out with a bright coloured bar through the middle of its label. It moved
+under the counter TOP, which is where the light is on a real display counter
+anyway - lit glass above, dark drawers below.
+
+**A fitting's brightness is a function of its distance from the lens.** The
+same tube and the same settings read as a neat lit line on a wall four metres
+back and as a full-width glare at the counter: 3.2 units at that distance is
+about 880 screen pixels, wider than the phone. Fittings take a `glow` scale
+now.
+
+And three bugs that only a running browser could show: a circular import
+between `ui.ts` and `input.ts` that presented as "Cannot access 'k' before
+initialization" with the shop simply never opening; a projection 97 px out
+because the station camera is not a child of the station scene, so updating the
+scene leaves the camera's matrix stale; and a test helper calling `advance()`,
+which stops the clock and never gives it back - the game froze with the mode
+still 'play' and the key still held, which is about as misleading as a symptom
+gets, and is the trap already written down beside `startClock`.
+
 ## What the numbers missed, and the screenshots caught
 
 Worth writing down, because it is the same lesson twice and it is about the

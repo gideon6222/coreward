@@ -453,7 +453,7 @@ export function resetNeonLights() { lightsUsed = 0; }
    The light pool on the wall behind is the fifth thing, and it is the piece
    that stands in for a bloom pass this renderer does not have. */
 export function neonFitting(color: number, len: number, opts: {
-  housing?: boolean; light?: number; pool?: number; radius?: number;
+  housing?: boolean; light?: number; pool?: number; radius?: number; glow?: number;
 } = {}): NeonFitting {
   const grp = new THREE.Group() as NeonFitting;
   const r = opts.radius ?? 0.028;
@@ -522,6 +522,16 @@ export function neonFitting(color: number, len: number, opts: {
      itself cannot have without a bloom pass. */
   const halo = fresnelShell(color, len, r);
   grp.add(halo);
+  /* How hard this fitting glows, over and above how long it is.
+
+     Needed because a fitting's apparent brightness is a function of how close
+     it is to the lens, and the fittings in this room are at wildly different
+     distances: the sign is on a wall four metres back and the counter strip is
+     barely a metre away. The same tube at the same settings read as a neat lit
+     line on the wall and as a full-width glare across the bottom of the frame.
+     Measured rather than argued: 3.2 units at the counter's distance is about
+     880 screen pixels on a 360-wide phone, which is wider than the screen. */
+  grp.userData.glow = opts.glow ?? 1;
 
   (grp as NeonFitting).tube = tube;
   (grp as NeonFitting).pool = pool;
@@ -539,7 +549,7 @@ export interface NeonFitting extends THREE.Group {
    tube's emissive and the pool together, because a tube that brightens without
    its pool brightening is back to being a sticker. */
 export function setNeon(f: NeonFitting, amount: number) {
-  const a = Math.max(0, Math.min(1, amount));
+  const a = Math.max(0, Math.min(1, amount)) * (f.userData.glow ?? 1);
   (f.tube.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.25 + a * 1.15;
   (f.pool.material as THREE.MeshBasicMaterial).opacity = 0.1 + a * 0.34;
   /* All three together, always. A tube that brightens without its pool is back
@@ -558,6 +568,129 @@ export function setNeon(f: NeonFitting, amount: number) {
    that way. Everything goes through the fitting now. */
 export function neonBar(color: number, w: number, _h = 0.05, _glow = 3.2): NeonFitting {
   return neonFitting(color, w);
+}
+
+
+/* ---------- the drawer under the counter ----------
+
+   Playtest: *"A secret display case at the bottom of the screen pops open and
+   shows all of the upgrades you have collected and lets you purchase the
+   upgrades there."*
+
+   The six consumables used to be a flat grid of chips in the tray - a menu
+   that had survived the room being rebuilt around it twice, and the last piece
+   of this screen that was still a list. This is the room's own answer: a
+   drawer in the counter you are already standing at, with a brass handle, that
+   drops its front and slides a lit shelf out at you.
+
+   THREE THINGS MAKE IT READ AS A DRAWER rather than as a panel that appears.
+
+   The front HINGES, it does not fade. A flap pivoting about its bottom edge is
+   the single motion that says "this is a thing with an inside", and it costs
+   one rotation. It is the same argument as the neon housing: the eye needs the
+   mechanism, not the result.
+
+   The shelf SLIDES OUT while the flap drops, so the two motions are visibly
+   one action with a hinge and a runner in it.
+
+   The inside is DARK UNTIL IT OPENS. A strip inside the case comes up as the
+   flap comes down, which is what makes it read as a case being opened rather
+   than as a lid being removed from a hole. It is also the one light in this
+   room that is not a department colour - warm, like something under glass.
+
+   One drawer, moved to whichever counter you are standing at, for the same
+   reason there are two roaming lights rather than eight: only one aisle is
+   ever on screen, so only one drawer can ever be reachable, and four of them
+   would be three more than anybody can open. */
+
+export interface Drawer {
+  group: THREE.Group;
+  /* Where the supply cases are parented. station.ts fills this, because the
+     room owns furniture and the shop owns stock. */
+  shelf: THREE.Group;
+  /* What a tap has to hit to open it: the handle and the flap together, which
+     is a bigger target than either and is what a thumb actually aims at. */
+  hit: THREE.Object3D[];
+  setOpen(on: boolean): void;
+  isOpen(): boolean;
+  step(dt: number): void;
+}
+
+export function makeDrawer(): Drawer {
+  const grp = new THREE.Group();
+
+  /* The flap, hinged at its bottom edge. The pivot is a group at the hinge
+     line with the panel offset up inside it - rotating a mesh about its own
+     centre would make it sink into the counter instead of falling open. */
+  const hinge = new THREE.Group();
+  /* Measured, not placed by eye. The counter front is barely a unit from the
+     lens, where one world unit is about 245 screen pixels on a 360-wide phone -
+     five times the scale of the wall behind. The first version was 3.1 units
+     wide with its crates spread over 2.3 of them, which put the outer two at
+     screen x -204 and 564 and the bottom row under the tray. Everything in
+     here is about a third of what it started as, and it is the same lesson as
+     the counter arc: distance from the lens decides the number. */
+  hinge.position.set(0, -0.92, 1.64);
+  const face = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.3, 0.06), brassMat);
+  face.position.y = 0.15;
+  hinge.add(face);
+  /* Rivets along the flap, so it is built out of the same building as the
+     wall behind it. */
+  rivetRow(hinge, -0.68, 0.05, 0.04, 1.36, 7);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.055, 0.08), copperMat);
+  handle.position.set(0, 0.24, 0.06);
+  hinge.add(handle);
+  grp.add(hinge);
+
+  /* The shelf that slides out, and the case it slides out of. */
+  const box = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.26, 0.4), ironMat);
+  box.position.set(0, -0.72, 1.42);
+  grp.add(box);
+  const shelf = new THREE.Group();
+  shelf.position.set(0, -0.76, 1.42);
+  grp.add(shelf);
+
+  /* The light inside. Warm rather than any department's colour: this is the
+     one thing in the room that is under glass rather than on a wall. */
+  const lamp = neonFitting(0xffc27a, 1.4, { light: 0, radius: 0.018 });
+  lamp.position.set(0, -0.56, 1.54);
+  lamp.rotation.x = -0.7;
+  grp.add(lamp);
+  setNeon(lamp, 0);
+
+  /* A label on the flap, so a closed drawer says what it is. Without it this
+     is a brass rectangle, and a brass rectangle nobody opens is worse than the
+     grid it replaced. */
+  const label = makeLabel('SUPPLIES', 0xffd9a0);
+  label.scale.setScalar(0.72);
+  label.position.set(0, 0.12, 0.05);
+  hinge.add(label);
+
+  let open = false, t = 0;
+  return {
+    group: grp,
+    shelf,
+    hit: [face, handle],
+    isOpen() { return open; },
+    setOpen(on: boolean) { open = on; },
+    step(dt: number) {
+      /* Eased toward the target rather than tweened on a timer, the same as
+         the aisle glide: a second tap part way through simply retargets. */
+      t += ((open ? 1 : 0) - t) * Math.min(1, dt * 9);
+      if (t < 0.001) t = 0;
+      if (t > 0.999) t = 1;
+      hinge.rotation.x = t * 1.45;
+      shelf.position.z = 1.42 + t * 0.3;
+      shelf.position.y = -0.76 + t * 0.06;
+      shelf.visible = t > 0.02;
+      setNeon(lamp, t);
+      /* The label goes with the flap, and fades as the flap turns away from
+         the camera - reading a word on a surface edge-on is worse than not
+         seeing it. */
+      (label.material as THREE.MeshBasicMaterial).opacity = 1 - t;
+      (label.material as THREE.MeshBasicMaterial).transparent = true;
+    }
+  };
 }
 
 /* ---------- the room ----------
@@ -599,9 +732,11 @@ export interface Room {
   bays: Bay[];
   crt: Crt;
   gauges: { g: Gauge; read: () => number }[];
-  /* Moves the two roaming lights to a bay. See the note where they are made. */
+  /* The one drawer, moved to whichever counter is in frame. */
+  drawer: Drawer;
+  /* Moves the two roaming lights and the drawer to a bay. */
   setAisle(i: number): void;
-  step(t: number): void;
+  step(t: number, dt: number): void;
 }
 
 /* Built once, the first time the shop is opened and the props have arrived.
@@ -699,11 +834,20 @@ export function buildRoom(): Room | null {
     root.add(top);
     rivetRow(root, ax - 1.6, -1.26, 1.62, 3.2, 11);
 
-    /* The strip under the counter lip: what makes a glass case read as a case.
-       In the department's own colour rather than one warm tone for all four,
-       because the colour is what says which aisle you are standing in. */
-    const lip = neonFitting(col, 3.2, { light: 0 });
-    lip.position.set(ax, -0.78, 1.68);
+    /* The strip under the counter TOP, not on its front lip.
+
+       It was on the lip, which is where the drawer is, and the two landed on
+       the same sixty pixels of screen - the brass drawer front came out with a
+       bright coloured bar drawn straight through the middle of its label. This
+       is also where the light belongs on a real display counter: under the
+       glass, lighting what is standing on it, with the drawers below in the
+       dark until you open one. */
+    const lip = neonFitting(col, 2.6, { light: 0, glow: 0.42, radius: 0.02 });
+    lip.position.set(ax, -0.55, 1.71);
+    /* Applied once here, because `glow` is a scale that `setNeon` multiplies in
+       and this fitting is never dimmed by anything else. A fitting built with a
+       glow it is never told to apply is a parameter that does nothing. */
+    setNeon(lip, 1);
     root.add(lip);
 
     /* The wall rack behind, and the shelf the standard stock sits on. */
@@ -851,6 +995,9 @@ export function buildRoom(): Room | null {
      ship went dark with the room - which is wrong, because the ship is the one
      object in here whose SHAPE is game state. It gets its own pair rather than
      the room's key coming back up. */
+  const drawer = makeDrawer();
+  root.add(drawer.group);
+
   const shipKick = new THREE.PointLight(0x6fa8ff, 3.2, 5.0, 2);
   shipKick.position.set(fx - 1.5, 0.3, 1.9);
   shipKick.castShadow = false;
@@ -862,22 +1009,27 @@ export function buildRoom(): Room | null {
     bays,
     crt,
     gauges,
+    drawer,
     setAisle(i: number) {
       /* At the forecourt the two roaming lights go dark rather than lighting
-         an aisle nobody is looking at. */
+         an aisle nobody is looking at, and the drawer goes with them - there
+         is no counter at the pump to put one in. */
       const at = i >= 1 && i <= bays.length;
       lipLight.visible = at;
       signLight.visible = at;
-      if (!at) return;
+      drawer.group.visible = at;
+      if (!at) { drawer.setOpen(false); return; }
+      drawer.group.position.x = stationX(i);
       const col = GROUP_COLOR[GROUP_ORDER[i - 1]];
       const ax = stationX(i);
       lipLight.color.setHex(col);
-      lipLight.position.set(ax, -0.6, 1.75);
+      lipLight.position.set(ax, -0.42, 1.8);
       signLight.color.setHex(col);
       signLight.position.set(ax, 1.1, -2.0);
     },
-    step(t: number) {
+    step(t: number, dt: number) {
       crt.step(t);
+      drawer.step(dt);
       for (const gg of gauges) gg.g.set(gg.read());
     }
   };

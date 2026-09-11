@@ -6,9 +6,9 @@ import { loadShipParts } from './shipparts';
 import { GROUP_ORDER, GROUP_COLOR, GROUP_LABEL, type GroupName } from './stationsigns';
 import { loadStationProps, buildRoom, stationX, FORECOURT, falloffTexture, type Room } from './stationroom';
 import { asMetal } from './materials';
-import { UPGRADES, shelfState, shelfStock, costOf } from './sim/config';
+import { UPGRADES, SUPPLIES, SUPPLY_OF, shelfState, shelfStock, costOf } from './sim/config';
 import { g } from './sim/state';
-import type { UpgradeKey } from './types';
+import type { UpgradeKey, SupplyKey } from './types';
 
 /* The Outfitter, as a room you are standing in.
 
@@ -607,6 +607,130 @@ UPGRADES.forEach((u, i) => {
   bays.push({ key: u.key, group: grp, part, glow, plate, plateTex, plateCtx, lamp, scrim });
 });
 
+
+/* ---------- what is in the drawer ----------
+
+   Playtest: *"a secret display case at the bottom of the screen pops open and
+   shows all of the upgrades you have collected and lets you purchase the
+   upgrades there."*
+
+   One case per consumable, built once, parented into the drawer's shelf the
+   first time the room exists. Only the ones you have actually held are
+   visible - an empty drawer with six grey slots in it would be a checklist,
+   which is the opposite of finding something.
+
+   Deliberately SMALLER and plainer than an upgrade case. These are boxes of
+   stock, not hardware under glass: a shallow crate, a plate, and the count you
+   are carrying. The visual difference is the point - the upgrade cases say
+   "this changes the ship" and these say "this is a thing you take with you". */
+
+export interface KitCase {
+  key: SupplyKey;
+  group: THREE.Group;
+  plate: THREE.Mesh;
+  plateTex: THREE.CanvasTexture;
+  plateCtx: CanvasRenderingContext2D;
+  glow: THREE.Mesh;
+}
+export const kitCases: KitCase[] = [];
+
+const kitMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x5a5148, metalness: 0.5, roughness: 0.62, flatShading: true
+}), 0.4);
+
+export function makeKitCases() {
+  if (kitCases.length) return;
+  SUPPLIES.forEach((sup) => {
+    const grp = new THREE.Group();
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.085, 0.15), kitMat);
+    grp.add(crate);
+    /* A coloured lid, so six crates in a row are six different things at a
+       glance rather than six crates. The colours are the ones the game already
+       uses for what each consumable answers: heat, hull, fuel, and the three
+       timed ones share the violet that ordnance uses for "a window, not a
+       repair". */
+    const lid = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.018, 0.16),
+      new THREE.MeshStandardMaterial({
+        color: KIT_COLOR[sup.key], metalness: 0.3, roughness: 0.5, flatShading: true
+      })
+    );
+    lid.position.y = 0.05;
+    grp.add(lid);
+
+    const { mesh: plate, tex: plateTex, ctx: plateCtx } = makePlate();
+    plate.scale.setScalar(0.36);
+    plate.position.set(0, -0.075, 0.1);
+    plate.rotation.x = -0.35;
+    grp.add(plate);
+
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.24), glowMat.clone());
+    glow.position.set(0, 0.01, -0.1);
+    grp.add(glow);
+
+    kitCases.push({ key: sup.key, group: grp, plate, plateTex, plateCtx, glow });
+  });
+}
+
+const KIT_COLOR: Record<string, number> = {
+  coolant: 0x6fd8ff, patch: 0xff6b7e, cell: 0x4be08a,
+  overdrive: 0xffa83c, bulwark: 0x8fb6ff, pulse: 0xa855f7
+};
+
+/* Laid out and priced. Only the found ones take a slot, so a drawer holding
+   two is two crates in the middle rather than two crates and four gaps. */
+export function refreshKit() {
+  makeKitCases();
+  const known = SUPPLIES.filter((sup) => g.foundKit.includes(sup.key));
+  const shown = new Set(known.map((s2) => s2.key));
+  const n = known.length;
+  known.forEach((sup, i) => {
+    const c = kitCases.find((k) => k.key === sup.key);
+    if (!c) return;
+    /* ONE row, however many there are, and that is decided by the screen.
+
+       Two rows of three was the obvious shape and it does not fit: measured,
+       the drawer has 117 px of band between the counter cases and the tray, and
+       two rows of crates with plates on them want about 160. They overlapped
+       each other AND ran under the tray.
+
+       So the crates are small, in a line, and read by their coloured lid and
+       their four-letter code rather than by a full name - which is what a
+       drawer of stock actually looks like, and which the card at the bottom of
+       the screen expands the moment you tap one. */
+    /* A fixed PITCH, centred, rather than a spread stretched to fill the
+       drawer. Stretching put the first two consumables a player ever finds at
+       the extreme left and right ends of an otherwise empty drawer, which
+       reads as two things that have fallen over rather than as stock. The
+       pitch is what six across the usable width works out at, so a full drawer
+       is unchanged and a nearly empty one sits in the middle. */
+    const PITCH = 0.222, y = 0.09;
+    c.group.position.set((i - (n - 1) / 2) * PITCH, y, 0);
+    /* Remembered, because the lift on the picked crate is animated off it
+       every frame. Without this the lift is measured against wherever the
+       crate happened to be last frame and it walks upward out of the drawer -
+       the same class of bug as easing toward a moving target. */
+    c.group.userData.baseY = y;
+  });
+
+  for (const c of kitCases) {
+    c.group.visible = shown.has(c.key);
+    if (!c.group.visible) continue;
+    const sup = SUPPLY_OF[c.key];
+    const held = g.kit[c.key];
+    const full = held >= sup.max;
+    const afford = g.credits >= sup.cost;
+    const line = full ? 'FULL' : '◈ ' + sup.cost.toLocaleString();
+    const tone = full ? '#4be08a' : afford ? '#3fe0ff' : '#ffc861';
+    /* The four-letter code and what you are carrying, then the price. At about
+       57 px wide there is room for one short word and a number, and `icon` is
+       already the four-letter code the in-game kit button uses - so the thing
+       in the drawer and the thing under your thumb underground are labelled
+       the same, which is most of what makes a consumable learnable. */
+    drawPlate(c as unknown as Bay, sup.icon + ' ' + held + '/' + sup.max, line, tone, false);
+  }
+}
+
 /* ---------- availability ----------
 
    Playtest: *"doing something to visually show that certain upgrades aren't
@@ -729,7 +853,17 @@ export function dockShip() {
   loadStationProps().then(() => {
     if (room) return;
     room = buildRoom();
-    if (room) { stationScene.add(room.group); refreshBays(); }
+    if (room) {
+      stationScene.add(room.group);
+      /* The crates go INTO the drawer, once, the moment there is a drawer to
+         put them in. Built in this module because drawing a plate is this
+         module's job; parented into the room because where they physically are
+         is the room's. */
+      makeKitCases();
+      for (const c of kitCases) room.drawer.shelf.add(c.group);
+      refreshBays();
+      refreshKit();
+    }
   });
   /* Where the shop OPENS, decided before anything is drawn.
 
@@ -768,16 +902,19 @@ export function undockShip() {
   for (const f of flames) { f.cone.visible = true; f.glow.visible = true; }
 }
 
-let selected: UpgradeKey | null = null;
+/* An upgrade key OR a supply key. One selection, because there is one card at
+   the bottom of the screen and two things that can fill it - and two selection
+   variables would be two ways for the card and the lit case to disagree. */
+let selected: string | null = null;
 export function selectedBay() { return selected; }
-export function selectBay(k: UpgradeKey | null) { selected = k; }
+export function selectBay(k: string | null) { selected = k; }
 
 /* Slow turntable on the ship, a turn on each part, and the picked case lit.
    Driven from the frame loop so it runs on the same delta as everything else -
    and so it keeps moving while the shop is open, which is most of what makes
    the room feel like a place rather than a screenshot. */
 export function stepStation(t: number, dt: number) {
-  if (room) room.step(t);
+  if (room) room.step(t, dt);
   /* The glide between aisles. Exponential approach on the frame delta rather
      than a tween on a timer, so it lands the same however the loop is driven -
      and so a swipe part way through another one simply retargets instead of
@@ -788,6 +925,14 @@ export function stepStation(t: number, dt: number) {
   stationCamera.position.x = aisleShown;
   stationCamera.lookAt(aisleShown, CAM_AIM_Y, CAM_AIM_Z);
   rig.rotation.y = Math.sin(t * 0.32) * 0.6;
+  for (const c of kitCases) {
+    const on = c.key === selected;
+    const m = c.glow.material as THREE.MeshBasicMaterial;
+    m.opacity += ((on ? 0.5 : 0) - m.opacity) * Math.min(1, dt * 8);
+    const lift = on ? 0.05 : 0;
+    c.group.position.y += ((c.group.userData.baseY || 0) + lift - c.group.position.y) *
+      Math.min(1, dt * 8);
+  }
   for (const b of bays) {
     b.part.rotation.y += dt * 0.65;
     const on = b.key === selected;
@@ -803,7 +948,7 @@ export function stepStation(t: number, dt: number) {
    which deselects - a room you cannot tap out of is a menu again. */
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
-export function pickBay(clientX: number, clientY: number): UpgradeKey | null {
+export function pickBay(clientX: number, clientY: number): string | null {
   /* Bring the world matrices up to date first.
 
      A raycast reads world matrices, and those are only refreshed as part of a
@@ -817,11 +962,48 @@ export function pickBay(clientX: number, clientY: number): UpgradeKey | null {
   ndc.y = -(clientY / window.innerHeight) * 2 + 1;
   ray.setFromCamera(ndc, stationCamera);
 
+  /* The drawer first, and inside-out.
+
+     A tap that lands on both an open drawer's flap and a case standing in it
+     is a purchase, not a close - so the cases are tested before the handle.
+     Closing a drawer by tapping the thing you were reaching for is the kind of
+     fault that only shows up under a thumb. */
+  if (room && room.drawer.group.visible) {
+    if (room.drawer.isOpen()) {
+      for (const c of kitCases) {
+        if (!c.group.visible) continue;
+        if (ray.intersectObject(c.group, true).length) return c.key;
+      }
+    }
+    if (room.drawer.isOpen()) {
+      /* Open, and the tap missed every crate: it shuts.
+
+         Tapping the handle again was the first design and it does not survive
+         the drawer opening - the handle swings down and forward with the flap,
+         which on a portrait phone puts it under the tray, so the control that
+         opened it is unreachable the moment it has been used. Tap-outside-to-
+         dismiss is the gesture people already have, and it costs nothing.
+
+         It falls THROUGH to the bays rather than returning, so a tap that
+         lands on an upgrade case both shuts the drawer and picks the case,
+         which is what somebody reaching past an open drawer meant. */
+      room.drawer.setOpen(false);
+      if (selected && SUPPLY_OF[selected]) selected = null;
+    } else {
+      for (const h of room.drawer.hit) {
+        if (ray.intersectObject(h, true).length) { room.drawer.setOpen(true); return null; }
+      }
+    }
+  }
   for (const b of bays) {
     if (ray.intersectObject(b.group, true).length) return b.key;
   }
   return null;
 }
+
+/* Whether the drawer is open, for the card and for a test. */
+export function drawerOpen() { return !!room && room.drawer.isOpen(); }
+export function roomDrawer() { return room ? room.drawer : null; }
 
 export function renderStation() {
   /* The renderer no longer resets its own statistics - see renderWorld() - so
