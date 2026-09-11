@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import { ambienceTick } from './sim/ambience';
-import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './sim/drive';
 import { FIND_COLOR } from './sim/finds';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo, ORES,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen,
-         groundTick, hereUnrest, lightHere } from './sim/state';
+         groundTick, hereUnrest, lightHere, vaultHere } from './sim/state';
 import { unrestBand, tremorScale } from './sim/unrest';
 import { landCollapse, closeGround } from './collapse';
 import { blockAt, findHere, climbCells } from './sim/world';
@@ -42,21 +41,19 @@ import { moveAndCollide, thrust, laneVel, headingFor } from './sim/fly';
 import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } from './ship';
 import { padLights, beam } from './pad';
 import { updateBallast } from './ballast';
-import { breachHeat } from './sim/breach';
 import { hap } from './haptics';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner } from './ui';
 import { stepGauges } from './gauges';
-import { sell, goSurface, die, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere, anchorLit } from './actions';
+import { sell, goSurface, die, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, anchorLit, vaultReached } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
-import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
+import { isShowcase, stepShowcase, renderTransit,
          landingT, isLanding } from './transit';
 import { introTick, beatT } from './sim/intro';
 import { endIntro, paintBeat, beginIntroLanding, titleLanding, finishLanding } from './titleui';
-import { arrive } from './chartui';
 
 export const FACE_VEC: Record<Dir, number[]> =
   { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -386,8 +383,7 @@ export function tick(raw: number, draw = true) {
         const fv = FACE_VEC[g.face];
         R.vx = fv[0] * S.speed();
         R.vy = fv[1] * S.speed();
-        if (b.core) { R.digging = null; breakCore(); }
-        else if (b.hazard) {
+        if (b.hazard) {
           /* A gas pocket pays nothing and costs you. It breaks faster than the
              rock around it, so you usually hit one by accident - which is the
              point: it is the surprise that makes a descent differ from the last
@@ -420,29 +416,6 @@ export function tick(raw: number, draw = true) {
           sfx.relic();
           showEvent('RELIC RECOVERED', rel.name + '. ' + rel.blurb +
             '  Relics found: ' + g.relics.length + '.', 'STOW IT', () => {});
-          R.digging = null;
-          save();
-        }
-        else if (b.part) {
-          /* A Jump Drive component. The other thing in the game you can lose
-             for good: leave it in the ground, break the core, and it goes with
-             the planet. Unlike a relic it is not a perk - it is a key, and
-             five of them open the Heart. */
-          const pid = partFor(g.trait);
-          if (pid && !g.drive.includes(pid)) g.drive.push(pid);
-          spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 190, 12, 2.2);
-          spray(worldX(R.digging.x), -R.digging.d, PART_COLOR, 150, 9, 2.6);
-          flash('rgba(160,255,255,.6)', 800);
-          R.shake = Math.max(R.shake, 0.9);
-          sfx.relic();
-          const left = DRIVE_SLOTS - g.drive.length;
-          showEvent('COMPONENT RECOVERED',
-            (pid ? partName(pid) + '. ' + (PART_OF[pid] ? PART_OF[pid].blurb : '') : '') +
-            (left > 0
-              ? '  Jump Drive ' + g.drive.length + '/' + DRIVE_SLOTS + '. ' + left +
-                ' still out there, on worlds the chart can find.'
-              : '  The Jump Drive is complete. A route to the Heart of the Drift is open.'),
-            'STOW IT', () => {});
           R.digging = null;
           save();
         }
@@ -639,6 +612,8 @@ export function tick(raw: number, draw = true) {
        see lightHere() for why it cannot be on a timer. */
     const litNow = lightHere();
     if (litNow >= 0) anchorLit(litNow);
+    /* And the same for the centre, which is the end of the game. */
+    else if (vaultHere()) vaultReached();
 
     /* The Ballast's own clock, and it only runs while the game is playing -
        not behind a shop sheet, not on the title, not mid-crossing. It decays
@@ -651,11 +626,7 @@ export function tick(raw: number, draw = true) {
                            S.rechargeMult());
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
-    /* The breach owns the world while it is running: its own tremor cadence,
-       its own grade. Everything else in this block still applies - fuel, heat
-       and the hold do not stop mattering because the core went. */
     R.worldT += dt;
-    const breaching = stepBreachHere(dt);
     const heatLine = heatDepth(g.planet, worldTrait());
     const heatSpan = coreM() - heatLine;
     g.soak = soakAfter(g.soak, g.pd, dt, worldTrait().soak || 1, heatLine);
@@ -707,8 +678,6 @@ export function tick(raw: number, draw = true) {
        The clock only runs inside the unstable band and is reset the moment
        you leave it, so climbing out of the band is a real reprieve rather
        than a pause. */
-    /* The ordinary tremor clock stands down while the breach is running - its
-       own cadence is four times faster and two clocks would fight. */
     /* Unrest reaches the player HERE, and mostly only here.
 
        Two ways, and both are things you feel rather than read. Restless ground
@@ -723,9 +692,7 @@ export function tick(raw: number, draw = true) {
     const localUnrest = hereUnrest();
     const shaky = unrestBand(localUnrest) >= 2;
     const tk = tremorTick({ t: R.tremorT, warn: R.tremorWarn }, dt,
-      /* Stands down while the breach is running: its own cadence is four
-         times faster and two clocks would fight over the same rumble. */
-      !breaching && (g.pd > tremorDepth(g.planet) || (shaky && g.pd > 4)) && !R.flight,
+      (g.pd > tremorDepth(g.planet) || (shaky && g.pd > 4)) && !R.flight,
       () => (TREMOR_EVERY + Math.random() * TREMOR_JITTER) / tremorScale(localUnrest));
     R.tremorT = tk.t;
     R.tremorWarn = tk.warn;
@@ -854,19 +821,6 @@ export function tick(raw: number, draw = true) {
     return;
   }
 
-  /* The crossing between worlds, for the same reason and in the same place as
-     the station: the ship has been reparented into another scene, so none of
-     the underground machinery below applies to it. */
-  if (isCrossing() && R.transit) {
-    R.transit.t += raw;
-    const u = Math.min(1, R.transit.t / R.transit.dur);
-    stepTransit(u, clock);
-    tickToast(raw); tickFound(raw);
-    if (draw) renderTransit();
-    if (u >= 1) arrive();
-    return;
-  }
-
   if (isDocked()) {
     stepStation(clock, raw);
     tickToast(raw); tickFound(raw);
@@ -951,13 +905,8 @@ export function tick(raw: number, draw = true) {
   /* Below the heat line the whole world turns ember: sky, fog and the drifting
      dust all warm together. Three coordinated signals so the boundary reads at
      a glance instead of having to be noticed in the HUD. */
-  /* One number drives the whole breach grade: the sky, the fog and the dust
-     all warm on it, exactly as they already do for the heat zone. Taking the
-     max rather than adding means a breach that starts in the heat zone does
-     not double-expose the picture. */
-  const hot = Math.max(
-    heatT(g.pd, heatDepth(g.planet, worldTrait()), (coreM() - heatDepth(g.planet, worldTrait())) * 0.55),
-    R.breach ? breachHeat(R.breach) : 0);
+  const hot = heatT(g.pd, heatDepth(g.planet, worldTrait()),
+                    (coreM() - heatDepth(g.planet, worldTrait())) * 0.55);
   const hi = lerpHex(skyHi(g.world), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
   const lo = lerpHex(skyLo(g.world), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
   /* The SKY keeps the gradual ramp; the fog does not. Fog only ever tints what

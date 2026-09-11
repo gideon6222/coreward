@@ -8,12 +8,10 @@ import { loadPure, assertGolden } from './harness.mjs';
 const H = await loadPure();
 const PLANETS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-function withUp(patch, shards, fn) {
+function withUp(patch, fn) {
   const savedUp = { ...H.g.up };
-  const savedShards = H.g.shards;
   Object.assign(H.g.up, { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 }, patch);
-  H.g.shards = shards || 0;
-  try { return fn(); } finally { Object.assign(H.g.up, savedUp); H.g.shards = savedShards; }
+  try { return fn(); } finally { Object.assign(H.g.up, savedUp); }
 }
 
 test('upgrade costs are unchanged at every level', () => {
@@ -35,7 +33,7 @@ test('upgrade costs are unchanged at every level', () => {
 test('derived stats are unchanged across the full upgrade range', () => {
   const out = {};
   const sweep = (key, max, read) =>
-    Array.from({ length: max + 1 }, (_, l) => withUp({ [key]: l }, 0, read));
+    Array.from({ length: max + 1 }, (_, l) => withUp({ [key]: l }, read));
   out.cargoCap = sweep('cargo', 9, () => H.S.cargoCap());
   out.speed = sweep('thrust', 9, () => H.S.speed());
   out.fuelCap = sweep('tank', 9, () => H.S.fuelCap());
@@ -43,12 +41,11 @@ test('derived stats are unchanged across the full upgrade range', () => {
   out.light = sweep('scan', 9, () => H.S.light());
   out.cellFuel = sweep('scrub', 8, () => H.S.cellFuel());
   out.autoRate = sweep('auto', 6, () => H.S.autoRate());
-  /* drill is the one stat with two inputs: level and permanent core shards */
-  out.drill = {};
-  for (let shards = 0; shards <= 8; shards++) {
-    out.drill['shards' + shards] =
-      Array.from({ length: 10 }, (_, l) => withUp({ drill: l }, shards, () => H.S.drill()));
-  }
+  /* Drill used to be the one stat with two inputs - level, and permanent Core
+     Shards from planets you had destroyed. The shards went with the cores in
+     W9, so it is a single sweep like everything else, and the whole drill
+     ladder is legible again: what you bought, and one relic. */
+  out.drill = sweep('drill', 9, () => H.S.drill());
   assertGolden('stats', out);
 });
 

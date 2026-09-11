@@ -7,7 +7,6 @@
 
 export * from '../src/sim/config';
 export * from '../src/sim/util';
-export * from '../src/sim/breach';
 export * from '../src/sim/unrest';
 export * from '../src/sim/vaults';
 export * from '../src/sim/state';
@@ -16,8 +15,6 @@ export * from '../src/sim/feel';
 export * from '../src/sim/fly';
 export * from '../src/sim/telemetry';
 export * from '../src/sim/light';
-export * from '../src/sim/chart';
-export * from '../src/sim/drive';
 export * from '../src/sim/finds';
 export * from '../src/sim/region';
 export * from '../src/sim/ambience';

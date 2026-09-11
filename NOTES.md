@@ -3588,3 +3588,54 @@ and an unsealed hall contains no sealed stone anywhere.
 Worked stone's `ROCK_BUMP` is 0.03 against 0.16-0.40 for every rock in the
 game. That single number is the whole visual read: every surface in this world
 is broken, and cut stone is not. No new texture, no new material.
+
+## Round eight, W9, 2026-09-11: one ending, and the removal of the other
+
+The Vault is a fifteen-by-thirteen chamber at the middle column of the deepest
+band, behind a seal that nothing in the game opens until all nine Anchors are
+lit. Two shells on purpose: the outer one is ordinary worked stone, so finding
+it reads exactly like finding any other room and the player already knows what
+that language means; the inner one is the difference between a locked door and
+an ending. Sealed stone waits for a TOOL you might find by accident. This waits
+for the whole errand.
+
+**The bigger half of W9 was a deletion.** The navigation chart, `chart.ts`,
+`drive.ts`, the crossing, `breach.ts`, the Core Shards, the five jump-drive
+components and the Planet Core are gone - about 1,300 lines and ninety call
+sites. They were the ending of a game about a chain of planets, and round eight
+made this one planet with one centre. Two objectives is worse than either.
+
+Three things that fell out of it and are worth keeping:
+
+**The drill ladder got legible again.** `S.drill()` was
+`(1 + level * 0.95) * (1 + shards * 0.08) * relic`, and shards came from
+destroying planets. With no planets to destroy it is `(1 + level * 0.95) *
+relic` - and the re-recorded stats golden matched the old `shards0` row
+exactly, which is what every fresh save always had.
+
+**`transit.ts` was two files wearing one name.** Half of it was the crossing
+and half was the title screen's showcase, landing and launch. Deleting the file
+took the title screen with it and the typechecker found it in seconds; the fix
+was to cut the crossing out and leave the rest, with a note at the seam saying
+what used to be there.
+
+**`part` stays in the golden's OVERWRITERS list forever.** There are no drive
+components any more, but the FROZEN baseline still has them, and an overwriter
+LEAVING a cell is as legal as one arriving. Removing the id would have read
+every one of those cells as "the ore stream moved".
+
+### The bug the fixture found
+
+`wake()` checked whether the planet had already woken and not whether it was
+TIME, so the FIRST Anchor of nine set the flag and the entire second act - the
+permanent Unrest step, the closing ground, the Blooms - fired in the first ten
+minutes.
+
+It survived W8's whole test pass because every fixture lit the early Anchors
+through the state directly and only the last one through the real path, so the
+first call `wake()` ever saw was always the fifth. It surfaced building W9,
+where a fixture lights eight and the ninth goes through `anchorLit` - and the
+wrong card came up.
+
+**A fixture that skips the early steps of a sequence cannot test the guard on
+the first one.** The test that exists now walks the count up from zero.

@@ -1676,8 +1676,22 @@ independent of the objective work.
       The hazard is aimed at the one thing in this game a player actually owns:
       the shape they cut. The route home is computed from it.
 
-- [ ] **W9 The Vault.** The ninth Anchor opens the centre, and that is the end
+- [x] **W9 The Vault.** The ninth Anchor opens the centre, and that is the end
       of the game. Other planets are what comes after, later.
+
+      *Done.* A fifteen-by-thirteen chamber at the middle column of the deepest
+      band - the one place on this world that can be described without a map.
+      Two shells: ordinary worked stone, so finding it reads like finding any
+      other room, and inside it a seal that NOTHING cuts until all nine Anchors
+      are lit. The ninth puts the centre on your map and opens the seal; flying
+      down to the core ends the game, and the game does not end the session -
+      the planet is handed back with everything still in it.
+
+      **And the old ending went with it.** The navigation chart, the jump drive
+      and its five components, the crossing between worlds, the breach, the
+      Core Shards and the Planet Core itself are all deleted - 1,300 lines and
+      ninety call sites. Round eight made this one planet; leaving a second
+      objective in it would have been worse than either.
 
 - [ ] **W10 The phone pass**, and a long play of the whole thing rather than of
       any one milestone.

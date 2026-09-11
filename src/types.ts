@@ -19,6 +19,9 @@ export interface Ore {
   min: number;
   chance: number;
   glow: number;
+  /* How many crystal shards blocks.ts scatters on the face. Nothing to do with
+     the Core Shards that went with the chart in W9 - this one is a particle
+     count and it stays. */
   shards: number;
   tone: number;
 }
@@ -192,8 +195,8 @@ export interface Relic {
 export type Dir = 'up' | 'down' | 'left' | 'right';
 
 /* g.mode gates input and the frame loop. */
-export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly' | 'boom'
-                 | 'chart' | 'transit' | 'title' | 'intro' | 'settle' | 'map' | 'ballast';
+export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly'
+                 | 'title' | 'intro' | 'settle' | 'map' | 'ballast';
 
 /* Chewing through one block. */
 export interface Dig {

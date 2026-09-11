@@ -13,6 +13,9 @@ import { g , coreM, worldTrait, save } from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
 import { openMap, wireMap } from './mapui';
+import { ANCHOR_COUNT } from './sim/vaults';
+import { MAP_TILE, WORLD_DEPTH } from './sim/region';
+import { W } from './sim/config';
 import { feed } from './sim/unrest';
 import { shoreUp } from './collapse';
 import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, retireHint, buildBallast, updateHUD } from './ui';
@@ -237,17 +240,20 @@ mustEl('btnPause').onclick = () => {
     '<div class="up"><div class="upinfo"><div class="upname">Records</div>' +
     '<div class="upeff">Deepest ' + g.best.depth + ' m' +
     (g.best.haul ? ' · best haul ◈ ' + g.best.haul.toLocaleString() : '') +
-    (g.best.fastest ? ' · fastest core ' + fmtTime(g.best.fastest) : '') +
-    (g.best.worlds ? ' · ' + g.best.worlds + ' world' + (g.best.worlds === 1 ? '' : 's') + ' broken' : '') +
     '</div></div>' +
     '<div class="val">' + g.best.depth + ' m</div></div>' +
-    '<div class="up"><div class="upinfo"><div class="upname">Jump Drive</div>' +
-    '<div class="upeff">' + (g.drive.length === 5 ? 'Complete · the Heart is on the chart'
-      : 'One piece on each kind of world') + '</div></div>' +
-    '<div class="val">' + g.drive.length + ' / 5</div></div>' +
-    '<div class="up"><div class="upinfo"><div class="upname">Core Shards</div>' +
-    '<div class="upeff">Planets destroyed · +' + (g.shards * 8) + '% drill power</div></div>' +
-    '<div class="val">' + g.shards + '</div></div>';
+    /* The campaign, in the two numbers it actually turns on. The Jump Drive and
+       the Core Shards used to be here and went with the chart in W9 - one
+       planet does not have worlds broken or routes to plot. */
+    '<div class="up"><div class="upinfo"><div class="upname">The Lattice</div>' +
+    '<div class="upeff">' + (g.ground.lit.length >= ANCHOR_COUNT
+      ? (g.won ? 'All nine, and the centre is behind you' : 'All nine. The centre is open')
+      : 'Anchors lit, of nine') + '</div></div>' +
+    '<div class="val">' + g.ground.lit.length + ' / ' + ANCHOR_COUNT + '</div></div>' +
+    '<div class="up"><div class="upinfo"><div class="upname">Survey</div>' +
+    '<div class="upeff">How much of the planet you have had a lamp on</div></div>' +
+    '<div class="val">' + Math.floor((g.seen.length /
+      (Math.ceil(W / MAP_TILE) * Math.ceil(WORLD_DEPTH / MAP_TILE))) * 100) + '%</div></div>';
   ui.pause.classList.remove('hidden');
 };
 ui.btnNotes.onclick = () => {

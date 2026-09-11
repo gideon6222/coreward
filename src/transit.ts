@@ -148,111 +148,17 @@ for (let i = 0; i < CHUNKS; i++) {
 }
 const scratch = new THREE.Object3D();
 
-let docked = false;
-export function isCrossing() { return docked; }
+/* ---------- what used to be here ----------
 
-/* Held so the render can paint the sky behind the destination as it arrives. */
-let toPal = paletteOf(0);
-let toSky = 0x0d2b52;
+   THE CROSSING: nine seconds of open space between one planet and the next,
+   with a starfield, two globes turning, and a ship that left one and arrived
+   at the other. It went with the chart in W9, because there is one planet now
+   and its ending is at the centre of it rather than at the end of a chain.
 
-export function beginTransit(fromWorld: number, toWorld: number) {
-  if (docked) return;
-  docked = true;
-  transitScene.add(player);
-  player.scale.setScalar(1.55);
-  rig.rotation.set(0, 0, 0);
-  for (const f of flames) { f.cone.visible = true; f.glow.visible = true; }
-
-  const fp = paletteOf(fromWorld);
-  toPal = paletteOf(toWorld);
-  toSky = skyLo(toWorld);
-  (from.body.material as THREE.MeshStandardMaterial).color.setHex(fp.rock);
-  (from.halo.material as THREE.SpriteMaterial).color.setHex(skyLo(fromWorld));
-  chunkMat.color.setHex(fp.rock);
-  (to.body.material as THREE.MeshStandardMaterial).color.setHex(toPal.rock);
-  (to.halo.material as THREE.SpriteMaterial).color.setHex(skyLo(toWorld));
-  transitScene.background = new THREE.Color(skyHi(fromWorld)).multiplyScalar(0.10);
-}
-
-export function endTransit() {
-  if (!docked) return;
-  docked = false;
-  gameScene.add(player);
-  player.scale.setScalar(1);
-  rig.rotation.set(0, 0, 0);
-}
-
-/* `t` is 0..1 across the whole crossing. Everything below is a function of it
-   and nothing accumulates, so the sequence is the same length however the
-   frame rate wanders - and so a skip can jump straight to the end. */
-export function stepTransit(t: number, clock: number) {
-  const ease = t * t * (3 - 2 * t);
-
-  /* The ship holds the middle of frame and banks, because a ship dead straight
-     against moving stars reads as a still image of a ship. */
-  player.position.set(Math.sin(clock * 0.7) * 0.16, -0.35 + Math.sin(clock * 0.9) * 0.1, 0);
-  /* Nose FORWARD, which underground means straight up: FACE_ANGLE puts the
-     drill at the floor at rotation zero, and a ship crossing open space with
-     its drill pointed at the deck reads as falling rather than flying. A
-     little roll and yaw on top so it is a machine holding a course rather than
-     a model on a turntable. */
-  rig.rotation.z = Math.PI + Math.sin(clock * 0.55) * 0.10;
-  rig.rotation.y = Math.sin(clock * 0.4) * 0.14;
-  rig.rotation.x = -0.30 + Math.sin(clock * 0.31) * 0.05;
-  for (const f of flames) {
-    f.cone.scale.set(1.15, 1.5 + Math.sin(clock * 9) * 0.22, 1.15);
-    f.glow.scale.setScalar(1.3 + Math.sin(clock * 7) * 0.2);
-  }
-
-  /* The world you broke: behind you and going. Its debris keeps expanding the
-     whole way, so a glance back at any point still says what happened. */
-  /* The lateral offset scales WITH the distance, which is the whole trick: a
-     fixed offset in world space shrinks to nothing in screen space as the
-     object recedes, so both planets slid in behind the ship and were eclipsed
-     by it. Proportional offsets hold their place in frame. */
-  const away = 6 + ease * 150;
-  from.grp.position.set(-0.30 * away, 0.16 * away, -away);
-  from.grp.scale.setScalar(3.4);
-  from.grp.visible = t < 0.75;
-  const spread = 1 + t * 9;
-  for (let i = 0; i < CHUNKS; i++) {
-    scratch.position.copy(from.grp.position).addScaledVector(dDir[i], spread * 3.4);
-    scratch.rotation.set(dSpin[i].x * clock, dSpin[i].y * clock, dSpin[i].z * clock);
-    const sc = 3.4 * (1 - t * 0.35);
-    scratch.scale.setScalar(sc);
-    scratch.updateMatrix();
-    debris.setMatrixAt(i, scratch.matrix);
-  }
-  debris.instanceMatrix.needsUpdate = true;
-  debris.visible = t < 0.75;
-
-  /* The destination: nothing, then a point, then everything. Held off until
-     the middle of the crossing so arriving is an event rather than a slow
-     approach that was always visible. */
-  const app = Math.max(0, (t - 0.42) / 0.58);
-  const near = 260 - app * app * 250;
-  to.grp.position.set(0.26 * near, -0.15 * near, -near);
-  to.grp.scale.setScalar(3.0 + app * app * 30);
-  to.grp.visible = t > 0.36;
-
-  /* Stars stream past at three speeds and fade out on arrival, when the sky of
-     the destination should be what fills the frame. */
-  for (let L = 0; L < starLayers.length; L++) {
-    const sp = (3 - L) * 26;
-    starLayers[L].position.z = (clock * sp) % 90;
-    (starLayers[L].material as THREE.PointsMaterial).opacity =
-      (0.9 - L * 0.22) * (1 - Math.max(0, (t - 0.82) / 0.18));
-  }
-
-  /* The sky arrives before the ground does. */
-  /* Deep space stays dark. The destination's colour arrives as a tint on the
-     void rather than as its sky, because a bright sky belongs to standing
-     under one - and Halcyne's is gold, which at full strength turned the whole
-     crossing into a wash and buried the stars in it. */
-  const sky = new THREE.Color(toSky).multiplyScalar(0.055 + Math.max(0, (t - 0.7) / 0.3) * 0.16);
-  (transitScene.background as THREE.Color).lerp(sky, 0.06);
-  key.color.setHex(t > 0.7 ? toPal.haze : 0xfff0dd);
-}
+   What is left in this file was never about crossing: the title screen's
+   showcase, and the landing and launch that bracket it. A planet the camera
+   flies down to is still the first thing anybody sees, and it is still the
+   last thing they see when they undock. */
 
 /* ---------- the flythrough ----------
 

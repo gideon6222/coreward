@@ -1,14 +1,13 @@
 import * as THREE from 'three';
-import { isHeart } from './sim/drive';
 import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF, PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE, GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS, tremorDepth, UPGRADES, costOf } from './sim/config';
 import { clamp, key, stream } from './sim/util';
-import { newBreach, stepBreach } from './sim/breach';
 import { FIND_OF } from './sim/finds';
 import { hap } from './haptics';
 import { regionName } from './sim/region';
 import { anchorAt } from './sim/vaults';
 import { wake } from './sim/unrest';
-import { g, S, save, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen } from './sim/state';
+import { vaultOpen } from './sim/vaults';
+import { g, S, save, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen, revealVault } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
@@ -467,7 +466,7 @@ export function autopilot() {
    no tow it is the thing that saves your life, and it is something you have to
    find before you can buy one. An existing mechanic stopped being decoration
    without a line of code. */
-export function die(cause: 'fuel' | 'heat' | 'gas' | 'breach', after: () => void = () => {}) {
+export function die(cause: 'fuel' | 'heat' | 'gas', after: () => void = () => {}) {
   /* Counted before anything is cleared, and it is still the number that says
      most about whether the game is priced right. */
   R.run.towed++;
@@ -493,9 +492,7 @@ export function die(cause: 'fuel' | 'heat' | 'gas' | 'breach', after: () => void
     ? 'The tank ran dry at ' + at + ' m and the ship went down with everything in the hold.'
     : cause === 'gas'
       ? 'A gas pocket opened the hull at ' + at + ' m and the ship went down with everything in the hold.'
-      : cause === 'breach'
-        ? 'The shaft closed over you at ' + at + ' m. The world came apart with the ship still in it.'
-        : 'The heat took the hull at ' + at + ' m and the ship went down with everything in the hold.';
+      : 'The heat took the hull at ' + at + ' m and the ship went down with everything in the hold.';
   showEvent('THE SHIP IS LOST',
     why + (lost > 0 ? ' That was ◈ ' + lost.toLocaleString() + ' of ore.' : '') +
     '  Everything you had already banked is still yours - the credits, the rig, '
@@ -542,114 +539,14 @@ export function showEvent(title: string, bodyTxt: string, btnTxt: string, cb: ()
   ui.evBtn.onclick = () => { sfx.ui(); ui.event.classList.add('hidden'); g.mode = 'play'; cb(); };
 }
 
-/* Set by main.ts. actions.ts must not import chartui.ts: chartui imports
-   actions (for goSurface and stopDigging), and a cycle that only works because
-   of when each binding happens to be read is a trap for whoever moves a call
-   next - the same reason FACE_VEC is duplicated rather than imported here. */
-let onCoreBroken: () => void = () => {};
-export function setCoreHandler(fn: () => void) { onCoreBroken = fn; }
-
-export function breakCore() {
-  g.mode = 'boom';
-  const x = worldX(g.px), y = -g.pd;
-  spray(x, y, 0xffe9a0, 300, 24, 2.6);
-  spray(x, y, 0xff7a18, 200, 15, 3.0);
-  flash('rgba(255,255,255,.95)', 700);
-  sfx.boom();
-  hap.boom();
-  R.shake = SHAKE_BOOM;
-  const heart = isHeart(g.world);
-  setTimeout(() => {
-    g.shards++;
-    /* The records this world just set. Kept here rather than in the breach,
-       because the core is what the record is about - whether you got out with
-       the hold is a different question and the tow already answers it. */
-    g.best.worlds = (g.best.worlds || 0) + 1;
-    const secs = Math.round(R.worldT);
-    if (secs > 0 && (!g.best.fastest || secs < g.best.fastest)) g.best.fastest = secs;
-    /* The core is broken and the world is gone. Anything still buried in it is
-       gone with it - which is what makes a Jump Drive component worth going
-       and looking for rather than something you pick up eventually. */
-    if (heart) {
-      /* The end. The one core in the game that does not open a chart.
-
-         The save is left exactly as it is rather than wiped: the Drift stays
-         open afterwards, so the endless game people are already playing is
-         still there with a finished thing behind it. Ending a long run by
-         deleting it would be the worst possible reward for completing it. */
-      g.won = true;
-      showEvent('THE DRIFT IS BEHIND YOU',
-        'The Heart came apart and the drive caught. ' +
-        'Fourteen worlds, ' + g.shards + ' cores, and a jump engine built out of five pieces ' +
-        'of the places that nearly kept you. Whatever the Drift was turning around, it is ' +
-        'not turning any more.  ' +
-        'The chart is still there when you want it. There is always more rock.',
-        'FLY ON', () => { onCoreBroken(); });
-      save();
-      return;
-    }
-    /* Not the chart. The world has just started coming apart and the way out
-       is up - the chart opens when the ship is standing on the pad, in
-       beginBreach's own hand-off. */
-    beginBreach();
-  }, 1700);
-}
-
-/* ---------- the breach ----------
-
-   Ninety seconds to climb out of a world that is closing from the bottom. The
-   clock, the tremor cadence and the collapse front are all in src/sim/breach.ts;
-   this is the part that touches the world. */
-
-export function beginBreach() {
-  g.mode = 'play';
-  R.breach = newBreach(g.planet);
-  toast('THE CORE IS GONE · GET OUT');
-  sfx.rumble();
-  R.shake = Math.max(R.shake, 1.6);
-}
-
-/* One tick of it. Returns true while the breach is still running, so the frame
-   loop can skip the ordinary tremor clock and the ordinary heat grade. */
-export function stepBreachHere(dt: number): boolean {
-  const b = R.breach;
-  if (!b) return false;
-  const home = g.pd <= 0;
-  const { tremor: fire } = stepBreach(b, dt, home);
-  if (fire) {
-    /* Bigger than an ordinary tremor and rising with the clock, but through
-       the same planCollapse - which still reverts any set that would seal the
-       ship in. The breach is allowed to be brutal; it is not allowed to take
-       the run. */
-    const want = tremorCells(Math.max(g.pd, tremorDepth(g.planet) + 1), g.planet) + 2;
-    const taken = planCollapse(want, stream(R.tremorN++, Math.round(g.pd), g.planet + 211));
-    if (taken.length) { syncBlocks(true); R.shake = Math.max(R.shake, 1.1); sfx.rumble(); }
-  }
-  if (b.done) {
-    R.breach = null;
-    onCoreBroken();
-    return false;
-  }
-  if (b.failed) {
-    R.breach = null;
-    /* The world still breaks, and now so do you. `onCoreBroken` is handed to
-       the death card as its dismiss callback rather than called here, because
-       both of them open a screen and two modals racing each other is how you
-       get a chart behind a death notice. */
-    die('breach', onCoreBroken);
-    return false;
-  }
-  return true;
-}
-
 export function hardReset() {
   try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) { /* ignore */ }
-  g.planet = 0; g.credits = 0; g.shards = 0;
+  g.planet = 0; g.credits = 0;
   g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, scrub: 0, auto: 0, bomb: 0, laser: 0,
     hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 };
   g.stock = {};
-  g.relics = []; g.relicsTaken = []; g.drive = [];
+  g.relics = []; g.relicsTaken = [];
   /* The four discovery lists, which a wipe had been quietly leaving behind.
 
      A button that says TAP AGAIN TO WIPE EVERYTHING and then hands the fresh
@@ -738,12 +635,21 @@ export function anchorLit(region: number) {
      Anchor, and then the planet reacted to it. Both at once would be one
      confusing flash and two modals stacked. */
   const answered = wake(g.ground);
+  /* And whether that was the ninth of nine, which opens the centre. Mutually
+     exclusive with the wake by construction - five is not nine - so the two
+     follow-on cards can never stack. */
+  const opened = !answered && vaultOpen(g.ground.lit.length);
+  if (opened) revealVault();
   showEvent('THE ANCHOR WAKES',
     regionName(region) + ' settles. The Ballast holds harder now, and the ground ' +
     'here has drawn itself onto your map.' +
     (n === 1 ? ' Whatever built these left nine of them.' : ''),
     'GO ON',
-    () => { updateHUD(); if (answered) planetAnswers(); });
+    () => {
+      updateHUD();
+      if (answered) planetAnswers();
+      else if (opened) centreOpens();
+    });
   save();
 }
 
@@ -786,5 +692,68 @@ export function planetAnswers() {
       resetBlockCache();
       syncBlocks(true);
     });
+  save();
+}
+
+/* ---------- the Vault ----------
+
+   The end of the game, and the one modal in it that is allowed to be long.
+
+   It does NOT end the session. `CRAFT.md` is firm that a game which throws you
+   back to a title screen the moment you finish it takes the world away at
+   exactly the moment you have earned it - and this is a world the player has
+   spent an evening mapping. So the card goes up, `won` is set, the Vault opens,
+   and then the game hands the planet back with everything still in it.
+
+   `won` is the one thing a wipe deliberately does not clear. It is not
+   progress, it is something you did, and the title reads it to offer a skip
+   next time round. */
+export function vaultReached() {
+  g.won = true;
+  const x = worldX(g.px), y = -g.pd;
+  spray(x, y, 0xfff0b8, 420, 18, 3.2);
+  spray(x, y, 0xffffff, 220, 26, 2.2);
+  /* Short and light, like the Anchor's. The card is the moment; a flash still
+     washing the screen while somebody is reading it is a flash nobody wants. */
+  flash('rgba(255,240,184,.28)', 700);
+  R.shake = Math.max(R.shake, 1.4);
+  sfx.boom();
+  hap.boom();
+  /* Redraw: the core's block id changes, and so does every Vault seal around
+     it - the same trap the Anchor's own re-draw was. */
+  for (const k of Array.from(meshes.keys())) dropBlock(k);
+  resetBlockCache();
+  syncBlocks(true);
+  showEvent('THE VAULT',
+    'Nine Anchors, and the centre is open. Whatever the Lattice was holding ' +
+    'down has been here the whole time, and it is not finished with this ' +
+    'planet - but it is quiet now, and it is quiet because of you.\n\n' +
+    'The ground is yours. There is more of it than you have seen.',
+    'STAY',
+    () => { updateHUD(); });
+  save();
+}
+
+
+/* The ninth Anchor. Not the ending - the ending is a place you still have to
+   fly to - but the moment the map tells you where it is.
+
+   Deliberately a card and not a toast: everything else the Anchors do is a
+   quiet consequence, and this is the one that changes what you are going to do
+   next. */
+export function centreOpens() {
+  flash('rgba(255,217,138,.30)', 800);
+  R.shake = Math.max(R.shake, 1.0);
+  sfx.relic();
+  hap.boom();
+  /* The seals around the Vault change block id when they open. */
+  for (const k of Array.from(meshes.keys())) dropBlock(k);
+  resetBlockCache();
+  syncBlocks(true);
+  showEvent('THE CENTRE IS OPEN',
+    'All nine. Something at the middle of the planet has stopped holding its ' +
+    'door shut, and your map knows where it is now. It is a long way down.',
+    'GO',
+    () => { updateHUD(); });
   save();
 }

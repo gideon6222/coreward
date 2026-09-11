@@ -17,7 +17,6 @@ import { regionName, regionAt } from './sim/region';
 import { hap, haptics, setHaptics } from './haptics';
 import { selectedBay, refreshBays, refreshKit, paintAisleBar, reframeIfNeeded } from './station';
 
-import { PARTS, DRIVE_SLOTS } from './sim/drive';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
    ones the game cannot run without: throwing here reaches the on-screen
@@ -363,32 +362,7 @@ export function buildVault() {
     ui.vault.appendChild(row);
   }
 
-  /* The Jump Drive, under the minerals.
-
-     It belongs in the manifest because the manifest is the screen that answers
-     "what have I got" - and the whole reason the drive exists is that the old
-     answer was a credit balance, which is a number that will look small next
-     week. Five named things you either have or do not is the opposite. */
-  const head = document.createElement('div');
-  head.className = 'sub';
-  head.style.marginTop = '16px';
-  head.textContent = 'JUMP DRIVE  ' + g.drive.length + ' / ' + DRIVE_SLOTS;
-  ui.vault.appendChild(head);
-  for (const part of PARTS) {
-    const has = g.drive.includes(part.id);
-    const row = document.createElement('div');
-    row.className = 'up';
-    row.innerHTML =
-      '<div class="dot" style="background:' +
-        (has ? '#9ffcff' : '#2a3038') + '; color:' + (has ? '#9ffcff' : '#2a3038') + '"></div>' +
-      '<div class="upinfo"><div class="upname"' + (has ? '' : ' style="color:#6b7480"') + '>' +
-        part.name + '</div>' +
-      '<div class="upeff">' + (has ? 'Aboard' : 'On a ' + (TRAIT_OF[part.trait] || { name: part.trait }).name + ' world') +
-      '</div></div>' +
-      '<div class="val"' + (has ? '' : ' style="color:#6b7480"') + '>' + (has ? '✓' : '—') + '</div>';
-    ui.vault.appendChild(row);
-  }
-  if (g.won) {
+    if (g.won) {
     const w = document.createElement('div');
     w.className = 'upeff';
     w.style.marginTop = '10px';

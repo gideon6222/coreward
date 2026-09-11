@@ -57,12 +57,18 @@ import { rnd } from './util';
 import { W } from './config';
 import { REGION_COLS, REGION_ROWS, WORLD_DEPTH, regionAt } from './region';
 
+/* The size of an ORDINARY room. The Vault is bigger, so the stamp reads each
+   template's own dimensions and these two are only the figure the wild slots
+   and the Anchor halls are laid out against. */
 export const VAULT_W = 11;
 export const VAULT_H = 9;
 
+export const vaultW = (v: Vault) => v.rows[0].length;
+export const vaultH = (v: Vault) => v.rows.length;
+
 export interface Vault {
   id: string;
-  kind: 'anchor' | 'expedition' | 'vein' | 'quiet';
+  kind: 'anchor' | 'expedition' | 'vein' | 'quiet' | 'vault';
   rows: string[];
 }
 
@@ -176,6 +182,52 @@ const QUIET_ROOM: Vault = {
     ' #.......# ',
     ' #.......# ',
     '  #######  '
+  ]
+};
+
+/* ---------- the Vault ----------
+
+   The centre of the planet, and the end of the game.
+
+   One room, hand-placed rather than seeded, at the middle column of the
+   deepest band - which is the one place on a 61-by-452 world that can be
+   described without a map: *the centre*. It is bigger than everything else in
+   the library because it is the only room in the game that has to feel like an
+   arrival rather than a discovery.
+
+   Two shells, and they say different things. The outer one is ordinary worked
+   stone, so finding it reads exactly like finding any other room - you have
+   met this language before and it means "somebody built this". The inner one
+   is `%`, which nothing in the game can cut until all nine Anchors are lit,
+   and that is the difference: this is not a door waiting for a tool, it is a
+   door waiting for the whole errand.
+
+   The core sits in the same open-topped niche the Anchors do, and for the same
+   two reasons: a monument you fly down to is worth more than a block you
+   drill, and a cell walled in on four sides is a cell the light field quite
+   correctly leaves in the dark. */
+export const VAULT_CORE_X = Math.floor(W / 2);
+
+/* In the deepest band, clear of the bedrock under it and of the band's own
+   wandering ceiling. 405 of 452. */
+export const VAULT_CORE_D = 405;
+
+export const THE_VAULT: Vault = {
+  id: 'the-vault', kind: 'vault',
+  rows: [
+    '    #######    ',
+    '  ###%%%%%###  ',
+    ' ##%%.....%%## ',
+    ' #%%.......%%# ',
+    ' #%.........%# ',
+    ' #%...#.#...%# ',
+    ' #%...#V#...%# ',
+    ' #%...###...%# ',
+    ' #%.........%# ',
+    ' #%%.......%%# ',
+    ' ##%%.....%%## ',
+    '  ###%%%%%###  ',
+    '    #######    '
   ]
 };
 
@@ -304,6 +356,9 @@ export interface Placed { x: number; d: number; vault: Vault }
    them overlap. */
 export function vaultPlan(): Placed[] {
   const out: Placed[] = [];
+  /* The Vault first of all, because it is the one room that is not allowed to
+     move for anything. */
+  out.push({ x: VAULT_CORE_X, d: VAULT_CORE_D, vault: THE_VAULT });
   for (let r = 0; r < ANCHOR_COUNT; r++) {
     const a = anchorAt(r);
     out.push({ x: a.x, d: a.d, vault: anchorVault(r) });
@@ -314,7 +369,11 @@ export function vaultPlan(): Placed[] {
        clearance either way is the cheapest correct test. Dropped entirely
        rather than clipped: a half-stamped room is a wall with no room behind
        it, and that is the worst thing this system could produce. */
-    if (out.some((t) => Math.abs(t.x - s.x) < VAULT_W && Math.abs(t.d - s.d) < VAULT_H)) continue;
+    /* Cleared against each room's OWN size, so the Vault's larger footprint
+       pushes wild rooms further away than an Anchor hall does. */
+    if (out.some((t) =>
+      Math.abs(t.x - s.x) < (vaultW(t.vault) + VAULT_W) / 2 &&
+      Math.abs(t.d - s.d) < (vaultH(t.vault) + VAULT_H) / 2)) continue;
     out.push(s);
   }
   return out;
@@ -323,10 +382,11 @@ export function vaultPlan(): Placed[] {
 export function vaultCells(): Map<string, string> {
   const out = new Map<string, string>();
   for (const p of vaultPlan()) {
-    const x0 = p.x - (VAULT_W - 1) / 2, d0 = p.d - (VAULT_H - 1) / 2;
-    for (let ry = 0; ry < VAULT_H; ry++) {
+    const w = vaultW(p.vault), h = vaultH(p.vault);
+    const x0 = p.x - (w - 1) / 2, d0 = p.d - (h - 1) / 2;
+    for (let ry = 0; ry < h; ry++) {
       const row = p.vault.rows[ry];
-      for (let rx = 0; rx < VAULT_W; rx++) {
+      for (let rx = 0; rx < w; rx++) {
         const ch = row[rx];
         if (!ch || ch === ' ') continue;
         const x = x0 + rx, d = d0 + ry;
@@ -403,3 +463,30 @@ export function anchorInRegion(r: number): boolean {
    even after you have the key. */
 export const WORKED_HARD = 2.1;
 export const SEALED_HARD = 4.4;
+
+
+/* ---------- the Vault's own rules ----------
+
+   `%` is not `=`. Sealed stone waits for a TOOL, which is a thing you can find
+   by accident; the Vault waits for the whole errand, and nothing in the game
+   opens it early. That is the difference between a locked door and an ending.
+
+   Once it is open it is still the hardest thing anybody ever drills - six
+   times the band - because the last wall in the game should cost something
+   even after you have earned the right to cut it. */
+export const VAULT_WALL_HARD = 6.0;
+
+export const vaultOpen = (litCount: number) => litCount >= ANCHOR_COUNT;
+
+/* Whether a cell is the Vault's core, and whether one is next to it. Same
+   shape as the Anchors' pair and for the same reason: reaching it is standing
+   next to it, not mining it. */
+export const isVaultCore = (x: number, d: number) =>
+  x === VAULT_CORE_X && d === VAULT_CORE_D;
+
+export function vaultCoreNear(x: number, d: number): boolean {
+  for (const n of [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0]]) {
+    if (isVaultCore(x + n[0], d + n[1])) return true;
+  }
+  return false;
+}

@@ -41,7 +41,8 @@ import { MAP_TILE, WORLD_DEPTH, mapKey, regionAt, regionName,
 import { el, mustEl } from './ui';
 import { sfx } from './audio';
 import { isCollapsed, unrestBand, UNREST_BANDS, isLit } from './sim/unrest';
-import { ANCHOR_COUNT, anchorAt, anchorSealed } from './sim/vaults';
+import { ANCHOR_COUNT, anchorAt, anchorSealed,
+         vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './sim/vaults';
 
 /* The pad sits at the middle column, which is also where every run starts. */
 const PAD_COL = Math.floor(W / 2);
@@ -308,6 +309,17 @@ export function draw() {
          lit ? '#8fffc8' : anchorSealed(r) ? '#5ad0e0' : '#d8d2c0', lit);
   }
 
+  /* ---------- the centre ----------
+
+     Drawn only once the ninth Anchor has opened it - which also puts its tiles
+     on the map, so it appears and is findable in the same moment. Before that
+     there is nothing here at all, because a marker for a place you cannot open
+     for six hours is the "too many unexplained hooks at once" failure the
+     research names by name. */
+    if (vaultOpen(g.ground.lit.length) && VAULT_CORE_D >= d0 && VAULT_CORE_D <= d1) {
+      star(x, VAULT_CORE_X * s, py(VAULT_CORE_D), g.won ? '#fff0b8' : '#ffd98a');
+    }
+
   /* The pad, the one fixed point in the world, and then the ship over the top
      of it - because at the start of a run they are the same place and the one
      you need to see is the ship.
@@ -368,6 +380,28 @@ function dot(x: CanvasRenderingContext2D, px: number, py: number, col: string, r
   x.lineWidth = 1.5;
   x.strokeStyle = 'rgba(0,0,0,.7)';
   x.stroke();
+}
+
+/* The Vault. A star, because it is the only one and it never has to be told
+   apart from a second of its kind - which is the whole reason the other marks
+   are disciplined about shape. */
+function star(x: CanvasRenderingContext2D, px: number, py: number, col: string) {
+  x.save();
+  x.translate(px, py);
+  x.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? 3.6 : 8.5;
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    if (i === 0) x.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    else x.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  x.closePath();
+  x.fillStyle = col;
+  x.fill();
+  x.lineWidth = 1.5;
+  x.strokeStyle = 'rgba(0,0,0,.7)';
+  x.stroke();
+  x.restore();
 }
 
 /* An Anchor. A RING, which is a third silhouette after the ship's disc and a

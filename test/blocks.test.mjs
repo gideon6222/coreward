@@ -14,11 +14,15 @@ const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ALL_IDS = [
   ...H.ORES.map((o) => o.id), ...H.ROCKS.map((r) => r.id),
   H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, H.SEAM.id,
-  'core', 'bedrock', '(empty)', 'relic', 'part', 'schematic',
+  'bedrock', '(empty)', 'relic', 'schematic',
   /* The authored rooms. Four ids and not one: a wall you can cut, a wall you
      cannot, and the Anchor in two states are four different things to a player
      and must be four different things to the snapshot. */
   'worked', 'sealed', 'anchor', 'anchorlit',
+  /* W9's Vault: the seal in both states and the core in both states. Four ids
+     and not two, for the reason the Anchor needed two - a wall you cannot cut
+     and a wall you can are different things to a player. */
+  'vaultwall', 'vaultopen', 'vaultcore', 'vaultlit',
   /* W8's Bloom, which generates nowhere until the planet answers - so it never
      appears in this snapshot and is listed anyway. A missing legend character
      is not an error at record time, it is a silent "undefined" that two
@@ -116,16 +120,24 @@ test('bedrock hardness is Infinity (asserted directly, not via snapshot)', () =>
   }
 });
 
-test('the core sits exactly at coreDepth and is breakable', () => {
+test('the bottom of the world is bedrock, and nothing is buried in it', () => {
+  /* There is no Planet Core any more. Breaking one used to end a world and
+     start the next, back when the game was a chain of planets; W9 gave the
+     planet an ending of its own at the centre, and two endings is worse than
+     either.
+
+     What has to hold now is that the floor is a floor: unbreakable, and with
+     nothing on the far side of it worth reaching. */
   for (const p of PLANETS) {
     H.setWorld(p);
     H.g.dug = new Set();
     const cd = H.coreDepth(p);
-    const core = H.blockAt(H.START_X, cd);
-    assert.equal(core.id, 'core', 'planet ' + p);
-    assert.equal(core.core, true);
-    assert.ok(Number.isFinite(core.hard) && core.hard > 0, 'core must be breakable on planet ' + p);
-    assert.equal(core.hard, 26 * H.hardMult(p));
+    for (let x = 0; x < H.W; x += 7) {
+      const floor = H.blockAt(x, cd);
+      assert.equal(floor.id, 'bedrock', `planet ${p}: the floor at ${cd} m is ${floor.id}`);
+      assert.equal(floor.hard, Infinity, `planet ${p}: the floor can be drilled`);
+      assert.equal(H.blockAt(x, cd + 1).id, 'bedrock');
+    }
   }
 });
 
@@ -187,7 +199,14 @@ const PRE = JSON.parse(
    it consumes NO roll. It is not sampled from the world's noise at all, so it
    cannot move an ore, and the cells it takes are the only cells it touches. */
 const OVERWRITERS = new Set([
-  '(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'part', 'schematic',
+  '(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'schematic',
+  /* `part` is a Jump Drive component, and there are none any more - the chart
+     and the drive went with the old ending in W9. It stays on this list
+     because the FROZEN baseline still has them in it, and an overwriter
+     leaving a cell is as legal as one arriving: the cell underneath goes back
+     to being the rock it always was. Removing the id from here would read
+     every one of those cells as "the ore stream moved". */
+  'part',
   /* W7's authored rooms, and they belong here for exactly the reason the
      pockets do: a room is STAMPED over whatever the generator made, after
      every roll has already happened, so it can change what a cell holds and
@@ -197,7 +216,11 @@ const OVERWRITERS = new Set([
      The rubble in the expedition room is the one that needs saying out loud:
      rubble was previously only ever placed by a tremor, so it appears in this
      list as a thing an authored room may leave behind. */
-  'worked', 'sealed', 'anchor', 'anchorlit', H.RUBBLE.id,
+  'worked', 'sealed', 'anchor', 'anchorlit',
+  /* W9's Vault: the seal in both states and the core in both states. Four ids
+     and not two, for the reason the Anchor needed two - a wall you cannot cut
+     and a wall you can are different things to a player. */
+  'vaultwall', 'vaultopen', 'vaultcore', 'vaultlit', H.RUBBLE.id,
   /* And the Bloom, for the same reason as the pockets above it: rolled on its
      own seed after every other roll has happened, so it can change what a cell
      holds and can never change what any other cell holds. */
@@ -380,7 +403,7 @@ test('caves stay below CAVE_MIN_DEPTH and never eat the core', () => {
           'planet ' + p + ': a cave opened at ' + d + ' m, above CAVE_MIN_DEPTH');
       }
     for (let x = 0; x < H.W; x++) {
-      assert.equal(H.blockAt(x, cd).id, 'core', 'planet ' + p + ': core row must survive caves');
+      assert.equal(H.blockAt(x, cd).id, 'bedrock', 'planet ' + p + ': floor must survive caves');
       assert.equal(H.blockAt(x, cd + 1).id, 'bedrock', 'planet ' + p + ': floor must survive caves');
     }
   }
@@ -704,10 +727,11 @@ test('rubble is coloured as the band it sits in, not one fixed grey', () => {
     assert.equal(b.color, H.mixHex(band, H.RUBBLE.color, 0.5));
   }
 
-  /* and it never overrides the two things that are not tunnel */
+  /* and it never overrides the floor, which is the one thing in the world
+     that is not tunnel and not rock */
   const cd = H.coreDepth(0);
   H.g.rubble = new Set([H.key(3, cd), H.key(3, cd + 1)]);
-  assert.equal(H.blockAt(3, cd).id, 'core', 'rubble must not overwrite the core');
+  assert.equal(H.blockAt(3, cd).id, 'bedrock', 'rubble must not overwrite the floor');
   assert.equal(H.blockAt(3, cd + 1).id, 'bedrock', 'rubble must not overwrite bedrock');
   H.g.rubble = new Set();
 });

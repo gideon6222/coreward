@@ -654,42 +654,6 @@
   #btnAuto{border-color:#2a5570; color:var(--cyan);}
   #btnPause{color:var(--dim);}
 
-  /* ---------- the navigation chart ----------
-     A card per candidate world, painted in that world's own palette so the
-     choice is made against the colour you will actually be flying in. */
-  .dest{
-    display:block; width:100%; text-align:left; margin-top:10px; padding:12px 13px;
-    border:1px solid var(--line); border-radius:12px; background:#0e1219;
-    color:var(--ink); font:inherit; cursor:pointer; position:relative; overflow:hidden;
-  }
-  .dest:disabled{opacity:.45; cursor:default;}
-  /* The world's colour as a bar down the leading edge. Cheap, and it makes the
-     three cards read as three places rather than three paragraphs. */
-  .dest::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--dc,#888);}
-  .dest .dname{font-size:15px; font-weight:700; letter-spacing:.04em;}
-  .dest .dtrait{font-size:11.5px; font-weight:700; color:var(--dc,#888); margin-top:2px; letter-spacing:.06em;}
-  .dest .dblurb{font-size:11.5px; color:var(--dim); margin-top:5px; line-height:1.5;}
-  .dest .drow{display:flex; gap:14px; margin-top:8px; font-size:11.5px; color:var(--dim);}
-  .dest .drow b{color:var(--ink); font-weight:700;}
-  /* The component line is the reason the chart exists, so it is the loudest
-     thing on the card it appears on and absent everywhere else. */
-  .dest .dpart{margin-top:7px; font-size:12px; font-weight:700; color:var(--cyan);}
-  .dest.short{border-color:#5a3320;}
-  .dest.short .dfuel{color:var(--amber);}
-  .chartfoot{font-size:11.5px; margin-top:14px;}
-
-  /* Bottom right, out of the way of the ship and well clear of where the
-     d-pad sits in play - a skip control under the thumb that was flying is a
-     skip you press by accident on the first crossing you actually wanted to
-     watch. */
-  #skipCross{
-    position:fixed; right:16px; bottom:calc(var(--ctrl-b) + 8px); z-index:12;
-    padding:11px 16px; border-radius:10px; letter-spacing:.10em; font-size:12px; font-weight:700;
-    background:rgba(10,14,20,.72); color:var(--dim); border:1px solid var(--line);
-    backdrop-filter:blur(3px);
-  }
-  #skipCross.hidden{display:none;}
-
   /* ---------- the way in ----------
      Both screens are transparent over the 3D showcase, so the only thing they
      draw is text and buttons. */
@@ -765,12 +729,6 @@
     display:flex; align-items:center; justify-content:center; padding:18px; backdrop-filter:blur(4px);
   }
   .modal.hidden{display:none;}
-  /* The crossing owns the screen. The HUD is about being underground - depth,
-     hold, fuel gauges, a d-pad - and none of it means anything in open space;
-     left up it reads as the game failing to change scene. */
-  body.crossing #hud, body.crossing #kit, body.crossing #cluster,
-  body.crossing #actions, body.crossing #ord, body.crossing #ctrl,
-  body.crossing #vignette, body.crossing #heat{display:none !important;}
   .sheet{
     width:100%; max-width:460px; max-height:86vh; overflow:auto;
     background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px;
@@ -842,6 +800,9 @@
   /* Hollow, because that is the state you spend most of the game looking at:
      an Anchor you know about and have not reached. */
   .mapkey i.rng{background:none; border:2px solid #d8d2c0; border-radius:50%; width:10px; height:10px;}
+  /* Not a real star - a rotated square reads as one at ten pixels and costs no
+     clip path. The map draws the genuine article. */
+  .mapkey i.str{transform:rotate(45deg); border-radius:1px; width:8px; height:8px;}
   .maphint{font-size:10px; color:#4a5570; letter-spacing:.07em; margin-top:3px;}
   .mapkey .maphint{margin-left:auto; color:#4a5570;}
   .maprow{display:flex; gap:8px;}
@@ -1152,6 +1113,7 @@
       <span><i class="sq" style="background:#3fe0ff"></i>PAD</span>
       <span><i class="dia" style="background:#00ff41"></i>FOUND</span>
       <span><i class="rng"></i>ANCHOR</span>
+      <span><i class="str" style="background:#ffd98a"></i>VAULT</span>
       <span class="maphint" id="mapPct">SURVEYED 0%</span>
     </div>
     <div class="maprow">
@@ -1223,20 +1185,6 @@
   <div id="introText"></div>
   <div id="introDots"></div>
   <button id="introSkip">SKIP &rsaquo;&rsaquo;</button>
-</div>
-
-<!-- Shown only during the crossing. A cutscene you cannot skip is a tax on
-     every planet after the first one, and this game expects to be played for
-     a long time. -->
-<button id="skipCross" class="hidden">SKIP &rsaquo;&rsaquo;</button>
-
-<div id="chart" class="modal hidden">
-  <div class="sheet">
-    <h2>NAVIGATION CHART</h2>
-    <div class="sub" id="chartSub"></div>
-    <div id="chartCards"></div>
-    <p id="chartFoot" class="chartfoot"></p>
-  </div>
 </div>
 
 <div id="event" class="modal hidden">

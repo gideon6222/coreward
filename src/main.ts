@@ -23,19 +23,14 @@ import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug, LM_COLS } from './lightmap';
 import { sfx } from './audio';
-import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCache } from './actions';
-import { openChart, arrive, skipTransit } from './chartui';
+import { beginSettle, grantFind, grantCache } from './actions';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
 import { landCollapse, closeGround } from './collapse';
-import { collapseTarget, lightAnchor, WAKE_AT, isAwake } from './sim/unrest';
-import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells } from './sim/vaults';
+import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake } from './sim/unrest';
+import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells,
+         vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './sim/vaults';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
-
-/* actions.ts raises "a core broke"; chartui.ts answers it. Wired here rather
-   than imported directly, because chartui already imports actions and a cycle
-   that works only because of when each binding is read is a trap. */
-setCoreHandler(openChart);
 
 /* ============ build stamp ============
    Vite replaces __BUILD_SHA__ and __BUILD_TIME__ at build time. This is the
@@ -151,18 +146,11 @@ if (new URLSearchParams(location.search).has('debug')) {
        rebuild-and-reload cycle is how an afternoon disappears. */
     scene, camera, lamp, amb, sun, rim, fog, renderer, lmDebug,
     setDrillTier, setUpgradeHardware,
-    /* The chart and the crossing. Reached through here rather than by
-       importing the module in a test: under the dev server a dynamic import
-       resolves to a different module instance than the one main.ts wired up,
-       so `breakCore` imported that way calls a handler that was never set and
-       the game sits in 'boom' forever. Through the seam it is the same
-       instance the game is running. */
-    breakCore, openChart, arrive, skipTransit,
     showTitle, showIntro,
     /* Jump the intro to a beat and repaint it. Through the seam and not a
        dynamic import, because under the dev server an import() resolves to a
        different module instance than the one the loop is running - the same
-       trap that made breakCore sit in 'boom' forever. */
+       trap that lost an afternoon to a handler that was never set. */
     introTo: (i: number) => {
       showIntro();
       if (R.intro) { R.intro.i = i; R.intro.t = 0; }
@@ -206,10 +194,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* Force a full terrain rebuild - for looking at a world's ground without
        flying to it. */
     resetBlocks: () => { resetBlockCache(); syncBlocks(true); },
-    /* The breach, so the filmstrip can start one without having to drill a
-       whole world first. coreM is here for the same reason: every fixture that
-       used to write a literal depth is now written against the world. */
-    beginBreach, coreM,
+    /* Every fixture that used to write a literal depth is written against the
+       world instead. */
+    coreM,
     /* The ship's own objects, for measuring which way the drill actually
        points rather than reasoning about Euler order. Two "fixes" to the
        intro's heading were argued from the code and both were wrong. */
@@ -228,6 +215,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT,
     /* The Anchors, so a spec can fly to one rather than dig for forty minutes
        looking for it. */
-    anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells, lightAnchor, WAKE_AT, isAwake, closeGround
+    anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells, lightAnchor, wake, WAKE_AT, isAwake, closeGround,
+    vaultOpen, VAULT_CORE_X, VAULT_CORE_D
   };
 }

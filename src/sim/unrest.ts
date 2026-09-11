@@ -205,7 +205,16 @@ export const isAwake = (s: GroundState) => s.lit.length >= WAKE_AT;
 /* Applied once, by the caller that lit the Anchor that crossed the line.
    Returns true if this was the moment. */
 export function wake(s: GroundState): boolean {
-  if (s.woke) return false;
+  /* The THRESHOLD as well as the flag, and the threshold was missing.
+
+     `anchorLit` calls this every time an Anchor is lit and reads the return to
+     decide whether to show the card, so a version that only checked `woke`
+     woke the planet on the FIRST Anchor of nine - the entire second act firing
+     in the first ten minutes. It was invisible in testing because every
+     fixture lit the first few Anchors through the state directly and only the
+     last one through the real path, so the first call this ever saw was
+     always the fifth. */
+  if (s.woke || s.lit.length < WAKE_AT) return false;
   s.woke = true;
   for (let i = 0; i < REGION_COUNT; i++) s.unrest[i] = clamp01(s.unrest[i] + WAKE_STEP);
   return true;

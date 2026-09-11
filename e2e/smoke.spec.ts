@@ -1733,116 +1733,15 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
   expect(r.missing, 'the lighting shader declares ' + r.missing.join(', ') +
     ' and nothing supplies them, so that part of the model is silently inert')
     .toEqual([]);
-
-  /* The shaft the ship is sitting in is fully lit; its wall catches the lamp;
-     four cells into untouched rock is nearly nothing.
-
-     The last one is asserted on what reaches the SCREEN, because the shader
-     squares this field before applying it and a threshold on the raw byte is a
-     threshold on an intermediate value nobody sees. The raw version of this
-     line failed the moment the rock gradient was retuned to exactly what a
-     playtest asked for, which is the wrong way round for a test to behave. */
-  const onScreen = (b: number) => Math.pow(b / 255, 2);
-  expect(r.shaft, 'the cell the ship is in').toBeGreaterThan(240);
-  expect(r.wall, 'the wall of the shaft').toBeGreaterThan(120);
-  expect(onScreen(r.four), 'four cells into solid rock, as displayed')
-    .toBeLessThan(0.08);
-  expect(r.two, 'two cells in is darker than one').toBeLessThan(r.wall);
 });
 
-test('breaking a core opens the chart, and the crossing lands you somewhere else', async ({ page }) => {
-  /* The whole top level of the game in one pass: a core breaks, three worlds
-     are offered, one is chosen, the ship crosses, and it arrives somewhere
-     that is genuinely a different place.
+/* ---------- what used to be here ----------
 
-     Driven through the debug seam rather than by playing down to a core,
-     because a core is 110 m of drilling and this test is about what happens
-     after it. Note the seam and not a dynamic import: under a dev server an
-     `import()` resolves to a different module instance than the one main.ts
-     wired up, so breakCore imported that way calls a handler nobody set and
-     the game sits in 'boom' forever. That cost a debugging round. */
-  await page.goto('/?debug');
-  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
-  await enterGame(page);
-
-  const before = await page.evaluate(() => {
-    const w = (window as any).__cw;
-    return { world: w.g.world, planet: w.g.planet, name: document.querySelector('#planet')!.textContent };
-  });
-
-  await page.evaluate(() => (window as any).__cw.breakCore());
-  await expect(page.locator('#chart')).not.toHaveClass(/hidden/, { timeout: 8_000 });
-
-  /* The property is "a choice", not "three". Written as a count here it would
-     be the third literal in this file to fail for the wrong reason the day the
-     chart grows a card - the other two were `bays` and `supplies`. */
-  const cards = page.locator('#chartCards .dest');
-  const n = await cards.count();
-  expect(n, 'the chart must offer a choice, not an announcement').toBeGreaterThan(1);
-
-  /* And every card a different world with a different trait, or some of them
-     are decoration. */
-  const names = await page.locator('#chartCards .dname').allTextContents();
-  expect(new Set(names).size, 'two cards named the same world: ' + names.join(', ')).toBe(n);
-  const traits = await page.locator('#chartCards .dtrait').allTextContents();
-  expect(new Set(traits).size, 'two cards with the same trait: ' + traits.join(', ')).toBe(n);
-
-  await cards.nth(1).click();
-
-  /* The crossing is its own mode and its own scene, and the HUD is gone for
-     it - depth and a d-pad mean nothing in open space. */
-  const crossing = await page.evaluate(() => {
-    const w = (window as any).__cw;
-    return { mode: w.g.mode, body: document.body.className, hud: getComputedStyle(document.querySelector('#hud')!).display };
-  });
-  expect(crossing.mode).toBe('transit');
-  expect(crossing.body).toContain('crossing');
-  expect(crossing.hud, 'the HUD is still up during the crossing').toBe('none');
-
-  /* The crossing is skippable, and it has to be: a cutscene you cannot skip is
-     a tax on every planet after the first one. Skipping is also how this test
-     finishes it, which means the skip path is exercised on every run rather
-     than being the one route nobody checks. */
-  await expect(page.locator('#skipCross')).not.toHaveClass(/hidden/);
-  await page.locator('#skipCross').dispatchEvent('click');
-  await page.evaluate(() => (window as any).__cw.advance(1));
-  await expect(page.locator('#skipCross'), 'the skip button outlived the crossing')
-    .toHaveClass(/hidden/);
-
-  /* And the touchdown, which is part of arriving rather than something after
-     it: the ship comes down onto the pad before the controls wake. */
-  await page.evaluate(async () => {
-    const cw = (window as any).__cw;
-    for (let i = 0; i < 20 && cw.g.mode !== 'play'; i++) {
-      cw.advance(0.5);
-      await new Promise((r) => requestAnimationFrame(r));
-    }
-    cw.startClock();
-  });
-
-  const after = await page.evaluate(() => {
-    const w = (window as any).__cw;
-    return {
-      mode: w.g.mode, world: w.g.world, planet: w.g.planet, trait: w.g.trait,
-      dug: w.g.dug.size, body: document.body.className,
-      name: document.querySelector('#planet')!.textContent
-    };
-  });
-
-  expect(after.mode, 'the crossing never ended').toBe('play');
-  expect(after.body, 'the HUD never came back').not.toContain('crossing');
-  expect(after.planet, 'the leg did not advance, so nothing got harder').toBe(before.planet + 1);
-  expect(after.world, 'arrived at the world it left').not.toBe(before.world);
-  expect(after.dug, 'the new world inherited the old one\'s tunnels').toBe(0);
-  /* The chip is no longer evidence of anything here: it names the region under
-     the ship, and both worlds put the ship down on the same pad in the same
-     region, so it correctly reads the same on either side of a crossing. What
-     actually proves the crossing landed somewhere else is the world seed, the
-     leg and the empty tunnel set - all three asserted above. The chip
-     assertion was deleted rather than reworded, because a reworded version of
-     it would have been a second copy of `after.world`. */
-  expect(after.trait, 'the arrival kept no trait at all').toBeTruthy();
-});
+   `breaking a core opens the chart, and the crossing lands you somewhere else`
+   went with the chart in W9. It was the ending of a game about a chain of
+   planets, and this is a game about one. Its replacement is
+   `the Vault at the centre opens on the ninth Anchor` at the bottom of this
+   file - the same shape of test for the ending that exists now. */
 
 test('the three ways in behave differently, and New Game Plus can skip', async ({ page }) => {
   /* Playtest: *"if you are starting a new run, do the full intro. if you are
@@ -3199,4 +3098,117 @@ test('the fifth Anchor wakes the planet, and the ground stops staying where you 
   });
   expect(fill.id, 'closed ground is not rubble').toBe('rubble');
   expect(fill.finite, 'closed ground cannot be dug back out').toBe(true);
+});
+
+/* The Vault at the centre, which is the end of the game.
+
+   Three claims, and the first one is the whole design: the last wall in the
+   game is not a wall you can be clever about. Sealed stone waits for a tool
+   you might find by accident; this waits for the entire errand, and nothing in
+   the game opens it early.
+
+   Driven with the Anchors lit through the state rather than flown to nine
+   halls, because nine halls is an evening. Everything after the ninth - the
+   seal opening, the map learning where the centre is, and the ending firing
+   when the ship reaches it - is the shipping path. */
+test('the Vault at the centre opens on the ninth Anchor', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* ---- shut, with eight of nine ---- */
+  const shut = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    for (let i = 0; i < w.ANCHOR_COUNT - 1; i++) w.lightAnchor(w.g.ground, i);
+    /* And the wake, which a real save with eight Anchors lit has already paid
+       for - the fixture lights them through the state, so it owes the step. */
+    w.wake(w.g.ground);
+    const V = w.vaultCells();
+    /* A seal cell, found from the stamp rather than named. */
+    let seal: string | null = null;
+    for (const [k, ch] of V) if (ch === '%') { seal = k; break; }
+    const i = seal!.indexOf(',');
+    const b = w.blockAt(+seal!.slice(0, i), +seal!.slice(i + 1));
+    const core = w.blockAt(w.VAULT_CORE_X, w.VAULT_CORE_D);
+    return {
+      lit: w.g.ground.lit.length, open: w.vaultOpen(w.g.ground.lit.length),
+      seal, sealId: b ? b.id : null, sealShut: !!b && !Number.isFinite(b.hard),
+      coreId: core ? core.id : null,
+      coreShut: !!core && !Number.isFinite(core.hard),
+      seenCentre: w.g.seen.includes(
+        Math.floor(w.VAULT_CORE_X / w.MAP_TILE) + ',' + Math.floor(w.VAULT_CORE_D / w.MAP_TILE))
+    };
+  });
+  expect(shut.lit).toBe(8);
+  expect(shut.open, 'eight Anchors opened the centre').toBe(false);
+  expect(shut.sealId, 'the Vault has no seal around it').toBe('vaultwall');
+  expect(shut.sealShut,
+    'the last wall in the game can be drilled with eight of nine Anchors lit').toBe(true);
+  expect(shut.coreId).toBe('vaultcore');
+  expect(shut.coreShut, 'the Vault core can be mined').toBe(true);
+  expect(shut.seenCentre, 'the map already knows where the centre is').toBe(false);
+
+  /* ---- the ninth ---- */
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const a = w.anchorAt(w.ANCHOR_COUNT - 1);
+    w.g.px = a.x; w.g.pd = a.d - 1;
+    w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+    w.advance(0.2);
+  });
+  await expect(page.locator('#evTitle')).toHaveText(/ANCHOR/i);
+  await page.locator('#evBtn').dispatchEvent('click');
+  await expect(page.locator('#evTitle')).toHaveText(/CENTRE IS OPEN/i);
+  await page.locator('#evBtn').dispatchEvent('click');
+
+  const open = await page.evaluate((seal: string) => {
+    const w = (window as any).__cw;
+    const i = seal.indexOf(',');
+    const b = w.blockAt(+seal.slice(0, i), +seal.slice(i + 1));
+    return {
+      lit: w.g.ground.lit.length,
+      sealId: b ? b.id : null, hard: b ? b.hard : 0,
+      seenCentre: w.g.seen.includes(
+        Math.floor(w.VAULT_CORE_X / w.MAP_TILE) + ',' + Math.floor(w.VAULT_CORE_D / w.MAP_TILE)),
+      won: w.g.won
+    };
+  }, shut.seal!);
+  expect(open.lit).toBe(9);
+  expect(open.sealId, 'the seal did not open on the ninth Anchor').toBe('vaultopen');
+  expect(Number.isFinite(open.hard), 'the seal is open and still uncuttable').toBe(true);
+  expect(open.hard,
+    `the open seal drills at ${open.hard} - the last wall should still cost something`)
+    .toBeGreaterThan(20);
+  expect(open.seenCentre,
+    'nine Anchors and the map still does not know where the centre is').toBe(true);
+  expect(open.won, 'the game ended before the ship got there').toBe(false);
+
+  /* ---- and reaching it ----
+
+     Standing next to the core, exactly like an Anchor. Nothing here calls the
+     ending: the assertion is that flying down to it IS the ending. */
+  const won = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.px = w.VAULT_CORE_X; w.g.pd = w.VAULT_CORE_D - 1;
+    w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+    w.advance(0.2);
+    return { won: w.g.won, mode: w.g.mode,
+             title: (document.getElementById('evTitle') || {}).textContent };
+  });
+  expect(won.won, 'reaching the centre did not end the game').toBe(true);
+  expect(won.mode, 'the ending did not stop the game to say so').toBe('event');
+  expect(won.title).toMatch(/VAULT/i);
+
+  /* It does not throw you back to a title screen: the world is still there,
+     and so is everything in it. */
+  await page.locator('#evBtn').dispatchEvent('click');
+  const after = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const b = w.blockAt(w.VAULT_CORE_X, w.VAULT_CORE_D);
+    return { mode: w.g.mode, won: w.g.won, coreId: b ? b.id : null };
+  });
+  expect(after.mode, 'the game ended the session rather than the errand').toBe('play');
+  expect(after.won, 'winning did not stick').toBe(true);
+  expect(after.coreId, 'the Vault looks exactly the same after it opened').toBe('vaultlit');
 });

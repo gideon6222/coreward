@@ -317,10 +317,15 @@ test('every room that was placed is stamped whole', () => {
      is every cell of it exactly the character its template says? A room that
      was overwritten by another loses cells and fails here, whatever the
      placement code believes. */
+  /* Each room's OWN size, not the standard one. The Vault is 15 by 13 and
+     checking it against 11 by 9 reads the wrong characters out of the
+     template - which this test reported, correctly, as the Vault having lost
+     cells it never had. */
   const check = (cx, cd, v, what) => {
-    const x0 = cx - (H.VAULT_W - 1) / 2, d0 = cd - (H.VAULT_H - 1) / 2;
-    for (let ry = 0; ry < H.VAULT_H; ry++) {
-      for (let rx = 0; rx < H.VAULT_W; rx++) {
+    const w = H.vaultW(v), h = H.vaultH(v);
+    const x0 = cx - (w - 1) / 2, d0 = cd - (h - 1) / 2;
+    for (let ry = 0; ry < h; ry++) {
+      for (let rx = 0; rx < w; rx++) {
         const ch = v.rows[ry][rx];
         if (!ch || ch === ' ') continue;
         const x = x0 + rx, d = d0 + ry;
@@ -343,14 +348,14 @@ test('every room that was placed is stamped whole', () => {
   for (let i = 0; i < plan.length; i++) {
     for (let j = i + 1; j < plan.length; j++) {
       assert.ok(
-        Math.abs(plan[i].x - plan[j].x) >= H.VAULT_W ||
-        Math.abs(plan[i].d - plan[j].d) >= H.VAULT_H,
+        Math.abs(plan[i].x - plan[j].x) >= (H.vaultW(plan[i].vault) + H.vaultW(plan[j].vault)) / 2 ||
+        Math.abs(plan[i].d - plan[j].d) >= (H.vaultH(plan[i].vault) + H.vaultH(plan[j].vault)) / 2,
         `the ${plan[i].vault.id} at (${plan[i].x},${plan[i].d}) overlaps the ` +
         `${plan[j].vault.id} at (${plan[j].x},${plan[j].d})`);
     }
   }
-  assert.ok(plan.length > H.ANCHOR_COUNT + 8,
-    `only ${plan.length - H.ANCHOR_COUNT} of ${H.WILD_SLOTS} wild rooms survived placement`);
+  assert.ok(plan.length > H.ANCHOR_COUNT + 9,
+    `only ${plan.length - H.ANCHOR_COUNT - 1} of ${H.WILD_SLOTS} wild rooms survived placement`);
 });
 
 /* ---------- lighting one ---------- */

@@ -4,10 +4,10 @@ import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES, traitOf } from './config';
 import { key, mixHex, rnd } from './util';
 import { regionAt, REGION_COUNT } from './region';
-import { vaultCells, anchorHere, WORKED_HARD, SEALED_HARD } from './vaults';
+import { vaultCells, anchorHere, WORKED_HARD, SEALED_HARD,
+         vaultOpen, VAULT_WALL_HARD } from './vaults';
 import { isCollapsed, hardScale, isAwake, UNREST_BANDS } from './unrest';
 import { g , coreM, valueM, worldTrait} from './state';
-import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
 import { findMap, cacheSupply, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
 import type { Block, SupplyKey } from '../types';
 
@@ -78,9 +78,15 @@ export function blockAt(x: number, d: number): Block | null {
     return { id: 'fallen', name: 'Fallen Ground', color: 0x24222a, host: 0x181720,
              hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   }
+  /* The floor. There is no Planet Core any more.
+
+     Breaking one used to be the end of a world and the start of the next, back
+     when the game was a chain of planets you passed through. Round eight made
+     it one planet and W9 gave it an ending of its own - the Vault, at the
+     centre, behind nine Anchors - and two endings is worse than either. So the
+     bottom of the world is simply the bottom of the world. */
   const cd = coreM();
-  if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
-  if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
+  if (d >= cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   /* The trait of THIS CELL, not of the world. Hardness, caves, gas and geodes
      are all properties of the ground you are cutting, so they answer to the
      region the cell is in - which is what makes a region somewhere you can
@@ -102,26 +108,6 @@ export function blockAt(x: number, d: number): Block | null {
              glow: 0.95, shards: 9, tone: 10, hard: 9 * hm, wt: 0, value: 0,
              ore: true, relic: true };
   }
-
-  /* The Jump Drive component, on the same footing as the relic and for the
-     same reason: it is one cell on the whole planet, so nothing is allowed to
-     overwrite it. Deeper than the relic, and only on a world whose trait holds
-     one - see drive.ts.
-
-     No roll of its own because it needs none: the position is a hash of the
-     leg, not a sample of the world's noise, so it consumes nothing from the
-     ore stream. That is the trap CLAUDE.md warns about, avoided by not rolling
-     at all rather than by rolling carefully. */
-  const pid = partFor(g.trait);
-  if (pid && !g.drive.includes(pid)) {
-    const pa = partAt(g.planet, g.coreOff);
-    if (x === pa.x && d === pa.d) {
-      return { id: 'part', name: partName(pid), color: PART_COLOR, host: PART_HOST,
-               glow: 1.0, shards: 10, tone: 10, hard: 13 * hm, wt: 0, value: 0,
-               ore: true, part: true };
-    }
-  }
-
 
   /* A schematic crate, on the same footing as the relic and the component and
      for the same reason: it is one cell carrying a whole verb, and it must not
@@ -208,6 +194,33 @@ export function blockAt(x: number, d: number): Block | null {
                color: lit ? 0x9effd4 : 0x2f6f5e, host: 0x16241f,
                glow: lit ? 1.0 : 0.30, shards: 10, tone: lit ? 10 : 6,
                ore: true, hard: Infinity, wt: 0, value: 0 };
+    }
+    if (vch === 'V') {
+      /* The end of the game, and it looks like one: the only gold thing in the
+         ground, and the only block besides an Anchor that cannot be cut. */
+      const won = g.won;
+      return { id: won ? 'vaultlit' : 'vaultcore', name: won ? 'The Vault · open' : 'The Vault',
+               color: won ? 0xfff0b8 : 0x8a6a2a, host: 0x2a2114,
+               glow: won ? 1.0 : 0.34, shards: 10, tone: won ? 10 : 6,
+               ore: true, hard: Infinity, wt: 0, value: 0 };
+    }
+    if (vch === '%') {
+      /* The last wall. Not sealed stone: sealed stone waits for a tool you can
+         find by accident, and this waits for all nine Anchors - which is the
+         difference between a locked door and an ending. */
+      const open = vaultOpen(g.ground.lit.length);
+      /* Lit even while it is shut, and that is the point of it.
+
+         At 0.18 it went black with the rock at the edge of the lamp, so the
+         picture a player got on arriving was worked stone and then a void -
+         which reads as an unfinished room rather than as a door. A locked door
+         you cannot see is not a promise, it is a dead end. */
+      return { id: open ? 'vaultopen' : 'vaultwall',
+               name: open ? 'Vault Seal · open' : 'Vault Seal',
+               color: open ? 0xffd98a : 0xa8862e, host: 0x241d12,
+               glow: open ? 0.75 : 0.48,
+               hard: open ? baseRock(d, g.planet, x).hard * hm * VAULT_WALL_HARD : Infinity,
+               wt: 0, value: 0 };
     }
     if (vch === '=') {
       /* The locked door you can see. Unbreakable until the laser is FOUND,

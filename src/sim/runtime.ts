@@ -29,9 +29,6 @@ export const R = {
   /* Wall-clock seconds since landing on this world, for the fastest-core
      record. Reset by arrive(); read once, when a core breaks. */
   worldT: 0,
-  /* The ninety seconds after a core comes apart, or null the rest of the
-     time - exactly like `flight` and `transit`. See src/sim/breach.ts. */
-  breach: null as import('./breach').BreachState | null,
   /* seconds into the touchdown; see SETTLE_* in feel.ts */
   settleT: 0,
   /* the intro's beat clock while it is running; see intro.ts */

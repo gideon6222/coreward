@@ -1,4 +1,4 @@
-import { regionAt, MAP_TILE, WORLD_DEPTH } from './region';
+import { regionAt, MAP_TILE, WORLD_DEPTH, tilesSeen } from './region';
 import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, W, UPGRADES, SUPPLIES, ORES, matTotalFor, scrubSave, costOf, traitAt,
          bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
@@ -7,7 +7,7 @@ import { FOUND_KEYS } from './finds';
 import { R } from './runtime';
 import { newGround, loadGround, cutCell, drainBallast, planetUnrest, collapseTarget,
          isCollapsed, unrestBand, lightAnchor, isLit, type GroundState } from './unrest';
-import { anchorNear } from './vaults';
+import { anchorNear, vaultCoreNear, vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './vaults';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from '../types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
@@ -24,7 +24,7 @@ export const g: {
      the same leg be three different places rather than three copies of one.
      A save from before the chart existed has no world, so it defaults to the
      leg and the old behaviour comes back exactly. */
-  planet: number; credits: number; shards: number;
+  planet: number; credits: number;
   world: number;
   /* The trait of the world you are on, STORED rather than hashed from an
      index. The chart is what decides what is out there, and `traitOf` can
@@ -53,13 +53,10 @@ export const g: {
   stock: Cargo;
   /* Relic PERKS collected, across every planet ever visited. The one list in
      the save that only ever grows. */
-  /* Jump Drive components aboard. Like `relics`, a list that only grows - and
-     like relics, it is what you OWN rather than what you have done. See
-     drive.ts. */
-  drive: string[];
-  /* Whether the Heart has ever been broken. A flag rather than an end state:
-     the game keeps going afterwards, and this is what the chart and the
-     manifest read to say so. */
+  /* Whether the Vault at the centre has ever been opened. A flag rather than
+     an end state: the game keeps going afterwards, and the title reads this to
+     offer a skip next time round. It is also the one thing a wipe deliberately
+     does not clear - it is not progress, it is something you did. */
   won: boolean;
   relics: string[];
   /* Which planets have had their relic taken.
@@ -117,9 +114,9 @@ export const g: {
   ground: GroundState;
   mode: Mode;
 } = {
-  planet: 0, credits: 0, shards: 0,
+  planet: 0, credits: 0,
   world: 0, trait: 'stable', coreOff: 0, rich: 1,
-  drive: [], won: false,
+  won: false,
   up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, scrub: 0, auto: 0, bomb: 0, laser: 0,
     hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 },
   kit: { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 },
@@ -141,7 +138,10 @@ export const relic = (id: string) => g.relics.includes(id);
 export const relicCount = (id: string) => g.relics.filter((r) => r === id).length;
 
 export const S = {
-  drill: () => (1 + g.up.drill * 0.95) * (1 + g.shards * 0.08) * (relic('drum') ? 1.1 : 1)
+  /* The Core Shard multiplier came off with the cores in W9. It was +8% drill
+     per planet destroyed, and there are no planets to destroy - which also
+     makes the drill ladder legible again: what you bought, and one relic. */
+  drill: () => (1 + g.up.drill * 0.95) * (relic('drum') ? 1.1 : 1)
            * (R.odT > 0 ? OVERDRIVE_MULT : 1),
   /* +12 a rung, not +45.
      M1 measured the hold at 5 to 12 per cent full when a run ends, and M3 found
@@ -240,9 +240,9 @@ export function hasSave(): boolean {
 export function save() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      planet: g.planet, credits: g.credits, shards: g.shards, up: g.up,
+      planet: g.planet, credits: g.credits, up: g.up,
       world: g.world, trait: g.trait, coreOff: g.coreOff, rich: g.rich,
-      drive: g.drive, won: g.won,
+      won: g.won,
       dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
@@ -259,7 +259,7 @@ export function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      g.planet = s.planet || 0; g.credits = s.credits || 0; g.shards = s.shards || 0;
+      g.planet = s.planet || 0; g.credits = s.credits || 0;
       /* Every one of these defaults to the pre-chart behaviour, so a save made
          before the chart existed loads as the world it was on. */
       g.world = typeof s.world === 'number' ? s.world : g.planet;
@@ -287,7 +287,6 @@ export function load() {
       g.drops = s.drops || {};
       g.damage = s.damage || {};
       if (typeof s.charge === 'number') g.charge = s.charge;
-      g.drive = Array.isArray(s.drive) ? s.drive.slice() : [];
       g.won = !!s.won;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
       g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];
@@ -366,7 +365,6 @@ export function load() {
     if (!old) return;
     const s = JSON.parse(old);
     g.planet = s.planet || 0;
-    g.shards = s.shards || 0;
     g.credits = Math.round((s.credits || 0) * 4);
     g.dug = new Set(s.dug || []);
     const o = s.up || {};
@@ -530,6 +528,22 @@ export function lightHere(): number {
   lightAnchor(g.ground, r);
   revealRegion(r);
   return r;
+}
+
+/* Reaching the Vault. Same seam as lightHere and the same reason it is every
+   frame: the act is "I flew down to it". */
+export function vaultHere(): boolean {
+  if (g.won) return false;
+  if (!vaultOpen(g.ground.lit.length)) return false;
+  return vaultCoreNear(Math.round(g.px), Math.max(0, Math.round(g.pd)));
+}
+
+/* Where the Vault is, put onto the map. Called when the ninth Anchor lights -
+   the centre opening is the payoff for the errand, and a player who has lit
+   nine Anchors should not then have to hunt blind for a single cell in a
+   61-by-452 world. */
+export function revealVault() {
+  markSeen(tilesSeen(VAULT_CORE_X, VAULT_CORE_D, 14));
 }
 
 /* An Anchor lights its own region on the map.

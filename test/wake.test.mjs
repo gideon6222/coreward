@@ -42,12 +42,33 @@ test('the planet answers at the fifth Anchor, not the first and not the last', (
   assert.equal(H.isAwake(s), true, `the planet did not wake at ${H.WAKE_AT} Anchors`);
 });
 
+test('the step is not paid before the fifth Anchor', () => {
+  /* The bug this exists for, and it shipped for an hour: wake() checked only
+     whether the planet had already woken, not whether it was TIME - so the
+     first Anchor of nine set the flag and the whole second act fired in the
+     first ten minutes.
+
+     Every fixture missed it for the same reason: they lit the early Anchors
+     through the state directly and only the last one through the real path,
+     so the first call wake() ever saw was always the fifth. */
+  const s = fresh();
+  assert.equal(H.wake(s), false, 'the planet woke with no Anchors lit at all');
+  for (let i = 0; i < H.WAKE_AT - 1; i++) {
+    H.lightAnchor(s, i);
+    assert.equal(H.wake(s), false, `the planet woke at ${i + 1} Anchors`);
+    assert.equal(s.woke, false);
+  }
+  H.lightAnchor(s, H.WAKE_AT - 1);
+  assert.equal(H.wake(s), true, 'the planet did not wake at the fifth');
+});
+
 test('the step is paid once, whatever happens afterwards', () => {
   /* The failure this exists for: `woke` is stored rather than derived, and a
      stored flag that the apply path does not check is a planet that ratchets
      itself to maximum - once per Anchor after the fifth, once per save
      reload, once per anything that calls it. */
   const s = fresh();
+  for (let i = 0; i < H.WAKE_AT; i++) H.lightAnchor(s, i);
   for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = 0.2;
   assert.equal(H.wake(s), true);
   const after = s.unrest.slice();
@@ -65,6 +86,7 @@ test('the step is paid once, whatever happens afterwards', () => {
 
 test('the step lifts every region, and cannot push one over the top', () => {
   const s = fresh();
+  for (let i = 0; i < H.WAKE_AT; i++) H.lightAnchor(s, i);
   for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = i / (H.REGION_COUNT - 1);
   const before = s.unrest.slice();
   H.wake(s);
