@@ -13,7 +13,8 @@ import { g , coreM, worldTrait} from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
 import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog } from './ui';
-import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation } from './station';
+import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation,
+         stepAisle, paintAisleBar, markSeen } from './station';
 import type { Dir } from './types';
 import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
 import { sfx, audioInit, setAudio, audioState } from './audio';
@@ -58,12 +59,23 @@ ui.btnShop.onclick = () => {
   dockShip();
   document.body.classList.add('docked');
   selectBay(null);
-  resizeStation();
   buildShop();
+  /* Un-hidden BEFORE the camera is framed, and that order is load-bearing.
+
+     The framing measures the tray and the bars to find the band of screen the
+     player can actually see, and a `display:none` subtree measures zero on
+     every axis. Called the other way round it silently fell back to "the band
+     is the whole screen" on every single open. */
   ui.shop.classList.remove('hidden');
+  resizeStation();
 };
 mustEl('shopClose').onclick = () => {
   sfx.ui();
+  /* What has been seen is settled on the way OUT, not on the way in. Marking
+     it at the door would fire the "open on the new aisle" beat and then
+     immediately forget it had, so a player who docked and undocked without
+     looking would never get the reveal at all. */
+  markSeen();
   undockShip();
   document.body.classList.remove('docked');
   ui.shop.classList.add('hidden');
@@ -79,11 +91,49 @@ mustEl('shopClose').onclick = () => {
    the event bubbling up from the stage, which worked and then did not - the
    kind of thing that costs an hour and buys nothing. The id check below is what
    actually scopes this, so where it is listening does not need to be clever. */
+/* ---------- walking the aisles ----------
+
+   Three ways in, and that is the point rather than belt and braces. The
+   research is blunt about gesture-only navigation: hidden affordances cost
+   about 21% of task completion and roughly half the discoverability, and this
+   room has already shipped one control that looked tappable and did nothing.
+   So the arrows are the real control, the dots say where you are, and the
+   swipe is the one that feels good once you have found it.
+
+   The threshold is 42 px and the vertical guard is what stops it firing on a
+   tap that drifted. Both measured against the thumb rather than chosen: a tap
+   on this phone wanders about 8 px, and 42 is comfortably outside that while
+   still being a flick rather than a drag. */
+const SWIPE_PX = 42;
+let swipeX = 0, swipeY = 0, swiping = false;
+
+mustEl('aisleL').onclick = () => { if (stepAisle(-1)) sfx.ui(); };
+mustEl('aisleR').onclick = () => { if (stepAisle(1)) sfx.ui(); };
+
 document.addEventListener('pointerdown', (e) => {
   if (g.mode !== 'shop') return;
   const t = e.target as HTMLElement;
   /* only taps that landed on the stage itself, not on the tray or the header */
   if (t.id !== 'shop' && t.id !== 'shopStage' && t.id !== 'shopHint') return;
+  swipeX = e.clientX; swipeY = e.clientY; swiping = true;
+});
+
+document.addEventListener('pointerup', (e) => {
+  if (g.mode !== 'shop' || !swiping) return;
+  swiping = false;
+  const dx = e.clientX - swipeX, dy = e.clientY - swipeY;
+  /* A swipe, and the vertical guard so a thumb sliding down the screen does
+     not change department. */
+  if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 1.4) {
+    /* Drag LEFT to walk right, the way a map or a carousel moves - the content
+       follows the finger rather than the camera doing. */
+    if (stepAisle(dx < 0 ? 1 : -1)) sfx.ui();
+    return;
+  }
+  /* Not a swipe: it is a tap, and taps pick a case. Resolved on the way UP
+     rather than on the way down, because the two gestures start identically
+     and deciding on pointerdown would select a case every time you swiped
+     past one. */
   const hit = pickBay(e.clientX, e.clientY);
   if (hit === selectedBay()) return;
   selectBay(hit);

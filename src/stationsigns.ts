@@ -35,12 +35,33 @@ import * as THREE from 'three';
 export const GROUP_ORDER = ['rig', 'survival', 'instruments', 'ordnance'] as const;
 export type GroupName = typeof GROUP_ORDER[number];
 
+/* ---------- the four aisle colours ----------
+
+   Repicked for round six against the sourced cyberpunk palette rather than
+   chosen by eye. Two rules came out of the research and both are load-bearing:
+
+   THE PAIR IS MAGENTA AND CYAN. It is the most-cited neon pairing in the
+   reference art and it is complementary, so the two read as deliberate rather
+   than as two colours that happened to be near each other. Violet extends the
+   cool half; the warm one is brass amber, which is also the colour of the
+   room's own metal, so the RIG aisle looks lit by the building it is in.
+
+   NEON IS RATIONED. Four saturated colours against a warm brass base is
+   already the ceiling, which is why there is no fifth department and why the
+   Matrix green is NOT in this table. That green belongs to exactly one surface
+   in the room and to the crates in the ground - see finds.ts. Putting it here
+   as a fifth neon would cancel both identities into mud, which is the one
+   thing the research was emphatic about. */
 export const GROUP_COLOR: Record<GroupName, number> = {
-  rig: 0xffb347, survival: 0xff6b5e, instruments: 0x49e0c0, ordnance: 0xb07cff
+  rig: 0xffa83c, survival: 0xff2e88, instruments: 0x2ee6ff, ordnance: 0xa855f7
 };
 
+/* Short enough to fit over an aisle in a portrait frame. SURVIVAL became LIFE
+   and INSTRUMENTS became SURVEY for the same reason the shop plates say DRILL
+   rather than Drill Bit: the sign is read at a glance from across the room and
+   a word that has to shrink to fit is a word nobody reads. */
 export const GROUP_LABEL: Record<GroupName, string> = {
-  rig: 'RIG', survival: 'SURVIVAL', instruments: 'INSTRUMENTS', ordnance: 'ORDNANCE'
+  rig: 'RIG', survival: 'LIFE', instruments: 'SURVEY', ordnance: 'ORDNANCE'
 };
 
 /* A header plate: the group's name in its own colour on a dark strip, with a

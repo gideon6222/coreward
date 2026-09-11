@@ -1,6 +1,7 @@
 /* Boot. Every imported module's top-level setup runs before this file's
    body, which is what the single-file version got for free by being written
    top to bottom. */
+import * as THREE from 'three';
 import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './sim/config';
 import { g, S, save, load, hasSave, coreM } from './sim/state';
 import { R } from './sim/runtime';
@@ -9,14 +10,17 @@ import { syncBlocks, resetBlockCache } from './blocks';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
-import { pickBay, selectBay, selectedBay, bays, stationCamera, roomReady, setOpenGroup, currentGroup } from './station';
-import { el, updateHUD, audioLabels } from './ui';
+import { GROUP_ORDER } from './stationsigns';
+import { stationX } from './stationroom';
+import { pickBay, selectBay, selectedBay, bays, stationCamera, stationScene, roomReady, goAisle, stepAisle,
+         currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
+import { el, updateHUD, audioLabels, buildShop } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug } from './lightmap';
 import { sfx } from './audio';
-import { setCoreHandler, breakCore, beginSettle, beginBreach } from './actions';
+import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
@@ -149,7 +153,26 @@ if (new URLSearchParams(location.search).has('debug')) {
       if (R.intro) { R.intro.i = i; R.intro.t = 0; }
       paintBeat();
     },
-    pickBay, selectBay, selectedBay, bays, stationCamera, roomReady, setOpenGroup, currentGroup,
+    pickBay, selectBay, selectedBay, bays, stationCamera, roomReady,
+    /* The aisles, so a smoke test can drive the shop the way a thumb does. */
+    goAisle, stepAisle, currentAisle, currentGroup, aisleStocked, AISLE_COUNT,
+    /* The scene itself, so the framing harness can project a world position
+       into screen pixels and count the lights that are actually in it. */
+    stationScene,
+    /* Which aisle a given upgrade lives in, so a test can walk there rather
+       than hard-coding a department that the layout may later move it out of. */
+    aisleOf: (k: string) => {
+      const u = UPGRADES.find((x) => x.key === k);
+      return u ? GROUP_ORDER.indexOf(u.group as never) + 1 : -1;
+    },
+    upgradeOf: (k: string) => UPGRADES.find((x) => x.key === k) || null,
+    stationXOf: stationX,
+    grantFind, buildShop,
+    /* Constructors, so a spec can build a Box3 or a Vector3 without importing
+       three itself - under the dev server an import() resolves to a different
+       module instance than the one the loop is running, which is the trap this
+       whole seam exists to avoid. */
+    Box3Ctor: THREE.Box3, Vec3Ctor: THREE.Vector3,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

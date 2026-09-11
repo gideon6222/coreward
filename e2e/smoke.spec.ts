@@ -102,6 +102,18 @@ async function tapBay(page: Page, key: string) {
     const w = (window as any).__cw;
     const bay = w.bays.find((b: any) => b.key === k);
     if (!bay) return { err: 'no case for ' + k };
+    /* Walk to the aisle it is in first.
+
+       The shop is four departments and only one is in the room at a time, so a
+       case in ORDNANCE is not merely off screen from RIG - it is not in the
+       scene at all, and its world position is wherever it was last parked. The
+       glide is run out on the tick seam rather than waited for. */
+    const up = w.upgradeOf ? w.upgradeOf(k) : null;
+    if (up) {
+      const want = w.aisleOf(k);
+      if (want > 0 && want !== w.currentAisle()) { w.goAisle(want); w.advance(2); }
+    }
+    if (!bay.group.visible) return { err: k + ' is not stocked, so it has no case in the room' };
     const p = bay.group.getWorldPosition(new w.camera.position.constructor());
     p.project(w.stationCamera);
     const x = Math.round((p.x * 0.5 + 0.5) * window.innerWidth);
@@ -109,7 +121,14 @@ async function tapBay(page: Page, key: string) {
     const el = document.elementFromPoint(x, y);
     if (!el) return { err: 'nothing at ' + x + ',' + y };
     const before = { mode: w.g.mode, sel: w.selectedBay() };
+    /* Down AND up, at the same point.
+
+       A tap and a swipe start identically, so the shop decides which one it
+       was on the way UP: anything that moved more than 42 px sideways walks to
+       the next aisle and anything else picks a case. A test that only sends
+       pointerdown is sending half a gesture and gets neither. */
     el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y }));
     w.advance(0.3);
     return { at: x + ',' + y, on: el.id || el.className, picked: w.pickBay(x, y),
              selected: w.selectedBay(), before };
@@ -1856,4 +1875,190 @@ test('the ship flies drill-first in the showcase', async ({ page }) => {
      is what made it read as climbing. */
   expect(drill.z, 'the drill must point away from the camera, along the heading').toBeLessThan(-0.9);
   expect(Math.abs(drill.y), 'and must not be pitched up or down off that heading').toBeLessThan(0.2);
+});
+
+/* ---------- round six: the aisles, and what the shop is allowed to sell ----------
+
+   Three claims that are only true in a real browser: that the swipe actually
+   moves the camera, that the shelf genuinely refuses to stock a device that
+   has not been found, and that a case is not merely inside the frame by its
+   centre.
+
+   That last one is here because it is the failure the measurement harness
+   passed. Projected centres said every case was on screen while two of five
+   plates hung over the edges, so this asserts the PLATE's bounding box rather
+   than the group's origin. */
+test('the shop is four aisles, and you can walk between them', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.locator('#btnShop').dispatchEvent('click');
+  await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+
+  /* The dots are the visible half of the navigation, and they are the half
+     that must exist - a swipe with no affordance is a shop most people only
+     ever see one quarter of. One per station, the forecourt included. */
+  const dots = await page.locator('#aisles .dot').count();
+  const stations = await page.evaluate(() => (window as any).__cw.AISLE_COUNT);
+  expect(dots, 'a dot per station, or the aisle bar has drifted from the room').toBe(stations);
+
+  const start = await page.evaluate(() => (window as any).__cw.currentAisle());
+
+  /* The arrow, which is the control that does not have to be discovered. */
+  await page.locator('#aisleR').dispatchEvent('click');
+  await page.evaluate(() => (window as any).__cw.advance(2));
+  const afterArrow = await page.evaluate(() => ({
+    aisle: (window as any).__cw.currentAisle(),
+    camX: (window as any).__cw.stationCamera.position.x
+  }));
+  expect(afterArrow.aisle, 'the right arrow did not walk to the next aisle').toBeGreaterThan(start);
+
+  /* And the camera actually WENT there, rather than an index changing under a
+     shop that stayed exactly where it was. */
+  const wantX = await page.evaluate((i) => (window as any).__cw.stationXOf(i), afterArrow.aisle);
+  expect(Math.abs(afterArrow.camX - wantX),
+    'the aisle changed but the camera did not move to it').toBeLessThan(0.2);
+
+  /* The swipe: a drag past the threshold on the stage, walking back the way we
+     came. */
+  const before = afterArrow.aisle;
+  await page.evaluate(() => {
+    const el = document.getElementById('shopStage')!;
+    const y = window.innerHeight * 0.35;
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 60, clientY: y }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 260, clientY: y }));
+    (window as any).__cw.advance(2);
+  });
+  const afterSwipe = await page.evaluate(() => (window as any).__cw.currentAisle());
+  expect(afterSwipe, 'dragging right did not walk back an aisle').toBeLessThan(before);
+
+  /* A short drag is a TAP, not a swipe. The two gestures start identically and
+     this is the line between them. */
+  const held = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const at = w.currentAisle();
+    const el = document.getElementById('shopStage')!;
+    const y = window.innerHeight * 0.35;
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 180, clientY: y }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 196, clientY: y }));
+    w.advance(1);
+    return { was: at, now: w.currentAisle() };
+  });
+  expect(held.now, 'a 16 px drag changed aisle; that is a tap, not a swipe').toBe(held.was);
+});
+
+test('the Outfitter will not sell a device that has not been dug up', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* A player with unlimited money and every depth record in the game who has
+     still never found a Cutting Laser. Money must not be able to buy one. */
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.credits = 9e6;
+    w.g.best.depth = 300;
+    for (const k of ['iron', 'copper', 'silver', 'gold', 'amethyst', 'emerald', 'ruby']) {
+      w.g.stock[k] = 99;
+    }
+    w.g.found.length = 0;
+    w.g.px = 6; w.g.pd = -1;
+    w.advance(0.5);
+  });
+  await page.locator('#btnShop').dispatchEvent('click');
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+
+  const shelf = await page.evaluate(() => (window as any).__cw.shelfKeys());
+  for (const k of ['laser', 'bomb', 'auto', 'magnet', 'survey', 'drone', 'reactor']) {
+    expect(shelf, k + ' is on the shelf of a player who has never found one').not.toContain(k);
+  }
+  /* And the eight that ARE sold are all there, or the gate has eaten the shop. */
+  for (const k of ['drill', 'cargo', 'thrust', 'tank', 'scan', 'tow', 'hull', 'cool']) {
+    expect(shelf, k + ' is sold at the shop and is missing from the shelf').toContain(k);
+  }
+
+  /* ORDNANCE is entirely devices, so its aisle has nothing in it and the walk
+     refuses to stop there. */
+  const ord = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const i = w.aisleOf('bomb');
+    return { i, stocked: w.aisleStocked(i) };
+  });
+  expect(ord.stocked, 'the ORDNANCE aisle has stock before anything has been found').toBe(false);
+
+  /* Now dig one up, and the whole aisle lights. */
+  const after = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.grantFind('bomb');
+    w.buildShop();
+    return { stocked: w.aisleStocked(w.aisleOf('bomb')), shelf: w.shelfKeys() };
+  });
+  expect(after.stocked, 'finding a charge did not light the ORDNANCE aisle').toBe(true);
+  expect(after.shelf, 'a found charge is still not on the shelf').toContain('bomb');
+});
+
+test('every case is fully inside the frame, plate and all', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.credits = 9e6;
+    w.g.best.depth = 300;
+    for (const k of ['magnet', 'survey', 'bomb', 'laser', 'auto', 'drone', 'reactor']) {
+      if (!w.g.found.includes(k)) w.g.found.push(k);
+    }
+    w.g.px = 6; w.g.pd = -1;
+    w.advance(0.5);
+  });
+  await page.locator('#btnShop').dispatchEvent('click');
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+
+  const bad: string[] = [];
+  const n = await page.evaluate(() => (window as any).__cw.AISLE_COUNT);
+  for (let i = 1; i < n; i++) {
+    const rows = await page.evaluate((i) => {
+      const w = (window as any).__cw;
+      w.goAisle(i);
+      w.advance(2);
+      w.stationScene.updateMatrixWorld(true);
+      w.stationCamera.updateMatrixWorld(true);
+      /* The band the player can actually SEE: under the aisle bar and above
+         the tray. Composing into the whole canvas is the fault this measures,
+         and it is the one he reported. */
+      const bar = document.querySelector('#shop .aislebar')!;
+      const tray = document.querySelector('#shop .tray')!;
+      const top = bar.getBoundingClientRect().bottom;
+      const bot = tray.getBoundingClientRect().top;
+      const out: any[] = [];
+      for (const b of w.bays) {
+        if (!b.group.visible) continue;
+        /* The PLATE's own corners, not the group's origin. A centre inside the
+           frame says nothing at all about a 136 px wide plate hanging off it,
+           which is exactly how two cases per aisle shipped half off the edge
+           while every measured number said they were fine. */
+        const box = new w.Box3Ctor().setFromObject(b.plate);
+        let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+        for (const cx of [box.min.x, box.max.x]) {
+          for (const cy of [box.min.y, box.max.y]) {
+            for (const cz of [box.min.z, box.max.z]) {
+              const p = new w.Vec3Ctor(cx, cy, cz).project(w.stationCamera);
+              const sx = (p.x * 0.5 + 0.5) * window.innerWidth;
+              const sy = (-p.y * 0.5 + 0.5) * window.innerHeight;
+              x0 = Math.min(x0, sx); x1 = Math.max(x1, sx);
+              y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+            }
+          }
+        }
+        out.push({ key: b.key, x0: Math.round(x0), x1: Math.round(x1),
+                   y0: Math.round(y0), y1: Math.round(y1),
+                   W: window.innerWidth, top: Math.round(top), bot: Math.round(bot) });
+      }
+      return out;
+    }, i);
+    for (const r of rows) {
+      /* A margin, not a boundary. Flush with the edge passes an `x > 0` test
+         and still reads as a plate somebody forgot to finish. */
+      const M = 6;
+      if (r.x0 < M || r.x1 > r.W - M) bad.push(r.key + ' runs off the side (' + r.x0 + '..' + r.x1 + ' of ' + r.W + ')');
+      if (r.y1 > r.bot) bad.push(r.key + ' runs under the tray (' + r.y1 + ' past ' + r.bot + ')');
+      if (r.y0 < r.top) bad.push(r.key + ' runs under the aisle bar (' + r.y0 + ' above ' + r.top + ')');
+    }
+  }
+  expect(bad.join('; '), 'a case is not fully on screen').toBe('');
 });

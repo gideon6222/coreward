@@ -832,17 +832,53 @@ behind it is a bright line and this renderer will never have bloom.
 
 ## Milestones
 
-- [ ] **S1 The two faults** - the tray's height measured on the phone and the
+- [x] **S1 The two faults** - the tray's height measured on the phone and the
       room framed above it; ship and shelf separated by composition
-- [ ] **S2 `sim/finds.ts`** - seven devices, hashed positions on offset 257, the
+- [x] **S2 `sim/finds.ts`** - seven devices, hashed positions on offset 257, the
       block, the break, the banner, the save field, the tests
-- [ ] **S3 The shop sells what you own** - `shelfStock` gains the found gate,
+- [x] **S3 The shop sells what you own** - `shelfStock` gains the found gate,
       departments become the layout, ordnance starts dark
-- [ ] **S4 The aisles** - camera stations, swipe, dot row AND arrows, the dark
-      aisle, the cut to the ship on a purchase
-- [ ] **S5 The look** - brass and rivets, rationed magenta and cyan, one Matrix
-      terminal, fresnel proxies on the tubes
+- [x] **S4 The aisles** - camera stations, swipe, dot row AND arrows, the dark
+      aisle. The cut-to-the-ship on a purchase was CUT: the ship is a station of
+      its own at the end of the run, and moving the camera under the player
+      every time they buy a rung is a thing that is charming once and irritating
+      the fourth time
+- [x] **S5 The look** - brass and rivets, rationed magenta and cyan, one Matrix
+      terminal, fresnel proxies on the tubes. Six measured corrections, every
+      one of them found by a screenshot rather than by the numbers - see the
+      note below
 - [ ] **S6 The phone pass** - judged at 1080x2340, with the light count measured
+
+## What the numbers missed, and the screenshots caught
+
+Worth writing down, because it is the same lesson twice and it is about the
+harness rather than about the room.
+
+A measurement harness was built for S1 that projects every case into screen
+pixels and compares it against the tray. It found the real fault immediately -
+the room was composed for the whole canvas while the tray covered 40% of it -
+and it was right about that. Then it passed a layout in which two of the five
+plates were half off the edges of the screen.
+
+**A case is not a point.** The harness measured projected CENTRES against a
+24-pixel margin. The plates are 136 pixels wide and the outer centres were 133
+pixels from the middle, so both hung over the edge while every centre was
+comfortably inside. The same blind spot passed a Matrix terminal a third of
+which was off the left edge.
+
+Five more things only the screenshot could say: the light pool under the
+counter was sized off the tube's LENGTH in both axes and threw a pink fog over
+the whole counter; the imported wall panels are a metre tall and sit on the
+deck, so the rack and the sign floated in pure black with nothing for a light
+to land on; the ambient was left at a workshop's 1.15 and drowned every neon in
+the room; the selection panel behind each case was a hard-edged rectangle
+visible on all five at once; and the aisle name was printed by the DOM directly
+on top of the 3D sign already saying it.
+
+The rule this earns: **a harness that measures positions cannot judge a
+composition.** Keep both. The numbers say what is provably wrong and the
+picture says what is actually wrong, and this round needed six passes of the
+second after the first had gone green.
 # Appendix: rounds one to three, as planned and shipped
 
 Kept because the reasoning is why the game is shaped the way it is. Everything below has

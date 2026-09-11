@@ -16,9 +16,24 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.27.0';
+export const VERSION = '0.28.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.28.0', date: '2026-09-10', title: 'Dug up, not bought',
+    notes: [
+      'Seven upgrades are no longer for sale at any price. The Salvage Magnet, Deep Survey, Seismic Charge, Reactor Core, Repair Drone, Autopilot and Cutting Laser are sealed in crates buried in the rock, and the Outfitter can only improve one once you have found it.',
+      'The first world holds three of them, at 20, 35 and 40 metres. The rest arrive with new worlds.',
+      'Breaking a crate fits the device on the spot and tells you in one line what it does. It does not pause the game - you keep drilling.',
+      'Leave one in the ground and it turns up on the next world. A device is never lost, only delayed.',
+      'The Outfitter is four departments now - RIG, LIFE, SURVEY and ORDNANCE - and you walk between them. Swipe, or tap the arrows either side.',
+      'Never more than five things in front of you at once, and the ship is parked at the pump at the end of the run instead of standing in front of the stock.',
+      'ORDNANCE starts dark, because everything in it has to be dug up. The first time you find a charge, the whole aisle lights.',
+      'Dock after finding something and the shop opens standing in front of it.',
+      'Brass, copper and riveted iron throughout, with gauges whose needles read your claim, your record depth and your store. One terminal behind the counter, running code.',
+      'Anything you were already carrying stays yours. A device you paid for is a device you found.'
+    ]
+  },
   {
     version: '0.27.0', date: '2026-09-10', title: 'The counter',
     notes: [

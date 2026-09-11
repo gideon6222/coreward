@@ -43,6 +43,7 @@
 import * as THREE from 'three';
 import { g } from './sim/state';
 import { GROUP_ORDER, GROUP_COLOR, GROUP_LABEL, type GroupName } from './stationsigns';
+import { SHIP_LAYER } from './scene';
 
 const PROPS = [
   'table-display', 'table-display-small', 'container', 'container-flat',
@@ -64,6 +65,56 @@ const deckMat = new THREE.MeshStandardMaterial({
 const gearMat = new THREE.MeshStandardMaterial({
   color: 0x767f8c, metalness: 0.6, roughness: 0.55, flatShading: true
 });
+
+/* ---------- the steampunk half ----------
+
+   Playtest: *"I was hoping for more of a mix of cyberpunk, matrix, and steam
+   punk."*
+
+   Three styles in one room is a recipe for mud unless each is given a JOB, and
+   the research is clear about what each one is actually made of:
+
+     steampunk  is MATERIALS AND PROPS - brass, copper, riveted iron, pipes,
+                gauges with needles, valve wheels. It reads through albedo and
+                silhouette and needs no lighting trick at all, which is exactly
+                why it can be everywhere. It is the room.
+     cyberpunk  is LIGHT - saturated magenta and cyan rationed against a warm
+                base. It is the signage and nothing else.
+     Matrix     is INFORMATION, on one surface, kept monochrome. See crtTexture.
+
+   So these three are the building, and every one of them is high metalness and
+   low roughness: brass that does not catch a light is painted wood. */
+export const brassMat = new THREE.MeshStandardMaterial({
+  color: 0xb8863c, metalness: 0.95, roughness: 0.32, flatShading: true
+});
+export const copperMat = new THREE.MeshStandardMaterial({
+  color: 0x9c5a32, metalness: 0.9, roughness: 0.4, flatShading: true
+});
+/* Riveted iron: dark, and rough enough that the brass beside it reads as the
+   precious one. A room of nothing but brass is a trumpet. */
+export const ironMat = new THREE.MeshStandardMaterial({
+  color: 0x32302c, metalness: 0.65, roughness: 0.74, flatShading: true
+});
+
+/* Rivets, as one instanced mesh for the whole room.
+
+   The single cheapest thing that says "built, and built a long time ago". Six
+   hundred of them cost one draw call, which is the only reason they are
+   affordable at all - six hundred meshes would not be. */
+const rivetGeo = new THREE.SphereGeometry(0.018, 5, 3);
+export function rivetRow(into: THREE.Object3D, x0: number, y: number, z: number,
+                         len: number, n: number) {
+  const m = new THREE.InstancedMesh(rivetGeo, brassMat, n);
+  const t = new THREE.Object3D();
+  for (let i = 0; i < n; i++) {
+    t.position.set(x0 + (len * i) / Math.max(1, n - 1), y, z);
+    t.updateMatrix();
+    m.setMatrixAt(i, t.matrix);
+  }
+  m.frustumCulled = false;
+  into.add(m);
+  return m;
+}
 
 function dress(o: THREE.Object3D, mat: THREE.Material) {
   o.traverse((n) => {
@@ -100,6 +151,182 @@ function prop(name: PropName, mat: THREE.Material, scale = 1): THREE.Object3D | 
   return o;
 }
 
+/* ---------- the Matrix terminal ----------
+
+   ONE surface in the whole room, and that exclusivity is the entire technique
+   rather than a budget decision.
+
+   The sourced finding: the film's green is a MONOCHROME grade - phosphor
+   #00ff41 on near-black, with brighter near-white-green at the hot points and
+   no other saturated hue allowed in the same read. It is not one neon among
+   several. Put it next to the magenta and the cyan on equal terms and both
+   identities cancel: the green stops reading as "a screen from that film" and
+   becomes "a third coloured light", and the cyberpunk pair stops reading as a
+   pair. So it gets a terminal, the terminal is green and black and nothing
+   else, and no fitting in this room is ever that colour.
+
+   It also costs almost nothing, which is the part that makes it viable here.
+   Falling glyph columns on a canvas at twelve frames a second, with the
+   scanlines drawn INTO the texture rather than added by a post pass this
+   renderer does not have. A CRT is one of the few things that is easier
+   without post-processing than with it. */
+const CRT_W = 256, CRT_H = 320;
+const GLYPHS = '01<>[]{}/\\|=+*#%$@&ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const COLS = 16;
+const CELL = CRT_W / COLS;
+const ROWS = Math.floor(CRT_H / 16);
+
+export interface Crt {
+  mesh: THREE.Mesh;
+  step(t: number): void;
+}
+
+export function makeCrt(w = 1.0, h = 1.25): Crt {
+  const c = document.createElement('canvas');
+  c.width = CRT_W; c.height = CRT_H;
+  const x = c.getContext('2d')!;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  /* One head per column, each falling at its own rate. Seeded off the column
+     index rather than Math.random, for the same reason everything else in this
+     repo is: a screen that looks different every time you open the shop is a
+     screen you cannot photograph and compare. */
+  const head: number[] = [], rate: number[] = [];
+  for (let i = 0; i < COLS; i++) {
+    head[i] = ((i * 7919) % 97) / 97 * ROWS;
+    rate[i] = 6 + ((i * 104729) % 11);
+  }
+
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, h),
+    /* Unlit and toneMapped off: a CRT emits, it is not lit. This is the one
+       place in the room where MeshBasicMaterial is the honest answer rather
+       than the lazy one. */
+    new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })
+  );
+
+  let acc = 0, last = 0;
+  return {
+    mesh,
+    step(t: number) {
+      /* Twelve frames a second, not sixty. A canvas redraw plus a texture
+         upload every frame for a decorative screen is the kind of cost that
+         does not show up until it is on a phone - and the effect is BETTER
+         slow, because real phosphor lags. */
+      if (t - last < 1 / 12) return;
+      acc += t - last;
+      last = t;
+
+      x.fillStyle = '#050a06';
+      x.fillRect(0, 0, CRT_W, CRT_H);
+      x.font = '700 13px "Chakra Petch", monospace';
+      x.textAlign = 'center';
+      for (let i = 0; i < COLS; i++) {
+        head[i] = (head[i] + acc * rate[i] * 0.12) % (ROWS + 14);
+        const hy = Math.floor(head[i]);
+        /* A tail of fourteen, fading from the near-white head down into the
+           black. The head being WHITER than the green is the detail that makes
+           it read as falling rather than as a static gradient. */
+        for (let k = 0; k < 14; k++) {
+          const r = hy - k;
+          if (r < 0 || r > ROWS) continue;
+          const gi = (i * 31 + r * 17 + Math.floor(head[i])) % GLYPHS.length;
+          x.fillStyle = k === 0 ? '#ccffcc'
+            : 'rgba(0,255,65,' + (0.85 * (1 - k / 14)).toFixed(3) + ')';
+          x.fillText(GLYPHS[gi], i * CELL + CELL / 2, r * 16 + 13);
+        }
+      }
+      /* Scanlines, drawn in. Every other row darkened is what a phosphor tube
+         looks like and what a bloom pass would never give you anyway. */
+      x.fillStyle = 'rgba(0,0,0,0.30)';
+      for (let y = 0; y < CRT_H; y += 3) x.fillRect(0, y, CRT_W, 1);
+      acc = 0;
+      tex.needsUpdate = true;
+    }
+  };
+}
+
+/* ---------- an analogue gauge ----------
+
+   The steampunk half's one moving part. A brass bezel, a dark face, a red
+   needle, and the needle reads REAL state - the claim's strain, the deepest
+   metre, what is in the shed. `CRAFT.md` warns against inventing a symbol for
+   something you can show; a dial in the fiction showing state the player
+   already has is not a duplicate HUD, it is the room knowing what you know. */
+export interface Gauge {
+  group: THREE.Group;
+  set(v: number): void;
+}
+
+function gaugeFaceTexture(label: string): THREE.CanvasTexture {
+  const S = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const x = c.getContext('2d')!;
+  x.fillStyle = '#12100c';
+  x.beginPath(); x.arc(S / 2, S / 2, S / 2 - 2, 0, Math.PI * 2); x.fill();
+  /* Ticks around the top 240 degrees, which is what a real dial uses. */
+  x.strokeStyle = '#d8c89a';
+  for (let i = 0; i <= 10; i++) {
+    const a = Math.PI * 0.9 + (i / 10) * Math.PI * 1.2;
+    const r0 = S / 2 - 8, r1 = i % 5 === 0 ? S / 2 - 20 : S / 2 - 14;
+    x.lineWidth = i % 5 === 0 ? 2.5 : 1.2;
+    x.beginPath();
+    x.moveTo(S / 2 + Math.cos(a) * r0, S / 2 + Math.sin(a) * r0);
+    x.lineTo(S / 2 + Math.cos(a) * r1, S / 2 + Math.sin(a) * r1);
+    x.stroke();
+  }
+  x.fillStyle = '#b8a473';
+  x.font = '700 13px "Chakra Petch", system-ui, sans-serif';
+  x.textAlign = 'center';
+  x.fillText(label, S / 2, S * 0.74);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+export function makeGauge(label: string, r = 0.2): Gauge {
+  const grp = new THREE.Group();
+  /* The bezel is a torus of real brass, lit by the room. That is the whole
+     reason the dial reads as an object rather than as a picture of one. */
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(r, r * 0.11, 6, 18), brassMat);
+  grp.add(bezel);
+  const face = new THREE.Mesh(
+    new THREE.CircleGeometry(r * 0.94, 20),
+    new THREE.MeshStandardMaterial({ map: gaugeFaceTexture(label), roughness: 0.55, metalness: 0.1 })
+  );
+  face.position.z = -0.006;
+  grp.add(face);
+  /* The needle pivots at its own end, so it swings rather than slides: the
+     geometry is offset inside a pivot group instead of the mesh being rotated
+     about its centre. */
+  const pivot = new THREE.Group();
+  const needle = new THREE.Mesh(
+    new THREE.BoxGeometry(r * 0.78, r * 0.045, 0.008),
+    new THREE.MeshStandardMaterial({ color: 0xd83c2c, roughness: 0.5, metalness: 0.2 })
+  );
+  needle.position.x = r * 0.34;
+  pivot.add(needle);
+  pivot.position.z = 0.012;
+  grp.add(pivot);
+  grp.add(new THREE.Mesh(new THREE.CylinderGeometry(r * 0.1, r * 0.1, 0.02, 8),
+    brassMat).rotateX(Math.PI / 2));
+
+  let shown = 0;
+  return {
+    group: grp,
+    set(v: number) {
+      /* Eased toward the reading rather than snapped to it, because a real
+         needle has mass and a snapping one reads as a number pretending to be
+         a dial. */
+      shown += (Math.max(0, Math.min(1, v)) - shown) * 0.12;
+      pivot.rotation.z = Math.PI * 0.9 + shown * Math.PI * 1.2;
+    }
+  };
+}
+
 /* ---------- neon ---------- */
 
 /* A soft radial falloff, drawn once and shared by every light pool.
@@ -109,7 +336,7 @@ function prop(name: PropName, mat: THREE.Material, scale = 1): THREE.Object3D | 
    - the edge is the tell - so the gradient goes into a texture and the quad
    that carries it is tinted per fitting. */
 let fallTex: THREE.CanvasTexture | null = null;
-function falloffTexture(): THREE.CanvasTexture {
+export function falloffTexture(): THREE.CanvasTexture {
   if (fallTex) return fallTex;
   const S = 128;
   const c = document.createElement('canvas');
@@ -123,6 +350,74 @@ function falloffTexture(): THREE.CanvasTexture {
   x.fillRect(0, 0, S, S);
   fallTex = new THREE.CanvasTexture(c);
   return fallTex;
+}
+
+/* ---------- glow without a bloom pass ----------
+
+   The sourced technique, and it is the one thing that was actually missing
+   from round five's fittings. A tube with an emissive material and no bloom
+   behind it is a bright line: the light stops dead at the silhouette, which is
+   the opposite of what a gas discharge tube does.
+
+   The fix is a smooth PROXY - a second, slightly larger cylinder around the
+   tube carrying a fresnel falloff, so the apparent brightness rises toward the
+   grazing edges the way a real tube's does. It has to be its own smooth mesh
+   rather than the tube's own material because the falloff is computed from
+   interpolated normals, and the flat-shaded low-poly geometry this game is
+   made of has none worth reading. That limitation is in the source and it is
+   the reason this is an added mesh rather than a material tweak.
+
+   Additive and depth-write-free, so it layers over the housing without
+   punching a hole in it, and `side: BackFace` so the near half of the shell
+   does not wash out the tube it is meant to be surrounding. */
+const fresnelVert = `
+  varying vec3 vN;
+  varying vec3 vV;
+  void main() {
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vN = normalize(mat3(modelMatrix) * normal);
+    vV = normalize(cameraPosition - wp.xyz);
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }`;
+const fresnelFrag = `
+  uniform vec3 uColor;
+  uniform float uPower;
+  uniform float uAmount;
+  varying vec3 vN;
+  varying vec3 vV;
+  void main() {
+    /* One minus the facing ratio: zero head-on, one at the grazing edge. */
+    float f = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+    f = pow(clamp(f, 0.0, 1.0), uPower);
+    gl_FragColor = vec4(uColor * f * uAmount, f * uAmount);
+  }`;
+
+export interface Halo extends THREE.Mesh {
+  material: THREE.ShaderMaterial;
+}
+
+function fresnelShell(color: number, len: number, r: number): Halo {
+  const m = new THREE.Mesh(
+    /* Smooth: 16 segments and no flat shading, because the whole effect is
+       computed off the interpolated normal. */
+    new THREE.CylinderGeometry(r * 1.9, r * 1.9, len * 1.02, 16, 1, true),
+    new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(color) },
+        uPower: { value: 2.2 },
+        uAmount: { value: 0.8 }
+      },
+      vertexShader: fresnelVert,
+      fragmentShader: fresnelFrag,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.BackSide,
+      toneMapped: false
+    })
+  ) as Halo;
+  m.rotation.z = Math.PI / 2;
+  return m;
 }
 
 /* How many real lights the room has handed out.
@@ -190,19 +485,29 @@ export function neonFitting(color: number, len: number, opts: {
 
   /* The light. Short range and no shadow - a point-light shadow is six cube
      faces and this room would pay for it on every fragment. */
-  if (lightsUsed < NEON_LIGHT_BUDGET) {
+  if ((opts.light ?? 2.4) > 0 && lightsUsed < NEON_LIGHT_BUDGET) {
     const l = new THREE.PointLight(color, opts.light ?? 2.4, opts.pool ?? 1.6, 2);
     l.castShadow = false;
     l.position.z = 0.06;
+    /* Its own full intensity, remembered, so setNeon can dim and restore it
+       without every caller having to hand the number back. */
+    l.userData.base = opts.light ?? 2.4;
     grp.add(l);
     lightsUsed++;
   }
 
   /* And the pool it throws on whatever is behind it. */
+  /* Sized off the tube's length ALONG it and off its radius ACROSS it.
+
+     Both axes used to scale with the length, so the 3.2-metre strip under the
+     counter threw a 4.8 by 1.8 metre haze - a wash over the whole counter and
+     the two cases standing on it, which in the screenshot read as a pink fog
+     with upgrades floating in it. A light pool is long and thin because the
+     thing making it is long and thin. */
   const pool = new THREE.Mesh(
-    new THREE.PlaneGeometry(len * 1.5, len * 0.55),
+    new THREE.PlaneGeometry(len * 1.08, Math.min(len * 0.3, r * 18)),
     new THREE.MeshBasicMaterial({
-      color, map: falloffTexture(), transparent: true, opacity: 0.3,
+      color, map: falloffTexture(), transparent: true, opacity: 0.26,
       blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
     })
   );
@@ -213,14 +518,21 @@ export function neonFitting(color: number, len: number, opts: {
      children[0] and children[1] from three different places, which is a
      structure nobody can change without breaking a caller that never said what
      it wanted. */
+  /* The fresnel shell, between the tube and the pool: it is the glow the tube
+     itself cannot have without a bloom pass. */
+  const halo = fresnelShell(color, len, r);
+  grp.add(halo);
+
   (grp as NeonFitting).tube = tube;
   (grp as NeonFitting).pool = pool;
+  (grp as NeonFitting).halo = halo;
   return grp as NeonFitting;
 }
 
 export interface NeonFitting extends THREE.Group {
   tube: THREE.Mesh;
   pool: THREE.Mesh;
+  halo: Halo;
 }
 
 /* How brightly a fitting is burning, 0 to 1 of its own colour. Drives the
@@ -230,6 +542,16 @@ export function setNeon(f: NeonFitting, amount: number) {
   const a = Math.max(0, Math.min(1, amount));
   (f.tube.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.25 + a * 1.15;
   (f.pool.material as THREE.MeshBasicMaterial).opacity = 0.1 + a * 0.34;
+  /* All three together, always. A tube that brightens without its pool is back
+     to being a sticker, and one that brightens without its halo is a bright
+     line again - which is exactly the fault round five shipped. */
+  if (f.halo) f.halo.material.uniforms.uAmount.value = 0.15 + a * 0.85;
+  /* And the real light, when this fitting got one. Dimming a fitting whose
+     lamp keeps burning is the tell that the lamp was never really its. */
+  for (const c of f.children) {
+    const l = c as THREE.PointLight;
+    if (l.isPointLight) l.intensity = (l.userData.base || 2.4) * (0.15 + a * 0.85);
+  }
 }
 
 /* Kept as a thin alias so the callers that only want a lit line still read
@@ -238,18 +560,47 @@ export function neonBar(color: number, w: number, _h = 0.05, _glow = 3.2): NeonF
   return neonFitting(color, w);
 }
 
-/* ---------- the room ---------- */
+/* ---------- the room ----------
 
-export interface Plinth {
+   Round six: a shop you walk ALONG rather than a wall you stand at.
+
+   Playtest: *"find a way to split the upgrades into categories, that aren't
+   all shown at once ... an intuitive way to scroll or swap through upgrades."*
+
+   Four departments, each with its own bay, its own sign in its own colour and
+   its own camera station, plus a forecourt at one end where the ship is parked
+   at the pump. Swipe or tap an arrow and the camera glides to the next bay.
+   Never more than five cases in a shot, which is the sourced ceiling for how
+   many options a phone should carry at once.
+
+   THE SHIP AND THE SHELF STOP SHARING A SHOT. That is not a nicety, it is the
+   fault he reported: the ship stood at z 0.9 with nine cases on a wall at
+   z -2.15 behind it, and with a 22 degree horizontal field there is no
+   "beside the ship" in portrait to move them to. Composition fixes it; nudging
+   never could. */
+
+export const AISLE_SPAN = 4.6;
+/* Station 0 is the forecourt; 1..4 are the four departments in GROUP_ORDER. */
+export const FORECOURT = 0;
+export function stationX(i: number) { return (i - 1) * AISLE_SPAN; }
+
+export interface Bay {
   name: GroupName;
-  group: THREE.Group;
-  hit: THREE.Object3D;
-  setPicked(on: boolean): void;
+  sign: NeonFitting;
+  /* The lit plate over the bay carrying the department's name. Dimmed rather
+     than hidden when the department has nothing in it - a dark aisle you can
+     see is a promise, an absent one is nothing. */
+  label: THREE.Mesh;
+  setLit(on: boolean, stocked: boolean): void;
 }
 
 export interface Room {
   group: THREE.Group;
-  plinths: Plinth[];
+  bays: Bay[];
+  crt: Crt;
+  gauges: { g: Gauge; read: () => number }[];
+  /* Moves the two roaming lights to a bay. See the note where they are made. */
+  setAisle(i: number): void;
   step(t: number): void;
 }
 
@@ -263,121 +614,271 @@ export function buildRoom(): Room | null {
   resetNeonLights();
   const root = new THREE.Group();
 
-  /* --- the deck --- */
-  for (let x = -2; x <= 2; x++) {
-    for (let z = -2; z <= 1; z++) {
+  const LEFT = stationX(0) - 2.6;
+  const RIGHT = stationX(4) + 2.6;
+
+  /* --- the deck, the length of the whole run --- */
+  for (let x = Math.floor(LEFT); x <= Math.ceil(RIGHT); x++) {
+    for (let z = -2; z <= 2; z++) {
       const p = prop('floor-panel', deckMat, 1.0);
       if (!p) continue;
-      p.position.set(x * 1.0, -1.35, z * 1.0);
+      p.position.set(x, -1.35, z);
       root.add(p);
     }
   }
 
-  /* --- the back wall, with a window onto wherever you are parked --- */
-  for (let x = -2; x <= 2; x++) {
-    const w = prop(x === 0 ? 'wall-window' : 'wall', deckMat, 1.0);
+  /* --- the back wall, riveted iron with a window every few metres --- */
+  for (let x = Math.floor(LEFT); x <= Math.ceil(RIGHT); x++) {
+    const w = prop(Math.abs(x % 4) === 2 ? 'wall-window' : 'wall', ironMat, 1.0);
     if (!w) continue;
-    w.position.set(x * 1.0, -1.35, -2.5);
+    w.position.set(x, -1.35, -2.5);
     root.add(w);
   }
+  /* And a real wall ABOVE them.
 
-  /* --- pipe runs, which is most of what says "this is machinery" --- */
-  for (const sx of [-2.2, 2.2]) {
-    for (let i = 0; i < 4; i++) {
-      const p = prop('pipe', gearMat, 1.0);
-      if (!p) continue;
-      p.position.set(sx, -0.5 + i * 0.02, -2.0 + i * 1.0);
-      p.rotation.y = Math.PI / 2;
-      root.add(p);
-    }
-    const b = prop('pipe-bend', gearMat, 1.0);
-    if (b) { b.position.set(sx, -0.48, 1.1); root.add(b); }
+     The imported wall panels are one metre tall and sit on the deck, so they
+     cover y -1.35 to -0.35 - the whole of which is below the rack at 0.46 and
+     the sign at 1.4. The screenshot showed both floating in pure black with
+     nothing behind them, and worse, nothing for a light pool to LAND on, which
+     is the one thing a neon fitting needs in order to read as a light rather
+     than as a lit line. A flat plate, in the same riveted iron, is the surface
+     the whole lighting idea has been missing. */
+  const upper = new THREE.Mesh(
+    new THREE.BoxGeometry(RIGHT - LEFT, 3.6, 0.16), ironMat);
+  upper.position.set((LEFT + RIGHT) / 2, 0.55, -2.55);
+  root.add(upper);
+  /* Seams every couple of metres, so it is a wall of panels rather than one
+     sheet - which is what stops a large flat surface reading as a backdrop. */
+  for (let x = Math.floor(LEFT); x <= Math.ceil(RIGHT); x += 2) {
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3.6, 0.06), brassMat);
+    seam.position.set(x, 0.55, -2.45);
+    root.add(seam);
   }
 
-  /* --- the work: an ore skip, crates and samples on the deck --- */
-  const skip = prop('skip-rocks', gearMat, 0.95);
-  if (skip) { skip.position.set(-2.15, -1.32, 0.4); skip.rotation.y = 0.5; root.add(skip); }
-  const crateA = prop('container', gearMat, 0.9);
-  if (crateA) { crateA.position.set(2.15, -1.32, -0.5); crateA.rotation.y = -0.35; root.add(crateA); }
-  const crateB = prop('container-flat', gearMat, 0.9);
-  if (crateB) { crateB.position.set(2.3, -1.32, 0.5); crateB.rotation.y = 0.2; root.add(crateB); }
-  for (const [rx, rz, rr] of [[-1.5, 1.0, 0.4], [1.6, 1.15, -0.9]] as [number, number, number][]) {
-    const r = prop('rocks', gearMat, 0.55);
+  /* A brass rail along the top of the wall with rivets under it. Two primitives
+     and an instanced mesh, and it is most of what makes the wall read as built
+     rather than extruded. */
+  const rail = new THREE.Mesh(
+    new THREE.BoxGeometry(RIGHT - LEFT, 0.09, 0.14), brassMat);
+  rail.position.set((LEFT + RIGHT) / 2, 1.92, -2.35);
+  root.add(rail);
+  rivetRow(root, LEFT, 1.79, -2.3, RIGHT - LEFT, Math.round((RIGHT - LEFT) * 3));
+
+  /* --- pipe runs along the ceiling line, the length of the shop --- */
+  for (let i = 0; i < Math.ceil(RIGHT - LEFT); i++) {
+    const p = prop('pipe', copperMat, 1.0);
+    if (!p) continue;
+    p.position.set(LEFT + i, 1.55, -2.2);
+    p.rotation.z = Math.PI / 2;
+    root.add(p);
+  }
+
+  /* ---------- the four department bays ---------- */
+  const bays: Bay[] = [];
+  GROUP_ORDER.forEach((name, i) => {
+    const ax = stationX(i + 1);
+    const col = GROUP_COLOR[name];
+
+    /* The counter: a brass top on a riveted iron body. This is the "display
+       case that is also a counter" from his own brief, and the expensive stock
+       stands on it - see layout() in station.ts. */
+    const body = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.86, 0.72), ironMat);
+    body.position.set(ax, -0.92, 1.25);
+    root.add(body);
+    /* Two ribs across the front. The panel is 3.4 by 0.86 and faces the camera
+       squarely with a lamp a foot in front of it, which in the screenshot was
+       a flat washed slab with two upgrades standing on it. Something for the
+       light to break across is the whole fix. */
+    for (const ry of [-0.72, -1.12]) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.05, 0.06), brassMat);
+      rib.position.set(ax, ry, 1.62);
+      root.add(rib);
+    }
+    const top = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.07, 0.86), brassMat);
+    top.position.set(ax, -0.46, 1.25);
+    root.add(top);
+    rivetRow(root, ax - 1.6, -1.26, 1.62, 3.2, 11);
+
+    /* The strip under the counter lip: what makes a glass case read as a case.
+       In the department's own colour rather than one warm tone for all four,
+       because the colour is what says which aisle you are standing in. */
+    const lip = neonFitting(col, 3.2, { light: 0 });
+    lip.position.set(ax, -0.78, 1.68);
+    root.add(lip);
+
+    /* The wall rack behind, and the shelf the standard stock sits on. */
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.07, 0.5), ironMat);
+    shelf.position.set(ax, 0.1, -2.1);
+    root.add(shelf);
+    for (const sx of [-1, 1]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.2, 0.08), brassMat);
+      post.position.set(ax + sx * 1.62, 0.95, -2.1);
+      root.add(post);
+    }
+
+    /* The sign over the bay. This is the aisle indicator, and it is a fitting
+       rather than an overlay - his note that three coloured lights in a row
+       normally mean categories was right, and this is that read made true. */
+    const sign = neonFitting(col, 2.4, { light: 0 });
+    sign.position.set(ax, 1.18, -2.28);
+    root.add(sign);
+    const label = makeLabel(GROUP_LABEL[name], col);
+    label.scale.setScalar(1.5);
+    label.position.set(ax, 0.84, -2.2);
+    root.add(label);
+
+    bays.push({
+      name, sign, label,
+      setLit(on: boolean, stocked: boolean) {
+        /* Three states, not two. The aisle you are in burns; an aisle with
+           stock you are not in idles; an aisle with NOTHING in it is dark -
+           which in the first hour is Ordnance, whose every device has to be
+           dug up. A department lighting for the first time is a better reward
+           than a row appearing in a list. */
+        setNeon(sign, !stocked ? 0.06 : on ? 1 : 0.42);
+        const lm = label.material as THREE.MeshBasicMaterial;
+        lm.transparent = true;
+        lm.opacity = !stocked ? 0.16 : on ? 1 : 0.5;
+      }
+    });
+  });
+
+  /* ---------- the forecourt ----------
+
+     Where the ship parks, and where all of the steampunk hardware is
+     concentrated: the pump, its gauges and the one Matrix terminal. Putting
+     them together rather than sprinkling them down the shop is what keeps the
+     styles from muddying - one place is the machine room, the rest is the
+     shop. */
+  const fx = stationX(FORECOURT);
+
+  /* The pump: a riveted column with a brass head and a hose to the ship. */
+  const pump = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.7, 0.5), ironMat);
+  pump.position.set(fx + 1.3, -0.5, 0.6);
+  root.add(pump);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.34, 0.6), brassMat);
+  head.position.set(fx + 1.3, 0.5, 0.6);
+  root.add(head);
+  rivetRow(root, fx + 1.05, -0.5, 0.86, 0.5, 4);
+  /* The hose, as a torus arc. A curve would be truer and a torus is two
+     numbers - and at this distance the only thing being read is "there is
+     something connecting the pump to the ship". */
+  const hose = new THREE.Mesh(
+    new THREE.TorusGeometry(0.62, 0.035, 5, 14, Math.PI * 0.8),
+    new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: 0.9, metalness: 0 }));
+  hose.position.set(fx + 0.95, -0.1, 0.6);
+  hose.rotation.set(0, 0, Math.PI * 0.15);
+  root.add(hose);
+
+  /* Three gauges on the wall behind the pump, reading real state. */
+  const gauges: { g: Gauge; read: () => number }[] = [
+    { g: makeGauge('STRAIN'), read: () => Math.min(1, g.claim.strain) },
+    { g: makeGauge('DEPTH'), read: () => Math.min(1, g.best.depth / 260) },
+    { g: makeGauge('STORE'), read: () => {
+      let n = 0; for (const k in g.stock) n += g.stock[k]; return Math.min(1, n / 120); } }
+  ];
+  /* Right of centre, with the terminal to the left of it.
+
+     Measured: at this wall's distance one world unit is about 122 screen
+     pixels on a 360-wide phone, so the terminal at fx - 1.5 spanned screen
+     x -3 to 119 - a third of it off the left edge, which the projected-centre
+     numbers passed because the centre itself was just inside. */
+  gauges.forEach((gg, i) => {
+    gg.g.group.position.set(fx + 0.3 + i * 0.46, 0.72, -2.28);
+    root.add(gg.g.group);
+  });
+  const gaugeBoard = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.62, 0.1), ironMat);
+  gaugeBoard.position.set(fx + 0.76, 0.72, -2.36);
+  root.add(gaugeBoard);
+  rivetRow(root, fx + 0.06, 0.44, -2.3, 1.4, 6);
+
+  /* The terminal. The only green in the room, and the only screen. */
+  const crt = makeCrt(1.0, 1.25);
+  crt.mesh.position.set(fx - 0.92, 0.35, -2.28);
+  root.add(crt.mesh);
+  /* A brass bezel round it, because a screen with no housing is a sticker -
+     the same lesson the neon needed in round five. */
+  const bezel = new THREE.Mesh(new THREE.BoxGeometry(1.16, 1.41, 0.12), brassMat);
+  bezel.position.set(fx - 0.92, 0.35, -2.36);
+  root.add(bezel);
+
+  /* --- the work, dressed along the run --- */
+  const skip = prop('skip-rocks', ironMat, 0.95);
+  if (skip) { skip.position.set(fx - 1.9, -1.32, 0.9); skip.rotation.y = 0.5; root.add(skip); }
+  for (const [cx, cz, cr] of [[stationX(1) - 2.3, 0.4, -0.35], [stationX(3) + 2.2, 0.5, 0.2],
+                              [stationX(4) + 1.9, -0.3, 0.7]] as [number, number, number][]) {
+    const box = prop('container', ironMat, 0.85);
+    if (box) { box.position.set(cx, -1.32, cz); box.rotation.y = cr; root.add(box); }
+  }
+  for (const [rx, rz, rr] of [[stationX(2) - 2.2, 1.0, 0.4], [stationX(4) - 2.4, 1.15, -0.9]] as
+       [number, number, number][]) {
+    const r = prop('rocks', ironMat, 0.55);
     if (r) { r.position.set(rx, -1.33, rz); r.rotation.y = rr; root.add(r); }
   }
 
-  /* --- the instruments on the back wall --- */
-  const consoles: { mesh: THREE.Object3D; bar: NeonFitting; read: () => number }[] = [];
-  const READS: { x: number; color: number; read: () => number }[] = [
-    { x: -1.35, color: 0xff6b5e, read: () => Math.min(1, g.claim.strain) },
-    { x: 0, color: 0x49e0c0, read: () => Math.min(1, g.best.depth / 260) },
-    { x: 1.35, color: 0x7fd86a, read: () => {
-      let n = 0; for (const k in g.stock) n += g.stock[k]; return Math.min(1, n / 120); } }
-  ];
-  for (const r of READS) {
-    const c = prop('computer', gearMat, 0.8);
-    if (!c) continue;
-    c.position.set(r.x, -1.34, -2.15);
-    root.add(c);
-    /* A lit bar across the console face carrying the reading. */
-    const bar = neonBar(r.color, 0.5, 0.045, 3.4);
-    bar.position.set(r.x, -0.86, -1.98);
-    root.add(bar);
-    consoles.push({ mesh: c, bar, read: r.read });
-  }
+  /* ---------- the lights that walk with you ----------
 
-  /* --- the counter the display cases stand on ---
+     Eight fittings and a budget of seven is a design that has already failed:
+     with one light per fitting the eighth simply never got one, which meant
+     the ORDNANCE sign was permanently unlit for no reason anybody could state.
+     Measured in the built game - eight real lights in the scene against a
+     stated ceiling of seven - rather than noticed by reading the code.
 
-     The plinths that used to be here are gone. They named the four upgrade
-     groups and filtered the shelf by them, which was a second mechanism bolted
-     onto the first and which shipped with the filtering cut - four lit,
-     labelled, tappable-looking objects that did nothing, and he found it in the
-     first minute.
+     The fix is not a bigger budget. Only ONE aisle is ever on screen, so only
+     one aisle's fittings can be doing any lighting work: two lights, moved to
+     whichever bay the camera is at. That is two instead of eight, it is always
+     the correct two, and it is why this room can afford the lip light to be as
+     strong as it is. */
+  const lipLight = new THREE.PointLight(0xffffff, 2.1, 2.4, 2);
+  lipLight.castShadow = false;
+  root.add(lipLight);
+  const signLight = new THREE.PointLight(0xffffff, 3.6, 3.2, 2);
+  signLight.castShadow = false;
+  root.add(signLight);
 
-     The layout is by PRICE now and it lives in station.ts's `layout()`: the
-     dear stock on this counter, the rest on the wall behind. Where a thing
-     stands is what says which kind it is, so nothing needs a label and nothing
-     needs tapping to be revealed. */
-  const plinths: Plinth[] = [];
-  const counter = prop('table-display', gearMat, 0.9);
-  if (counter) { counter.position.set(0, -1.34, 1.62); counter.scale.set(3.1, 0.9, 1.0); root.add(counter); }
-  /* A strip under the counter lip, which is the light that makes a glass case
-     read as a case. Warm, against the cool room. */
-  const lip = neonFitting(0xffc98a, 2.8, { light: 3.0, pool: 2.2 });
-  lip.position.set(0, -0.92, 2.12);
-  root.add(lip);
+  /* And one for the forecourt, which has no bay of its own but does have the
+     ship in it. Warm, filament-coloured, so the brass reads as brass: the
+     research puts two or three of the budget on practicals for exactly this. */
+  const pumpLight = new THREE.PointLight(0xffc27a, 5.5, 6.0, 2);
+  pumpLight.position.set(fx + 0.9, 1.0, 2.0);
+  pumpLight.castShadow = false;
+  pumpLight.layers.enable(SHIP_LAYER);
+  root.add(pumpLight);
+  /* A cool kicker from the other side, so the ship has a lit edge against the
+     dark wall instead of reading as a silhouette.
 
-  /* And one flat wash over the wall rack behind, which is what says "stock":
-     repetition under one even light rather than a highlight per item. */
-  const wash = neonFitting(0x8fb6ff, 2.9, { light: 2.2, pool: 2.6 });
-  wash.position.set(0, 1.92, -2.1);
-  root.add(wash);
+     The room's key was cut from 3.4 to 1.35 to let the neon carry, and the
+     ship went dark with the room - which is wrong, because the ship is the one
+     object in here whose SHAPE is game state. It gets its own pair rather than
+     the room's key coming back up. */
+  const shipKick = new THREE.PointLight(0x6fa8ff, 3.2, 5.0, 2);
+  shipKick.position.set(fx - 1.5, 0.3, 1.9);
+  shipKick.castShadow = false;
+  shipKick.layers.enable(SHIP_LAYER);
+  root.add(shipKick);
 
-  /* A foreground occluder: a rail close to the lens, overlapping the room
-     behind it. The diorama sources are consistent that this is what makes a
-     fixed-camera scene read as a space with depth rather than as a painted
-     backdrop - and it costs one imported model, because the camera never moves
-     far enough to reveal that there is nothing behind it. */
-  const fg = prop('rail', gearMat, 1.15);
-  if (fg) { fg.position.set(-0.2, -1.32, 3.6); root.add(fg); }
-
-  let t0 = 0;
   return {
     group: root,
-    plinths,
+    bays,
+    crt,
+    gauges,
+    setAisle(i: number) {
+      /* At the forecourt the two roaming lights go dark rather than lighting
+         an aisle nobody is looking at. */
+      const at = i >= 1 && i <= bays.length;
+      lipLight.visible = at;
+      signLight.visible = at;
+      if (!at) return;
+      const col = GROUP_COLOR[GROUP_ORDER[i - 1]];
+      const ax = stationX(i);
+      lipLight.color.setHex(col);
+      lipLight.position.set(ax, -0.6, 1.75);
+      signLight.color.setHex(col);
+      signLight.position.set(ax, 1.1, -2.0);
+    },
     step(t: number) {
-      t0 = t;
-      /* The consoles read live state. */
-      for (const c of consoles) {
-        const v = c.read();
-        c.bar.scale.x = 0.08 + v * 0.92;
-        setNeon(c.bar, v);
-      }
-      /* The samples turn. */
-      for (const p of plinths) {
-        const s = p.group.children.find((c) => c.type === 'Group' && c !== p.group);
-        if (s) s.rotation.y = t0 * 0.35;
-      }
+      crt.step(t);
+      for (const gg of gauges) gg.g.set(gg.read());
     }
   };
 }

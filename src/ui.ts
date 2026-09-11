@@ -12,7 +12,7 @@ import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
 import { R } from './sim/runtime';
 import { hap, haptics, setHaptics } from './haptics';
-import { selectedBay, refreshBays } from './station';
+import { selectedBay, refreshBays, paintAisleBar } from './station';
 import { PARTS, DRIVE_SLOTS } from './sim/drive';
 
 export /* el() is for lookups that may legitimately be absent. mustEl() is for the
@@ -332,6 +332,10 @@ export function buildShop() {
      whenever anything they show can have changed - which is exactly when this
      runs: opening the shop, and after every purchase. */
   refreshBays();
+  /* The dots too, and the arrows with them: buying the last thing in a
+     department cannot change which aisles have stock, but FINDING one can, and
+     a purchase is the moment the shop is rebuilt either way. */
+  paintAisleBar();
   buildCard();
   buildSupplies();
 }

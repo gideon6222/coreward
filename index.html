@@ -440,8 +440,13 @@
   body.docked #hud, body.docked #actions, body.docked #ctrl,
   body.docked #kit, body.docked #ord{display:none;}
   .screen.room > *{pointer-events:auto;}
+  /* The hint sits in the middle of the stage, which is the one band of the
+     room with nothing in it: the gap between the wall rack and the counter.
+     At the bottom it lay across the counter plates and at the top it lay
+     across the aisle's neon sign, and both of those are things it is asking
+     you to look at. */
   .stage{flex:1 1 auto; pointer-events:none; display:flex; align-items:flex-end;
-    justify-content:center; padding-bottom:8px;}
+    justify-content:center; padding-bottom:118px;}
   .hintline{
     font-size:10.5px; letter-spacing:.16em; color:var(--dim); opacity:.85;
     text-shadow:0 2px 10px #000; transition:opacity .3s;
@@ -516,6 +521,42 @@
   .shopname{font-size:18px; font-weight:700; letter-spacing:.18em;}
   .shopsub{font-size:10.5px; letter-spacing:.1em; color:var(--dim); margin-top:3px;}
   .shopcred{font-size:15px; font-weight:800; color:var(--amber); white-space:nowrap;}
+
+  /* ---------- the aisle bar ----------
+
+     The visible half of the aisle navigation. The diegetic half is the neon
+     sign over each bay, in the same colour; these dots mirror it so the two
+     are obviously the same control seen twice.
+
+     A dot per station, lit for the one you are standing in, dimmed to almost
+     nothing for a department with no stock yet - which in the first hour is
+     ORDNANCE, every device of which has to be dug out of the ground. A dark
+     dot is a promise. A missing one is nothing. */
+  .aislebar{
+    flex:0 0 auto; display:flex; align-items:center; gap:6px;
+    padding:7px 10px 8px;
+    background:linear-gradient(180deg,rgba(9,13,20,.82),rgba(9,13,20,0));
+  }
+  .aislemid{flex:1 1 auto; text-align:center; min-width:0;}
+  #aisles{display:flex; justify-content:center; gap:7px;}
+  #aisles .dot{
+    width:7px; height:7px; border-radius:50%; background:var(--c,#7f8ea8);
+    opacity:.34; transition:opacity .25s, transform .25s, box-shadow .25s;
+  }
+  /* The lit dot gets a halo of its own colour, which is the flat-UI version of
+     what the fitting in the room is doing. */
+  #aisles .dot.on{opacity:1; transform:scale(1.5); box-shadow:0 0 9px 2px var(--c,#7f8ea8);}
+  #aisles .dot.off{opacity:.1;}
+  #aisles .dot.pump{--c:#b8863c; border-radius:2px;}
+  .arw{
+    flex:0 0 auto; width:40px; height:40px; border-radius:11px;
+    border:1px solid var(--line); background:rgba(255,255,255,.04);
+    color:var(--ink); font-size:22px; line-height:1; font-weight:700;
+    transition:opacity .2s;
+  }
+  /* Greyed rather than removed: an arrow that vanishes moves the dots under
+     the thumb that was about to press it. */
+  .arw.gone{opacity:.18; pointer-events:none;}
   .screen #upgrades, .screen #supplies{padding:0 16px;}
   /* A counter reads as a label riveted to the bulkhead: a short bright rule
      before the name, a long dim one after it. */
@@ -896,8 +937,20 @@
     <div class="shopcred">&#9672; <span id="shopCredits">0</span></div>
   </div>
 
+  <!-- The aisle bar. Dots AND arrows, both, from the first commit: NN/g
+       measured a 21% drop in task completion for navigation with no visible
+       affordance, so a swipe on its own would be a shop most people only ever
+       see one quarter of. -->
+  <div class="aislebar">
+    <button id="aisleL" class="arw" aria-label="previous aisle">&#8249;</button>
+    <div class="aislemid">
+      <div id="aisles"></div>
+    </div>
+    <button id="aisleR" class="arw" aria-label="next aisle">&#8250;</button>
+  </div>
+
   <!-- pointer-events:none, so a tap lands on the bay behind it -->
-  <div class="stage" id="shopStage"><div class="hintline" id="shopHint">TAP A CASE TO INSPECT IT</div></div>
+  <div class="stage" id="shopStage"><div class="hintline" id="shopHint">SWIPE TO WALK THE AISLES</div></div>
 
   <div class="tray">
     <div id="shopCard" class="card"></div>
