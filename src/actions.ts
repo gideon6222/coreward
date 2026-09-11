@@ -5,6 +5,8 @@ import { clamp, key, stream } from './sim/util';
 import { newBreach, stepBreach } from './sim/breach';
 import { FIND_OF } from './sim/finds';
 import { hap } from './haptics';
+import { regionName } from './sim/region';
+import { anchorAt } from './sim/vaults';
 import { g, S, save, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
@@ -17,7 +19,7 @@ import { takeDrop, syncDrops, leaveDrop } from './drops';
 import { fireBeam } from './beam';
 import { setMark } from './mark';
 import { setDrillTier, setUpgradeHardware } from './ship';
-import { ui, toast, flash, atSurface, updateKit, foundBanner } from './ui';
+import { ui, toast, flash, atSurface, updateKit, foundBanner, updateHUD } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './sim/feel';
 import type { Dir, SupplyKey, UpgradeKey } from './types';
@@ -682,4 +684,57 @@ export function hardReset() {
   ui.pause.classList.add('hidden');
   flash('rgba(255,255,255,.5)', 400);
   toast('Progress wiped. Fresh start on ' + planetName(0) + '.');
+}
+
+/* ---------- an Anchor lights ----------
+
+   The biggest thing that happens in this game short of losing the ship, and
+   the only one that is unambiguously good. `POLISH.md`: one event, four
+   channels - light, sound, shake, haptic - fired together.
+
+   A MODAL, unlike a device find, and the difference is deliberate. A device
+   banner runs itself out over four seconds while the drill keeps turning,
+   because a device is a thing you are about to use. An Anchor is the objective
+   moving: the Ballast is permanently stronger, a region is now on your map,
+   and the machine on the pad has grown. That is worth stopping for, and it is
+   the one place in the round where stopping is right.
+
+   The wording says what changed and does NOT say how many are left. The count
+   is on the panel at the pad for anybody who wants it; putting "4 of 9" in the
+   moment turns a discovery into a checklist, and the research on withheld
+   rules is the whole reason this round exists. */
+export function anchorLit(region: number) {
+  const n = g.ground.lit.length;
+  /* Redraw the cell. The Anchor's BLOCK ID changes when it lights - 'anchor'
+     becomes 'anchorlit' - and the instanced pools are keyed by id, so nothing
+     in the world knows the cell has to move pools. Without this the monument
+     stays dark until the streaming window happens to rebuild, which is when
+     you cross a row - so the one thing the player is looking at is the one
+     thing that does not change, and then it changes later for no reason.
+
+     A full rebuild rather than a single instance, because moving one cell
+     between two pools by hand is three more places for the pools to disagree
+     with the world, and this happens nine times in a campaign. */
+  const a = anchorAt(region);
+  dropBlock(key(a.x, a.d));
+  resetBlockCache();
+  syncBlocks(true);
+  const x = worldX(g.px), y = -g.pd;
+  spray(x, y, 0x8fffc8, 260, 14, 2.4);
+  spray(x, y, 0xffffff, 120, 20, 1.6);
+  /* Short and light, because the CARD is the moment and the flash is only its
+     punctuation. The first version was .40 for 900 ms and it was still washing
+     the screen green when the modal was fully open and being read - a flash
+     under a modal is a flash nobody wants. */
+  flash('rgba(150,255,210,.26)', 480);
+  R.shake = Math.max(R.shake, 0.9);
+  sfx.relic();
+  hap.boom();
+  showEvent('THE ANCHOR WAKES',
+    regionName(region) + ' settles. The Ballast holds harder now, and the ground ' +
+    'here has drawn itself onto your map.' +
+    (n === 1 ? ' Whatever built these left nine of them.' : ''),
+    'GO ON',
+    () => { updateHUD(); });
+  save();
 }

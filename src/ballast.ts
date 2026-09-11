@@ -323,5 +323,5 @@ export function updateBallast(dt: number) {
   vm.opacity = dead ? 0 : 0.16 + puff * (0.2 + u * 0.45);
   vent.scale.setScalar(0.5 + puff * 0.28);
 
-  for (let i = 0; i < MAX_TIER; i++) collars[i].visible = i < s.tier;
+  for (let i = 0; i < MAX_TIER; i++) collars[i].visible = i < s.lit.length;
 }

@@ -3513,3 +3513,78 @@ That was a fact about a planet you flew to. The chip names the REGION now,
 because a chip that says the same word for a whole game says nothing - and it
 is derived from the pad's own region rather than typed out, because the region
 boundaries wander.
+
+## Round eight, W7, 2026-09-11: the first authored content in a generated world
+
+Everything in this planet had been rolled until now. W7 stamps hand-drawn rooms
+into it, and authored content fails differently from generated content: a
+generator fails by producing something WRONG, and a stamp fails by producing
+something INCOMPLETE. Half a room. A wall with nothing behind it. A door across
+the only way down.
+
+So the tests are mostly about wholeness, and three of them earned their keep:
+
+- **every Anchor hall is inside its own region, corner to corner.** The region
+  boundaries wander by up to seven metres and three columns, so a room eleven
+  cells wide placed at a region's nominal centre is a claim about insets, and
+  "far enough" is exactly the sort of claim that is wrong by two.
+- **every hall is shut.** Checked on the stamped world, not on the template: a
+  clip or an overlap is where a room loses a wall, and a hall with a gap in it
+  is one an ordinary shaft wanders into without the player noticing they
+  arrived anywhere.
+- **a locked door never locks the planet.** With nothing found at all, flood
+  the whole world through everything that is not unbreakable and check the
+  bottom is still reachable. Region 4's sealed hall sits directly under the pad
+  at 135 m, and the shaft does run into it - you go round, six columns over,
+  which is a good moment. It would not have been a good moment if it had been
+  the only way down.
+
+### A test that restated the implementation, and passed with the rule deleted
+
+The overlap test re-derived the stamp's own drop rule and then asserted the
+rule had been applied. Deleting the drop rule entirely left it green.
+
+The fix was to make placement *reportable*: `vaultPlan()` returns the rooms
+that are actually in the world, and the test asks whether every room on that
+list is stamped cell-for-cell as its template says, and whether any two of them
+overlap. Both read the OUTPUT. Neither can be satisfied by the code being
+self-consistent.
+
+The first attempt at that rewrite had its own bug and the test caught it
+immediately: it identified "was this room placed" by whether the room's centre
+cell was stamped - which is true of a room that was DROPPED for overlapping an
+Anchor, because the Anchor's own hall covers that cell. It reported a room that
+does not exist as having lost its walls.
+
+### Two mutations that passed, and the claims that were missing
+
+Sealing all nine halls passed. Putting sealed stone into the ordinary hall's
+wall passed. Neither is caught by any test above and both are the same failure:
+**the player meets the locked door before they have met the mechanic.** A door
+you cannot open is only a promise if you already know what doors are. So: the
+shallowest Anchor in the world is never sealed, at least half of them are open,
+and an unsealed hall contains no sealed stone anywhere.
+
+### Three things only the screenshot could find
+
+1. **The Anchor rendered as a flat teal tile.** `blocks.ts` decides between
+   "pebbles on a rock face" and "crystal shards" on `b.ore`, and a monument is
+   not ore. Flagging it fixed the look and immediately broke an e2e that counts
+   what materials the shallow world holds - correctly, and the fix is the
+   `notOre` list that already existed for crates and pockets.
+2. **The Anchor was in shadow, and the lighting was right.** The plinth was a
+   ring of worked stone on all four sides, so the light field did exactly what
+   it should with an enclosed cell and left the brightest object in the game a
+   dull smudge. It is a niche now - walls either side, floor underneath, open
+   above - which takes the lamp and is a better piece of architecture anyway.
+3. **Lighting one did not redraw it.** The block's ID changes from `anchor` to
+   `anchorlit`, and the instanced pools are keyed by id, so nothing in the
+   world knew the cell had to move pools. The monument stayed dark until the
+   streaming window happened to rebuild - which is when you cross a row, so the
+   thing you were looking at changed several seconds later for no reason.
+
+### And one number worth keeping
+
+Worked stone's `ROCK_BUMP` is 0.03 against 0.16-0.40 for every rock in the
+game. That single number is the whole visual read: every surface in this world
+is broken, and cut stone is not. No new texture, no new material.

@@ -7,7 +7,7 @@ import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, rel
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen,
-         groundTick, hereUnrest } from './sim/state';
+         groundTick, hereUnrest, lightHere } from './sim/state';
 import { unrestBand, tremorScale } from './sim/unrest';
 import { landCollapse } from './collapse';
 import { blockAt, findHere, climbCells } from './sim/world';
@@ -49,7 +49,7 @@ import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner } from './ui';
 import { stepGauges } from './gauges';
-import { sell, goSurface, die, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere } from './actions';
+import { sell, goSurface, die, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere, anchorLit } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
 import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
@@ -630,6 +630,11 @@ export function tick(raw: number, draw = true) {
       }
       R.wasAtSurface = now;
     }
+
+    /* Standing next to an Anchor lights it. Five Map lookups, every frame -
+       see lightHere() for why it cannot be on a timer. */
+    const litNow = lightHere();
+    if (litNow >= 0) anchorLit(litNow);
 
     /* The Ballast's own clock, and it only runs while the game is playing -
        not behind a shop sheet, not on the title, not mid-crossing. It decays

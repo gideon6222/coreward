@@ -148,6 +148,30 @@ export function ballastDrain(planetUnrest: number, tier: number): number {
   return BALLAST_DRAIN * (0.35 + planetUnrest) / (1 + tier * BALLAST_TIER_RELIEF);
 }
 
+/* How many Anchors are lit. Derived, never stored. */
+export const tierOf = (s: GroundState) => s.lit.length;
+
+/* ---------- lighting one ----------
+
+   Three things happen, and the third is the point:
+
+   1. the region's Unrest is pushed back - not to zero. An Anchor holds the
+      ground down, it does not undo what you did to it
+   2. the Ballast gains a permanent tier, which slows its drain for the rest of
+      the game and stacks a collar on the machine at the pad
+   3. the planet wakes a little more, which is W8's business and is why this
+      returns how many are now lit */
+export const UNREST_AFTER_ANCHOR = 0.15;
+
+export function lightAnchor(s: GroundState, region: number): number {
+  if (s.lit.indexOf(region) >= 0) return s.lit.length;
+  s.lit.push(region);
+  s.unrest[region] = Math.min(s.unrest[region], UNREST_AFTER_ANCHOR);
+  return s.lit.length;
+}
+
+export const isLit = (s: GroundState, region: number) => s.lit.indexOf(region) >= 0;
+
 /* What a unit of ore is worth to it.
 
    Scored on the ore's TONE - its rank on the ladder, 1 to 10 - and not on its
@@ -208,9 +232,15 @@ export interface GroundState {
      array is what both the map and the save want. */
   unrest: number[];
   ballast: number;
-  /* Anchors lit. Raises the Ballast's resistance and its height on the pad.
-     Zero until W7. */
-  tier: number;
+  /* Anchors lit, by region. Raises the Ballast's resistance and its height on
+     the pad, and is the campaign's own progress bar.
+
+     A LIST and not just the count, because three different things want to know
+     WHICH: the map draws a lit Anchor differently from one you have only found,
+     the world draws the monument, and W8's threshold has to fire on the fifth
+     one exactly once. `tier` is derived from it rather than stored beside it -
+     two numbers that must agree is one number with a bug in it. */
+  lit: number[];
   /* Regions currently down, oldest first - which is also the order they are
      shored back up in. */
   collapsed: number[];
@@ -226,7 +256,7 @@ export interface GroundState {
 export function newGround(): GroundState {
   return {
     unrest: new Array(REGION_COUNT).fill(0),
-    ballast: 1, tier: 0, collapsed: [], pending: -1, collapses: 0, fed: 0
+    ballast: 1, lit: [], collapsed: [], pending: -1, collapses: 0, fed: 0
   };
 }
 
@@ -238,7 +268,11 @@ export function loadGround(raw: unknown): GroundState {
     for (let i = 0; i < REGION_COUNT; i++) s.unrest[i] = clamp01(Number(r.unrest[i]) || 0);
   }
   if (typeof r.ballast === 'number') s.ballast = clamp01(r.ballast);
-  if (typeof r.tier === 'number') s.tier = Math.max(0, Math.round(r.tier));
+  if (Array.isArray(r.lit)) {
+    s.lit = r.lit
+      .map((n) => Math.round(Number(n)))
+      .filter((n, i, a) => n >= 0 && n < REGION_COUNT && a.indexOf(n) === i);
+  }
   if (Array.isArray(r.collapsed)) {
     s.collapsed = r.collapsed
       .map((n) => Math.round(Number(n)))
@@ -285,7 +319,7 @@ export function isCollapsed(s: GroundState, region: number): boolean {
    once rather than every frame for as long as the tank sits on the floor. */
 export function drainBallast(s: GroundState, dt: number): { emptied: boolean } {
   if (s.ballast <= 0) return { emptied: false };
-  s.ballast = Math.max(0, s.ballast - ballastDrain(planetUnrest(s), s.tier) * dt);
+  s.ballast = Math.max(0, s.ballast - ballastDrain(planetUnrest(s), tierOf(s)) * dt);
   return { emptied: s.ballast <= 0 };
 }
 

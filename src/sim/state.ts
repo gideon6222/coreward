@@ -1,12 +1,13 @@
-import { regionAt } from './region';
-import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, ORES, matTotalFor, scrubSave, costOf, traitAt,
+import { regionAt, MAP_TILE, WORLD_DEPTH } from './region';
+import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, W, UPGRADES, SUPPLIES, ORES, matTotalFor, scrubSave, costOf, traitAt,
          bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
 import { FOUND_KEYS } from './finds';
 import { R } from './runtime';
 import { newGround, loadGround, cutCell, drainBallast, planetUnrest, collapseTarget,
-         isCollapsed, unrestBand, type GroundState } from './unrest';
+         isCollapsed, unrestBand, lightAnchor, isLit, type GroundState } from './unrest';
+import { anchorNear } from './vaults';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from '../types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
@@ -512,6 +513,40 @@ export function salePayout(v: number): number {
   const t = worldTrait();
   const clean = (t.cleanBonus && g.hull >= S.hullCap() - 0.5) ? 1 + t.cleanBonus : 1;
   return Math.round(v * (t.payout ?? 1) * clean);
+}
+
+/* ---------- lighting an Anchor ----------
+
+   Called from the frame loop, cheaply, every frame: five Map lookups against a
+   table built once. It has to be every frame rather than on a timer, because
+   the act is "I flew up to it" and a third of a second of standing next to a
+   monument with nothing happening is long enough to fly away again.
+
+   Returns the region lit, or -1. Everything the player SEES about it is
+   actions.ts's business - this only moves the state and opens the map. */
+export function lightHere(): number {
+  const r = anchorNear(Math.round(g.px), Math.max(0, Math.round(g.pd)));
+  if (r < 0 || isLit(g.ground, r)) return -1;
+  lightAnchor(g.ground, r);
+  revealRegion(r);
+  return r;
+}
+
+/* An Anchor lights its own region on the map.
+
+   One of the three things the design says lighting one does, and the cheapest
+   of them: the region's coarse tiles are simply added to `seen`. It is also
+   the strongest argument for going and lighting one - a whole region drawn in
+   without flying it, which on a 452 m planet is a real prize. */
+export function revealRegion(r: number) {
+  const add: string[] = [];
+  for (let ty = 0; ty * MAP_TILE < WORLD_DEPTH; ty++) {
+    for (let tx = 0; tx * MAP_TILE < W; tx++) {
+      if (regionAt(tx * MAP_TILE + MAP_TILE / 2, ty * MAP_TILE + MAP_TILE / 2) !== r) continue;
+      add.push(tx + ',' + ty);
+    }
+  }
+  markSeen(add);
 }
 
 /* A fresh planet. Only a wipe reaches this now: there is one world, so unlike

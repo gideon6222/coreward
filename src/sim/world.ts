@@ -4,6 +4,7 @@ import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES, traitOf } from './config';
 import { key, mixHex, rnd } from './util';
 import { regionAt } from './region';
+import { vaultCells, anchorHere, WORKED_HARD, SEALED_HARD } from './vaults';
 import { isCollapsed, hardScale } from './unrest';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
@@ -32,6 +33,27 @@ export function findCells(): Map<string, Find> {
 export function findHere(x: number, d: number): Find | null {
   return findCells().get(x + ',' + d) || null;
 }
+
+/* ---------- the authored rooms ----------
+
+   Built once and kept. Unlike the find crates this does not key on anything:
+   there is one world now and the rooms in it never move. Lighting an Anchor
+   changes what a cell LOOKS like and not where it is, so the stamp is
+   computed on the first cell that asks for it and never again. */
+let vcMap: Map<string, string> | null = null;
+export function vaultMap(): Map<string, string> {
+  if (!vcMap) vcMap = vaultCells();
+  return vcMap;
+}
+export function resetVaults() { vcMap = null; }
+
+/* Whether sealed stone will cut.
+
+   The Cutting Laser is the key, and it is the key because it already exists:
+   Hollow Knight's rule is that each key opens a few locks, and a new device
+   invented purely to open doors would be a key that opens exactly one. Having
+   FOUND it is enough - the laser's own charge is not spent on stone. */
+export const canCutSealed = () => g.found.includes('laser');
 
 export function blockAt(x: number, d: number): Block | null {
   if (d < 0 || x < 0 || x >= W) return null;
@@ -123,6 +145,82 @@ export function blockAt(x: number, d: number): Block | null {
     return { id: 'schematic', name: 'Sealed Crate', color: FIND_COLOR, host: FIND_HOST,
              glow: 1.0, shards: 9, tone: 9, hard: FIND_HARD * hm, wt: 0, value: 0,
              ore: true, find: true };
+  }
+
+  /* ---------- an authored room ----------
+
+     AFTER the three singletons, so a room that happens to be stamped over the
+     relic, a drive component or a crate does not swallow it - those are one
+     cell each on the whole planet and losing one is losing a whole thing. A
+     crate embedded in a room's wall reads perfectly well; a crate that does not
+     exist reads as nothing at all.
+
+     BEFORE everything that generates, because a room is authored and the rock
+     it is cut into is not. Nothing in a room is a coin flip. */
+  const vch = vaultMap().get(x + ',' + d);
+  if (vch) {
+    if (vch === '.') return null;
+    if (vch === 'A') {
+      /* The Anchor itself, and it is the one block in the game that cannot be
+         cut at all - not by the drill, not by a charge, not by the laser.
+
+         That is the whole ritual. You break into the hall, you cross it, you
+         cut one block of the plinth, and then you are STANDING NEXT TO the
+         thing rather than having mined it. `CRAFT.md`: make the moment a
+         place, not a pickup. The lighting happens in the frame loop, on
+         proximity - see lightHere(). */
+      const lit = g.ground.lit.includes(anchorHere(x, d));
+      /* `ore: true` and it is not ore. That flag is what blocks.ts reads to
+         decide between "pebbles on a rock face" and "crystal shards with a
+         halo", and a monument wants the second one - the first build had none
+         of it and the Anchor rendered as a flat teal tile on a plinth.
+
+         Safe, because the only thing `ore` otherwise does is decide what goes
+         into the hold when a block breaks, and this block cannot break. */
+      return { id: lit ? 'anchorlit' : 'anchor', name: lit ? 'Anchor · lit' : 'Anchor',
+               color: lit ? 0x9effd4 : 0x2f6f5e, host: 0x16241f,
+               glow: lit ? 1.0 : 0.30, shards: 10, tone: lit ? 10 : 6,
+               ore: true, hard: Infinity, wt: 0, value: 0 };
+    }
+    if (vch === '=') {
+      /* The locked door you can see. Unbreakable until the laser is FOUND,
+         and then merely very hard - which is the whole of the ability gate,
+         and it costs no new world at all. */
+      return { id: 'sealed', name: 'Sealed Stone', color: 0x5ad0e0, host: 0x1d2a33,
+               glow: 0.34,
+               hard: canCutSealed() ? baseRock(d, g.planet, x).hard * hm * SEALED_HARD : Infinity,
+               wt: 0, value: 0 };
+    }
+    if (vch === '#') {
+      /* Off the LOCAL BAND, like the rubble below it and unlike the flat
+         numbers the singletons use. A room at 300 m has to be harder than the
+         same room at 40 m for the same reason everything else down there is -
+         a fixed hardness would make the deepest halls the cheapest walls in
+         the game, which is exactly backwards. */
+      /* A little self-lit, unlike every rock in the game. Cut stone at the edge
+         of the lamp's reach was going black with the rock around it, which
+         threw away the one moment the room has to say "somebody built this"
+         before you are all the way inside it. */
+      return { id: 'worked', name: 'Worked Stone', color: 0x8a7f63, host: 0x2c2a24,
+               glow: 0.13, hard: baseRock(d, g.planet, x).hard * hm * WORKED_HARD,
+               wt: 0.4, value: 1 };
+    }
+    if (vch === 'r') {
+      const band = baseRock(d, g.planet, x);
+      return { id: RUBBLE.id, name: RUBBLE.name, glow: RUBBLE.glow,
+               color: mixHex(band.color, RUBBLE.color, 0.5),
+               hard: band.hard * hm * RUBBLE_HARD, wt: RUBBLE.wt, value: RUBBLE.value, ore: false };
+    }
+    if (vch === 'o') {
+      return { id: CACHE.id, name: CACHE.name, color: CACHE.color, host: CACHE.host, glow: CACHE.glow,
+               shards: CACHE.shards, tone: CACHE.tone, hard: CACHE.hard * hm, wt: CACHE.wt,
+               value: CACHE.value, ore: true, cache: true };
+    }
+    if (vch === '*') {
+      return { id: GEODE.id, name: GEODE.name, color: GEODE.color, host: GEODE.host, glow: GEODE.glow,
+               shards: GEODE.shards, tone: GEODE.tone, hard: GEODE.hard * hm, wt: GEODE.wt,
+               value: GEODE.value, ore: true };
+    }
   }
 
   /* Checked before generation, and only after `dug`, so a cell you have

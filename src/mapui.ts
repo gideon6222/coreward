@@ -36,11 +36,12 @@
 
 import { g, save } from './sim/state';
 import { W, paletteOf } from './sim/config';
-import { MAP_TILE, WORLD_DEPTH, regionAt, regionName,
+import { MAP_TILE, WORLD_DEPTH, mapKey, regionAt, regionName,
          REGION_COLS, REGION_ROWS, REGION_COUNT } from './sim/region';
 import { el, mustEl } from './ui';
 import { sfx } from './audio';
-import { isCollapsed, unrestBand, UNREST_BANDS } from './sim/unrest';
+import { isCollapsed, unrestBand, UNREST_BANDS, isLit } from './sim/unrest';
+import { ANCHOR_COUNT, anchorAt, anchorSealed } from './sim/vaults';
 
 /* The pad sits at the middle column, which is also where every run starts. */
 const PAD_COL = Math.floor(W / 2);
@@ -282,6 +283,31 @@ export function draw() {
     else dot(x, +p[1] * s, py(md), '#ff8fd8', 3);
   }
 
+  /* ---------- the Anchors ----------
+
+     The hunt, on the one screen that can show it. Three states, and which one
+     a marker is in is the whole of what the map has to say about the
+     objective:
+
+       LIT        a filled ring. Nine of these is the end of the game
+       FOUND      a hollow ring - you have surveyed the ground it is in, so you
+                  know it is there and have not been to it
+       SEALED     the same, in the colour of the stone you cannot cut. The
+                  "locked door you can see", and the map is where you see it
+                  from once you have walked away
+
+     An Anchor in ground you have never surveyed is not drawn at all. That is
+     the rule the whole map runs on and it is what makes lighting one - which
+     reveals its whole region - worth the trip. */
+  for (let r = 0; r < ANCHOR_COUNT; r++) {
+    const a = anchorAt(r);
+    if (a.d < d0 || a.d > d1) continue;
+    const lit = isLit(g.ground, r);
+    if (!lit && !seen.has(mapKey(a.x, a.d))) continue;
+    ring(x, a.x * s, py(a.d),
+         lit ? '#8fffc8' : anchorSealed(r) ? '#5ad0e0' : '#d8d2c0', lit);
+  }
+
   /* The pad, the one fixed point in the world, and then the ship over the top
      of it - because at the start of a run they are the same place and the one
      you need to see is the ship.
@@ -296,7 +322,11 @@ export function draw() {
   x.lineWidth = 1.5;
   x.fillRect(PAD_COL * s - 4, py(0) - 4, 8, 8);
   x.strokeRect(PAD_COL * s - 4, py(0) - 4, 8, 8);
-  dot(x, g.px * s, py(g.pd), '#ffc861', 5);
+  /* The ship LAST, and smaller than the Anchor ring it may be sitting on. The
+     two coincide at exactly the moment an Anchor lights, and the ship hiding
+     the thing you just lit is the one frame where the map has something to
+     say. */
+  dot(x, g.px * s, py(g.pd), '#ffc861', 4);
 
   const depth = el('mapDepth');
   if (depth) depth.textContent = Math.max(0, Math.round(view)) + ' – ' +
@@ -338,6 +368,23 @@ function dot(x: CanvasRenderingContext2D, px: number, py: number, col: string, r
   x.lineWidth = 1.5;
   x.strokeStyle = 'rgba(0,0,0,.7)';
   x.stroke();
+}
+
+/* An Anchor. A RING, which is a third silhouette after the ship's disc and a
+   device's diamond - hollow while it is only known and filled once it is lit,
+   so "how far through the game am I" is a glance at a map rather than a
+   counter anywhere. */
+function ring(x: CanvasRenderingContext2D, px: number, py: number, col: string, filled: boolean) {
+  x.beginPath();
+  x.arc(px, py, 6, 0, Math.PI * 2);
+  x.lineWidth = 2.4;
+  x.strokeStyle = col;
+  if (filled) { x.fillStyle = col; x.fill(); }
+  x.stroke();
+  x.beginPath();
+  x.arc(px, py, 2, 0, Math.PI * 2);
+  x.fillStyle = filled ? 'rgba(0,0,0,.55)' : col;
+  x.fill();
 }
 
 /* Devices get a different SHAPE and not just a different colour. At five

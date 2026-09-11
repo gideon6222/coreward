@@ -3,12 +3,12 @@
   "chunks": [
     {
       "name": "three",
-      "bytes": 531503,
+      "bytes": 532458,
       "tolerancePercent": 1
     },
     {
       "name": "index",
-      "bytes": 190399,
+      "bytes": 215826,
       "tolerancePercent": 12
     },
     {
@@ -23,7 +23,7 @@
     },
     {
       "name": "GLTFLoader",
-      "bytes": 46076,
+      "bytes": 46077,
       "tolerancePercent": 10
     },
     {

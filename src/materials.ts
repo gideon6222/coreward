@@ -142,7 +142,15 @@ export const ROCK_BUMP: Record<string, number> = {
   /* a seam is broken-up rock, rougher than the band it sits in */
   seam: 0.30,
   /* loose fill, so the roughest surface in the game */
-  rubble: 0.40
+  rubble: 0.40,
+  /* And the flattest, which is the entire read on W7's authored rooms.
+
+     Every other surface in this world is broken - that is what displacement is
+     for, and five rock types differ only in how broken. Worked stone is CUT,
+     so it is very nearly flat, and at play scale that is the difference you
+     notice first: a smooth face in a world with no smooth faces in it. No new
+     texture, no new material, one number. */
+  worked: 0.03, sealed: 0.02, anchor: 0.05, anchorlit: 0.05, fallen: 0.36
 };
 
 /* How many world units of rock one tile of the normal map covers, as a

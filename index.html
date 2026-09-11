@@ -829,13 +829,19 @@
        Without this the first pull scrolls the modal instead of the world. */
     touch-action:none;
   }
-  .mapkey{display:flex; align-items:center; gap:11px; font-size:10px; color:var(--dim); letter-spacing:.07em;}
+  /* Wraps, because the legend gained an entry per round and a legend that
+     runs off the side of a phone is a legend that explains the marks you can
+     still see and hides the ones you cannot. */
+  .mapkey{display:flex; flex-wrap:wrap; align-items:center; gap:6px 11px; font-size:10px; color:var(--dim); letter-spacing:.07em;}
   .mapkey span{display:flex; align-items:center; gap:5px;}
   .mapkey i{width:9px; height:9px; border-radius:2px; display:block;}
   /* The legend has to carry the SHAPE as well as the colour, because that is
      what the map does: at five pixels on a phone a hue is a guess. */
   .mapkey i.sq{border-radius:1px;}
   .mapkey i.dia{border-radius:1px; transform:rotate(45deg); width:8px; height:8px;}
+  /* Hollow, because that is the state you spend most of the game looking at:
+     an Anchor you know about and have not reached. */
+  .mapkey i.rng{background:none; border:2px solid #d8d2c0; border-radius:50%; width:10px; height:10px;}
   .maphint{font-size:10px; color:#4a5570; letter-spacing:.07em; margin-top:3px;}
   .mapkey .maphint{margin-left:auto; color:#4a5570;}
   .maprow{display:flex; gap:8px;}
@@ -1145,6 +1151,7 @@
       <span><i style="background:#ffc861"></i>SHIP</span>
       <span><i class="sq" style="background:#3fe0ff"></i>PAD</span>
       <span><i class="dia" style="background:#00ff41"></i>FOUND</span>
+      <span><i class="rng"></i>ANCHOR</span>
       <span class="maphint" id="mapPct">SURVEYED 0%</span>
     </div>
     <div class="maprow">

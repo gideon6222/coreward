@@ -1633,10 +1633,31 @@ independent of the objective work.
       landing on somebody who is still underground. Shoring one back costs 45%
       of the tank and never restores the tunnels.
 
-- [ ] **W7 Anchors, and vaults.** Nine Anchors across the regions. A small
+- [x] **W7 Anchors, and vaults.** Nine Anchors across the regions. A small
       library of authored vault templates dropped at seeded rare slots -
       sealed ones you can see and not open, the previous expedition, and empty
       ones so the full ones mean something.
+
+      *Done.* Nine Anchors, one in each region of the top three rows - the
+      deepest row holds none, because that row is the Vault's. Each stands in
+      a hand-authored hall of worked stone: a chamber you have to cut into, and
+      a niche in the middle of it. The Anchor cannot be mined at all; you fly
+      down to it and it lights. Lighting one pushes its region's Unrest back,
+      draws the whole region onto your map, and gives the Ballast a permanent
+      tier - a collar on the machine at the pad.
+
+      Three of the nine are behind SEALED stone, which nothing cuts until you
+      have found the Cutting Laser somewhere else. That is Hollow Knight's rule
+      applied for free: a tool that opens something you have already seen.
+
+      Sixteen more rooms at seeded slots, drawn from a pool that is mostly
+      EMPTY on purpose - if every worked room held something, worked stone
+      would be a reward rather than a question. The rest are the previous
+      expedition (their shaft, their spoil, the crate they left) and a worked
+      chamber round a pocket.
+
+      Five characters of authored world, 1,602 cells of it, 5.8% of the planet.
+      The whole library is legible as drawings in `src/sim/vaults.ts`.
 
 - [ ] **W8 The planet answers.** At the fifth Anchor, Unrest steps permanently,
       a hazard appears in ground you already know, and something new grows in

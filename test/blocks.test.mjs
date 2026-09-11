@@ -14,9 +14,18 @@ const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ALL_IDS = [
   ...H.ORES.map((o) => o.id), ...H.ROCKS.map((r) => r.id),
   H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, H.SEAM.id,
-  'core', 'bedrock', '(empty)', 'relic', 'part', 'schematic'
+  'core', 'bedrock', '(empty)', 'relic', 'part', 'schematic',
+  /* The authored rooms. Four ids and not one: a wall you can cut, a wall you
+     cannot, and the Anchor in two states are four different things to a player
+     and must be four different things to the snapshot. */
+  'worked', 'sealed', 'anchor', 'anchorlit'
 ].sort();
 const CHAR = new Map(ALL_IDS.map((id, i) => [id, ALPHA[i]]));
+
+/* Every authored cell in the world, built once. Several tests below need to
+   say "except inside a room", and asking the stamp is the only way to say it
+   that stays true when the rooms move. */
+const VAULT = H.vaultCells();
 assert.ok(ALL_IDS.length <= ALPHA.length, 'ran out of snapshot characters');
 
 /* An id with no character silently became the literal string "undefined" in
@@ -171,7 +180,19 @@ const PRE = JSON.parse(
    restating rather than lumping in, because the claim is what makes it legal:
    it consumes NO roll. It is not sampled from the world's noise at all, so it
    cannot move an ore, and the cells it takes are the only cells it touches. */
-const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'part', 'schematic']);
+const OVERWRITERS = new Set([
+  '(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'part', 'schematic',
+  /* W7's authored rooms, and they belong here for exactly the reason the
+     pockets do: a room is STAMPED over whatever the generator made, after
+     every roll has already happened, so it can change what a cell holds and
+     can never change what any other cell holds. The ore stream underneath is
+     untouched - which is the property this whole file exists to defend.
+
+     The rubble in the expedition room is the one that needs saying out loud:
+     rubble was previously only ever placed by a tremor, so it appears in this
+     list as a thing an authored room may leave behind. */
+  'worked', 'sealed', 'anchor', 'anchorlit', H.RUBBLE.id
+]);
 
 /* Extending the ore ladder downward is the other legal change, and it is a
    NARROWER claim than the one above, so it is stated narrowly rather than by
@@ -338,10 +359,16 @@ test('caves stay below CAVE_MIN_DEPTH and never eat the core', () => {
     H.setWorld(p);
     H.g.dug = new Set();
     const cd = H.coreDepth(p);
+    /* Except inside an authored room, which is open ground ON PURPOSE at
+       whatever depth it was placed - see vaults.ts. Named as an exception
+       rather than by lowering CAVE_MIN_DEPTH, because the claim is still that
+       the GENERATOR opens nothing up there, and a room is not the generator. */
     for (let d = 0; d < H.CAVE_MIN_DEPTH; d++)
-      for (let x = 0; x < H.W; x++)
+      for (let x = 0; x < H.W; x++) {
+        if (VAULT.has(x + ',' + d)) continue;
         assert.notEqual(H.blockAt(x, d), null,
           'planet ' + p + ': a cave opened at ' + d + ' m, above CAVE_MIN_DEPTH');
+      }
     for (let x = 0; x < H.W; x++) {
       assert.equal(H.blockAt(x, cd).id, 'core', 'planet ' + p + ': core row must survive caves');
       assert.equal(H.blockAt(x, cd + 1).id, 'bedrock', 'planet ' + p + ': floor must survive caves');
@@ -595,11 +622,23 @@ test('rubble never appears on its own, only where something put it', () => {
   H.setWorld(0);
   H.g.dug = new Set();
   H.g.rubble = new Set();
+  /* "Something put it" now means a tremor OR an authored room - the previous
+     expedition's spoil is the only rubble in the world that was not caved in
+     by the ground. The claim is unchanged: the generator never rolls it. */
+  let authored = 0;
   for (let d = 0; d < H.coreDepth(0); d++)
     for (let x = 0; x < H.W; x++) {
       const b = H.blockAt(x, d);
-      assert.notEqual(b && b.id, 'rubble', 'rubble generated at (' + x + ',' + d + ')');
+      if (b && b.id === 'rubble') {
+        assert.equal(VAULT.get(x + ',' + d), 'r',
+          'rubble generated at (' + x + ',' + d + ') with nothing to have put it there');
+        authored++;
+      }
     }
+  /* And the exception is not vacuous: there IS spoil in the world, so this
+     test is exercising the branch it just licensed rather than licensing a
+     branch that never runs. */
+  assert.ok(authored > 0, 'no expedition spoil anywhere in the world');
 });
 
 test('the tremor band is reachable on the planet everyone starts on', () => {

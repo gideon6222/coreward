@@ -221,28 +221,31 @@ test('a save from before this round loads a quiet planet, not a broken one', () 
   const old = H.loadGround({ strain: 0.8, refinery: 20, derrick: 0, shed: 55, quakes: 9 });
   assert.equal(old.ballast, 1);
   assert.equal(old.collapsed.length, 0);
+  assert.equal(old.lit.length, 0);
   assert.equal(old.unrest.length, H.REGION_COUNT);
   assert.equal(H.planetUnrest(old), 0);
 
   /* And a real one round-trips. */
   const s = fresh();
-  s.unrest[3] = 0.44; s.ballast = 0.6; s.tier = 2;
+  s.unrest[3] = 0.44; s.ballast = 0.6;
+  H.lightAnchor(s, 7); H.lightAnchor(s, 2);
   H.collapse(s, 3);
   const back = H.loadGround(JSON.parse(JSON.stringify(s)));
   assert.deepEqual(back.unrest, s.unrest);
   assert.deepEqual(back.collapsed, s.collapsed);
-  assert.equal(back.tier, 2);
+  assert.deepEqual(back.lit, [7, 2]);
+  assert.equal(H.tierOf(back), 2);
 });
 
 test('a corrupt save cannot put the planet into a state the game cannot draw', () => {
   const bad = H.loadGround({
-    unrest: [5, -3, 'x', null], ballast: 99, tier: -4,
+    unrest: [5, -3, 'x', null], ballast: 99, lit: [3, 3, 99, -2],
     collapsed: [0, 40, -1, 3], pending: 99
   });
   assert.equal(bad.unrest.length, H.REGION_COUNT);
   for (const u of bad.unrest) assert.ok(u >= 0 && u <= 1, `unrest out of range: ${u}`);
   assert.ok(bad.ballast <= 1 && bad.ballast >= 0);
-  assert.ok(bad.tier >= 0);
+  assert.deepEqual(bad.lit, [3], 'a duplicate and two out-of-range Anchors survived the load');
   for (const c of bad.collapsed) assert.ok(c >= 0 && c < H.REGION_COUNT, `region out of range: ${c}`);
   assert.equal(bad.pending, -1, 'a pending region off the end of the world survived the load');
 });

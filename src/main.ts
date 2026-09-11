@@ -3,7 +3,7 @@
    top to bottom. */
 import * as THREE from 'three';
 import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH } from './sim/config';
-import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest } from './sim/state';
+import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
@@ -27,7 +27,8 @@ import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCa
 import { openChart, arrive, skipTransit } from './chartui';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
 import { landCollapse } from './collapse';
-import { collapseTarget } from './sim/unrest';
+import { collapseTarget, lightAnchor } from './sim/unrest';
+import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells } from './sim/vaults';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
 
@@ -144,7 +145,7 @@ requestAnimationFrame(frame);
    usually means to make: DEPTH 0 m is true at pd 0.0 and at pd 0.49. */
 if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as { __cw: unknown }).__cw = {
-    tick, advance, stopClock, startClock, g, S, R, save,
+    tick, advance, stopClock, startClock, g, S, R, save, markSeen,
     /* The renderer's own handles, for tuning an art pass live. Every lighting
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
@@ -224,6 +225,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     openMap, closeMap, mapView, mapPan, mapSetView, mapDraw, MAP_TILE, WORLD_DEPTH,
     /* The campaign, so a spec can put the planet into a state it would take
        forty runs to reach and then check what the game does about it. */
-    padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT
+    padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT,
+    /* The Anchors, so a spec can fly to one rather than dig for forty minutes
+       looking for it. */
+    anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells, lightAnchor
   };
 }

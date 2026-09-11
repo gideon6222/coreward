@@ -2610,7 +2610,15 @@ test('the shallow world holds three materials, and the deep ones are a prize', a
   });
   expect(breaches.join('; '), 'a material generated above its own floor depth').toBe('');
 
-  const notOre = new Set(['__cells', 'geode', 'gas', 'cache', 'schematic', 'relic', 'part']);
+  /* Blocks that carry `ore: true` and are not materials.
+
+     The flag does two jobs: it decides what goes in the hold when a block
+     breaks, and it decides whether blocks.ts draws crystal shards or pebbles.
+     An Anchor wants the second and cannot do the first - it never breaks - so
+     it is flagged and belongs on this list, next to the crates and pockets
+     that were already here for the same reason. */
+  const notOre = new Set(['__cells', 'geode', 'gas', 'cache', 'schematic', 'relic', 'part',
+                          'anchor', 'anchorlit']);
   const shallow = Object.keys(counts.shallow).filter((k) => !notOre.has(k));
   expect(shallow.sort().join(','), 'the top sixty metres holds more than the starter three')
     .toBe('copper,iron,silver');
@@ -2954,4 +2962,125 @@ test('the Ballast is fed at the pad, and an empty one takes a region', async ({ 
   expect(reopened.down, 'the region is still marked as fallen').toBe(false);
   expect(reopened.solid, 'shored ground is still unbreakable').toBe(false);
   expect(reopened.ballast, 'shoring a region cost nothing').toBeLessThan(1);
+});
+
+/* An Anchor hall, and lighting the thing in it.
+
+   The objective, end to end. Flown rather than dug: the shallowest Anchor is
+   forty-odd metres down and a stock drill takes longer than the budget to get
+   through a hall wall, so the ship is placed at the door and everything after
+   that - breaking in, crossing the room, standing at the plinth - is the real
+   code.
+
+   The load-bearing assertions are the two that could each look right in a
+   screenshot and be wrong: that the room is actually SHUT until you cut it,
+   and that the Anchor cannot be mined. A hall you can drift into is not a
+   discovery, and an Anchor you can drill out is a pickup. */
+test('an Anchor hall is shut until you cut it, and lights by standing there', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* The shallowest Anchor, found rather than named: the positions are seeded
+     and a literal here would go stale the moment anything reseeds them. */
+  const target = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    let best = -1, at = Infinity;
+    for (let r = 0; r < w.ANCHOR_COUNT; r++) {
+      const a = w.anchorAt(r);
+      if (!w.anchorSealed(r) && a.d < at) { at = a.d; best = r; }
+    }
+    const a = w.anchorAt(best);
+    return { region: best, x: a.x, d: a.d };
+  });
+  expect(target.region, 'no open Anchor anywhere in the world').toBeGreaterThanOrEqual(0);
+
+  /* ---- the room is shut ----
+
+     Checked at the wall and at the air behind it, on the real generator. An
+     unbreakable wall would be a different bug and is checked too: worked stone
+     has to be cuttable or the room is a tease. */
+  const hall = await page.evaluate((t: { x: number; d: number }) => {
+    const w = (window as any).__cw;
+    const V = w.vaultCells();
+    /* Straight up from the Anchor: plinth, air, wall, rock. */
+    const col: { d: number; ch: string; id: string; hard: number }[] = [];
+    for (let d = t.d - 5; d <= t.d; d++) {
+      const b = w.blockAt(t.x, d);
+      col.push({ d, ch: V.get(t.x + ',' + d) || ' ',
+                 id: b ? b.id : '(empty)', hard: b ? b.hard : 0 });
+    }
+    return col;
+  }, target);
+
+  const wall = hall.find((c) => c.ch === '#');
+  const air = hall.find((c) => c.ch === '.');
+  expect(wall, 'no worked stone above the Anchor at all').toBeTruthy();
+  expect(air, 'no open room above the Anchor at all').toBeTruthy();
+  expect(wall!.id, 'the hall wall is not worked stone').toBe('worked');
+  expect(Number.isFinite(wall!.hard) && wall!.hard > 0,
+    `worked stone reads as hardness ${wall!.hard} - a wall you cannot cut is not a room`).toBe(true);
+  expect(air!.id, 'the room behind the wall is solid').toBe('(empty)');
+  /* And the wall is genuinely between you and the room: the cell above the
+     wall is untouched ground, so there is no way in that is not through it. */
+  const outside = hall.find((c) => c.d < wall!.d);
+  expect(outside && outside.id, 'the ground above the hall is already open').not.toBe('(empty)');
+
+  /* ---- the Anchor cannot be mined ---- */
+  const anchorBlock = hall[hall.length - 1];
+  expect(anchorBlock.id, 'the Anchor is not where the map says it is').toBe('anchor');
+  expect(Number.isFinite(anchorBlock.hard),
+    'the Anchor has a finite hardness, so it can be drilled out like ore').toBe(false);
+
+  /* ---- and lighting it ----
+
+     The ship is put in the room's air, one cell above the plinth, and then the
+     frame loop does the rest. Nothing here calls lightAnchor: the assertion is
+     that STANDING THERE is enough. */
+  const lit = await page.evaluate(async (t: { region: number; x: number; d: number }) => {
+    const w = (window as any).__cw;
+    w.g.px = t.x; w.g.pd = t.d - 1;
+    w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+    const before = w.g.ground.lit.slice();
+    w.advance(0.2);
+    return {
+      before, after: w.g.ground.lit.slice(),
+      mode: w.g.mode,
+      unrest: w.g.ground.unrest[t.region],
+      seen: w.g.seen.length,
+      title: (document.getElementById('evTitle') || {}).textContent
+    };
+  }, target);
+
+  expect(lit.before.length, 'something was already lit before the test lit anything').toBe(0);
+  expect(lit.after, 'standing at the plinth did not light the Anchor').toContain(target.region);
+  expect(lit.mode, 'lighting an Anchor did not stop the game to say so').toBe('event');
+  expect(lit.title, 'the moment passed with no card').toMatch(/ANCHOR/i);
+
+  /* The region drew itself onto the map, which is the reward that is not a
+     number: a whole region surveyed without flying it. */
+  const revealed = await page.evaluate((region: number) => {
+    const w = (window as any).__cw;
+    let mine = 0, total = 0;
+    const seen = new Set(w.g.seen);
+    for (let ty = 0; ty * w.MAP_TILE < w.WORLD_DEPTH; ty++) {
+      for (let tx = 0; tx * w.MAP_TILE < w.W; tx++) {
+        if (w.regionAt(tx * w.MAP_TILE + 2, ty * w.MAP_TILE + 2) !== region) continue;
+        total++;
+        if (seen.has(tx + ',' + ty)) mine++;
+      }
+    }
+    return { mine, total, ballastTier: w.g.ground.lit.length };
+  }, target.region);
+  expect(revealed.total, 'the region has no map tiles at all').toBeGreaterThan(20);
+  expect(revealed.mine, 'lighting the Anchor revealed none of its region')
+    .toBe(revealed.total);
+  expect(revealed.ballastTier, 'the Ballast gained no tier').toBe(1);
+
+  /* And the block itself now reads as lit, which is the only thing left in the
+     room to look at. */
+  const after = await page.evaluate((t: { x: number; d: number }) =>
+    (window as any).__cw.blockAt(t.x, t.d).id, target);
+  expect(after, 'the Anchor looks the same after being lit').toBe('anchorlit');
 });

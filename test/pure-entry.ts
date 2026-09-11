@@ -9,6 +9,7 @@ export * from '../src/sim/config';
 export * from '../src/sim/util';
 export * from '../src/sim/breach';
 export * from '../src/sim/unrest';
+export * from '../src/sim/vaults';
 export * from '../src/sim/state';
 export * from '../src/sim/world';
 export * from '../src/sim/feel';

@@ -589,11 +589,12 @@ export function buildBallast() {
     /* Says what it is DOING, not what it is. The rate is the thing a player
        can act on, and it is the only place the drain is ever stated - the
        machine outside shows it as a vent and a needle and never as a number. */
-    const secs = s.ballast > 0 ? s.ballast / ballastDrain(u, s.tier) : 0;
+    const tier = s.lit.length;
+    const secs = s.ballast > 0 ? s.ballast / ballastDrain(u, tier) : 0;
     sub.textContent = s.ballast <= 0
       ? 'Empty. The ground is going to give somewhere.'
       : 'Holding for about ' + Math.max(1, Math.round(secs / 60)) + ' more minutes of digging'
-        + (s.tier > 0 ? ' · ' + s.tier + ' anchor' + (s.tier === 1 ? '' : 's') + ' lit' : '');
+        + (tier > 0 ? ' · ' + tier + ' anchor' + (tier === 1 ? '' : 's') + ' lit' : '');
   }
   const fill = el('balFill');
   if (fill) {
