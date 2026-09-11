@@ -9,11 +9,13 @@ function fmtTime(secs: number) {
   const m = Math.floor(secs / 60), r = secs % 60;
   return m + ':' + String(r).padStart(2, '0');
 }
-import { g , coreM, worldTrait} from './sim/state';
+import { g , coreM, worldTrait, save } from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
 import { openMap, wireMap } from './mapui';
-import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, retireHint } from './ui';
+import { feed } from './sim/unrest';
+import { shoreUp } from './collapse';
+import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, retireHint, buildBallast, updateHUD } from './ui';
 import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation,
          stepAisle, paintAisleBar, markSeen } from './station';
 import type { Dir } from './types';
@@ -148,6 +150,50 @@ mustEl('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('h
    screen is how you get two modals and no way back. */
 mustEl('btnMap').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); R.held = null; sfx.digStop(); openMap(); };
 wireMap();
+
+/* The Ballast, at the pad. Rebuilt on open rather than kept live: the panel is
+   a decision screen and nothing on it moves while it is up except in response
+   to a tap, so a rebuild per tap is both simpler and correct. */
+const ballastSheet = mustEl('ballast');
+function openBallast() {
+  if (g.mode !== 'play' || !atSurface()) return;
+  sfx.ui();
+  g.mode = 'ballast';
+  buildBallast();
+  ballastSheet.classList.remove('hidden');
+}
+mustEl('btnBallast').onclick = openBallast;
+mustEl('ballastClose').onclick = () => {
+  sfx.ui();
+  ballastSheet.classList.add('hidden');
+  g.mode = 'play';
+  updateHUD();
+  save();
+};
+/* Delegated, because the rows are rebuilt after every tap and handlers bound
+   to the old nodes would be bound to nodes that no longer exist. */
+ballastSheet.onclick = (e) => {
+  const btn = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
+  if (!btn || btn.disabled) return;
+  if (btn.dataset.shore) {
+    if (shoreUp() >= 0) buildBallast();
+    return;
+  }
+  const id = btn.dataset.feed;
+  if (!id) return;
+  const n = Math.min(g.stock[id] || 0, Number(btn.dataset.n) || 0);
+  if (n <= 0) return;
+  /* The ore leaves the vault whether or not the tank had room for all of it -
+     which is why the button's count is computed to fit rather than to empty
+     your pockets. See buildBallast. */
+  feed(g.ground, id, n);
+  g.stock[id] -= n;
+  if (g.stock[id] <= 0) delete g.stock[id];
+  sfx.buy();
+  hap.buy();
+  buildBallast();
+  save();
+};
 
 ui.btnMusic.onclick = () => { audioInit(); setAudio('music', !audioState.music); audioLabels(); };
 ui.btnSfx.onclick = () => { audioInit(); setAudio('sfx', !audioState.sfx); audioLabels(); sfx.ui(); };

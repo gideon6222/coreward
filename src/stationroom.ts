@@ -41,7 +41,8 @@
    already has is not a duplicate HUD, it is the room knowing what you know. */
 
 import * as THREE from 'three';
-import { g } from './sim/state';
+import { g, worldUnrest } from './sim/state';
+import { WORLD_DEPTH } from './sim/region';
 import { GROUP_ORDER, GROUP_COLOR, GROUP_LABEL, type GroupName } from './stationsigns';
 import { SHIP_LAYER } from './scene';
 
@@ -916,10 +917,13 @@ export function buildRoom(): Room | null {
 
   /* Three gauges on the wall behind the pump, reading real state. */
   const gauges: { g: Gauge; read: () => number }[] = [
-    { g: makeGauge('STRAIN'), read: () => Math.min(1, g.claim.strain) },
-    { g: makeGauge('DEPTH'), read: () => Math.min(1, g.best.depth / 260) },
-    { g: makeGauge('STORE'), read: () => {
-      let n = 0; for (const k in g.stock) n += g.stock[k]; return Math.min(1, n / 120); } }
+    /* UNREST and BALLAST rather than STRAIN and STORE. The two readings the
+       campaign now turns on, on the wall of the one room you stand still in -
+       which is where a reading you are supposed to think about belongs, and
+       is why neither of them is on the HUD underground. */
+    { g: makeGauge('UNREST'), read: () => worldUnrest() },
+    { g: makeGauge('DEPTH'), read: () => Math.min(1, g.best.depth / WORLD_DEPTH) },
+    { g: makeGauge('BALLAST'), read: () => g.ground.ballast }
   ];
   /* Right of centre, with the terminal to the left of it.
 

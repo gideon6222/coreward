@@ -5,7 +5,7 @@ import { clamp, key, stream } from './sim/util';
 import { newBreach, stepBreach } from './sim/breach';
 import { FIND_OF } from './sim/finds';
 import { hap } from './haptics';
-import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout, addMark, resetSeen } from './sim/state';
+import { g, S, save, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
@@ -17,7 +17,7 @@ import { takeDrop, syncDrops, leaveDrop } from './drops';
 import { fireBeam } from './beam';
 import { setMark } from './mark';
 import { setDrillTier, setUpgradeHardware } from './ship';
-import { ui, toast, flash, atSurface, updateKit, onQuake, foundBanner } from './ui';
+import { ui, toast, flash, atSurface, updateKit, foundBanner } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './sim/feel';
 import type { Dir, SupplyKey, UpgradeKey } from './types';
@@ -66,9 +66,9 @@ export function stopDigging() {
 export function sell() {
   const v = haulValue();
   if (v <= 0) { g.cargo = {}; g.weight = 0; return; }
-  /* The refinery takes its own condition out of the price before the assay
-     relics add theirs. */
-  const paid = Math.round(claimPayout(v) * S.saleBonus());
+  /* The ground's own trait and the clean-run bonus come out of the price
+     before the assay relics add theirs. */
+  const paid = Math.round(salePayout(v) * S.saleBonus());
   g.credits += paid;
   /* A run ends when it is banked. Fold it into the all-time totals and start a
      fresh one, so "this run" in the log means what a player means by it. */
@@ -273,7 +273,7 @@ function pickAt(x: number, d: number): boolean {
    the planet core, which is the climax of a planet and has to be drilled by
    hand rather than deleted from four metres away. */
 function breakCells(cells: number[][]) {
-  let taken = 0, dropped = 0, gassed = 0, quaked = false;
+  let taken = 0, dropped = 0, gassed = 0;
   for (const c of cells) {
     const x = c[0], d = c[1];
     if (x < 0 || x >= W || d < 0 || d > coreM()) continue;
@@ -281,7 +281,7 @@ function breakCells(cells: number[][]) {
     if (!b || b.hard === Infinity || b.core) continue;
 
     g.dug.add(key(x, d));
-    if (digStrain(d)) quaked = true;
+    cutGround(x, d);
     dropBlock(key(x, d));
     spray(worldX(x), -d, b.color, b.ore ? 26 : 12, 5, 0.7);
 
@@ -306,7 +306,6 @@ function breakCells(cells: number[][]) {
   syncBlocks(true);
   /* One blast is one quake however many cells it took, or a bomb through the
      deep rock would fire three in a row and read as a bug. */
-  if (quaked) onQuake();
   save();
   return { taken, dropped, gassed };
 }
@@ -667,7 +666,7 @@ export function hardReset() {
   g.damage = {};
   g.dug = new Set();
   g.rubble = new Set();
-  resetClaim();
+  resetGround();
   g.cargo = {}; g.weight = 0;
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();

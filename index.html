@@ -394,6 +394,17 @@
     white-space:nowrap; box-shadow:var(--bevel), var(--lift);
     text-shadow:0 1px 2px rgba(0,0,0,.8);
   }
+  /* The one HUD control that is allowed to shout, and only while the Ballast
+     is low or a region is down. See updateHUD. */
+  #actions button.armed{
+    border-color:var(--red); color:#ffd2d2;
+    background:var(--grain) repeat 0 0 / 44px 44px, rgba(120,34,44,.55);
+    animation:balPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes balPulse{
+    0%,100%{box-shadow:var(--bevel), var(--lift);}
+    50%{box-shadow:var(--bevel), 0 0 14px rgba(255,92,107,.6);}
+  }
   #actions button:active{
     transform:translateY(1px); filter:brightness(1.2);
     box-shadow:inset 0 2px 6px rgba(0,0,0,.7);
@@ -782,6 +793,33 @@
   .maphead{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
   .maphead h2{margin:0; font-size:19px; letter-spacing:.06em;}
   .maphead .sub{margin:3px 0 0;}
+  /* The Ballast's two bars. Deliberately plain: this panel is read while
+     standing still on the pad, so it can afford to be a readout rather than an
+     instrument - the instrument is the machine itself, outside the window. */
+  .bal{margin:14px 0 4px;}
+  .ballabel{
+    display:flex; justify-content:space-between; font-size:10.5px; font-weight:700;
+    letter-spacing:.09em; color:var(--dim); margin:10px 0 5px;
+  }
+  .balbar{
+    position:relative; height:12px; border-radius:3px; overflow:hidden;
+    background:rgba(255,255,255,.06); border:1px solid var(--line);
+  }
+  .balbar i{
+    display:block; height:100%; width:0;
+    background:linear-gradient(90deg,#2b8f7e,#49e0c0);
+    transition:width .25s ease;
+  }
+  .balbar i.low{background:linear-gradient(90deg,#8f3a2b,#ff7a4a);}
+
+  /* Where shoring becomes possible. A line on the bar rather than a number in
+     the text, so "am I close" is a glance and not a subtraction. */
+  .balbar b{position:absolute; top:0; bottom:0; width:2px; background:rgba(255,255,255,.42);}
+  .fallen{
+    display:flex; align-items:center; gap:10px; padding:11px 0;
+    border-top:1px solid var(--line);
+  }
+  .fallen .upinfo .upname{color:#ff8f88;}
   .mapright{text-align:right; padding-top:6px;}
   .mapdepth{font-size:11.5px; font-weight:700; color:var(--dim); letter-spacing:.08em; white-space:nowrap;}
   #mapCanvas{
@@ -928,6 +966,7 @@
   <button id="btnPause">⏸ MENU</button>
   <button id="btnManifest">MANIFEST</button>
   <button id="btnMap">MAP</button>
+  <button id="btnBallast" style="display:none">BALLAST</button>
   <button id="btnShop">SHOP</button>
   <button id="btnAuto" style="display:none">AUTOPILOT</button>
 </div>
@@ -1066,6 +1105,24 @@
   <div class="tray">
     <div id="shopCard" class="card"></div>
     <div class="undock"><button id="shopClose" class="wide">UNDOCK</button></div>
+  </div>
+</div>
+
+<!-- The Ballast. The one thing on the surface with a stake in it. -->
+<div id="ballast" class="modal hidden">
+  <div class="sheet">
+    <h2>The Ballast</h2>
+    <div class="sub" id="balSub">&mdash;</div>
+    <div class="bal">
+      <div class="ballabel"><span>BALLAST</span><span id="balPct">100%</span></div>
+      <div class="balbar"><i id="balFill"></i><b id="balSafe"></b></div>
+      <div class="ballabel"><span>PRESSURE</span><span id="balUn">&mdash;</span></div>
+      <div class="balbar"><i id="balUnFill" class="warm"></i></div>
+    </div>
+    <div id="balFallen"></div>
+    <div class="kithead">BANKED ORE &middot; FEEDING IT COSTS THE OUTFITTER</div>
+    <div id="balRows"></div>
+    <button id="ballastClose" class="wide">CLOSE</button>
   </div>
 </div>
 

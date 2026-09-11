@@ -5,8 +5,8 @@ import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, ORES, matTota
 import { CHARGE_MAX } from './feel';
 import { FOUND_KEYS } from './finds';
 import { R } from './runtime';
-import { newClaim, loadClaim, afterCell, applyQuake, refuelMult, payoutMult,
-         RICH_PER_QUAKE, type ClaimState, type Structure } from './claim';
+import { newGround, loadGround, cutCell, drainBallast, planetUnrest, collapseTarget,
+         isCollapsed, unrestBand, type GroundState } from './unrest';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from '../types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
@@ -109,10 +109,11 @@ export const g: {
      actually saw on the rock face. */
   damage: Cargo;
   best: Best;
-  /* The surface claim for the world you are ON. Per world and left behind when
-     a core breaks, so its condition is an arc inside a world rather than a
-     scar carried across the whole Drift. See claim.ts. */
-  claim: ClaimState;
+  /* How angry the planet is, region by region, and how much is left in the
+     thing holding it down. There is one world now, so unlike the Claim it
+     replaced this is not left behind anywhere - it is the campaign. See
+     unrest.ts. */
+  ground: GroundState;
   mode: Mode;
 } = {
   planet: 0, credits: 0, shards: 0,
@@ -129,7 +130,7 @@ export const g: {
   cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [], foundKit: [], seenOre: [], seen: [], marks: [],
   log: blankLog(),
   best: { depth: 0, haul: 0, fastest: 0, worlds: 0 },
-  claim: newClaim(),
+  ground: newGround(),
   mode: 'play'
 };
 
@@ -247,7 +248,7 @@ export function save() {
       relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
       found: g.found, foundKit: g.foundKit, seenOre: g.seenOre, seen: g.seen,
       marks: g.marks,
-      claim: g.claim
+      ground: g.ground
     }));
   } catch (e) { /* ignore */ }
 }
@@ -267,8 +268,13 @@ export function load() {
       Object.assign(g.up, s.up || {});
       Object.assign(g.kit, s.kit || {});
       Object.assign(g.best, s.best || {});
-      /* A save from before the Claim existed loads an intact one. */
-      g.claim = loadClaim(s.claim);
+      /* `ground` and not `claim`. A save from before this round carries a
+         refinery, a derrick and a shed with damage on them, and none of those
+         exist any more - there is nothing in the old shape to carry across, so
+         an older save starts on a quiet planet with a full Ballast. That is
+         the generous direction, and the only alternative was inventing an
+         Unrest reading out of a strain number that meant something else. */
+      g.ground = loadGround((s as any).ground);
       /* M5 moved every world's core. A save made when planet 0 ended at 110 m
          can have its ship parked at 70, which is now inside bedrock, so it is
          put back where the world still exists. Nothing else is touched: the
@@ -434,50 +440,84 @@ export function setWorld(p: number) {
 }
 
 
-/* ---------- the Claim, from the game's side ----------
+/* ---------- the ground, from the game's side ----------
 
-   Three seams, and they are deliberately the only three: a cell is removed, a
-   tank is filled, a haul is sold. Everything else about the Claim is claim.ts's
-   business. */
+   Four seams, and they are deliberately the only four: a cell is removed, time
+   passes, a haul is sold, and a region comes down. Everything else about
+   Unrest and the Ballast is unrest.ts's business. */
 
 /* Called for every cell the ship removes, however it was removed - drill, bomb
-   or laser. Returns true if that cell was the one that set off a quake, so the
-   caller can shake the camera and say so; the state change has already
-   happened either way. */
-export function digStrain(d: number): boolean {
-  const r = afterCell(g.claim.strain, d, coreM());
-  g.claim.strain = r.strain;
-  if (!r.quake) return false;
-  applyQuake(g.claim, g.planet);
-  /* A shaken world pays more. This is what makes depth a bet rather than a
-     tax, and it is the whole reason a quake is worth having. */
-  g.rich *= 1 + RICH_PER_QUAKE;
-  return true;
+   or laser. Returns the region it was taken from, because that is what the
+   toast wants to be able to name.
+
+   Nothing is returned about quakes any more, because a quake is not a thing
+   that happens to a building now. The old version fired one when strain
+   crossed 1, damaged three structures and made the world 4% richer to
+   compensate; the richness had to go with the structures, since a multiplier
+   that compounds four per cent a run across a campaign on ONE planet ends
+   somewhere absurd. What Unrest drives instead is the tremor clock that
+   already existed. */
+export function cutGround(x: number, d: number): number {
+  return cutCell(g.ground, x, d);
 }
 
-/* What the tank actually fills to at the pad. A wrecked derrick is a shorter
-   tank, not a slower pump: the game refuels instantly at the pad and always
-   has, and a discount you can read off the gauge the moment you land beats a
-   rate you would have to sit and watch. */
+/* The Ballast's own clock. Called from the frame loop while the game is
+   playing, and only then: it decays while you are out working, not while you
+   are standing in a shop with the game paused behind the sheet.
+
+   Returns the region that is now waiting to fall, or -1. It is chosen here and
+   applied at the door - see the note at the top of unrest.ts about never
+   landing a collapse on somebody who is underground. */
+export function groundTick(dt: number): number {
+  const r = drainBallast(g.ground, dt);
+  if (!r.emptied || g.ground.pending >= 0) return -1;
+  const ship = regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)));
+  g.ground.pending = collapseTarget(g.ground, ship, padRegion());
+  return g.ground.pending;
+}
+
+/* The region the pad is in, which is the one region that can never fall. */
+export function padRegion(): number {
+  return regionAt(START_X, 0);
+}
+
+/* How angry the ground under the ship is, for the tremor clock and the HUD. */
+export function hereUnrest(): number {
+  return g.ground.unrest[regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)))];
+}
+
+export function hereBand(): number { return unrestBand(hereUnrest()); }
+export function worldUnrest(): number { return planetUnrest(g.ground); }
+
+/* Whether a cell is inside ground that has come down. Asked per cell by the
+   world, so it is a straight array scan over a list that is almost always
+   empty and never longer than eleven. */
+export function cellCollapsed(x: number, d: number): boolean {
+  if (!g.ground.collapsed.length) return false;
+  return isCollapsed(g.ground, regionAt(Math.round(x), Math.max(0, Math.round(d))));
+}
+
+/* What the tank fills to at the pad. A flat refill now: the derrick that used
+   to shorten it is gone, and a fuel penalty attached to a building nobody
+   could see the point of was the least legible thing the Claim did. */
 export function padFuel(): number {
-  return Math.round(S.fuelCap() * refuelMult(g.claim));
+  return S.fuelCap();
 }
 
-/* What the refinery pays for a haul, before the assay relics' bonus. */
-export function claimPayout(v: number): number {
-  /* Three multipliers, all of them things the player chose: the refinery's
-     condition, which they let happen; the world's own trait, which they picked
-     off the chart; and the clean-run bonus on a Stable world, which is the
-     control world finally having a reason to be picked. */
+/* What the pad pays for a haul, before the assay relics' bonus. */
+export function salePayout(v: number): number {
+  /* Two multipliers now that the refinery's condition is gone, and both are
+     things the player chose: the ground's own trait, and the clean-run bonus
+     on Stable ground. */
   const t = worldTrait();
   const clean = (t.cleanBonus && g.hull >= S.hullCap() - 0.5) ? 1 + t.cleanBonus : 1;
-  return Math.round(v * payoutMult(g.claim) * (t.payout ?? 1) * clean);
+  return Math.round(v * (t.payout ?? 1) * clean);
 }
 
-/* Everything a new world starts with. The Claim does not travel: its condition
-   is an arc inside one world, so a bad world cannot sour the ten after it. */
-export function resetClaim(): void {
-  g.claim = newClaim();
+/* A fresh planet. Only a wipe reaches this now: there is one world, so unlike
+   the Claim there is nowhere for the campaign to be left behind. */
+export function resetGround(): void {
+  g.ground = newGround();
 }
 
 /* ---------- the seen index ----------

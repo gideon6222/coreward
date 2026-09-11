@@ -3442,3 +3442,74 @@ indexes lives in `state.ts`. Moving it next to the list is not tidying - `load()
 replaces the list wholesale, and an index in another module has no way to know
 that happened. It now rebuilds on every load and on a wipe, and there is a unit
 test that fails if the rebuild is removed.
+
+## Round eight, W6, 2026-09-11: the Claim becomes the planet
+
+Three buildings became one machine, and a discount became a stake.
+
+**What was wrong with the Claim** was not the mechanism, it was the object.
+Cutting deep rock shook a refinery, a derrick and a shed, and the damage was
+three discounts: a worse sale price, a shorter tank, some spillage. The
+research names that exact pattern as Deep Rock's rig - organisationally rich,
+in no jeopardy at all - and it was three meters, three repair prices and three
+silhouettes for one idea.
+
+**Unrest is per region, and that is the one change to the plan.** The milestone
+said "a planet-wide meter". A single planet-wide number is a second fuel gauge:
+it goes up, you cannot point at where, and there is nothing to do about it. Per
+region it gives the map something to show, makes "work this place out and go
+somewhere else" a real move, and means an Anchor pushing its own region back
+(W7) is a thing you can see happen.
+
+**The numbers were set against a campaign, not by feel.** 0.0007 a cell at the
+surface times up to 2.5 at the floor puts a region at Grinding after about ten
+runs of working it, which the unit test asserts as a band rather than as a
+literal. The Ballast drains a full tank in twenty-five minutes of digging at
+ordinary Unrest and fourteen at high - never urgent inside a three-minute run,
+always present across an evening.
+
+**Feeding is ranked, not priced.** Ore value spans forty to a hundred and
+ninety-six thousand credits. A value-weighted feed would make one Solmarrow
+worth six hundred Copper and the decision would stop existing - you would tip
+in the one deep rock and never think about it again. Scored on the ore's TONE,
+its rank on the ladder, the spread is ten to one and a pile of Copper is still
+an answer.
+
+### Four things found by looking at it
+
+1. **A machine that was rendering perfectly, behind the HUD.** The Ballast was
+   placed where the old refinery stood, at -2.2 world units. The camera is 17.7
+   back at 52 degrees on a 0.46 aspect, so the visible world is about eight
+   units across and the action buttons own the left sixteen to thirty-two per
+   cent of it - which is exactly where the machine was. Twenty minutes went on
+   shader theories before the arithmetic. It is on the right now.
+2. **A sight glass that could not be seen.** The fluid was modelled inside its
+   tube, which is where fluid goes. The tube is opaque and goes through the
+   opaque pass first; the fluid is additive with `depthWrite` off, and an
+   additive surface behind an opaque one is depth-rejected before it ever
+   blends. The tube is the dark backing now and the fluid is the lit face over
+   it, which is also how a real sight glass reads.
+3. **An alarm that was on for most of the normal range.** Both the panel's bar
+   and the HUD button read `< BALLAST_SAFE`, and BALLAST_SAFE is 0.7 - the
+   threshold for SHORING a fallen region, nothing to do with danger. A tank at
+   a perfectly ordinary 60% drew red and the button pulsed. `BALLAST_LOW` is
+   0.35, about three runs of warning.
+4. **A gradient painted on the wrong element.** The Unrest bar had a
+   green-to-red gradient on its FILL, so a calm planet drew a little rainbow
+   with red in it compressed into 18% of the track. The colour IS the reading:
+   it is the band's own colour, flat.
+
+### And two tests that had always been asserting about a world that is gone
+
+`a searing world moves its heat line up but never above the surface` looped
+over four LEGS. W4 made this one planet, so `heatDepth` returns 199 for every
+one of them and the loop was four copies of one assertion; its lower bound was
+half the Claim's stability line, and the Claim no longer exists. It now asserts
+what it always meant: Searing starts shallower, and not so shallow that the
+burn is inside the first minute.
+
+`boots without hitting the error overlay` asserted the HUD chip reads "Verdax".
+That was a fact about a planet you flew to. The chip names the REGION now,
+because a chip that says the same word for a whole game says nothing - and it
+is derived from the pad's own region rather than typed out, because the region
+boundaries wander.

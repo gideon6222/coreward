@@ -1,4 +1,4 @@
-import { g, save, setWorld, resetClaim } from './sim/state';
+import { g, save, setWorld, resetGround } from './sim/state';
 import { chartFor, type Destination } from './sim/chart';
 import { coreDepth, planetName, paletteOf, TRAIT_OF, skyLo } from './sim/config';
 import { R } from './sim/runtime';
@@ -129,7 +129,11 @@ export function arrive() {
      together or the new world inherits the old one's tunnels. */
   g.dug = new Set();
   g.rubble = new Set();
-  resetClaim();
+  /* The chart is a W4 leftover: there is one planet now and this screen only
+     opens after a core breaks, which is the far end of the game. W9 replaces
+     the ending with the Vault and takes this file with it. Until then a new
+     world is a new campaign, which is what it always was. */
+  resetGround();
   R.worldT = 0;
   g.damage = {};
   g.drops = {}; syncDrops();

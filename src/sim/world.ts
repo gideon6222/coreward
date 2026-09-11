@@ -1,8 +1,10 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
          RELIC_COLOR, RELIC_HOST, relicAt, relicFor,
-         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES, traitAt } from './config';
+         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES, traitOf } from './config';
 import { key, mixHex, rnd } from './util';
+import { regionAt } from './region';
+import { isCollapsed, hardScale } from './unrest';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
 import { findMap, cacheSupply, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
@@ -34,6 +36,26 @@ export function findHere(x: number, d: number): Find | null {
 export function blockAt(x: number, d: number): Block | null {
   if (d < 0 || x < 0 || x >= W) return null;
   if (g.dug.has(key(x, d))) return null;
+  /* Ground that has come down.
+
+     Checked before anything else that can generate, including the relic and
+     the drive component, because a collapsed region is not a kind of rock with
+     things in it - it is closed. A relic showing through fallen ground you
+     cannot enter would be the worst possible read: a prize you can see and
+     have no way to be told why you cannot reach.
+
+     Unbreakable, like bedrock. A bomb does not open it either, which is the
+     point: the only thing that opens a fallen region is the Ballast. */
+  /* The region, asked ONCE. It is five seeded hashes deep and three separate
+     things below want it - whether the ground is shut, how angry it is, and
+     which trait it has - and blockAt runs for every cell of a 21-column
+     streaming window on every rebuild. Three lookups was three times the
+     hashing for one answer that cannot change between them. */
+  const reg = regionAt(x, d);
+  if (g.ground.collapsed.length && isCollapsed(g.ground, reg)) {
+    return { id: 'fallen', name: 'Fallen Ground', color: 0x24222a, host: 0x181720,
+             hard: Infinity, wt: 0, value: 0, glow: 0.02 };
+  }
   const cd = coreM();
   if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
   if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
@@ -41,8 +63,14 @@ export function blockAt(x: number, d: number): Block | null {
      are all properties of the ground you are cutting, so they answer to the
      region the cell is in - which is what makes a region somewhere you can
      walk into rather than a label on a save. */
-  const tr = traitAt(x, d);
-  const hm = hardMult() * (tr.hard ?? 1);
+  const tr = traitOf(reg);
+  /* And how angry this region is, which closes the rock up as it rises.
+
+     Small, and deliberately the least visible thing Unrest does: a hardness
+     multiplier is the most expensive-but-invisible change that can be made to
+     a mining game, so it does nothing at all below the third band and reaches
+     about a third more drilling at the top. You notice the tremors first. */
+  const hm = hardMult() * (tr.hard ?? 1) * hardScale(g.ground.unrest[reg]);
 
   /* The relic, before anything that could hide it. It is one cell on the whole
      planet and it must not lose a coin flip to a cave. */

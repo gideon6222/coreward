@@ -39,15 +39,27 @@ test('no trait is strictly better than another', () => {
   }
 });
 
-test('a searing world moves its heat line up but never above the surface', () => {
+test('searing ground starts its heat shallower, and still leaves a cold top', () => {
+  /* Rewritten twice over, and both times for the same reason: it was asserting
+     against a world that no longer exists.
+
+     It used to loop over four LEGS and compare each one's heat line, which
+     stopped meaning anything when W4 made this one planet - heatDepth returns
+     199 for every leg now, so the loop was four copies of one assertion. And
+     its lower bound was half the Claim's stability line, and the Claim is
+     gone.
+
+     The claim it was always making is the one below: Searing has to matter,
+     and it must not swallow the world. A heat line above a fifth of the depth
+     would put the burn inside the first minute of a descent. */
   const searing = H.TRAITS.find((t) => t.id === 'searing');
-  for (const leg of [0, 1, 4, 9]) {
-    const plain = H.heatDepth(leg);
-    const hot = H.heatDepth(leg, searing);
-    assert.ok(hot < plain, `leg ${leg}: searing must start shallower than ${plain} m`);
-    assert.ok(hot > H.stabilityLine(H.coreDepth(leg)) * 0.5,
-      `leg ${leg}: a heat line at ${hot} m is so shallow the whole world is the heat zone`);
-  }
+  const plain = H.heatDepth(0);
+  const hot = H.heatDepth(0, searing);
+  assert.ok(hot < plain, `searing must start shallower than ${plain} m, and starts at ${hot}`);
+  assert.ok(hot > H.WORLD_DEPTH * 0.2,
+    `a heat line at ${hot} m of a ${H.WORLD_DEPTH} m world burns you before you have gone anywhere`);
+  assert.ok(plain < H.WORLD_DEPTH * 0.8,
+    `ordinary ground's heat line at ${plain} m is so deep that heat is never met`);
 });
 
 test('the trait multipliers all default to no change', () => {

@@ -1,7 +1,7 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, SUPPLY_OF, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
 import { setGauges, setFuelReserve } from './gauges';
 import { clamp } from './sim/util';
-import { g, S, save, coreM, valueM, worldTrait, padFuel } from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, padFuel, worldUnrest } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
 import type { Upgrade, Supply } from './types';
 import { VERSION, CHANGELOG } from './changelog';
@@ -11,6 +11,9 @@ import { setDrillTier, setUpgradeHardware } from './ship';
 import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
 import { R } from './sim/runtime';
+import { feedValue, ballastDrain, unrestBand, UNREST_BANDS,
+         BALLAST_SAFE, BALLAST_SHORE_COST, BALLAST_LOW } from './sim/unrest';
+import { regionName, regionAt } from './sim/region';
 import { hap, haptics, setHaptics } from './haptics';
 import { selectedBay, refreshBays, refreshKit, paintAisleBar, reframeIfNeeded } from './station';
 
@@ -174,18 +177,31 @@ export function flash(color: string, ms?: number) {
 export const atSurface = () => g.pd <= -0.6;
 
 export function updateHUD() {
-  /* The chip carries the trait because it is the only always-visible place a
-     planet is named, and a modifier you have to open a menu to remember is a
-     modifier you play without. Stable is left unlabelled - "Verdax · Stable"
-     would teach the first-time player that traits are a thing before they have
-     ever seen one bite. */
+  /* The chip names WHERE YOU ARE, and it is the only always-visible place that
+     happens.
+
+     It used to name the planet, which was right when a planet was a place you
+     flew to and stayed on. There is one planet now, so a chip reading "Verdax"
+     for the entire game says nothing at all - while the thing it could be
+     saying changes every time you cross a boundary, which is the single
+     clearest way a player finds out that regions exist.
+
+     The trait rides along with it for the same reason it always did: a
+     modifier you have to open a menu to remember is a modifier you play
+     without. Stable is left unlabelled, so the first hour never learns that
+     traits are a thing before it has seen one bite. */
   const tr = worldTrait();
+  const here = regionName(regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd))));
   ui.planet.textContent = tr.id === 'stable'
-    ? planetName(g.world)
-    : planetName(g.world) + '  ·  ' + tr.name.toUpperCase();
+    ? here
+    : here + '  ·  ' + tr.name.toUpperCase();
   ui.credits.textContent = Math.floor(g.credits).toLocaleString();
   ui.haul.textContent = haulValue().toLocaleString();
-  ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   CORE ' + coreM() + ' m';
+  /* "CORE 452 m" was the other thing that stopped being true. The core was the
+     end of a world you were passing through; the floor of the one world is
+     just how deep it goes, and naming it after the thing you used to break
+     there points the player at an objective that is no longer the objective. */
+  ui.depth.textContent = 'DEPTH ' + Math.max(0, Math.round(g.pd)) + ' m   /   ' + coreM() + ' m DEEP';
   /* The dials take fractions and do their own smoothing - see gauges.ts. The
      two numbers under them are the exact reading a needle cannot give you, and
      fuel is the one that decides whether to turn round. Rounded UP, so a gauge
@@ -195,7 +211,19 @@ export function updateHUD() {
   const weightFrac = clamp(g.weight / S.cargoCap(), 0, 1);
   ui.fuelTxt.textContent = Math.ceil(fuelFrac * 100) + '%';
   ui.cargoTxt.textContent = g.weight.toFixed(1) + ' / ' + S.cargoCap() + ' KG';
-  ui.btnShop.style.display = atSurface() && g.mode === 'play' ? '' : 'none';
+  const docked = atSurface() && g.mode === 'play';
+  ui.btnShop.style.display = docked ? '' : 'none';
+  /* The Ballast button carries its own alarm. It is the only place the
+     campaign's state reaches the HUD, and it only does so when there is
+     something to do about it - a button that is always shouting is a button
+     nobody reads. */
+  const bal = el('btnBallast');
+  if (bal) {
+    bal.style.display = docked ? '' : 'none';
+    const low = g.ground.ballast < BALLAST_LOW || g.ground.collapsed.length > 0;
+    bal.textContent = 'BALLAST  ' + Math.round(g.ground.ballast * 100) + '%';
+    bal.classList.toggle('armed', low);
+  }
   if (g.up.auto > 0 && !atSurface() && g.mode === 'play') {
     ui.btnAuto.style.display = '';
     ui.btnAuto.textContent = 'AUTOPILOT  ' + Math.ceil(g.pd * S.autoRate()) + ' FUEL';
@@ -535,25 +563,119 @@ export function audioLabels() {
 }
 
 
-/* ---------- a quake at the surface ----------
 
-   Fired from wherever the cell was removed, which is usually a hundred metres
-   from the thing that just broke. So the feedback has to travel: a rumble you
-   hear underground, a shake through the whole frame, and a line that names
-   what took the damage. The damage itself is visible the next time you surface,
-   which is the point - you cannot fly up to protect it and you do not get to
-   watch it happen.
 
-   `CRAFT.md`: fire visual, audio and camera as one event. Haptics join this in
-   M8, where every event in the game gets them at once. */
-export function onQuake() {
-  const c = g.claim;
-  R.shake = Math.max(R.shake, 1.35);
-  sfx.rumble();
-  hap.quake();
-  const worst = (['refinery', 'derrick', 'shed'] as const)
-    .map((k) => ({ k, v: c[k] }))
-    .sort((a, b) => a.v - b.v)[0];
-  const name = { refinery: 'Refinery', derrick: 'Derrick', shed: 'Shed' }[worst.k];
-  toast('The claim was shaken · ' + name + ' at ' + Math.round(worst.v) + '%');
+/* ---------- the Ballast panel ----------
+
+   The one screen where the campaign is a decision rather than a reading.
+
+   It opens at the pad only, because feeding it is a pad action and because the
+   two bars on it are the sort of thing that would rot into wallpaper if they
+   were on the HUD while you dig. `CRAFT.md`: a HUD is a claim about what the
+   player should be thinking about, and what they should be thinking about
+   underground is fuel and the way home.
+
+   The list is BANKED ore and not the hold. That is the tension the whole
+   system exists for: everything here is something the Outfitter also wants,
+   so feeding the planet is paid for out of upgrades. Rock is not on the list -
+   rock does not hold a planet down. */
+export function buildBallast() {
+  const s = g.ground;
+  const u = worldUnrest();
+  const pct = Math.round(s.ballast * 100);
+
+  const sub = el('balSub');
+  if (sub) {
+    /* Says what it is DOING, not what it is. The rate is the thing a player
+       can act on, and it is the only place the drain is ever stated - the
+       machine outside shows it as a vent and a needle and never as a number. */
+    const secs = s.ballast > 0 ? s.ballast / ballastDrain(u, s.tier) : 0;
+    sub.textContent = s.ballast <= 0
+      ? 'Empty. The ground is going to give somewhere.'
+      : 'Holding for about ' + Math.max(1, Math.round(secs / 60)) + ' more minutes of digging'
+        + (s.tier > 0 ? ' · ' + s.tier + ' anchor' + (s.tier === 1 ? '' : 's') + ' lit' : '');
+  }
+  const fill = el('balFill');
+  if (fill) {
+    fill.style.width = pct + '%';
+    fill.classList.toggle('low', s.ballast < BALLAST_LOW);
+  }
+  const pctEl = el('balPct');
+  if (pctEl) pctEl.textContent = pct + '%';
+  const safe = el('balSafe');
+  if (safe) {
+    safe.style.left = Math.round(BALLAST_SAFE * 100) + '%';
+    /* The shoring line only means anything while there is something to shore,
+       so it is only drawn then. A permanent mark whose significance is
+       conditional is a mark you learn to ignore. */
+    safe.style.display = s.collapsed.length ? '' : 'none';
+  }
+  const unFill = el('balUnFill');
+  if (unFill) {
+    unFill.style.width = Math.round(u * 100) + '%';
+    /* The BAND's own colour, flat, and not a green-to-red gradient across the
+       fill. A gradient belongs to the track it is measured against; painted on
+       the fill it compresses into the bar's own width, so a Calm planet drew a
+       little rainbow with red in it. The colour is the reading. */
+    unFill.style.background = '#' +
+      UNREST_BANDS[unrestBand(u)].color.toString(16).padStart(6, '0');
+  }
+  const unEl = el('balUn');
+  if (unEl) unEl.textContent = UNREST_BANDS[unrestBand(u)].name.toUpperCase();
+
+  /* ---- fallen ground ---- */
+  const fallen = el('balFallen');
+  if (fallen) {
+    fallen.innerHTML = '';
+    for (const r of s.collapsed) {
+      const row = document.createElement('div');
+      row.className = 'fallen';
+      const first = r === s.collapsed[0];
+      const can = first && s.ballast >= BALLAST_SAFE;
+      row.innerHTML =
+        '<div class="upinfo"><div class="upname">' + regionName(r) + ' has come down</div>' +
+        '<div class="upeff">' + (first
+          ? 'Shoring it costs ' + Math.round(BALLAST_SHORE_COST * 100) + '% of the Ballast'
+          : 'Waiting on the ground above it') + '</div></div>' +
+        (first ? '<button class="buy" data-shore="1"' + (can ? '' : ' disabled') + '>SHORE UP</button>' : '');
+      fallen.appendChild(row);
+    }
+  }
+
+  /* ---- what you can feed it ---- */
+  const rows = el('balRows');
+  if (!rows) return;
+  rows.innerHTML = '';
+  const held = ORES.filter((o) => (g.stock[o.id] || 0) > 0);
+  if (!held.length) {
+    rows.innerHTML = '<div class="upeff" style="padding:10px 0">Nothing banked. ' +
+      'Ore is kept when you sell, and this is the other thing it is for.</div>';
+    return;
+  }
+  const room = 1 - s.ballast;
+  for (const o of held) {
+    const have = g.stock[o.id] || 0;
+    const each = feedValue(o.id);
+    /* How many it would actually take, rather than everything you hold.
+
+       A button that empties your Solmarrow into a tank with room for one unit
+       is a button that has to be undone, and there is no undo. `CRAFT.md`: the
+       expensive irreversible action is the one that must be hardest to do by
+       accident - so the count is on the face of the button. */
+    const n = Math.min(have, Math.max(1, Math.ceil(room / each)));
+    const full = room <= 0.001;
+    const row = document.createElement('div');
+    row.className = 'up';
+    row.innerHTML =
+      '<span class="dot" style="background:#' + o.color.toString(16).padStart(6, '0') + '"></span>' +
+      '<div class="upinfo"><div class="upname">' + o.name + ' <span class="mult">x' + have + '</span></div>' +
+      /* What it is worth to the tank, and where it came from - not what it
+         sold for. The credits were paid the moment you touched the pad, so a
+         price here reads as a second cost that is not being charged, and the
+         actual cost of feeding is the upgrade you do not buy. */
+      '<div class="upeff">' + Math.round(each * 100) + '% each · from ' + o.min + ' m</div></div>' +
+      '<button class="buy" data-feed="' + o.id + '" data-n="' + n + '"' +
+        (full ? ' disabled' : '') + '>FEED ' + n + '</button>';
+    rows.appendChild(row);
+  }
 }

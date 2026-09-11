@@ -3,12 +3,12 @@
    top to bottom. */
 import * as THREE from 'three';
 import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH } from './sim/config';
-import { g, S, save, load, hasSave, coreM } from './sim/state';
+import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
 import { findCells, blockAt, cachePrize, haulValue } from './sim/world';
-import { regionAt, regionName, MAP_TILE, WORLD_DEPTH } from './sim/region';
+import { regionAt, regionName, MAP_TILE, WORLD_DEPTH, REGION_COUNT } from './sim/region';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
@@ -17,7 +17,7 @@ import { stationX } from './stationroom';
 import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen, roomDrawer,
          stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
-import { el, updateHUD, audioLabels, buildShop, toast, foundBanner } from './ui';
+import { el, updateHUD, audioLabels, buildShop, toast, foundBanner, buildBallast } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
@@ -26,6 +26,8 @@ import { sfx } from './audio';
 import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCache } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
+import { landCollapse } from './collapse';
+import { collapseTarget } from './sim/unrest';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
 
@@ -142,7 +144,7 @@ requestAnimationFrame(frame);
    usually means to make: DEPTH 0 m is true at pd 0.0 and at pd 0.49. */
 if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as { __cw: unknown }).__cw = {
-    tick, advance, stopClock, startClock, g, S, R,
+    tick, advance, stopClock, startClock, g, S, R, save,
     /* The renderer's own handles, for tuning an art pass live. Every lighting
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
@@ -179,7 +181,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     },
     upgradeOf: (k: string) => UPGRADES.find((x) => x.key === k) || null,
     stationXOf: stationX,
-    grantFind, buildShop,
+    grantFind, buildShop, buildBallast,
     /* Constructors, so a spec can build a Box3 or a Vector3 without importing
        three itself - under the dev server an import() resolves to a different
        module instance than the one the loop is running, which is the trap this
@@ -219,6 +221,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* The map. `mapView` and `mapPan` rather than the canvas, because the one
        part of that screen that can silently be wrong is the panning arithmetic
        - backwards, or unclamped off either end of the world. */
-    openMap, closeMap, mapView, mapPan, mapSetView, mapDraw, MAP_TILE, WORLD_DEPTH
+    openMap, closeMap, mapView, mapPan, mapSetView, mapDraw, MAP_TILE, WORLD_DEPTH,
+    /* The campaign, so a spec can put the planet into a state it would take
+       forty runs to reach and then check what the game does about it. */
+    padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT
   };
 }

@@ -40,6 +40,7 @@ import { MAP_TILE, WORLD_DEPTH, regionAt, regionName,
          REGION_COLS, REGION_ROWS, REGION_COUNT } from './sim/region';
 import { el, mustEl } from './ui';
 import { sfx } from './audio';
+import { isCollapsed, unrestBand, UNREST_BANDS } from './sim/unrest';
 
 /* The pad sits at the middle column, which is also where every run starts. */
 const PAD_COL = Math.floor(W / 2);
@@ -166,7 +167,11 @@ export function draw() {
          to be adjacent, and nowhere else. Opaque fills have no seam to close
          and no accident to inherit, and the grid below is then deliberate,
          even, and drawn everywhere. */
-      x.fillStyle = dim(paletteOf(tileRegion(tx, ty)).rock, 0.34);
+      /* Fallen ground loses its colour. A region that has come down is not
+         somewhere with different rock in it any more, it is somewhere shut. */
+      const reg = tileRegion(tx, ty);
+      x.fillStyle = isCollapsed(g.ground, reg)
+        ? 'rgb(38,34,36)' : dim(paletteOf(reg).rock, 0.34);
       x.fillRect(tx * MAP_TILE * s, py(ty * MAP_TILE),
                  MAP_TILE * s + 1, MAP_TILE * s + 1);
     }
@@ -220,17 +225,48 @@ export function draw() {
     x.fillRect(+k.slice(0, i) * s, py(cd), cell, cell);
   }
 
-  /* ---- region names ---- */
+  /* ---- region names, and how angry each one is ----
+
+     The map is where Unrest is READ. It is deliberately nowhere else: there is
+     no Unrest bar on the HUD, because a meter in the corner of the screen
+     while you are digging would turn a place that is getting dangerous into a
+     status effect, and the research on withheld rules is that you learn a
+     hazard by watching it.
+
+     So it is shown as a bar under a place's name, in that band's colour,
+     which answers the only question a player actually asks: which of these
+     places is angry, and is the one I am about to go into on that list. There
+     is no number and no legend for what the colours mean. */
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  x.font = '700 10px "Chakra Petch", system-ui, sans-serif';
   for (let i = 0; i < REGION_COUNT; i++) {
     const cd = (Math.floor(i / REGION_COLS) + 0.5) * (WORLD_DEPTH / REGION_ROWS);
     if (cd < view || cd > view + rows) continue;
-    const cx = ((i % REGION_COLS) + 0.5) * (W / REGION_COLS);
+    const cx = ((i % REGION_COLS) + 0.5) * (W / REGION_COLS) * s;
     const hit = known.has(i);
-    x.fillStyle = hit ? 'rgba(232,228,218,.42)' : 'rgba(130,145,170,.26)';
-    x.fillText(hit ? regionName(i).toUpperCase() : '? ? ?', cx * s, py(cd));
+    const down = isCollapsed(g.ground, i);
+    x.font = '700 10px "Chakra Petch", system-ui, sans-serif';
+    x.fillStyle = down ? 'rgba(214,58,74,.75)'
+      : hit ? 'rgba(232,228,218,.42)' : 'rgba(130,145,170,.26)';
+    x.fillText(down ? regionName(i).toUpperCase() : hit ? regionName(i).toUpperCase() : '? ? ?',
+               cx, py(cd));
+
+    if (down) {
+      x.font = '700 8px "Chakra Petch", system-ui, sans-serif';
+      x.fillStyle = 'rgba(214,58,74,.65)';
+      x.fillText('FALLEN', cx, py(cd) + 12);
+      continue;
+    }
+    /* Only for ground you have been in. An Unrest reading on a region you have
+       never entered would be telling you something you have no way to have
+       learned, and the map's whole rule is that it shows what you know. */
+    if (!hit) continue;
+    const u = g.ground.unrest[i];
+    const w = 34;
+    x.fillStyle = 'rgba(255,255,255,.09)';
+    x.fillRect(cx - w / 2, py(cd) + 8, w, 3);
+    x.fillStyle = dim(UNREST_BANDS[unrestBand(u)].color, 1);
+    x.fillRect(cx - w / 2, py(cd) + 8, w * Math.max(0.04, Math.min(1, u)), 3);
   }
 
   /* ---- the marks ----

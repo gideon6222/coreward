@@ -1608,10 +1608,30 @@ independent of the objective work.
       emptiness. Unrest per region is the one piece deferred: it lands with
       Unrest itself in W6.
 
-- [ ] **W6 Unrest and the Ballast.** Strain grows into a planet-wide meter that
+- [x] **W6 Unrest and the Ballast.** Strain grows into a planet-wide meter that
       everything you cut raises; the Ballast decays against it, is fed with ore,
       collapses a region if it empties, and grows a tier per Anchor. The three
       old buildings are cut.
+
+      *Done.* Unrest is PER REGION rather than planet-wide, which was the one
+      real change to the plan: a single number would have been a second fuel
+      gauge, and twelve of them give the map something to show and make
+      abandoning worked-out ground a move. Everything you cut raises it, a cell
+      at the floor costing two and a half times one at the surface. Past the
+      second band tremors fire above the depth line and up to three times as
+      often; past the third the rock closes up about a third. None of it is
+      stated anywhere - the map shows a bar under a place's name and nothing
+      says what the colours mean.
+
+      The refinery, derrick and shed are gone, and so are `claim.ts`,
+      `claimyard.ts` and `claimsigns.ts`. In their place one machine: a riveted
+      pressure vessel with a sight glass for the level, a dial whose needle is
+      the planet's Unrest, a stack that vents faster as it climbs, and nine
+      collars that stack one per Anchor. It drains while you dig, you feed it
+      banked ore at the pad, and when it empties a region comes down - tunnels
+      filled in, ground unbreakable, and it waits at the door rather than
+      landing on somebody who is still underground. Shoring one back costs 45%
+      of the tank and never restores the tunnels.
 
 - [ ] **W7 Anchors, and vaults.** Nine Anchors across the regions. A small
       library of authored vault templates dropped at seeded rare slots -

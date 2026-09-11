@@ -6,7 +6,10 @@ import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, rel
          coreDepth, valueMult, skyHi, skyLo, ORES,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
-import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel, markSeen } from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen,
+         groundTick, hereUnrest } from './sim/state';
+import { unrestBand, tremorScale } from './sim/unrest';
+import { landCollapse } from './collapse';
 import { blockAt, findHere, climbCells } from './sim/world';
 import { tilesSeen } from './sim/region';
 import { R } from './sim/runtime';
@@ -38,13 +41,13 @@ import { stepBeam } from './beam';
 import { moveAndCollide, thrust, laneVel, headingFor } from './sim/fly';
 import { player, rig, bit, flames, lensFlares, drillTint, FACE_ANGLE, SHIP_Z } from './ship';
 import { padLights, beam } from './pad';
-import { updateClaim } from './claimyard';
+import { updateBallast } from './ballast';
 import { breachHeat } from './sim/breach';
 import { hap } from './haptics';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
-import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner, onQuake } from './ui';
+import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner } from './ui';
 import { stepGauges } from './gauges';
 import { sell, goSurface, die, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere } from './actions';
 import { sfx, setDepth, setMood } from './audio';
@@ -360,8 +363,8 @@ export function tick(raw: number, draw = true) {
            question this row is actually asking. */
         R.run.blocks++; if (b.value >= DROP_MIN_VALUE) R.run.oreBlocks++;
         g.dug.add(k);
-        /* The Claim feels every cell that leaves the world. */
-        if (digStrain(R.digging.d)) onQuake();
+        /* The planet feels every cell that leaves it. */
+        cutGround(R.digging.x, R.digging.d);
         delete g.damage[k];
         dropBlock(k);
         spray(worldX(R.digging.x), -R.digging.d, b.color, b.ore ? 52 : 24, b.ore ? 6.5 : 4, 0.85);
@@ -617,9 +620,21 @@ export function tick(raw: number, draw = true) {
          surface at all - which also means it fires once however slowly the
          ship drifts up onto the pad. */
       const now = atSurface();
-      if (now && !R.wasAtSurface) { sell(); g.fuel = padFuel(); g.hull = S.hullCap(); }
+      if (now && !R.wasAtSurface) {
+        sell(); g.fuel = padFuel(); g.hull = S.hullCap();
+        /* And this is the door. A region chosen while you were underground
+           comes down NOW, with the ship on the pad and nothing in the hold to
+           lose - see the note at the top of unrest.ts about why a collapse
+           never lands on somebody who is still down there. */
+        landCollapse();
+      }
       R.wasAtSurface = now;
     }
+
+    /* The Ballast's own clock, and it only runs while the game is playing -
+       not behind a shop sheet, not on the title, not mid-crossing. It decays
+       while you are out working, which is the only time it is fair. */
+    groundTick(dt);
 
     /* Power cells trickle back underground and fill at the pad; see
        chargeAfter in feel.ts for why it is both. */
@@ -685,11 +700,24 @@ export function tick(raw: number, draw = true) {
        than a pause. */
     /* The ordinary tremor clock stands down while the breach is running - its
        own cadence is four times faster and two clocks would fight. */
+    /* Unrest reaches the player HERE, and mostly only here.
+
+       Two ways, and both are things you feel rather than read. Restless ground
+       shakes at depths that used to be quiet - past the second band the depth
+       gate stops applying at all - and it shakes more often everywhere, up to
+       about three times as often at the top of the meter.
+
+       Nothing anywhere says so. That is deliberate: the research on withheld
+       rules is that you learn a hazard by watching it, and a tooltip reading
+       "Unrest 0.62: tremor rate x2.4" would turn a place that is getting
+       dangerous into a status effect. */
+    const localUnrest = hereUnrest();
+    const shaky = unrestBand(localUnrest) >= 2;
     const tk = tremorTick({ t: R.tremorT, warn: R.tremorWarn }, dt,
       /* Stands down while the breach is running: its own cadence is four
          times faster and two clocks would fight over the same rumble. */
-      !breaching && g.pd > tremorDepth(g.planet) && !R.flight,
-      () => TREMOR_EVERY + Math.random() * TREMOR_JITTER);
+      !breaching && (g.pd > tremorDepth(g.planet) || (shaky && g.pd > 4)) && !R.flight,
+      () => (TREMOR_EVERY + Math.random() * TREMOR_JITTER) / tremorScale(localUnrest));
     R.tremorT = tk.t;
     R.tremorWarn = tk.warn;
     if (tk.warned) { toast('The rock is shifting'); sfx.rumble(); }
@@ -1014,7 +1042,7 @@ export function tick(raw: number, draw = true) {
 
   /* The surface is drawn every frame even from underground: the lean and the
      strain lamp are what the player looks for on the way up. */
-  updateClaim(raw);
+  updateBallast(raw);
   updateHUD();
   stepGauges(raw);
   if (draw) renderWorld();

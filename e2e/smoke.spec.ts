@@ -292,7 +292,20 @@ test('boots without hitting the error overlay', async ({ page }) => {
   /* the overlay is the game's own last-resort reporter; if it is visible,
      something threw before we got here */
   await expect(page.locator('#err')).toHaveClass(/hidden/);
-  await expect(page.locator('#planet')).toHaveText('Verdax');
+  /* The chip names the REGION the ship is standing in, not the planet. It named
+     the planet until W6, and a literal 'Verdax' here was fine while a planet
+     was a place you flew to; with one world it would have been asserting that
+     the chip says the same thing for the whole game, which is the bug rather
+     than the property.
+
+     Derived from the pad's own region so the assertion survives the boundaries
+     being reseeded - they wander, so the name at the pad is a fact about the
+     world and not a constant anybody should type out. */
+  const here = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    return w.regionName(w.padRegion());
+  });
+  await expect(page.locator('#planet')).toHaveText(new RegExp('^' + here));
 });
 
 test('creates a WebGL context', async ({ page }) => {
@@ -1821,7 +1834,14 @@ test('breaking a core opens the chart, and the crossing lands you somewhere else
   expect(after.planet, 'the leg did not advance, so nothing got harder').toBe(before.planet + 1);
   expect(after.world, 'arrived at the world it left').not.toBe(before.world);
   expect(after.dug, 'the new world inherited the old one\'s tunnels').toBe(0);
-  expect(after.name, 'the HUD still names the old world').not.toBe(before.name);
+  /* The chip is no longer evidence of anything here: it names the region under
+     the ship, and both worlds put the ship down on the same pad in the same
+     region, so it correctly reads the same on either side of a crossing. What
+     actually proves the crossing landed somewhere else is the world seed, the
+     leg and the empty tunnel set - all three asserted above. The chip
+     assertion was deleted rather than reworded, because a reworded version of
+     it would have been a second copy of `after.world`. */
+  expect(after.trait, 'the arrival kept no trait at all').toBeTruthy();
 });
 
 test('the three ways in behave differently, and New Game Plus can skip', async ({ page }) => {
@@ -2765,4 +2785,173 @@ test('the map records the descent and draws it', async ({ page }) => {
   await page.locator('#mapClose').dispatchEvent('click');
   await expect(page.locator('#map')).toHaveClass(/hidden/);
   expect(await page.evaluate(() => (window as any).__cw.g.mode)).toBe('play');
+});
+
+/* The Ballast, and a region coming down.
+
+   The campaign's whole stake, end to end. Everything here is reachable in
+   ordinary play and none of it is reachable in ninety seconds of it, so the
+   planet is pushed into the state rather than played into it - the code that
+   then runs is the same code either way.
+
+   The load-bearing assertion is that fallen ground is actually SHUT. Every
+   other part of this can fail visibly; a collapse that draws grey on the map
+   and still lets you fly through it is a collapse that looks right in a
+   screenshot and is not a stake at all. */
+test('the Ballast is fed at the pad, and an empty one takes a region', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* A kitted rig, because the ground this test needs to reach is two regions
+     and a sale away and a stock drill does not get there inside the budget.
+     Everything after this is the shipping code path. */
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.up.thrust = 6; w.g.up.drill = 5; w.g.up.tank = 9;
+    w.g.fuel = w.S.fuelCap();
+  });
+
+  /* Down, then sideways until the ship is out of the pad's own region - which
+     is the one region a collapse may never take, so the test has to be
+     standing somewhere else to have anything to collapse.
+
+     Sideways and not deeper: the regions are three columns by four rows, so
+     the shallow middle runs to a hundred and thirteen metres and the nearest
+     edge of it is ten cells to the right. The fuel is topped up inside the
+     poll, which is a fixture and not a game rule - the drill, the rock and the
+     tunnels are all real. */
+  const topUp = () => page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+  });
+  const until = (fn: () => Promise<boolean>) => async () => { await topUp(); return fn(); };
+  const depth = () => page.evaluate(() => (window as any).__cw.g.pd);
+  const offPad = () => page.evaluate(() => {
+    const w = (window as any).__cw;
+    return w.regionAt(Math.round(w.g.px), Math.round(w.g.pd)) !== w.padRegion();
+  });
+
+  await holdSeam(page, 'down', until(async () => (await depth()) > 18));
+  await holdSeam(page, 'right', until(offPad));
+  await holdSeam(page, 'down', until(async () => (await depth()) > 30));
+  await holdSeam(page, 'up', until(async () =>
+    (await page.evaluate(() => (window as any).__cw.g.credits)) > 0));
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* ---- feeding ---- */
+  await page.locator('#btnBallast').dispatchEvent('click');
+  await expect(page.locator('#ballast')).not.toHaveClass(/hidden/);
+  /* Room to feed into, or every FEED button is correctly disabled and this
+     tests nothing. Half empty is a state several runs of play reach. */
+  await page.evaluate(() => {
+    (window as any).__cw.g.ground.ballast = 0.5;
+    (window as any).__cw.buildBallast();
+  });
+
+  const before = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const btn = document.querySelector('#balRows button[data-feed]') as HTMLButtonElement;
+    return btn ? { id: btn.dataset.feed!, n: Number(btn.dataset.n),
+                   held: w.g.stock[btn.dataset.feed!], ballast: w.g.ground.ballast } : null;
+  });
+  expect(before, 'the panel offered nothing to feed after a sale').not.toBeNull();
+  await page.locator('#balRows button[data-feed]').first().dispatchEvent('click');
+
+  const after = await page.evaluate((id: string) => {
+    const w = (window as any).__cw;
+    return { held: w.g.stock[id] || 0, ballast: w.g.ground.ballast };
+  }, before!.id);
+  expect(after.ballast, 'feeding did not raise the Ballast').toBeGreaterThan(before!.ballast);
+  expect(after.held, 'feeding did not cost any banked ore')
+    .toBe(before!.held - before!.n);
+  expect(after.ballast, 'the Ballast went over full').toBeLessThanOrEqual(1);
+
+  await page.locator('#ballastClose').dispatchEvent('click');
+  await expect(page.locator('#ballast')).toHaveClass(/hidden/);
+
+  /* ---- the collapse ----
+
+     Aimed at the region the shaft actually goes through, found from a dug cell
+     rather than from a region index picked out of the air: the boundaries
+     wander, so "region 4" is a guess and "wherever cell 30,80 is" is not. */
+  const hit = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const pad = w.padRegion();
+    for (const k of w.g.dug) {
+      const i = k.indexOf(',');
+      const r = w.regionAt(+k.slice(0, i), +k.slice(i + 1));
+      if (r !== pad) return { region: r, cell: k, pad };
+    }
+    return null;
+  });
+  expect(hit, 'the descent never left the pad region, so there is nothing to collapse').not.toBeNull();
+
+  const dugThere = await page.evaluate((r: number) => {
+    const w = (window as any).__cw;
+    let n = 0;
+    for (const k of w.g.dug) {
+      const i = k.indexOf(',');
+      if (w.regionAt(+k.slice(0, i), +k.slice(i + 1)) === r) n++;
+    }
+    return n;
+  }, hit!.region);
+  expect(dugThere, 'no tunnel in the region about to fall').toBeGreaterThan(5);
+
+  const fell = await page.evaluate((h: { region: number; cell: string }) => {
+    const w = (window as any).__cw;
+    w.g.ground.ballast = 0;
+    w.g.ground.pending = h.region;
+    w.landCollapse();
+    const i = h.cell.indexOf(',');
+    const x = +h.cell.slice(0, i), d = +h.cell.slice(i + 1);
+    let left = 0;
+    for (const k of w.g.dug) {
+      const j = k.indexOf(',');
+      if (w.regionAt(+k.slice(0, j), +k.slice(j + 1)) === h.region) left++;
+    }
+    const b = w.blockAt(x, d);
+    return {
+      down: w.g.ground.collapsed.indexOf(h.region) >= 0,
+      left,
+      /* JSON cannot carry Infinity, so the question is asked here. */
+      solid: !!b && b.hard === Infinity,
+      id: b ? b.id : null,
+      ballast: w.g.ground.ballast
+    };
+  }, hit!);
+
+  expect(fell.down, 'the region was not recorded as collapsed').toBe(true);
+  expect(fell.left, 'tunnels survived the ground coming down on them').toBe(0);
+  expect(fell.solid,
+    `a cell in fallen ground came back as ${fell.id} - the region is drawn as shut and is not`)
+    .toBe(true);
+  expect(fell.ballast,
+    'the collapse left the Ballast empty, which collapses another region on the next run')
+    .toBeGreaterThan(0);
+
+  /* ---- and shoring it back ---- */
+  await page.locator('#btnBallast').dispatchEvent('click');
+  await page.evaluate(() => {
+    (window as any).__cw.g.ground.ballast = 1;
+    (window as any).__cw.buildBallast();
+  });
+  await expect(page.locator('#balFallen button[data-shore]')).toBeEnabled();
+  await page.locator('#balFallen button[data-shore]').dispatchEvent('click');
+
+  const reopened = await page.evaluate((h: { region: number; cell: string }) => {
+    const w = (window as any).__cw;
+    const i = h.cell.indexOf(',');
+    const b = w.blockAt(+h.cell.slice(0, i), +h.cell.slice(i + 1));
+    return {
+      down: w.g.ground.collapsed.indexOf(h.region) >= 0,
+      solid: !!b && b.hard === Infinity,
+      ballast: w.g.ground.ballast,
+      dug: w.g.dug.size
+    };
+  }, hit!);
+  expect(reopened.down, 'the region is still marked as fallen').toBe(false);
+  expect(reopened.solid, 'shored ground is still unbreakable').toBe(false);
+  expect(reopened.ballast, 'shoring a region cost nothing').toBeLessThan(1);
 });
