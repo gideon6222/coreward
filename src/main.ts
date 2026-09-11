@@ -16,7 +16,7 @@ import { stationX } from './stationroom';
 import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen, roomDrawer,
          stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
-import { el, updateHUD, audioLabels, buildShop, toast } from './ui';
+import { el, updateHUD, audioLabels, buildShop, toast, foundBanner } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
@@ -189,7 +189,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     drawerOpen, roomDrawer, kitCases, refreshKit,
     /* So a spec can open a cache the way the drill does, and ask what a given
        cell would pay before it opens one. */
-    cachePrize, grantCache, haulValue, ORES,
+    cachePrize, grantCache, haulValue, ORES, foundBanner,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

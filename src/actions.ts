@@ -471,7 +471,11 @@ export function die(cause: 'fuel' | 'heat' | 'gas' | 'breach', after: () => void
   g.cargo = {};
   g.weight = 0;
   sfx.alarm();
-  flash('rgba(255,90,60,.55)', 900);
+  /* Softer and shorter than the first version. The card comes up inside the
+     flash, and at .55 over 900 ms a screenshot four hundred milliseconds in
+     showed the death notice as pink text on pink - the flash was drowning the
+     one thing the player has to read. */
+  flash('rgba(255,90,60,.38)', 520);
   R.shake = Math.max(R.shake, SHAKE_BOOM);
   hap.boom();
   spray(worldX(Math.round(g.px)), -g.pd, 0xff8844, 220, 13, 2.6);

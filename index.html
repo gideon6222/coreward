@@ -298,7 +298,15 @@
      clear of both thumbs. `pointer-events:none` because there is nothing to
      tap: it goes on its own. */
   #found{
-    position:absolute; left:14px; right:14px; top:14%;
+    /* BELOW the action buttons, not on top of them.
+
+       It was at 14% of the screen and #actions starts at 146px plus the notch
+       inset and runs two buttons deep - so MENU and MANIFEST sat straight
+       across the name of whatever you had just found. Measured off the same
+       constant the buttons are positioned from rather than a percentage, so
+       the two cannot drift apart on a different phone. */
+    position:absolute; left:14px; right:14px;
+    top:calc(env(safe-area-inset-top,0px) + 258px);
     padding:12px 14px 11px; pointer-events:none;
     border:1px solid rgba(0,255,65,.45); border-left:3px solid #00ff41;
     background:linear-gradient(180deg,rgba(6,18,10,.94),rgba(4,10,7,.96));
