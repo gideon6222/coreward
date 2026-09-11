@@ -339,10 +339,31 @@ function occlusion(x: number, d: number): number {
    world coordinates. Any per-instance rotation or scale breaks that agreement
    and the seams come straight back. Variety now comes from the noise field
    itself, which does not repeat, rather than from 64 rotations of one shape. */
-function placeCell(px: number, py: number) {
+/* ---------- breaking the grid ----------
+
+   Playtest: *"redesign the blocks for a more interesting stylized feel."*
+
+   The instinct is to add texture. The sourced answer is the opposite: vary the
+   GEOMETRY and the phase, not the surface. A grid of cubes reads as a grid
+   because every cube is in the same orientation at the same size, and no
+   amount of detail on their faces changes that.
+
+   Two things, both free. A QUARTER-TURN SNAP - 0, 90, 180 or 270 about Z -
+   which is the standard fix and is a snap rather than a free angle because a
+   quarter turn leaves a cube's normals and UVs exactly where they were, so the
+   displacement shader and the normal map still line up. And a SCALE WOBBLE of
+   about a tenth, which stops neighbouring cells sharing an edge and gives the
+   wall a broken profile.
+
+   Both are written into the instance matrix once when the chunk is built.
+   Zero draw calls, zero per-frame cost, and seeded off the cell so a wall does
+   not reshuffle itself every time you fly past it. */
+function placeCell(px: number, py: number, x: number, d: number) {
   scratch.position.set(px, py, 0);
-  scratch.rotation.set(0, 0, 0);
-  scratch.scale.set(1, 1, 1);
+  const r = rnd(x + 19, d + 53, g.planet + 311);
+  scratch.rotation.set(0, 0, Math.floor(r * 4) * (Math.PI / 2));
+  const sc = 0.94 + rnd(x + 131, d + 7, g.planet + 311) * 0.12;
+  scratch.scale.set(sc, sc, 1);
 }
 
 function rebuild() {
@@ -376,7 +397,7 @@ function rebuild() {
            on the cell, never a kind of cell - see growth.ts. */
         addGrowth(x, d, px, py, ao);
         scratch.position.set(px, py, 0);
-        placeCell(px, py);
+        placeCell(px, py, x, d);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
         pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.color, g.planet), jit * ao)));
@@ -409,7 +430,7 @@ function rebuild() {
 
       /* ore: a host block plus crystal shards, two of them mirrored behind */
       scratch.position.set(px, py, 0);
-      placeCell(px, py);
+      placeCell(px, py, x, d);
       scratch.updateMatrix();
       pool.body.setMatrixAt(pool.bodies, scratch.matrix);
       pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.host || 0x333038, g.planet), jit * ao)));

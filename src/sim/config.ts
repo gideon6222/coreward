@@ -2,6 +2,7 @@
 
 import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost, Relic } from '../types';
 import { zoomForScan } from './feel';
+import { rnd } from './util';
 import { FOUND_KEYS } from './finds';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
@@ -588,12 +589,36 @@ export const stoneToGranite = (p: number) => Math.round(coreDepth(p) * STONE_FRA
 export const graniteToScoria = (p: number) => heatDepth(p);
 export const scoriaToBasalt = (p: number) => Math.round(coreDepth(p) * BASALT_FRACTION);
 
-export const baseRock = (d: number, p: number) =>
-  d < dirtToStone(p) ? ROCKS[0]
-  : d < stoneToGranite(p) ? ROCKS[1]
-  : d < graniteToScoria(p) ? ROCKS[2]
-  : d < scoriaToBasalt(p) ? ROCKS[3]
-  : ROCKS[4];
+/* How far a stratum boundary wanders, in metres, column by column.
+
+   A band that changes at an exact horizontal metre is the most artificial line
+   in the game: every wall in the world has the same seam at the same height,
+   dead straight across thirteen columns. Deep Rock's own technique is the
+   opposite - define the large forms irregularly and let the surface follow -
+   and the research is clear that large-scale irregularity does more for the
+   read than any amount of per-block noise.
+
+   Seeded per column and per boundary, so a seam wanders the same way every
+   time you come back to it. Plus or minus three metres is enough to make a
+   band look geological and small enough that graniteToScoria - which IS the
+   heat line, and is nailed to it by a test at every leg - never moves far
+   enough from the danger it marks to lie about it. */
+export const BAND_WANDER = 3;
+const bandOffset = (x: number, which: number, p: number) =>
+  Math.round((rnd(x + which * 97, which * 13 + 401, p + 421) - 0.5) * 2 * BAND_WANDER);
+
+/* `x` is optional so every caller that only cares which band a DEPTH is in -
+   the tests, the econ probe, the heat line - keeps asking the straight
+   question and getting the straight answer. Only generation passes a column,
+   and only generation wants the wander. */
+export const baseRock = (d: number, p: number, x?: number) => {
+  const w = (i: number) => (x === undefined ? 0 : bandOffset(x, i, p));
+  return d < dirtToStone(p) + w(0) ? ROCKS[0]
+    : d < stoneToGranite(p) + w(1) ? ROCKS[1]
+    : d < graniteToScoria(p) + w(2) ? ROCKS[2]
+    : d < scoriaToBasalt(p) + w(3) ? ROCKS[3]
+    : ROCKS[4];
+};
 
 /* Ore carries a depth gate and a spawn chance; rock does not. That is the only
    structural difference between the two, so it is also the type guard - and it

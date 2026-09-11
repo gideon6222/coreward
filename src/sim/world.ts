@@ -102,7 +102,7 @@ export function blockAt(x: number, d: number): Block | null {
        sandstone boulders in a lava tube; half-blended it reads as the local
        rock, shattered - identifiable as fill without leaving the palette.
        Free: the pool is keyed by block id but the shade rides on the instance. */
-    const band = baseRock(d, g.planet);
+    const band = baseRock(d, g.planet, x);
     return { id: RUBBLE.id, name: RUBBLE.name, glow: RUBBLE.glow,
              color: mixHex(band.color, RUBBLE.color, 0.5),
              hard: band.hard * hm * RUBBLE_HARD, wt: RUBBLE.wt, value: RUBBLE.value, ore: false };
@@ -147,7 +147,7 @@ export function blockAt(x: number, d: number): Block | null {
                hard: o.hard * hm, wt: o.wt, value: o.value, ore: true };
     }
   }
-  const b = baseRock(d, g.planet);
+  const b = baseRock(d, g.planet, x);
 
   /* A seam: the same cells that already had mineral flecks scattered on their
      face. Its own seed offset, checked only after every ore roll has failed,

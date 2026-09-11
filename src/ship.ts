@@ -51,6 +51,24 @@ const trimMat = asMetal(new THREE.MeshStandardMaterial({
 export const darkMat = asMetal(new THREE.MeshStandardMaterial({
   color: 0x12161c, metalness: 0.5, roughness: 0.6, flatShading: true
 }), 0.3);
+/* Brass, and it exists for a measured reason rather than for flavour.
+
+   The first pass of this hull failed its own squint test: blurred at play
+   scale the ship was one dark lump with a bright dot on it, and neither the
+   stack nor the flywheel read at all. They were there - they were just dark
+   metal on a dark hull, so the outline breaks were invisible even though the
+   geometry was correct.
+
+   The fix is not more geometry, it is VALUE. The protruding parts are brass:
+   mid-value and warm, so they separate from both the near-black hull and the
+   dark tunnel, and the blurred silhouette gains two distinct appendages
+   instead of being a rounded rectangle. This is the research's "value carries
+   the read, hue count does not", applied to the one object that has to be
+   recognisable at thirty pixels. */
+const brassMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0xa8762e, metalness: 0.9, roughness: 0.42, flatShading: true
+}), 0.4);
+
 const steelMat = asMetal(new THREE.MeshStandardMaterial({
   /* The pale steel was most of what still read as white at play scale:
      bright bare metal on a small object against dark rock is a highlight, not
@@ -58,52 +76,174 @@ const steelMat = asMetal(new THREE.MeshStandardMaterial({
   color: 0x2b3038, metalness: 0.62, roughness: 0.66, flatShading: true
 }), 0.26);
 
-/* ---------- body ----------
+/* ---------- the body ----------
 
-   A chamfered block rather than a cylinder: four-sided prisms rotated 45 give
-   flat faces that take the lamp unevenly, which is what makes a shape read as
-   machined. */
-const hull = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.56, 0.34), hullMat);
-rig.add(hull);
+   Playtest: *"redesign the ship to look more steam punk and unique."*
 
-/* the chamfer - a narrower block sat proud of the main body, so the silhouette
-   has a step in it instead of one unbroken edge */
-const spine = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.26), darkMat);
-spine.position.y = -0.02;
-rig.add(spine);
+   Designed at THIRTY PIXELS, which is the whole method and is what every
+   previous pass on this ship got wrong. The sourced finding is blunt: at play
+   scale only things that break the OUTLINE survive. Rivets, gauges, valve
+   dials, portholes and brass-versus-iron all vanish - a 2-3 px brass band is
+   not a colour, it is noise. Brass reads in play only if it covers a whole
+   panel.
 
-/* A wedge nose. Four segments, so it is a pyramid rather than a cone: the
-   difference is four hard edges catching light at four different angles. */
-const cowl = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.24, 0.22, 4), hullMat);
-cowl.position.y = 0.37;
-cowl.rotation.y = Math.PI / 4;
-rig.add(cowl);
+   What survives the squint test, and what this hull is therefore made of:
 
-/* The collar the drill hangs off - heavy, and stepped, because this is the part
+   1. A STACK. A cylinder breaking the roofline is the single most efficient
+      steampunk signal there is, because it changes the outline rather than the
+      surface. Off-centre and raked back, so it is also the asymmetry.
+   2. A BOILER. A barrel-shaped drum instead of a flat box hull - a bulge
+      distinct from the body is the second outline break.
+   3. A FLYWHEEL. Big enough to matter: a spoked disc on one flank at about a
+      third of ship height. Under about 15% of height a wheel disappears.
+   4. NEGATIVE SPACE. An open frame between the boiler and the drill collar.
+      Gaps read as strongly as filled shape at distance and cost nothing.
+
+   And the rule that decides everything else: ONE dominant feature, not several.
+   The stack is the hero. The rest of the hull is deliberately plain and low
+   contrast so the eye lands on it - which is why there is no detail on the
+   boiler's face at all.
+
+   The greeble that a steampunk machine wants but cannot show at 30 px - rivet
+   rows, the brass band, a pressure gauge, a valve wheel - is in `dressShip()`
+   at the bottom, added only when the Outfitter shows the ship at full screen.
+
+   ASYMMETRIC FRONT TO BACK, on purpose. A symmetric hull reads as "generic
+   vehicle"; steampunk craft almost never are. The stack leans one way, the
+   flywheel sits on one flank, and the ship is immediately not a sci-fi pod. */
+
+/* The boiler: a drum lying across the ship, so the silhouette is round where a
+   hull would be flat. Eight sides rather than smooth - facets take the lamp
+   unevenly, which is what makes a shape read as machined rather than moulded. */
+const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.42, 8), hullMat);
+boiler.rotation.z = Math.PI / 2;
+boiler.position.y = 0.02;
+rig.add(boiler);
+
+/* The end caps, a little proud, so the drum has a rim rather than a cut edge. */
+for (const sx of [-1, 1]) {
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 8), steelMat);
+  cap.rotation.z = Math.PI / 2;
+  cap.position.set(sx * 0.22, 0.02, 0);
+  rig.add(cap);
+}
+
+/* The firebox under the boiler, squared off - the one hard-edged mass on the
+   ship, and what the drill collar hangs from. */
+const firebox = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.3), darkMat);
+firebox.position.y = -0.2;
+rig.add(firebox);
+
+/* ---------- the stack ----------
+
+   The hero feature, and the only thing on the ship allowed to be loud. Raked
+   back off the top of the boiler and offset to one side: two asymmetries for
+   the price of one, and it is what makes this silhouette nobody else's.
+
+   Remember the ship flies drill-first, so +y is the REAR - the stack trails
+   behind the machine the way a funnel should. */
+const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.085, 0.46, 6), brassMat);
+stack.position.set(-0.19, 0.4, -0.04);
+stack.rotation.z = -0.3;
+rig.add(stack);
+/* The crown - a flared lip, which is what stops a cylinder reading as a peg. */
+const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.07, 0.07, 6), brassMat);
+crown.position.set(-0.26, 0.62, -0.04);
+crown.rotation.z = -0.3;
+rig.add(crown);
+
+/* ---------- the flywheel ----------
+
+   On one flank only, facing the camera, because a disc seen edge-on is a line.
+   0.18 radius against a hull about 0.6 tall is roughly a third - comfortably
+   over the threshold where a wheel stops being visible.
+
+   Six spokes as one thin box each. Spokes are the reason it reads as a WHEEL
+   and not a disc, and they are also the negative space: the gaps between them
+   are as much of the read as the metal is. */
+export const flywheel = new THREE.Group();
+const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.036, 5, 12), brassMat);
+flywheel.add(rim);
+for (let i = 0; i < 6; i++) {
+  const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.4, 0.032), brassMat);
+  spoke.rotation.z = (i / 6) * Math.PI;
+  flywheel.add(spoke);
+}
+const boss = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 6), darkMat);
+boss.rotation.x = Math.PI / 2;
+flywheel.add(boss);
+flywheel.position.set(0.3, -0.04, 0.18);
+rig.add(flywheel);
+
+/* And the rod that drives it, running down to the collar - the one piece of
+   visible mechanism, and it sits on the silhouette's edge where it can be
+   seen rather than on a face where it cannot. */
+const rod = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.26, 0.035), steelMat);
+rod.position.set(0.32, -0.26, 0.14);
+rod.rotation.z = 0.18;
+rig.add(rod);
+
+/* ---------- the open frame ----------
+
+   Two legs from the firebox down to the drill collar with daylight between
+   them. This is the negative space, and it is why the bottom half of the ship
+   does not read as one solid lump. */
+for (const sx of [-1, 1]) {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.05), steelMat);
+  leg.position.set(sx * 0.14, -0.36, 0.02);
+  leg.rotation.z = sx * 0.14;
+  rig.add(leg);
+}
+
+/* The collar the drill hangs off - heavy and stepped, because this is the part
    of a mining machine that takes the load. */
-const collar = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.3), steelMat);
-collar.position.y = -0.3;
+const collar = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.26), steelMat);
+collar.position.y = -0.47;
 rig.add(collar);
-const collarLip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.07, 0.34), trimMat);
-collarLip.position.y = -0.37;
+const collarLip = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.3), trimMat);
+collarLip.position.y = -0.53;
 rig.add(collarLip);
 
-/* Exposed struts down each flank. Two thin bars read as structure at small
-   scale where a panel line reads as nothing at all. */
-for (const sx of [-1, 1]) {
-  const strut = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.5, 0.045), steelMat);
-  strut.position.set(sx * 0.25, -0.02, 0.14);
-  rig.add(strut);
-  /* swept blade, kept from the old ship because it was the part that worked */
-  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.34, 0.22), darkMat);
-  fin.position.set(sx * 0.26, 0.04, -0.04);
-  fin.rotation.z = sx * 0.2;
-  rig.add(fin);
-  const tip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.16), trimMat);
-  tip.position.set(sx * 0.31, -0.15, -0.04);
-  tip.rotation.z = sx * 0.2;
-  rig.add(tip);
+/* ---------- the greeble ----------
+
+   Everything here is invisible at play scale and that is the point. The
+   research is explicit that rivets, gauges and valve wheels do not survive
+   thirty pixels - they exist because the Outfitter shows this ship at full
+   screen, and a steampunk machine with no rivets on it at arm's length is a
+   shape rather than a thing.
+
+   Kept to THREE draw calls between them. The rivets are one instanced mesh
+   rather than forty, which is the same lesson the ship's bolt-on hardware
+   learned when thirteen separate meshes took the worst case to three draws off
+   failing CI. */
+const rivetGeo = new THREE.SphereGeometry(0.012, 5, 3);
+{
+  const N = 24;
+  const rivets = new THREE.InstancedMesh(rivetGeo, brassMat, N);
+  const t = new THREE.Object3D();
+  for (let i = 0; i < N; i++) {
+    /* Two bands around the boiler, at the seams a real drum would be riveted
+       at rather than scattered over the face. */
+    const band = i < N / 2 ? -0.13 : 0.13;
+    const a2 = ((i % (N / 2)) / (N / 2)) * Math.PI * 2;
+    t.position.set(band, 0.02 + Math.cos(a2) * 0.25, Math.sin(a2) * 0.25);
+    t.updateMatrix();
+    rivets.setMatrixAt(i, t.matrix);
+  }
+  rivets.frustumCulled = false;
+  rig.add(rivets);
 }
+
+/* A pressure gauge on the firebox, because the one thing a boiler always has
+   is something telling you whether it is about to go. */
+const gaugeFace = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.018, 8),
+  new THREE.MeshStandardMaterial({ color: 0xe8dcc0, metalness: 0.1, roughness: 0.7, flatShading: true }));
+gaugeFace.rotation.x = Math.PI / 2;
+gaugeFace.position.set(-0.17, -0.19, 0.17);
+rig.add(gaugeFace);
+const gaugeBezel = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.014, 4, 8), brassMat);
+gaugeBezel.position.set(-0.17, -0.19, 0.18);
+rig.add(gaugeBezel);
 
 /* ---------- drill ---------- */
 
@@ -203,33 +343,33 @@ rig.add(bit);
    light should look like it is coming from INSIDE a canopy, not like the
    canopy is the light. */
 const cab = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.055, 0.13, 0.17, 4),
+  new THREE.CylinderGeometry(0.085, 0.105, 0.08, 6),
   new THREE.MeshStandardMaterial({
     color: 0x2a3138, emissive: 0x9a6a12, emissiveIntensity: 0.55,
     metalness: 0.4, roughness: 0.25, flatShading: true
   })
 );
-cab.position.set(0, 0.1, 0.24);
-cab.rotation.set(Math.PI / 2.35, Math.PI / 4, 0);
+cab.position.set(0.02, 0.02, 0.24);
+cab.rotation.x = Math.PI / 2;
 rig.add(cab);
 
-/* The frame around the canopy. Highest-value detail at small scale: it
-   separates the lit cockpit from the lit hull, which otherwise merge into one
-   bright smudge. Square now, to match the wedge. */
-const ring = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.03), steelMat);
-ring.position.set(0, 0.09, 0.2);
+/* The porthole's ring. Highest-value detail at small scale for the same reason
+   it always was: it separates the lit window from the lit hull, which
+   otherwise merge into one bright smudge. Brass, and thick enough to survive
+   being small - a thin ring is the 2 px band the research says vanishes. */
+const ring = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.024, 5, 8), brassMat);
+ring.position.set(0.02, 0.02, 0.26);
 rig.add(ring);
 
-/* Much smaller than it was. The cockpit should be a lit window, not a lantern -
-   an oversized glow sprite here is most of what made the ship read as a toy. */
-const cabGlow = makeGlow(0xffca7a, 0.34, 0.32);
-cabGlow.position.set(0, 0.1, 0.36);
+/* Much smaller than a lantern. The cockpit is a lit window. */
+const cabGlow = makeGlow(0xffca7a, 0.3, 0.3);
+cabGlow.position.set(0.02, 0.02, 0.34);
 rig.add(cabGlow);
 
 /* shoulder running lights, so the hull has a readable outline in the dark */
-for (const sx of [-0.28, 0.28]) {
-  const lamp = makeGlow(0x6fe8ff, 0.17, 0.5);
-  lamp.position.set(sx, -0.16, 0.18);
+for (const sx of [-0.24, 0.24]) {
+  const lamp = makeGlow(0x6fe8ff, 0.15, 0.45);
+  lamp.position.set(sx, 0.02, 0.2);
   rig.add(lamp);
 }
 
@@ -257,16 +397,16 @@ const lensMat = new THREE.MeshStandardMaterial({
 });
 for (const sx of [-0.15, 0.15]) {
   const shroud = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.09, 0.1), darkMat);
-  shroud.position.set(sx, -0.26, 0.12);
+  shroud.position.set(sx, -0.42, 0.12);
   rig.add(shroud);
   const lens = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.045, 0.11), lensMat);
-  lens.position.set(sx, -0.29, 0.13);
+  lens.position.set(sx, -0.45, 0.13);
   rig.add(lens);
   /* A tight halo so the lens blooms rather than reading as a painted rectangle.
      Small on purpose: anything wide enough to cover the hull is the mistake the
      big glow made. */
   const flare = makeGlow(0xffc87a, 0.3, 0.55);
-  flare.position.set(sx, -0.3, 0.3);
+  flare.position.set(sx, -0.46, 0.28);
   rig.add(flare);
   lensFlares.push(flare);
 }
@@ -274,9 +414,9 @@ for (const sx of [-0.15, 0.15]) {
 /* ---------- thrusters ---------- */
 
 export const flames: { cone: THREE.Mesh<THREE.ConeGeometry, THREE.MeshBasicMaterial>; glow: THREE.Sprite }[] = [];
-for (const sx of [-0.19, 0.19]) {
+for (const sx of [0.14, -0.2]) {
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.06, 0.13, 4), steelMat);
-  nozzle.position.set(sx, 0.31, 0);
+  nozzle.position.set(sx, 0.26, 0);
   nozzle.rotation.y = Math.PI / 4;
   rig.add(nozzle);
 
@@ -284,10 +424,10 @@ for (const sx of [-0.19, 0.19]) {
     new THREE.ConeGeometry(0.075, 0.3, 6),
     new THREE.MeshBasicMaterial({ color: 0x8fdcff, transparent: true, opacity: 0.9 })
   );
-  fl.position.set(sx, 0.42, 0);
+  fl.position.set(sx, 0.37, 0);
   rig.add(fl);
   const fg = makeGlow(0x7ad4ff, 0.7, 0.9);
-  fg.position.set(sx, 0.48, 0);
+  fg.position.set(sx, 0.43, 0);
   rig.add(fg);
   flames.push({ cone: fl, glow: fg });
 }
