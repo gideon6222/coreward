@@ -193,7 +193,7 @@ export type Dir = 'up' | 'down' | 'left' | 'right';
 
 /* g.mode gates input and the frame loop. */
 export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly' | 'boom'
-                 | 'chart' | 'transit' | 'title' | 'intro' | 'settle';
+                 | 'chart' | 'transit' | 'title' | 'intro' | 'settle' | 'map';
 
 /* Chewing through one block. */
 export interface Dig {

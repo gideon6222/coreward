@@ -1565,21 +1565,21 @@ Ordered so each one ships and is playable, and so the two that are pure
 presentation come early - they are the ones you can judge fastest, and they are
 independent of the objective work.
 
-- [ ] **W1 The ship, designed at thirty pixels.** Silhouette first: an
+- [x] **W1 The ship, designed at thirty pixels.** Silhouette first: an
       off-centre stack, a boiler bulge, an open under-frame, asymmetric
       front-to-back, the auger still leading. Judged blurred at 30 px against
       the tunnel, not in the shop. Then the greeble - rivets, a brass band, a
       pressure gauge, a valve wheel - which exists only for the Outfitter.
       *Cost: one file rewritten. No new systems.*
 
-- [ ] **W2 The blocks.** Per-instance quarter-turn and scale jitter; two or
+- [x] **W2 The blocks.** Per-instance quarter-turn and scale jitter; two or
       three chamfered mesh variants per material; ragged stratum boundaries
       instead of straight horizontal lines; sparse crack and vein decals in one
       instanced batch; baked seam AO folded into the per-instance colour; a rim
       term in the forward shader. *Cost: no new draw calls, and the ragged
       boundaries are rock-for-rock, which the frozen baseline already permits.*
 
-- [ ] **W3 The world gets wide.** `W` from 13 to about 61, and the streaming
+- [x] **W3 The world gets wide.** `W` from 13 to about 61, and the streaming
       window gains a horizontal axis - a column range around the ship, a rebuild
       on crossing a column, and `MAX_CELLS` sized off the window rather than off
       `W`. **This is the one piece of work that is invisible from the outside
@@ -1587,13 +1587,26 @@ independent of the objective work.
       to 10.6 MB and every rebuild touches five times the cells. Measured, not
       estimated.
 
-- [ ] **W4 Regions.** The twelve palettes and five traits stop being planets and
+- [x] **W4 Regions.** The twelve palettes and five traits stop being planets and
       become regions of one world, in width and depth. `coreDepth(leg)` and the
       chart go. One fixed world about 450 m deep.
 
-- [ ] **W5 The map.** Fills in as you dig, marks finds, marks the
+- [x] **W5 The map.** Fills in as you dig, marks finds, marks the
       not-yet-understood, shows Unrest per region. Nothing else in this round
       works without it.
+
+      *Done.* A Survey screen on a canvas: the ground you have had a lamp on,
+      washed in each region's own rock colour four cells to a tile; your own
+      tunnels exact over the top of it; the pad, the ship and every device and
+      cache you have pulled out of the rock; region names over their own ground,
+      and three question marks over ground you have never entered. A survey
+      grid and a 50 m ruler are drawn across the WHOLE world and not only the
+      explored part, so unsurveyed ground reads as empty squares on a chart
+      rather than as a hole in the screen. Vertical drag to scroll, CENTRE ON
+      SHIP to get back, and a surveyed percentage, which is the partial-progress
+      readout the research says procedural mystery needs to avoid reading as
+      emptiness. Unrest per region is the one piece deferred: it lands with
+      Unrest itself in W6.
 
 - [ ] **W6 Unrest and the Ballast.** Strain grows into a planet-wide meter that
       everything you cut raises; the Ballast decays against it, is fed with ore,

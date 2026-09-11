@@ -3393,3 +3393,52 @@ reason: they counted pockets and seams by looking at the DIFF, and the frozen
 world now contains both, so the diff is correctly zero. A count of zero would
 have read as "pockets have stopped generating". They count the world directly
 now, which is what they always meant.
+
+## Round eight, W5, 2026-09-11: the map, and three constructs that proved nothing
+
+The Survey screen landed. What is worth keeping out of it is not the canvas
+work - it is that **three separate checks in this milestone reported success
+while proving nothing**, and all three were caught the same way: by deleting
+the thing they were supposed to be watching and seeing whether they noticed.
+
+**1. The recorder that ran once.** The map records what the lamp has shown you
+on the climb timer. Written as `if (R.climbT <= 0) { record }` sitting next to
+the timer rather than inside it, and the timer is reset to 0.35 in the same
+frame it expires - so the condition is true on the first frame of the session
+and never again. The map filled in at the pad and nowhere else, which looks
+exactly like a map you simply have not explored yet. The e2e catches it by
+asserting the SPAN of the trail, not its size: a one-shot recorder leaves three
+tile rows and a working one leaves ten over a 40 m descent.
+
+**2. The pixel count that the graph paper answered.** The first version of the
+screen test counted "pixels that are not the background". Then unexplored
+ground gained a survey grid - drawn over the whole canvas on purpose - and the
+count stopped meaning anything: a map that had drawn nothing but its own lines
+would have passed. The second version counted the wash by colour and was no
+better, because three 50 m rules are wide, coloured, and clear the threshold on
+their own. Both were verified by deleting the wash, and the second one still
+passed. What works is a DIFFERENCE: a surveyed tile against an unsurveyed one,
+at the same scale on the same canvas, with tunnel cells excluded so the tunnels
+cannot answer for the wash.
+
+**3. The tunnel check that was reading the ship.** Sampling dug cells and
+taking the brightest one passed with every tunnel deleted, because the ship
+marker is drawn on top of a dug cell by definition and one amber dot was the
+maximum. The median cannot be moved by the two or three cells a marker covers.
+
+The through-line is the one this repo keeps relearning: **a measurement taken
+over a whole picture can be satisfied by the wrong part of the picture.** The
+fix is never a bigger threshold, it is a narrower question.
+
+### Two bugs found on the way, neither of them in the map
+
+`hardReset()` - the button that says TAP AGAIN TO WIPE EVERYTHING - never wiped
+`found`, `foundKit` or `seenOre`. It zeroed `g.up`, so the devices came back at
+tier zero and stayed on the Outfitter's shelf: a fresh save that had somehow
+already done the finding. Fixed with the map's own lists.
+
+And the Set that indexes `g.seen` started life in `loop.ts` while the list it
+indexes lives in `state.ts`. Moving it next to the list is not tidying - `load()`
+replaces the list wholesale, and an index in another module has no way to know
+that happened. It now rebuilds on every load and on a wipe, and there is a unit
+test that fails if the rebuild is removed.

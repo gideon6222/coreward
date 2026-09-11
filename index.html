@@ -766,6 +766,45 @@
     box-shadow:0 20px 60px rgba(0,0,0,.6);
   }
   .sheet h2{margin:0 0 4px; font-size:19px; letter-spacing:.06em;}
+
+  /* ---------- the map ----------
+
+     A .sheet and not a screen was the wrong shape for this: a sheet is
+     max-width 460 and centred, and the thing being drawn is 61 wide by 452
+     deep on a phone that is twice as tall as it is wide. The map takes the
+     height, because the world's interesting axis is the one a sheet wastes. */
+  .mapsheet{
+    width:100%; max-width:460px; height:100%;
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+  }
+  .maphead{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .maphead h2{margin:0; font-size:19px; letter-spacing:.06em;}
+  .maphead .sub{margin:3px 0 0;}
+  .mapright{text-align:right; padding-top:6px;}
+  .mapdepth{font-size:11.5px; font-weight:700; color:var(--dim); letter-spacing:.08em; white-space:nowrap;}
+  #mapCanvas{
+    flex:1; min-height:0; width:100%; display:block;
+    border:1px solid var(--line); border-radius:10px; background:#05070c;
+    /* The drag up and down this canvas is the map's, not the browser's.
+       Without this the first pull scrolls the modal instead of the world. */
+    touch-action:none;
+  }
+  .mapkey{display:flex; align-items:center; gap:11px; font-size:10px; color:var(--dim); letter-spacing:.07em;}
+  .mapkey span{display:flex; align-items:center; gap:5px;}
+  .mapkey i{width:9px; height:9px; border-radius:2px; display:block;}
+  /* The legend has to carry the SHAPE as well as the colour, because that is
+     what the map does: at five pixels on a phone a hue is a guess. */
+  .mapkey i.sq{border-radius:1px;}
+  .mapkey i.dia{border-radius:1px; transform:rotate(45deg); width:8px; height:8px;}
+  .maphint{font-size:10px; color:#4a5570; letter-spacing:.07em; margin-top:3px;}
+  .mapkey .maphint{margin-left:auto; color:#4a5570;}
+  .maprow{display:flex; gap:8px;}
+  .maprow button{
+    flex:1; border:1px solid var(--line); background:rgba(63,224,255,.12); color:var(--cyan);
+    border-radius:11px; padding:13px; font-size:11.5px; font-weight:700; letter-spacing:.08em;
+  }
   .sheet p{color:var(--dim); font-size:14px; line-height:1.55;}
   .sub{color:var(--amber); font-size:13px; font-weight:700; margin-bottom:14px;}
   .up{display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--line);}
@@ -888,6 +927,7 @@
 <div id="actions">
   <button id="btnPause">⏸ MENU</button>
   <button id="btnManifest">MANIFEST</button>
+  <button id="btnMap">MAP</button>
   <button id="btnShop">SHOP</button>
   <button id="btnAuto" style="display:none">AUTOPILOT</button>
 </div>
@@ -1026,6 +1066,34 @@
   <div class="tray">
     <div id="shopCard" class="card"></div>
     <div class="undock"><button id="shopClose" class="wide">UNDOCK</button></div>
+  </div>
+</div>
+
+<!-- The map. See .mapsheet in the CSS for why this is not a .sheet. -->
+<div id="map" class="modal hidden">
+  <div class="mapsheet">
+    <div class="maphead">
+      <div>
+        <h2>Survey</h2>
+        <div class="sub" id="mapWhere">&mdash;</div>
+      </div>
+      <div class="mapright">
+        <div class="mapdepth" id="mapDepth">0 &ndash; 0 m</div>
+        <div class="maphint">DRAG TO SCROLL</div>
+      </div>
+    </div>
+    <canvas id="mapCanvas"></canvas>
+    <div class="mapkey">
+      <span><i style="background:#d7c9a8"></i>CUT</span>
+      <span><i style="background:#ffc861"></i>SHIP</span>
+      <span><i class="sq" style="background:#3fe0ff"></i>PAD</span>
+      <span><i class="dia" style="background:#00ff41"></i>FOUND</span>
+      <span class="maphint" id="mapPct">SURVEYED 0%</span>
+    </div>
+    <div class="maprow">
+      <button id="mapHere">CENTRE ON SHIP</button>
+      <button id="mapClose">CLOSE</button>
+    </div>
   </div>
 </div>
 

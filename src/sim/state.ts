@@ -79,6 +79,22 @@ export const g: {
   /* Every material you have ever cut out of the rock. The first of each is an
      event; after that it is just ore. See the reveal in loop.ts. */
   seenOre: string[];
+  /* Which patches of the world you have had in front of you.
+
+     Stored at a coarse grid rather than per cell - see MAP_TILE. The tunnels
+     are drawn from `dug`, which is already saved and is already exact; this is
+     the dimmer wash behind them that says "you have been down this way", which
+     does not need to be exact and would cost 27,572 entries if it were. */
+  seen: string[];
+  /* Where the notable things were. One entry per discovery, `kind,x,d` - `f`
+     for a device, `c` for a supply cache.
+
+     A separate list from `found` on purpose: `found` answers "what do I own",
+     which is what the Outfitter asks, and this answers "where was I standing",
+     which is what the map asks. Folding the two together would mean a device
+     could only ever be found once, which is true, and that a cache could only
+     ever be found once, which is not. The Anchors join this list in W7. */
+  marks: string[];
   /* balance telemetry: all time in the save, this run in memory only */
   log: Log;
   /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
@@ -110,7 +126,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
-  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [], foundKit: [], seenOre: [],
+  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [], foundKit: [], seenOre: [], seen: [], marks: [],
   log: blankLog(),
   best: { depth: 0, haul: 0, fastest: 0, worlds: 0 },
   claim: newClaim(),
@@ -229,7 +245,8 @@ export function save() {
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
       relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
-      found: g.found, foundKit: g.foundKit, seenOre: g.seenOre,
+      found: g.found, foundKit: g.foundKit, seenOre: g.seenOre, seen: g.seen,
+      marks: g.marks,
       claim: g.claim
     }));
   } catch (e) { /* ignore */ }
@@ -298,6 +315,14 @@ export function load() {
          is added to the list on load, whatever the save says. New saves write
          the list properly and this clause never fires again for them. */
       g.found = Array.isArray(s.found) ? s.found.slice() : [];
+      /* The map, and the marks on it. Both new this round, so an older save
+         has neither - and an empty map is the right answer for both. It is not
+         a loss: the wash fills in from the first flight, and a blank map on a
+         veteran save reads as a survey worth redoing rather than as data
+         destroyed. Backfilling it from `dug` was the alternative and it would
+         claim you had seen ground you had only tunnelled past. */
+      g.seen = Array.isArray(s.seen) ? s.seen.slice() : [];
+      g.marks = Array.isArray((s as any).marks) ? (s as any).marks.slice() : [];
       /* A save from before this existed has plainly already seen whatever its
          depth record says it has been standing in, so it is granted rather
          than replayed - being told "NEW MINERAL: Copper" on your fiftieth run
@@ -327,6 +352,7 @@ export function load() {
       g.stock = s.stock || grandfatherStock();
       if (typeof s.px === 'number') g.px = s.px;
       if (typeof s.pd === 'number') g.pd = s.pd;
+      resetSeen();
       return;
     }
     const old = localStorage.getItem(OLD_KEY);
@@ -350,6 +376,7 @@ export function load() {
     /* Same as the v2 path: a save from before the kit was a discovery is a
        save whose owner could buy all six. */
     g.foundKit = SUPPLIES.map((sup) => sup.key);
+    resetSeen();
     save();
   } catch (e) { /* corrupt save, start fresh */ }
 }
@@ -451,4 +478,30 @@ export function claimPayout(v: number): number {
    is an arc inside one world, so a bad world cannot sour the ten after it. */
 export function resetClaim(): void {
   g.claim = newClaim();
+}
+
+/* ---------- the seen index ----------
+
+   A Set mirror of `seen`. The recorder asks "have I got this tile" a few times
+   a second and `includes` on a list that grows to 1,808 entries is quadratic,
+   so the question is asked of a Set and the answer is written to both.
+
+   It lives here and not in the loop because `seen` lives here: the list is the
+   save and the Set is an index of it, and an index kept in a different module
+   from the thing it indexes is an index that eventually disagrees with it.
+   Rebuilt whenever the list is replaced wholesale - a load, or a wipe - which
+   is the only way the two can drift apart. */
+let seenSet = new Set<string>();
+export function resetSeen() { seenSet = new Set<string>(g.seen); }
+export function markSeen(keys: string[]) {
+  for (const k of keys) if (!seenSet.has(k)) { seenSet.add(k); g.seen.push(k); }
+}
+
+/* Record a discovery's position for the map.
+
+   Deduplicated on the exact cell, because a cache re-opened by a bomb after
+   the drill already took it would otherwise stack two marks on one spot. */
+export function addMark(kind: 'f' | 'c', x: number, d: number) {
+  const k = kind + ',' + Math.round(x) + ',' + Math.round(d);
+  if (!g.marks.includes(k)) g.marks.push(k);
 }

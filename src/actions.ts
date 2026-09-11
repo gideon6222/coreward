@@ -5,7 +5,7 @@ import { clamp, key, stream } from './sim/util';
 import { newBreach, stepBreach } from './sim/breach';
 import { FIND_OF } from './sim/finds';
 import { hap } from './haptics';
-import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout } from './sim/state';
+import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout, addMark, resetSeen } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
@@ -292,7 +292,7 @@ function breakCells(cells: number[][]) {
       R.hullCause = 'gas';
     } else if (b.find) {
       const f = findHere(x, d);
-      if (f) grantFind(f.key);
+      if (f) grantFind(f.key, x, d);
     } else if (b.cache) {
       grantCache(x, d);
     } else if (g.weight + b.wt <= S.cargoCap()) {
@@ -324,8 +324,9 @@ function breakCells(cells: number[][]) {
    crate can never take a level off something - which it could, on a save where
    the grandfather clause put a level-three device in the list and a crate for
    it is still in the ground on the world you were already on. */
-export function grantFind(key: UpgradeKey) {
+export function grantFind(key: UpgradeKey, x: number, d: number) {
   if (!g.found.includes(key)) g.found.push(key);
+  addMark('f', x, d);
   g.up[key] = Math.max(g.up[key] || 0, 1);
   const u = UPGRADES.find((x) => x.key === key);
   const f = FIND_OF[key];
@@ -338,6 +339,7 @@ export function grantFind(key: UpgradeKey) {
    silently destroyed one would be the worst possible surprise. */
 export function grantCache(x: number, d: number) {
   const p = cachePrize(x, d);
+  addMark('c', x, d);
   if (p.kind === 'supply') {
     const sup = SUPPLY_OF[p.id];
     g.kit[p.id] = Math.min(sup.max, g.kit[p.id] + 1);
@@ -646,6 +648,16 @@ export function hardReset() {
   g.kit = { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 };
   g.stock = {};
   g.relics = []; g.relicsTaken = []; g.drive = [];
+  /* The four discovery lists, which a wipe had been quietly leaving behind.
+
+     A button that says TAP AGAIN TO WIPE EVERYTHING and then hands the fresh
+     save a shop stocked with every device the last one found is the button
+     lying. `g.up` was already being zeroed, so the devices came back at tier
+     zero and were still on the shelf - a fresh start that had somehow already
+     done the finding. Same for the kit, the mineral reveals and the map. */
+  g.found = []; g.foundKit = [];
+  g.seenOre = []; g.seen = []; g.marks = [];
+  resetSeen();
   /* `won` deliberately SURVIVES a reset. It is not progress, it is something
      you did, and starting another run does not undo it - which is also what
      makes a New Game Plus knowable: the intro reads this to decide whether to

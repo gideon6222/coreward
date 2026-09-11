@@ -116,3 +116,45 @@ export const REGION_TRAIT = [
   /* the deep */
   'searing',     'crystalline', 'searing'
 ];
+
+/* ---------- what you have seen ----------
+
+   The map needs two different things and they want two different resolutions.
+
+   The TUNNELS are drawn from `g.dug`, which is exact, already saved, and is
+   the thing a player actually recognises - "that is the shaft I cut last
+   Tuesday". Nothing new is needed for those.
+
+   Behind them is the dimmer wash of ground you have merely been NEAR, which is
+   what turns a map from a diagram of your own tunnels into a picture of a
+   place with unexplored parts. That does not need to be exact: at one entry
+   per cell a fully explored world would be 27,572 of them, and at four by four
+   it is 1,808 - a hundred and thirteen rows of sixteen, which is more than
+   enough resolution on a screen where the whole world is 340 pixels wide.
+
+   The lamp's reach decides what counts as near, so a better Scanner fills the
+   map faster, which is a quiet second reason to buy one. */
+export const MAP_TILE = 4;
+
+export const mapKey = (x: number, d: number) =>
+  Math.floor(x / MAP_TILE) + ',' + Math.floor(d / MAP_TILE);
+
+/* Every tile within `reach` of a point. Returned rather than applied so the
+   pure core never touches the save directly and a test can ask what a position
+   would reveal without revealing it. */
+export function tilesSeen(x: number, d: number, reach: number): string[] {
+  const out: string[] = [];
+  const r = Math.max(1, Math.round(reach));
+  for (let dx = -r; dx <= r; dx += 1) {
+    for (let dd = -r; dd <= r; dd += 1) {
+      const cx = x + dx, cd = d + dd;
+      if (cx < 0 || cx >= W || cd < -1) continue;
+      /* A circle, not a square: a square of revealed map around a ship that
+         has flown in a straight line reads as a corridor with corners on it. */
+      if (dx * dx + dd * dd > r * r) continue;
+      const k = mapKey(cx, Math.max(0, cd));
+      if (out.indexOf(k) < 0) out.push(k);
+    }
+  }
+  return out;
+}

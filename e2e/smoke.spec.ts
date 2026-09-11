@@ -2603,3 +2603,166 @@ test('the shallow world holds three materials, and the deep ones are a prize', a
     'solmarrow is ' + ((sol / deep.__cells) * 100).toFixed(2) + '% of the deep band, not a prize')
     .toBeLessThan(0.006);
 });
+
+/* The map, end to end.
+
+   Two things can break here and neither shows up in a unit test. The first is
+   the recorder: it runs on the climb timer, and the timer is reset inside the
+   same branch that fires it - so a recorder written next to that branch rather
+   than inside it runs on the first frame of the session and never again. The
+   map then fills in at the pad and nowhere else, which looks exactly like a
+   map that simply has not been explored yet. The assertion that catches it is
+   the SPAN of the trail, not its size.
+
+   The second is the screen itself: a canvas that is laid out at zero height,
+   or is never drawn into, is a black rectangle that reads as "you have not
+   been anywhere". So the pixels are counted. */
+test('the map records the descent and draws it', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* Nothing is recorded while the ship is on the pad, so the map starts blank
+     however long the descent takes to begin. */
+  const rowSpan = () => page.evaluate(() => {
+    const w = (window as any).__cw;
+    const rows = w.g.seen.map((k: string) => Number(k.split(',')[1]));
+    return rows.length ? { n: w.g.seen.length, lo: Math.min(...rows), hi: Math.max(...rows) }
+                       : { n: 0, lo: 0, hi: 0 };
+  });
+
+  const depth = 40;
+  await holdSeam(page, 'down', async () => (await page.evaluate(() => (window as any).__cw.g.pd)) > depth);
+
+  const trail = await rowSpan();
+  /* 40 m of descent is ten four-metre tile rows. A recorder that fired once
+     leaves the three or four rows the lamp reaches from a single point, so
+     eight is comfortably past "it ran" and short of "it ran perfectly". */
+  expect(trail.hi - trail.lo,
+    `the trail covers tile rows ${trail.lo}..${trail.hi} after a ${depth} m descent - a recorder that only fires once leaves about three`)
+    .toBeGreaterThanOrEqual(8);
+  expect(trail.n, 'the descent recorded almost no tiles').toBeGreaterThan(20);
+
+  /* ---- the screen ---- */
+  await page.locator('#btnMap').dispatchEvent('click');
+  await expect(page.locator('#map')).not.toHaveClass(/hidden/);
+  expect(await page.evaluate(() => (window as any).__cw.g.mode)).toBe('map');
+
+  /* Read as a DIFFERENCE between a surveyed tile and an unsurveyed one, at
+     known positions, rather than as a count of lit pixels.
+
+     Two earlier versions of this check were worth less than they looked. "Is
+     anything lit" stopped meaning anything the moment the survey grid started
+     drawing over unexplored ground as well - a map that had drawn nothing but
+     its own graph paper passed it. Counting the wash by colour was no better:
+     the heavier 50 m rules are wide, coloured enough to match, and three of
+     them across the canvas cleared the threshold on their own. Both were
+     verified by deleting the wash, and the second one still passed.
+
+     A tile you have surveyed against a tile you have not, at the same scale on
+     the same canvas, cannot be satisfied by anything but the wash. Tiles with
+     a tunnel through them are excluded so the tunnels cannot answer for it. */
+  const painted = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const c = document.getElementById('mapCanvas') as HTMLCanvasElement;
+    const ctx = c.getContext('2d')!;
+    const dpr = c.width / c.clientWidth;
+    const s = c.clientWidth / w.W;
+    const view = w.mapView();
+    const rows = c.clientHeight / s;
+    const seen = new Set<string>(w.g.seen);
+    const tw = Math.ceil(w.W / w.MAP_TILE);
+
+    /* The brightness at the centre of a tile, averaged over a small patch so a
+       single grid pixel cannot decide it. */
+    const patch = (tx: number, ty: number) => {
+      const px = Math.round((tx * w.MAP_TILE + w.MAP_TILE / 2) * s * dpr);
+      const py = Math.round(((ty * w.MAP_TILE + w.MAP_TILE / 2) - view) * s * dpr);
+      const d = ctx.getImageData(px - 2, py - 2, 5, 5).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
+      return sum / (d.length / 4) / 3;
+    };
+    /* A tile is usable if it is fully on screen and holds no dug cell. */
+    const clean = (tx: number, ty: number) => {
+      if (ty * w.MAP_TILE < view + 2 || (ty + 1) * w.MAP_TILE > view + rows - 2) return false;
+      for (let cx = tx * w.MAP_TILE; cx < (tx + 1) * w.MAP_TILE; cx++) {
+        for (let cd = ty * w.MAP_TILE; cd < (ty + 1) * w.MAP_TILE; cd++) {
+          if (w.g.dug.has(cx + ',' + cd)) return false;
+        }
+      }
+      return true;
+    };
+    let lit = -1, dark = -1;
+    for (let ty = Math.floor(view / w.MAP_TILE); ty < (view + rows) / w.MAP_TILE; ty++) {
+      for (let tx = 0; tx < tw; tx++) {
+        if (!clean(tx, ty)) continue;
+        if (seen.has(tx + ',' + ty)) { if (lit < 0) lit = patch(tx, ty); }
+        else if (dark < 0) dark = patch(tx, ty);
+      }
+    }
+    /* And the dug cells, read at their own positions. The tunnels are the
+       layer that can only exist because the player went somewhere, and they
+       are pale and warm where nothing else on the map is both.
+
+       The MEDIAN of them, not the brightest. The brightest was the first
+       version and it was worthless: the ship marker is drawn on top of a dug
+       cell by definition, so one amber dot answered for the whole layer and
+       deleting every tunnel still passed. A median cannot be moved by the two
+       or three cells a marker covers. */
+    const reds: number[] = [], blues: number[] = [];
+    for (const k of w.g.dug) {
+      const i = k.indexOf(',');
+      const cx = +k.slice(0, i), cd = +k.slice(i + 1);
+      if (cd < view + 3 || cd > view + rows - 3) continue;
+      const d = ctx.getImageData(Math.round((cx + 0.5) * s * dpr),
+                                 Math.round((cd - view + 0.5) * s * dpr), 1, 1).data;
+      reds.push(d[0]); blues.push(d[2]);
+    }
+    reds.sort((a, b) => a - b); blues.sort((a, b) => a - b);
+    const mid = (a: number[]) => (a.length ? a[Math.floor(a.length / 2)] : -1);
+    return { h: c.clientHeight, lit, dark, cut: { n: reds.length, r: mid(reds), b: mid(blues) } };
+  });
+  expect(painted.h, 'the map canvas has no height, so nothing can be on it').toBeGreaterThan(200);
+  expect(painted.lit, 'no surveyed tile was on screen to measure').toBeGreaterThan(0);
+  expect(painted.dark, 'no unsurveyed tile was on screen to measure').toBeGreaterThan(-1);
+  expect(painted.lit - painted.dark,
+    `a surveyed tile reads ${painted.lit.toFixed(1)} and an unsurveyed one ${painted.dark.toFixed(1)} - the wash is not being drawn`)
+    .toBeGreaterThan(6);
+  expect(painted.cut.n, 'no dug cell was on screen to measure').toBeGreaterThan(20);
+  expect(painted.cut.r,
+    `the median dug cell on screen reads ${painted.cut.r} - no tunnel is being drawn`)
+    .toBeGreaterThan(140);
+  expect(painted.cut.r - painted.cut.b, 'the tunnel colour is not the tunnel colour')
+    .toBeGreaterThan(20);
+
+  /* ---- panning ----
+
+     The world moves WITH the finger, and it stops at both ends. A map that
+     pans the wrong way or scrolls into empty space below the world is worse
+     than no map, and neither shows up as an error. */
+  const pan = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const c = document.getElementById('mapCanvas') as HTMLCanvasElement;
+    const cw = c.clientWidth, ch = c.clientHeight;
+    w.mapSetView(100);
+    /* Dragging the finger DOWN (positive dy) has to show you shallower ground. */
+    const down = w.mapPan(60, cw, ch);
+    w.mapSetView(100);
+    const up = w.mapPan(-60, cw, ch);
+    w.mapSetView(0);
+    const top = w.mapPan(9999, cw, ch);
+    const bottom = w.mapPan(-99999, cw, ch);
+    return { down, up, top, bottom, depth: w.WORLD_DEPTH };
+  });
+  expect(pan.down, 'dragging down must travel up the world').toBeLessThan(100);
+  expect(pan.up, 'dragging up must travel down the world').toBeGreaterThan(100);
+  expect(pan.top, 'the map scrolled above the sky').toBeGreaterThanOrEqual(-2);
+  expect(pan.bottom, 'the map scrolled past the bottom of the world')
+    .toBeLessThanOrEqual(pan.depth);
+
+  await page.locator('#mapClose').dispatchEvent('click');
+  await expect(page.locator('#map')).toHaveClass(/hidden/);
+  expect(await page.evaluate(() => (window as any).__cw.g.mode)).toBe('play');
+});

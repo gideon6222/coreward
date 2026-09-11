@@ -8,7 +8,7 @@ import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
 import { findCells, blockAt, cachePrize, haulValue } from './sim/world';
-import { regionAt, regionName } from './sim/region';
+import { regionAt, regionName, MAP_TILE, WORLD_DEPTH } from './sim/region';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
@@ -25,6 +25,7 @@ import { lmDebug, LM_COLS } from './lightmap';
 import { sfx } from './audio';
 import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCache } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
+import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
 
@@ -214,6 +215,10 @@ if (new URLSearchParams(location.search).has('debug')) {
     sealedKey: () => {
       const s = shelfStock(g.best.depth, g.found).filter((u) => g.best.depth < u.unlock);
       return s.length ? s[0].key : null;
-    }
+    },
+    /* The map. `mapView` and `mapPan` rather than the canvas, because the one
+       part of that screen that can silently be wrong is the panning arithmetic
+       - backwards, or unclamped off either end of the world. */
+    openMap, closeMap, mapView, mapPan, mapSetView, mapDraw, MAP_TILE, WORLD_DEPTH
   };
 }

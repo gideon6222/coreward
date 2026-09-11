@@ -6,8 +6,9 @@ import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, rel
          coreDepth, valueMult, skyHi, skyLo, ORES,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
-import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel } from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel, markSeen } from './sim/state';
 import { blockAt, findHere, climbCells } from './sim/world';
+import { tilesSeen } from './sim/region';
 import { R } from './sim/runtime';
 import type { Dir } from './types';
 import {
@@ -449,7 +450,7 @@ export function tick(raw: number, draw = true) {
              to use rather than the end of a search. The banner runs itself
              out over four seconds while the drill keeps turning. */
           const f = findHere(R.digging.x, R.digging.d);
-          if (f) grantFind(f.key);
+          if (f) grantFind(f.key, R.digging.x, R.digging.d);
           spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 150, 10, 1.8);
           spray(worldX(R.digging.x), -R.digging.d, FIND_COLOR, 120, 8, 2.2);
           flash('rgba(80,255,140,.34)', 520);
@@ -721,6 +722,22 @@ export function tick(raw: number, draw = true) {
       R.climbT = 0.35;
       R.climb = atSurface() ? 0 : fuelToClimb(climbCells(), S.speed());
       R.fuelState = fuelState(g.fuel, R.climb);
+      /* What the lamp has shown you, folded into the map.
+
+         INSIDE the expiry rather than beside it, and that is not a style
+         choice: the timer is reset to 0.35 in the same frame it runs out, so
+         `climbT <= 0` is only ever true at the top of the block on the first
+         frame of the session. Written that way it recorded one tile and then
+         never ran again - the map filled in at the pad and nowhere else.
+
+         On this timer rather than every frame because the tiles are four cells
+         across and the ship does not cross one in sixteen milliseconds. At
+         0.35 s and full speed the samples are under three cells apart, which
+         the lamp's radius covers with room to spare, so the trail has no gaps
+         in it. */
+      if (!atSurface()) {
+        markSeen(tilesSeen(Math.round(g.px), Math.round(g.pd), S.light() * 0.7));
+      }
     }
     /* Announced on the EDGE, once per step down, so the tone and the haptic
        are an event rather than a noise that runs for a minute. One escalating

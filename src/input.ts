@@ -12,6 +12,7 @@ function fmtTime(secs: number) {
 import { g , coreM, worldTrait} from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
+import { openMap, wireMap } from './mapui';
 import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, retireHint } from './ui';
 import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation,
          stepAisle, paintAisleBar, markSeen } from './station';
@@ -142,6 +143,11 @@ document.addEventListener('pointerup', (e) => {
 });
 mustEl('btnManifest').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); g.mode = 'manifest'; buildManifest(); ui.manifest.classList.remove('hidden'); };
 mustEl('manifestClose').onclick = () => { sfx.ui(); ui.manifest.classList.add('hidden'); g.mode = 'play'; };
+
+/* The map. Gated on 'play' like the manifest: a screen opened out of another
+   screen is how you get two modals and no way back. */
+mustEl('btnMap').onclick = () => { if (g.mode !== 'play') return; sfx.ui(); R.held = null; sfx.digStop(); openMap(); };
+wireMap();
 
 ui.btnMusic.onclick = () => { audioInit(); setAudio('music', !audioState.music); audioLabels(); };
 ui.btnSfx.onclick = () => { audioInit(); setAudio('sfx', !audioState.sfx); audioLabels(); sfx.ui(); };
