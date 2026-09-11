@@ -160,6 +160,17 @@ export function startClock() {
 
    The step is fixed at 1/60 rather than taken from real elapsed time, so the
    same call produces the same run on any machine. */
+/* IT STOPS THE CLOCK AND DOES NOT GIVE IT BACK. Call `startClock()` if the
+   caller wants real frames afterwards.
+
+   Deliberate, and the stop is the point: a caller driving the loop while real
+   frames are also arriving is measuring the two of them interleaved, and how
+   many real frames got in first depends on how fast the machine booted the
+   bundle. But the failure mode of forgetting is vicious - the game simply
+   freezes, with the mode still 'play' and the key still held, which looks like
+   an input or physics bug and is neither. It has now cost two runs, and the
+   warning was sitting beside `startClock`, which is the function nobody calls,
+   rather than here, which is the one everybody does. */
 export function advance(seconds: number, step = 1 / 60) {
   stopClock();
   const n = Math.max(1, Math.round(seconds / step));
