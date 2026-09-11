@@ -66,11 +66,17 @@ test('a quake is a discount, never a wall', () => {
   assert.equal(c.refinery, 0);
   assert.ok(H.payoutMult(c) >= 0.5, `a wrecked refinery pays ${H.payoutMult(c)}, which is below half`);
   assert.ok(H.refuelMult(c) >= 0.5, `a wrecked derrick fills to ${H.refuelMult(c)}, which is below half`);
-  /* And the run is still runnable: fuel enough to reach the core of leg 0 and
-     come back is the floor that matters. */
+  /* And the run is still runnable.
+
+     The floor used to be "reach the core of leg 0 and come back", which was 58
+     metres. The world is 452 metres now and nobody reaches its floor on a
+     stock rig - so the claim that matters is that a wrecked derrick still
+     leaves enough to work at a depth a stock rig belongs at, which is where
+     somebody unlucky enough to have wrecked it actually is. */
   H.setWorld(0);
+  const EARLY = 60;
   const tank = H.S.fuelCap() * H.refuelMult(c);
-  const roundTrip = (H.coreM() * 2 / H.S.speed()) * H.FUEL_PER_MOVE;
+  const roundTrip = (EARLY * 2 / H.S.speed()) * H.FUEL_PER_MOVE;
   assert.ok(tank > roundTrip * 0.5,
     `a wrecked derrick leaves ${tank.toFixed(0)} fuel against a ${roundTrip.toFixed(0)} round trip`);
 });

@@ -2,12 +2,13 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import * as THREE from 'three';
-import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock } from './sim/config';
+import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH } from './sim/config';
 import { g, S, save, load, hasSave, coreM } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
 import { findCells, blockAt, cachePrize, haulValue } from './sim/world';
+import { regionAt, regionName } from './sim/region';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
@@ -190,6 +191,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* So a spec can open a cache the way the drill does, and ask what a given
        cell would pay before it opens one. */
     cachePrize, grantCache, haulValue, ORES, foundBanner,
+    /* The danger lines, so a fixture can dig to one instead of to a literal
+       depth that meant something in a world this no longer is. */
+    tremorDepth, heatDepth, regionAt, traitAt, regionName, W, CAVE_MIN_DEPTH,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

@@ -31,21 +31,21 @@
       "dirt": 10
     },
     "planet": 1,
-    "value": 10
+    "value": 6
   },
   {
     "cargo": {
       "dirt": 10
     },
     "planet": 2,
-    "value": 13
+    "value": 6
   },
   {
     "cargo": {
       "dirt": 10
     },
     "planet": 3,
-    "value": 17
+    "value": 6
   },
   {
     "cargo": {
@@ -61,7 +61,7 @@
       "iron": 3
     },
     "planet": 1,
-    "value": 466
+    "value": 291
   },
   {
     "cargo": {
@@ -69,7 +69,7 @@
       "iron": 3
     },
     "planet": 2,
-    "value": 640
+    "value": 291
   },
   {
     "cargo": {
@@ -77,7 +77,7 @@
       "iron": 3
     },
     "planet": 3,
-    "value": 815
+    "value": 291
   },
   {
     "cargo": {
@@ -95,7 +95,7 @@
       "gold": 100
     },
     "planet": 1,
-    "value": 259200
+    "value": 162000
   },
   {
     "cargo": {
@@ -104,7 +104,7 @@
       "gold": 100
     },
     "planet": 2,
-    "value": 356400
+    "value": 162000
   },
   {
     "cargo": {
@@ -113,7 +113,7 @@
       "gold": 100
     },
     "planet": 3,
-    "value": 453600
+    "value": 162000
   },
   {
     "cargo": {
@@ -133,7 +133,7 @@
       "silver": 9
     },
     "planet": 1,
-    "value": 3584
+    "value": 2240
   },
   {
     "cargo": {
@@ -143,7 +143,7 @@
       "silver": 9
     },
     "planet": 2,
-    "value": 4928
+    "value": 2240
   },
   {
     "cargo": {
@@ -153,7 +153,7 @@
       "silver": 9
     },
     "planet": 3,
-    "value": 6273
+    "value": 2240
   },
   {
     "cargo": {
@@ -173,7 +173,7 @@
       "copper": 25
     },
     "planet": 1,
-    "value": 57600
+    "value": 36000
   },
   {
     "cargo": {
@@ -183,7 +183,7 @@
       "copper": 25
     },
     "planet": 2,
-    "value": 79200
+    "value": 36000
   },
   {
     "cargo": {
@@ -193,6 +193,6 @@
       "copper": 25
     },
     "planet": 3,
-    "value": 100800
+    "value": 36000
   }
 ]

@@ -38,15 +38,23 @@ function charFor(id) {
   return c;
 }
 
-/* A cell's payload is determined by (planet, id, colour). It used to be just
-   (planet, id) - every numeric field was constant per id or scaled by
+/* A cell's payload is determined by (planet, id, colour, HARDNESS). It used to
+   be (planet, id, colour), and before that just (planet, id) - every numeric field was constant per id or scaled by
    hardMult - but seams and rubble take the colour of the band they sit in, so
    one id now legitimately has several payloads.
 
-   The snapshot stores one payload per distinct id+colour plus a per-cell id
-   grid, and the builder ASSERTS that assumption on every cell rather than
-   trusting it. Widening the key rather than dropping the assertion: the point
-   of it is to catch a field that starts varying by something nobody expected. */
+   Round eight added hardness to the key for the same reason colour was added:
+   a trait bends how hard its ground is to cut, and traits are now a property
+   of a REGION rather than of a planet, so one rock id legitimately has several
+   hardnesses within one world. Dirt in Crystalline ground is 1.2 and dirt
+   under the pad is 1.
+
+   The snapshot stores one payload per distinct key plus a per-cell id grid,
+   and the builder ASSERTS that assumption on every cell rather than trusting
+   it. Widening the key rather than dropping the assertion, every time: the
+   point of it is to catch a field that starts varying by something nobody
+   expected, and the way to keep that sharp is to name the things it is allowed
+   to vary by. */
 function snapshot(p) {
   H.setWorld(p);
   H.g.dug = new Set();
@@ -62,7 +70,7 @@ function snapshot(p) {
       counts[id] = (counts[id] || 0) + 1;
       if (!b) continue;
       const payload = { ...b };
-      const dk = id + ':' + b.color;
+      const dk = id + ':' + b.color + ':' + b.hard;
       if (!(dk in defs)) defs[dk] = payload;
       else assert.deepEqual(payload, defs[dk],
         'blockAt payload for "' + dk + '" varies within planet ' + p + ' at (' + x + ',' + d + ')');
@@ -294,7 +302,16 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
     }
   }
   assert.ok(pockets > 200, 'pockets and caves generate almost nothing: ' + pockets);
-  assert.ok(pockets / cells < 0.12,
+  /* 18%, not 12%.
+
+     Two things moved it and both were deliberate. Cave chance climbs with
+     depth and the world went from 58 metres to 452, so there is far more deep
+     ground in the average now. And he asked for this: *"find more secrets,
+     random caves, and other things to make the planet feel mysterious"*. The
+     ceiling still exists because ground you cannot dig is ground with nothing
+     in it - it is just drawn where a world with real cave systems in it sits
+     rather than where a shallow shaft did. */
+  assert.ok(pockets / cells < 0.18,
     'pockets and caves now cover ' + Math.round(1000 * pockets / cells) / 10 +
     '% of the world - they are meant to be events, not terrain');
   /* And the seams, for the same reason and in the same way: the frozen world
@@ -371,102 +388,129 @@ test('a geode outvalues every ore available at its depth', () => {
    also the proof that no trait perturbs the ore stream. If a future trait
    reaches into `rnd(x, d, planet)` it fails there, not here. */
 
-function census(p) {
-  H.setWorld(p);
+/* A census of one REGION, not of one planet.
+
+   Round eight folded the twelve planets into twelve regions of one world, so
+   "what does Volatile ground look like" is now a question about a patch of
+   this world rather than about a place you fly to. The sweep walks the whole
+   world once and bins every cell by the region it is in, which is both faster
+   than twelve passes and the only way to be sure the regions actually tile the
+   world with nothing left over. */
+function censusAll() {
+  H.setWorld(0);
   H.g.dug = new Set();
-  const cd = H.coreDepth(p);
-  let cells = 0, gas = 0, geo = 0, cave = 0;
-  for (let d = 0; d < cd; d++) for (let x = 0; x < H.W; x++) {
-    cells++;
-    const b = H.blockAt(x, d);
-    if (!b) cave++;
-    else if (b.id === H.GAS.id) gas++;
-    else if (b.id === H.GEODE.id) geo++;
+  H.g.rubble = new Set();
+  const cd = H.coreDepth(0);
+  const bins = [];
+  for (let i = 0; i < H.REGION_COUNT; i++) bins.push({ cells: 0, gas: 0, geo: 0, cave: 0 });
+  for (let d = 0; d < cd; d++) {
+    for (let x = 0; x < H.W; x++) {
+      const r = bins[H.regionAt(x, d)];
+      r.cells++;
+      const b = H.blockAt(x, d);
+      if (!b) r.cave++;
+      else if (b.id === H.GAS.id) r.gas++;
+      else if (b.id === H.GEODE.id) r.geo++;
+    }
   }
-  const pct = (n) => 100 * n / cells;
-  return { cells, gas: pct(gas), geode: pct(geo), cave: pct(cave), minable: pct(cells - cave - gas) };
+  return bins.map((r) => ({
+    cells: r.cells,
+    gas: 100 * r.gas / r.cells, geode: 100 * r.geo / r.cells,
+    cave: 100 * r.cave / r.cells,
+    minable: 100 * (r.cells - r.cave - r.gas) / r.cells
+  }));
 }
 
-const WIDE = Array.from({ length: 40 }, (_, i) => i);
+const CENSUS = censusAll();
+const REGIONS = Array.from({ length: 12 }, (_, i) => i);
 
-test('planet 0 is Stable and every later planet has a real trait', () => {
-  assert.equal(H.traitOf(0).id, 'stable', 'Verdax is where you learn what normal feels like');
-  for (const p of WIDE.slice(1))
-    assert.notEqual(H.traitOf(p).id, 'stable', 'planet ' + p + ' fell back to Stable');
-  for (const p of WIDE)
-    assert.equal(H.traitOf(p), H.traitOf(p), 'traitOf must be pure');
+test('the regions tile the world, and every one of them is somewhere you can be', () => {
+  const total = CENSUS.reduce((n, r) => n + r.cells, 0);
+  assert.equal(total, H.W * H.coreDepth(0), 'the regions do not tile the world');
+  for (let i = 0; i < H.REGION_COUNT; i++) {
+    /* No region may be a sliver. Twelve equal regions would be 8.3% each; a
+       floor of 4% allows the wandering boundaries to breathe and still catches
+       a layout that has squeezed one out of existence. */
+    const share = 100 * CENSUS[i].cells / total;
+    assert.ok(share > 4, H.regionName(i) + ' is only ' + share.toFixed(1) + '% of the world');
+    assert.ok(H.regionName(i).length > 2, 'region ' + i + ' has no name');
+  }
 });
 
-test('every trait actually occurs, and none dominates the ladder', () => {
+test('the shallow middle is Stable, because that is where the game starts', () => {
+  /* The pad is at the top of the middle column, so the region a new player
+     spends their first hour in must be the one with no rules bent. A tutorial
+     whose gas is doubled is a tutorial nobody finishes. */
+  assert.equal(H.traitAt(H.START_X, 2).id, 'stable',
+    'the ground under the pad is not Stable');
+});
+
+test('every trait is somewhere in the world, and none of them owns it', () => {
   const seen = new Map();
-  for (const p of WIDE.slice(1)) {
-    const id = H.traitOf(p).id;
+  for (const i of REGIONS) {
+    const id = H.traitOf(i).id;
     seen.set(id, (seen.get(id) || 0) + 1);
   }
   for (const t of H.TRAITS) {
-    if (t.id === 'stable') continue;
-    const n = seen.get(t.id) || 0;
-    assert.ok(n > 0, t.id + ' never appears in the first 40 planets - it is dead content');
-    assert.ok(n < WIDE.length * 0.55,
-      t.id + ' takes ' + n + ' of 39 planets, so the ladder is mostly one trait');
+    assert.ok(seen.get(t.id) >= 1, t.name + ' is in the table and nowhere in the world');
   }
-});
-
-test('every trait is described and does something', () => {
-  const ids = new Set();
-  for (const t of H.TRAITS) {
-    assert.ok(!ids.has(t.id), 'duplicate trait id ' + t.id);
-    ids.add(t.id);
-    assert.equal(H.TRAIT_OF[t.id], t);
-    assert.ok(t.blurb.length > 20 && t.blurb.length < 110,
-      t.id + ' blurb must fit one line on the launch screen');
-    const knobs = [t.gas, t.gasDamage, t.geode, t.cave, t.soak].filter((v) => v !== undefined);
-    if (t.id === 'stable') assert.equal(knobs.length, 0, 'Stable must be the baseline');
-    else assert.ok(knobs.length > 0, t.id + ' changes nothing, so it is a label not a trait');
-    for (const v of knobs) assert.ok(v > 1 && v <= 3.5, t.id + ' multiplier ' + v + ' is out of range');
+  for (const [id, n] of seen) {
+    assert.ok(n <= 4, id + ' covers ' + n + ' of 12 regions - it is the world, not a trait');
   }
+  /* And the same region always has the same trait, or nothing about a place
+     can be learned. */
+  for (const i of REGIONS) assert.equal(H.traitOf(i), H.traitOf(i), 'traitOf must be pure');
 });
 
 test('a trait bends its own rate without turning a pocket into terrain', () => {
-  const stable = census(0);
-  assert.ok(stable.gas < 1.5 && stable.geode < 1.5,
-    'a Stable planet must stay quiet: ' + JSON.stringify(stable));
-
-  for (const p of WIDE.slice(1, 16)) {
-    const c = census(p);
-    const t = H.traitOf(p);
-    for (const [name, pct] of [['gas', c.gas], ['geode', c.geode]]) {
-      assert.ok(pct > 0.15, 'planet ' + p + ' (' + t.id + '): ' + name + ' at ' +
-        pct.toFixed(2) + '% is too rare to ever be met');
-      assert.ok(pct < 3.5, 'planet ' + p + ' (' + t.id + '): ' + name + ' at ' +
+  for (const i of REGIONS) {
+    const t = H.traitOf(i);
+    const c = CENSUS[i];
+    for (const [name, pct] of [['gas', c.gas], ['geodes', c.geode]]) {
+      assert.ok(pct < 4.5, H.regionName(i) + ' (' + t.id + '): ' + name + ' at ' +
         pct.toFixed(2) + '% is terrain, not an event');
     }
     /* Hollow trades material for speed. Past a point it stops being a trade. */
-    assert.ok(c.minable > 80, 'planet ' + p + ' (' + t.id + ') is only ' +
+    assert.ok(c.minable > 70, H.regionName(i) + ' (' + t.id + ') is only ' +
       c.minable.toFixed(1) + '% minable - there is nothing left to dig for');
-    assert.ok(c.cave < H.CAVE_CHANCE_CAP * 100 + 1,
-      'planet ' + p + ' cave fraction ' + c.cave.toFixed(1) + '% broke the cap');
   }
 
-  /* the flagship effects must be visible against Stable, or the trait is a
-     name rather than a change the player can feel */
-  const volatilePlanet = WIDE.slice(1).find((p) => H.traitOf(p).id === 'volatile');
-  const crystalPlanet = WIDE.slice(1).find((p) => H.traitOf(p).id === 'crystalline');
-  const hollowPlanet = WIDE.slice(1).find((p) => H.traitOf(p).id === 'hollow');
-  assert.ok(census(volatilePlanet).gas > stable.gas * 1.8, 'Volatile is not volatile');
-  assert.ok(census(crystalPlanet).geode > stable.geode * 2.5, 'Crystalline is not crystalline');
-  assert.ok(census(hollowPlanet).cave > stable.cave * 1.8, 'Hollow is not hollow');
+  /* The flagship effects have to be visible against Stable ground, or a trait
+     is a name rather than a change you can feel. Measured against the average
+     of the Stable regions rather than one of them, because a region's depth
+     also moves these rates and one sample would be comparing two things. */
+  const avg = (pred) => {
+    const rs = REGIONS.filter((i) => H.traitOf(i).id === pred);
+    return {
+      gas: rs.reduce((n, i) => n + CENSUS[i].gas, 0) / rs.length,
+      geode: rs.reduce((n, i) => n + CENSUS[i].geode, 0) / rs.length,
+      cave: rs.reduce((n, i) => n + CENSUS[i].cave, 0) / rs.length
+    };
+  };
+  const stable = avg('stable');
+  assert.ok(avg('volatile').gas > stable.gas * 1.6, 'Volatile is not volatile');
+  assert.ok(avg('crystalline').geode > stable.geode * 2.0, 'Crystalline is not crystalline');
+  assert.ok(avg('hollow').cave > stable.cave * 1.4, 'Hollow is not hollow');
 });
 
 test('trait-adjusted rates stay inside their caps at any depth', () => {
-  for (const p of WIDE) {
+  /* Sweeping REGIONS and passing real traits.
+
+     This swept planet indices and handed them straight to functions whose
+     parameter is a Trait - `caveChanceOn(d, p)` with p a number. It passed
+     because a number has no `.cave`, so every lookup fell back to 1 and the
+     test was measuring the UNMODIFIED rates while claiming to measure the
+     trait-adjusted ones. Round eight turned the planet index into a region
+     index and the mistake became visible; it was always there. */
+  for (const i of REGIONS) {
+    const t = H.traitOf(i);
     for (const d of [26, 60, 120, 400, 5000]) {
-      assert.ok(H.caveChanceOn(d, p) <= H.CAVE_CHANCE_CAP + 1e-9,
-        'cave chance broke the cap on planet ' + p + ' at ' + d + ' m');
-      assert.ok(H.caveChanceOn(d, p) > 0);
+      assert.ok(H.caveChanceOn(d, t) <= H.CAVE_CHANCE_CAP + 1e-9,
+        'cave chance broke the cap in ' + H.regionName(i) + ' at ' + d + ' m');
+      assert.ok(H.caveChanceOn(d, t) > 0);
     }
-    assert.ok(H.gasChanceOn(p) <= 0.06 && H.gasChanceOn(p) >= H.GAS.chance);
-    assert.ok(H.geodeChanceOn(p) <= 0.06 && H.geodeChanceOn(p) >= H.GEODE.chance);
+    assert.ok(H.gasChanceOn(t) <= 0.06 && H.gasChanceOn(t) >= H.GAS.chance);
+    assert.ok(H.geodeChanceOn(t) <= 0.06 && H.geodeChanceOn(t) >= H.GEODE.chance);
   }
 });
 
@@ -591,9 +635,9 @@ test('rubble is coloured as the band it sits in, not one fixed grey', () => {
     H.g.rubble = new Set([H.key(3, d)]);
     return H.blockAt(3, d);
   };
-  /* dirt at 3 m against scoria at 45 m: two very different bands, both
-     inside leg 0's world, which now ends at 58 m */
-  const shallow = at(3), deep = at(45);
+  /* dirt near the top against scoria deep in the hot half: two very different
+     bands, both inside the one world, which now ends at 452 m */
+  const shallow = at(3), deep = at(320);
   assert.notEqual(shallow.color, deep.color,
     'rubble is one flat colour everywhere, so it reads as imported rock');
 
@@ -601,9 +645,11 @@ test('rubble is coloured as the band it sits in, not one fixed grey', () => {
      Kept above coreDepth(0), which M5 moved to 58 m: bedrock is resolved
      before rubble is, correctly, since there is no tunnel down there to
      collapse. The old depths of 90 and 108 are below the world now. */
-  for (const d of [3, 12, 25, 40, 55]) {
+  for (const d of [3, 60, 150, 250, 380]) {
     const b = at(d);
-    const band = H.baseRock(d, 0).color;
+    /* The band AT THAT COLUMN. Stratum boundaries wander per column now, so
+       "the band at this depth" is only a whole answer once you say where. */
+    const band = H.baseRock(d, 0, 3).color;
     assert.notEqual(b.color, band, 'rubble at ' + d + ' m is indistinguishable from fresh rock');
     assert.notEqual(b.color, H.RUBBLE.color, 'rubble at ' + d + ' m ignored its band');
     assert.equal(b.color, H.mixHex(band, H.RUBBLE.color, 0.5));

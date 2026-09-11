@@ -237,7 +237,12 @@ test('the opening hour is untouched, and requirements ramp after it', () => {
       if (m.need > prev) grew++;
       prev = m.need;
     }
-    if (u.max > H.MAT_FROM_LEVEL)
+    /* A ramp is only possible where the cap leaves room for one. A rare
+       mineral is capped at two and starts at two, so the Cooling Rig's
+       requirement is flat by design - see matCost. What still must hold is
+       that it never falls, which is asserted above for every row. */
+    const cap = H.DEF[u.mat].chance >= 0.02 ? 4 : 2;
+    if (u.max > H.MAT_FROM_LEVEL && cap > 2)
       assert.ok(grew >= 2, u.key + ' requirement never ramps, it is flat from the first rung');
   }
 });
@@ -268,7 +273,13 @@ test('the Cooling Rig is gated behind a mineral inside the heat zone', () => {
   /* Deep Survey joined this list with M5. It exists to find ore through rock
      at depth and it unlocks at 35 m, which on leg 0 is past the heat line at
      32 - it is bought BECAUSE you go deep, exactly like the other three. */
-  const deepOnly = new Set(['cool', 'auto', 'laser', 'survey', 'drone', 'reactor']);
+  /* Three rows left this list in round eight, and they left it because they
+     no longer need it. The exemption is for rows that ask for a mineral from
+     INSIDE the heat zone; the heat line moved from 38 m to 199 m when the
+     world became one 452-metre planet, and gold at 64 and amethyst at 95 are
+     both comfortably above it now. Deep Survey, the Repair Drone and the
+     Reactor Core pass the plain rule, so they are held to it. */
+  const deepOnly = new Set(['cool', 'auto', 'laser']);
   for (const u of H.UPGRADES) {
     if (deepOnly.has(u.key)) continue;
     assert.ok(H.DEF[u.mat].min < H.heatDepth(0),
@@ -296,7 +307,7 @@ test('the mineral gates climb in the same order as the upgrades matter', () => {
      everything you need to start comes from above the heat line, and
      everything you buy because you went deep comes from below it. */
   const open = H.UPGRADES.filter((u) => (u.unlock || 0) === 0);
-  const deep = ['cool', 'auto', 'laser', 'survey', 'drone', 'reactor'];
+  const deep = ['cool', 'auto', 'laser'];
   const heat = H.heatDepth(0);
   for (const u of open) {
     assert.ok(depthOf(u.key) < heat,
@@ -411,7 +422,11 @@ test('the deepest ores are reachable on some planet, and not before', () => {
     if (mins[i] - mins[i - 1] > worst) { worst = mins[i] - mins[i - 1]; at = mins[i - 1]; }
   const tail = deepest - mins[mins.length - 1];
   assert.ok(worst <= 62, 'a ' + worst + ' m stretch from ' + at + ' m has no new ore in it');
-  assert.ok(tail <= 55,
+  /* 85, not 55. The world is 452 metres now and Solmarrow starts at 372, so
+     the deepest material has eighty metres of ground to itself - which is the
+     point of it rather than a gap. The bound still exists to catch a ladder
+     that stops well short of the floor. */
+  assert.ok(tail <= 85,
     'the last ' + tail + ' m before planet 5\'s core has nothing new in it');
 });
 

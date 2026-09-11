@@ -54,8 +54,8 @@
     "warn": 1.5
   },
   "heat": {
-    "depth": 38,
-    "ramp": 50,
+    "depth": 199,
+    "ramp": 150,
     "exponent": 1.3,
     "rate": 4.5
   },

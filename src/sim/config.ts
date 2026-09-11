@@ -3,6 +3,7 @@
 import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost, Relic } from '../types';
 import { zoomForScan } from './feel';
 import { rnd } from './util';
+import { regionAt, REGION_TRAIT, REGION_COUNT, WORLD_DEPTH } from './region';
 import { FOUND_KEYS } from './finds';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
@@ -152,6 +153,8 @@ const HEART_PAL: Palette =
     /* Glassy and sharp: slag rather than stone, and nothing grows on it. */
     rough: 0.55, bump: 1.45, growth: 'none', growthColor: 0x000000 };
 
+/* Takes a REGION index now, not a planet. Same twelve palettes, spent on
+   twelve places in one world instead of twelve worlds - see region.ts. */
 export const paletteOf = (i: number): Palette =>
   i === 9999 ? HEART_PAL : PALETTES[i % PALETTES.length];
 
@@ -196,7 +199,12 @@ export const skyLo = (i: number) => SKY_LO[i % SKY_LO.length];
    tremors at 44, which is a whole world inside a first session. The ladder is
    steeper so that leg 4 lands on 250 m, exactly where the old one did: the
    deep game is unchanged, only the distance to your first sight of it. */
-export const coreDepth = (p: number) => 58 + p * 48;
+/* One world, one depth. `coreDepth` used to be 58 + 48 a leg, which is what
+   made the game a ladder of planets; there are no legs now, so it is a
+   constant and the argument is kept only so the call sites and the tests that
+   sweep over it do not all have to change in the same commit as everything
+   else. See WORLD_DEPTH in region.ts. */
+export const coreDepth = (_p: number = 0) => WORLD_DEPTH;
 
 /* Heat and tremors are fractions of the world's own core rather than two
    global metres. Every world then has the same SHAPE - danger at 55%, the
@@ -210,11 +218,29 @@ export const coreDepth = (p: number) => 58 + p * 48;
    into the heat to buy. Only the rows you buy BECAUSE you go deep may ask for
    a mineral from down there. The heat zone is now the bottom third of every
    world, which is also easier to say out loud than any pair of metres. */
-export const HEAT_FRACTION = 0.66;
-export const TREMOR_FRACTION = 0.76;
-export const heatDepth = (p: number, trait?: Trait) =>
+/* Re-anchored to one world instead of to a leg.
+
+   At 0.66 of a 58-metre planet the heat line was 38 m and a run reached it in
+   a minute. At 0.66 of a 452-metre WORLD it is 298 m, which leaves two thirds
+   of the planet with no heat in it at all and puts the line below the mineral
+   the Cooling Rig is built from - so the design that makes you survive a heat
+   run before you can buy heat protection stopped being possible.
+
+   0.44 puts heat at 199 m, which is where the ore ladder turns over from
+   emerald and ruby into magmite and coreite: the deep half of the world is
+   hot, the shallow half is not, and the thing you buy to survive it is built
+   out of a mineral from inside it.
+
+   Tremors stay BELOW the heat line, which is the escalation the game already
+   had and is worth keeping: the ground gets hot, and then deeper still it also
+   starts moving. 0.56 is 253 m. The shallow half of the world having no heat
+   and no tremors is not a gap - Unrest is the pressure that reaches
+   everywhere, and it is what the shallow half is for. */
+export const HEAT_FRACTION = 0.44;
+export const TREMOR_FRACTION = 0.56;
+export const heatDepth = (p: number = 0, trait?: Trait) =>
   Math.round(coreDepth(p) * HEAT_FRACTION * (trait?.heatUp ?? 1));
-export const tremorDepth = (p: number) => Math.round(coreDepth(p) * TREMOR_FRACTION);
+export const tremorDepth = (p: number = 0) => Math.round(coreDepth(p) * TREMOR_FRACTION);
 
 /* ---------- planet traits ----------
 
@@ -279,13 +305,27 @@ export const TRAITS: Trait[] = [
 /* Deterministic, so a planet is the same every time you reach it and the
    golden tests stay reproducible. Skips index 0 for p > 0 so the four real
    traits cycle and Stable stays unique to Verdax. */
-export const traitOf = (p: number): Trait =>
-  p <= 0 ? TRAITS[0] : TRAITS[1 + (Math.imul(p, 2654435761) >>> 8) % (TRAITS.length - 1)];
+/* The trait of a REGION, looked up from the hand-written layout rather than
+   hashed from a leg number. A world's places are a design; a sequence of
+   planets was an arithmetic accident. */
+export const traitOf = (region: number): Trait =>
+  TRAIT_OF[REGION_TRAIT[region % REGION_COUNT]] || TRAITS[0];
+
+/* The trait and the palette at a CELL, which is what generation actually
+   wants. Everything that used to ask "which planet am I on" asks "where am I
+   standing" now. */
+export const traitAt = (x: number, d: number): Trait => traitOf(regionAt(x, d));
+export const paletteAt = (x: number, d: number): Palette => paletteOf(regionAt(x, d));
 
 export const TRAIT_OF: Record<string, Trait> = {};
 for (const t of TRAITS) TRAIT_OF[t.id] = t;
-export const hardMult = (p: number) => 1 + p * 0.28;
-export const valueMult = (p: number) => 1 + p * 0.6;
+/* Both were per-leg difficulty sliders: a later planet had harder rock and
+   better prices. There are no later planets. Depth already carries both - the
+   rock bands climb from hardness 1 to 9 and the ore ladder climbs from 40
+   credits to 196,000 - so these are 1 and stay in place only because a dozen
+   call sites and several golden tests multiply by them. */
+export const hardMult = (_p: number = 0) => 1;
+export const valueMult = (_p: number = 0) => 1;
 
 /* ---------- pockets ----------
 
@@ -592,9 +632,22 @@ export const DROP_MIN_VALUE = 10;
    that matters is still nailed to the danger: graniteToScoria IS heatDepth, so
    the rock turning to smouldering ember and the hull starting to drain happen
    on the same metre in every world. There is a test at every leg. */
-export const DIRT_FRACTION = 0.09;
-export const STONE_FRACTION = 0.39;
-export const BASALT_FRACTION = 1.05;
+/* Re-anchored to a 452-metre world, the same way the heat line was.
+
+   At the old fractions a 452-metre world is 41 m of dirt, 135 of stone, and
+   then TWENTY-THREE of granite before the scoria - because graniteToScoria is
+   the heat line and the heat line moved. A band you pass through in twenty
+   metres is not a band.
+
+   Spread against the world rather than against a 58-metre shaft: a thin skin
+   of dirt, a long stone middle where most of the early game happens, granite
+   as the run-up to the heat, scoria through the hot half, and basalt in the
+   deep. graniteToScoria is still heatDepth exactly - the rock turning to
+   smouldering ember and the hull starting to drain are still the same metre,
+   and there is still a test on it. */
+export const DIRT_FRACTION = 0.055;
+export const STONE_FRACTION = 0.265;
+export const BASALT_FRACTION = 0.73;
 export const dirtToStone = (p: number) => Math.max(4, Math.round(coreDepth(p) * DIRT_FRACTION));
 export const stoneToGranite = (p: number) => Math.round(coreDepth(p) * STONE_FRACTION);
 export const graniteToScoria = (p: number) => heatDepth(p);
@@ -745,7 +798,7 @@ export const UPGRADES: Upgrade[] = [
      a rig that could not be paid for - two gates on one thing, and one of them
      pointing at nothing. The design it protects is unchanged: you still have to
      survive inside the heat to buy the thing that answers it. */
-  { key: 'cool',   name: 'Cooling Rig',   base: 6000, mul: 1.5, max: 9, mat: 'emerald', group: 'survival', unlock: 130,
+  { key: 'cool',   name: 'Cooling Rig',   base: 6000, mul: 1.5, max: 7, mat: 'magmite', group: 'survival', unlock: 212,
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
   /* The effect line names the framing as well as the lamp, because the
      framing is now the part the player actually feels. */
@@ -764,7 +817,7 @@ export const UPGRADES: Upgrade[] = [
      constraint is the fault this round exists to fix. */
   { key: 'scrub',  name: 'Scrubber',      base: 1500, mul: 1.5, max: 8, mat: 'iron', group: 'survival', unlock: 25,
     effect: (l: number) => Math.round(scrubSave(l) * 100) + '% less fuel per cell cut' },
-  { key: 'auto',   name: 'Autopilot',     base: 4900, mul: 1.55, max: 6, mat: 'amethyst', group: 'instruments', unlock: 100,
+  { key: 'auto',   name: 'Autopilot',     base: 4900, mul: 1.55, max: 6, mat: 'ruby', group: 'instruments', unlock: 190,
     effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') },
 
   /* ---------- ordnance ----------
@@ -783,7 +836,7 @@ export const UPGRADES: Upgrade[] = [
      the mineral gate was doing nothing at all behind the depth gate - one of
      the two was decoration. Ruby lives at 105 m, which puts both gates in the
      same neighbourhood, and a ruby laser is the better fiction anyway. */
-  { key: 'laser',  name: 'Cutting Laser',  base: 12500, mul: 1.6, max: 5, mat: 'ruby', group: 'ordnance', unlock: 170,
+  { key: 'laser',  name: 'Cutting Laser',  base: 12500, mul: 1.6, max: 5, mat: 'coreite', group: 'ordnance', unlock: 260,
     effect: (l) => (l === 0 ? 'Not installed' : laserRange(l) + ' cells straight ahead') },
 
   /* ---------- the second wave ----------
@@ -962,7 +1015,21 @@ export const matCost = (u: Upgrade, lvl: number): MatCost => {
      to say "you have to have BEEN somewhere", and a fourth trip says that no
      better than the first three. The cap is what keeps the top of a ladder a
      purchase rather than an expedition. */
-  return { id: u.mat, need: Math.min(4, 2 + (buying - MAT_FROM_LEVEL)) };
+  /* The cap depends on how much of the mineral is in the ground.
+
+     Round eight made this bite. The Cooling Rig has to be built from something
+     below the heat line - that is the design that makes you survive a heat run
+     before you can buy heat protection - and below the line there is nothing
+     but the rare tier. At a flat cap of four, maxing the rig wanted 21 magmite
+     at 0.78 finds per hundred cells: about 27 hundred-cell runs of doing
+     nothing but looking, which is a grind wearing a gate's clothes.
+
+     So a common mineral is asked for in fours and a rare one in twos. The gate
+     still says "you have to have BEEN somewhere"; it just stops charging the
+     deep minerals as if they were copper. */
+  const ore = DEF[u.mat];
+  const cap = ore && (ore as Ore).chance >= 0.02 ? 4 : 2;
+  return { id: u.mat, need: Math.min(cap, 2 + (buying - MAT_FROM_LEVEL)) };
 };
 
 /* Everything a tree will ever ask for, used to grandfather old saves and to

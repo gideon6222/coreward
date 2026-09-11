@@ -262,7 +262,7 @@
     "name": "Cooling Rig",
     "base": 6000,
     "mul": 1.5,
-    "max": 9,
+    "max": 7,
     "tiers": null,
     "costs": [
       6000,
@@ -272,9 +272,7 @@
       30375,
       45563,
       68344,
-      102516,
-      153773,
-      230660
+      102516
     ],
     "effects": [
       "0% heat shield",
@@ -284,41 +282,31 @@
       "36% heat shield",
       "45% heat shield",
       "54% heat shield",
-      "63% heat shield",
-      "72% heat shield",
-      "72% heat shield"
+      "63% heat shield"
     ],
-    "mat": "emerald",
+    "mat": "magmite",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "emerald",
+        "id": "magmite",
         "need": 2
       },
       {
-        "id": "emerald",
-        "need": 3
+        "id": "magmite",
+        "need": 2
       },
       {
-        "id": "emerald",
-        "need": 4
+        "id": "magmite",
+        "need": 2
       },
       {
-        "id": "emerald",
-        "need": 4
-      },
-      {
-        "id": "emerald",
-        "need": 4
-      },
-      {
-        "id": "emerald",
-        "need": 4
+        "id": "magmite",
+        "need": 2
       }
     ],
-    "matTotal": 21
+    "matTotal": 8
   },
   "scan": {
     "name": "Scanner Array",
@@ -462,25 +450,25 @@
       "0.25 fuel per metre",
       "0.18 fuel per metre"
     ],
-    "mat": "amethyst",
+    "mat": "ruby",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "amethyst",
+        "id": "ruby",
         "need": 2
       },
       {
-        "id": "amethyst",
-        "need": 3
+        "id": "ruby",
+        "need": 2
       },
       {
-        "id": "amethyst",
-        "need": 4
+        "id": "ruby",
+        "need": 2
       }
     ],
-    "matTotal": 9
+    "matTotal": 6
   },
   "bomb": {
     "name": "Seismic Charge",
@@ -530,21 +518,21 @@
       "11 cells straight ahead",
       "13 cells straight ahead"
     ],
-    "mat": "ruby",
+    "mat": "coreite",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "ruby",
+        "id": "coreite",
         "need": 2
       },
       {
-        "id": "ruby",
-        "need": 3
+        "id": "coreite",
+        "need": 2
       }
     ],
-    "matTotal": 5
+    "matTotal": 4
   },
   "hull": {
     "name": "Hull Plating",

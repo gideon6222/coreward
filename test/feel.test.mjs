@@ -74,7 +74,12 @@ test('soak builds while deep and bleeds off above the threshold', () => {
   const shallow = H.heatDepth(0) - 20;
   assert.ok(H.soakAfter(0, deep, 1, 1, H.heatDepth(0)) > 0, 'must build below the heat threshold');
   assert.equal(H.soakAfter(0, shallow, 1, 1, H.heatDepth(0)), 0, 'must not build above it, and must not go negative');
-  assert.ok(H.soakAfter(0.5, shallow, 1) < 0.5, 'must bleed off above it');
+  /* The line passed explicitly. It used to be left to the default, which is
+     HEAT_DEPTH_LEGACY at 70 m - fine while the real line was 38 and `shallow`
+     was 18, and wrong the moment round eight moved the line to 199 and
+     `shallow` became 179, which is below 70 and therefore builds. A test that
+     leans on a default is asserting about the default. */
+  assert.ok(H.soakAfter(0.5, shallow, 1, 1, H.heatDepth(0)) < 0.5, 'must bleed off above it');
   assert.ok(H.soakAfter(1, deep, 999, 1, H.heatDepth(0)) <= 1, 'must clamp at fully soaked');
   assert.equal(H.soakAfter(0, deep, 0, 1, H.heatDepth(0)), 0, 'a zero-length frame changes nothing');
 });
@@ -87,16 +92,19 @@ test('recovering is faster than soaking, so a dip in and out is cheap', () => {
 });
 
 test('soak escalates heat damage without replacing depth as the driver', () => {
-  const deep = 100;
-  const cold = H.heatDamagePerSecond(deep, 0, 0);
-  const hot = H.heatDamagePerSecond(deep, 0, 1);
+  /* Depths relative to the heat line, not literals. They were 80, 100 and 110,
+     which straddled a line at 38 m and all sit above one at 199. */
+  const line = H.heatDepth(0);
+  const deep = line + 60;
+  const cold = H.heatDamagePerSecond(deep, 0, 0, line);
+  const hot = H.heatDamagePerSecond(deep, 0, 1, line);
   assert.ok(hot > cold, 'a soaked hull must take more damage');
   assert.ok(Math.abs(hot / cold - H.SOAK_MAX_MULT) < 1e-9, 'full soak must apply exactly the stated multiplier');
   /* depth still dominates: shallow-and-soaked must beat deep-and-cold */
-  assert.ok(H.heatDamagePerSecond(80, 0, 1) < H.heatDamagePerSecond(110, 0, 0, H.heatDepth(0)),
+  assert.ok(H.heatDamagePerSecond(line + 10, 0, 1, line) < H.heatDamagePerSecond(line + 120, 0, 0, line),
     'depth must still matter more than dwell time');
   /* and soak cannot conjure damage where there is none */
-  assert.equal(H.heatDamagePerSecond(H.heatDepth(0) - 1, 0, 1), 0, 'no heat above the threshold, however soaked');
+  assert.equal(H.heatDamagePerSecond(line - 1, 0, 1, line), 0, 'no heat above the threshold, however soaked');
 });
 
 /* The world has to explain the mechanic. If the rock band and the heat
@@ -113,7 +121,9 @@ test('the world tint announces the zone faster than the danger builds', () => {
   assert.equal(H.heatT(H.heatDepth(0), H.heatDepth(0)), 0, 'no tint above the line');
   assert.equal(H.heatT(0, H.heatDepth(0)), 0);
   assert.ok(H.heatT(H.heatDepth(0) + 10, H.heatDepth(0)) > 0.3, 'the shift must be obvious within a few blocks');
-  assert.equal(H.heatT(200, H.heatDepth(0)), 1, 'and clamp');
+  /* Past the tint's own ramp, which is much shorter than the damage ramp - the
+     name of this test is the reason they are two numbers. */
+  assert.equal(H.heatT(H.heatDepth(0) + H.HEAT_TINT_RAMP + 10, H.heatDepth(0)), 1, 'and clamp');
   /* tint ramps over ~26 m of digging; soak takes 40 s. The world should say
      "you are somewhere dangerous" well before the hull says "and it is
      costing you". */
@@ -121,7 +131,16 @@ test('the world tint announces the zone faster than the danger builds', () => {
 });
 
 test('every rock band is reachable, and they get harder with depth', () => {
-  const bands = [0, 10, 25, 40, 61].map((d) => H.baseRock(d, 0));
+  /* Sampled one metre inside each band rather than at five literal depths.
+
+     The literals were 0, 10, 25, 40 and 61 - the five bands of a 58-metre
+     world - and they now all land in the first two bands of a 452-metre one.
+     Asking each boundary where it is means this keeps testing the ORDER of the
+     bands, which is the claim, rather than testing where they happened to be
+     on the day it was written. */
+  const edges = [0, H.dirtToStone(0), H.stoneToGranite(0),
+                 H.graniteToScoria(0), H.scoriaToBasalt(0)];
+  const bands = edges.map((d) => H.baseRock(d + 1, 0));
   const ids = bands.map((b) => b.id);
   assert.deepEqual(ids, ['dirt', 'stone', 'granite', 'scoria', 'basalt']);
   for (let i = 1; i < bands.length; i++) {
@@ -130,7 +149,8 @@ test('every rock band is reachable, and they get harder with depth', () => {
   }
   /* basalt used to start at 130 while planet 0's core sits at 110, so the
      deepest rock in the game could never be seen on the first planet */
-  assert.ok(H.baseRock(H.coreDepth(1) - 5).id === 'basalt', 'basalt must be reachable by planet 1');
+  assert.ok(H.baseRock(H.coreDepth(0) - 5).id === 'basalt',
+    'the deepest rock in the game must exist above the floor of the world');
 
   /* Plain rock is what you cut through, not what you carry. Its income has to
      stay a rounding error next to a seam, or the hold fills with spoil and the
@@ -199,7 +219,10 @@ test('seams are common enough to shape a tunnel, rare enough to be a find', () =
 
 test('cooling buys time but never immunity', () => {
   const maxShield = 0.72;
-  assert.ok(H.heatDamagePerSecond(110, maxShield, 1, H.heatDepth(0)) > 0,
+  /* At the CORE, which is what the message says and what the number used to
+     be: 110 was near the bottom of a 58-metre world's reachable range and is
+     comfortably above a 452-metre world's heat line. */
+  assert.ok(H.heatDamagePerSecond(H.coreDepth(0) - 1, maxShield, 1, H.heatDepth(0)) > 0,
     'a fully upgraded rig fully soaked at the core must still be losing hull');
   /* the whole point of the rebalance: the pressure is not purchasable away */
   const unprotected = H.heatDamagePerSecond(110, 0, 1);
@@ -406,14 +429,19 @@ test('a better drill buys speed and never fuel efficiency', () => {
 });
 
 /* The Point of No Return, which is only tension if the player can compute it. */
-test('the climb home stays affordable from the deepest cell of any world', () => {
-  for (let leg = 0; leg < 12; leg++) {
-    const L = Math.min(9, Math.round(leg * 0.8));
+test('the climb home stays affordable from every depth of the world', () => {
+  /* Swept over DEPTH, not over legs - there are no legs. The rig is scaled to
+     the depth the way a player's actually is: you do not reach 400 metres on a
+     stock tank, and the claim is that whoever CAN be at a depth can afford to
+     leave it. */
+  const floor = H.coreDepth(0);
+  for (let d = 40; d <= floor; d += 40) {
+    const L = Math.min(9, Math.round((d / floor) * 9));
     const tank = 90 + L * 40, speed = 3.0 + L * 0.7;
-    const climb = H.fuelToClimb(H.coreDepth(leg), speed);
+    const climb = H.fuelToClimb(d, speed);
     assert.ok(climb < tank * 0.35,
-      'leg ' + leg + ': climbing out of the deepest cell costs ' + climb.toFixed(0) +
-      ' of a ' + tank + ' tank, which leaves nothing to have dug with');
+      'at ' + d + ' m the climb home costs ' + climb.toFixed(0) + ' of a ' + tank +
+      ' tank, which leaves nothing to have dug with');
   }
 });
 

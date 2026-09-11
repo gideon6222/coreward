@@ -33,7 +33,12 @@ test('the collapse front rises from the core to the surface over the clock', () 
 test('it ends, and in exactly one of two ways', () => {
   /* Left alone it fails. */
   const a = H.newBreach(0);
-  for (let i = 0; i < 400 && !a.failed && !a.done; i++) H.stepBreach(a, 0.5, false);
+  /* Stepped far enough to outlast the clock, rather than a fixed 400 halves.
+     The clock scales with the world now - 340 seconds against 452 metres - and
+     a loop that ran out at 200 seconds was asserting that a breach nobody
+     escapes fails within two hundred seconds, which is not the claim. */
+  const steps = Math.ceil(H.BREACH_SECONDS / 0.5) + 20;
+  for (let i = 0; i < steps && !a.failed && !a.done; i++) H.stepBreach(a, 0.5, false);
   assert.ok(a.failed && !a.done, 'a breach nobody escapes must fail');
 
   /* Reached, it is done, and the failure never fires afterwards. */
@@ -51,7 +56,9 @@ test('the clock is long enough to climb out of any world it can start in', () =>
      this ever fails the breach has become a wall rather than a chase. */
   H.setWorld(0);
   const climb = H.coreDepth(0) / H.S.speed();
-  assert.ok(climb < H.BREACH_SECONDS * 0.4,
+  /* The stock climb rate, and that is the point: this is the claim that the
+     clock is beatable by somebody who has bought nothing. */
+  assert.ok(climb < H.BREACH_SECONDS * 0.5,
     `leg 0 takes ${climb.toFixed(0)}s to climb against a ${H.BREACH_SECONDS}s clock - ` +
     'under half of it has to be free for drilling and mistakes');
 });

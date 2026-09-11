@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { scene } from './scene';
 import { paletteOf, GROWTH_BAND, type GrowthKind } from './sim/config';
+
 import { setRockSurface } from './materials';
 import { applyLightUnlit } from './lightmap';
-import { g } from './sim/state';
+import { g, region } from './sim/state';
 import { rnd } from './sim/util';
 
 /* What lives, settles or leaks on the rock face.
@@ -168,7 +169,18 @@ let kind: GrowthKind = 'none';
 /* Called by blocks.rebuild() before it walks the window. */
 export function beginGrowth() {
   n = 0;
-  const pal = paletteOf(g.world);
+  /* The growth of the region the SHIP is in, and that is an approximation
+     with a reason.
+
+     Growth is one instanced mesh per KIND - moss, frost, plants - built once
+     per rebuild, so a per-cell kind would need a pool per kind alive at once.
+     The streaming window is 21 columns and a region is about 20, so at most
+     two regions are ever on screen and usually one. Taking the ship's is wrong
+     only in the few metres either side of a boundary, and wrong there in a way
+     that looks like the growth thinning out rather than like a bug.
+
+     If regions ever get narrower than the window this has to become real. */
+  const pal = paletteOf(region());
   /* The stone's own surface, not just what grows on it. Set here because this
      already runs on every rebuild - which is every planet change - and one
      call site cannot fall out of step with the palette. */
@@ -192,7 +204,18 @@ export function addGrowth(x: number, d: number, px: number, py: number, ao: numb
   const r = rnd(x + 91, d + 29, g.planet + 131);
   if (r > band.chance) return;
 
-  const pal = paletteOf(g.world);
+  /* The growth of the region the SHIP is in, and that is an approximation
+     with a reason.
+
+     Growth is one instanced mesh per KIND - moss, frost, plants - built once
+     per rebuild, so a per-cell kind would need a pool per kind alive at once.
+     The streaming window is 21 columns and a region is about 20, so at most
+     two regions are ever on screen and usually one. Taking the ship's is wrong
+     only in the few metres either side of a boundary, and wrong there in a way
+     that looks like the growth thinning out rather than like a bug.
+
+     If regions ever get narrower than the window this has to become real. */
+  const pal = paletteOf(region());
   const r2 = rnd(x + 17, d + 63, g.planet + 131);
   const r3 = rnd(x + 45, d + 8, g.planet + 131);
   /* One patch, or two on a lucky cell, so a face is uneven rather than

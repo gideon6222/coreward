@@ -3,6 +3,7 @@ import { beginGrowth, addGrowth, finishGrowth } from './growth';
 import { W } from './sim/config';
 import { key } from './sim/util';
 import { g } from './sim/state';
+import { regionAt } from './sim/region';
 import { blockAt } from './sim/world';
 import { rnd } from './sim/util';
 import { scene } from './scene';
@@ -422,7 +423,7 @@ function rebuild() {
         placeCell(px, py, x, d);
         scratch.updateMatrix();
         pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.color, g.planet), jit * ao)));
+        pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.color, regionAt(x, d)), jit * ao)));
         pool.bodies++;
 
         /* Flecks belong to seams and only to seams now.
@@ -443,7 +444,7 @@ function rebuild() {
             scratch.scale.set(sc, sc, sc);
             scratch.updateMatrix();
             pool.detail.setMatrixAt(pool.details, scratch.matrix);
-            pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(tintRock(0xd9c898, g.planet), jit * 1.15 * ao)));
+            pool.detail.setColorAt(pool.details, scratchColor.setHex(shade(tintRock(0xd9c898, regionAt(x, d)), jit * 1.15 * ao)));
             pool.details++;
           }
         }
@@ -455,7 +456,7 @@ function rebuild() {
       placeCell(px, py, x, d);
       scratch.updateMatrix();
       pool.body.setMatrixAt(pool.bodies, scratch.matrix);
-      pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.host || 0x333038, g.planet), jit * ao)));
+      pool.body.setColorAt(pool.bodies, scratchColor.setHex(shade(tintRock(b.host || 0x333038, regionAt(x, d)), jit * ao)));
       pool.bodies++;
 
       const n = b.shards || 5;

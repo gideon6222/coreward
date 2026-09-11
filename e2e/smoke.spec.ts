@@ -498,10 +498,12 @@ test('the score layers respond to depth and to danger', async ({ page }) => {
     };
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 6, cargo: 3, thrust: 4, tank: 6, cool: 8, scan: 5, scrub: 0, auto: 0 },
+      up: { drill: 6, cargo: 3, thrust: 4, tank: 6, cool: 7, scan: 5, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {},
-      dug: Array.from({ length: 97 }, (_, d) => '6,' + d),
-      rubble: [], cargo: {}, weight: 0, px: 6, pd: 96
+      /* The shaft has to be under the SHIP. This dug column 6 and parked the
+         ship at 30, which leaves it sealed in solid rock. */
+      dug: Array.from({ length: 402 }, (_, d) => '30,' + d),
+      rubble: [], cargo: {}, weight: 0, px: 30, pd: 400
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -522,8 +524,18 @@ test('the score layers respond to depth and to danger', async ({ page }) => {
   const seen = () => page.evaluate(() => (window as any).__gains as number[]);
   const near = (xs: number[], v: number) => xs.some((x) => Math.abs(x - v) < 1e-6);
 
-  /* 96 m is past both the heat line and the unstable band, so the heat layer
-     and the shifting-rock layer should both be asked for. */
+  /* 400 m, and the number is chosen against the RAMP rather than against the
+     line.
+
+     The score asks for the heat layer at `heatT(pd, line, (core - line) * 0.55)`
+     - a ramp that scales with the world - so reaching full volume needs
+     199 + 139 = 338 m, not merely crossing 199. At 300 the layer was at 0.063
+     of its 0.075 and this waited twenty seconds for a number it was never
+     going to see. It was 96 m against a 58-metre planet, where the same
+     arithmetic put full volume at 49.
+
+     400 is past that and past the unstable band at 253, so both layers should
+     be asked for. */
   await expect
     .poll(async () => near(await seen(), 0.075), { timeout: 20_000 })
     .toBe(true);
@@ -610,16 +622,19 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
      how a budget silently stops being a budget. */
   await page.evaluate(() => {
     const dug: string[] = [];
-    for (let d = 0; d <= 96; d++) dug.push('6,' + d);
-    for (let x = 1; x <= 11; x++) for (let d = 88; d <= 99; d++) dug.push(x + ',' + d);
-    const rubble = ['5,90', '7,90', '4,92', '8,92', '6,86', '9,94', '3,95', '2,91'];
+    /* 300 m, not 96. The heat line moved from 38 m to 199 m when the twelve
+       planets folded into one 452-metre world, so a fixture that sits at 96 is
+       in cool rock and can only assert that nothing is draining. */
+    for (let d = 0; d <= 300; d++) dug.push('30,' + d);
+    for (let x = 25; x <= 35; x++) for (let d = 292; d <= 303; d++) dug.push(x + ',' + d);
+    const rubble = ['29,294', '31,294', '28,296', '32,296', '30,290', '33,298', '27,299', '26,295'];
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 3, credits: 0, shards: 0,
-      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 9, scan: 9, scrub: 0, auto: 0 },
+      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 7, scan: 9, scrub: 0, auto: 0 },
       kit: { coolant: 2, patch: 3, cell: 3 }, stock: {},
       best: { depth: 40, haul: 0 },
       dug: dug.filter((k) => !rubble.includes(k)), rubble,
-      cargo: {}, weight: 0, px: 6, pd: 96
+      cargo: {}, weight: 0, px: 30, pd: 300
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -633,7 +648,7 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
      raises no pointerdown, so this cannot start the audio graph and the
      gesture assertions below still mean what they say. */
   await enterGame(page);
-  await expect(page.locator('#depth')).toContainText('DEPTH 96 m');
+  await expect(page.locator('#depth')).toContainText('DEPTH 300 m');
 
   const perFrame = await page.evaluate(async () => {
     const w = window as any;
@@ -1097,7 +1112,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
          the second one. 135, not 80: round seven moved emerald from 78 m to
          130 m and the row followed it, which is the whole point of the two
          gates pointing at the same place. */
-      best: { depth: 135, haul: 0 },
+      best: { depth: 460, haul: 0 },
       dug: [], cargo: {}, weight: 0, px: 6, pd: -1
     }));
     const set = Storage.prototype.setItem;
@@ -1120,9 +1135,9 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await expect(card).toContainText('Cooling Rig');
   await expect(buy).toBeDisabled();
   await expect(card.locator('.upmat')).toHaveClass(/short/);
-  await expect(card.locator('.upmat')).toContainText('2 Emerald');
+  await expect(card.locator('.upmat')).toContainText('2 Magmite');
   await expect(card.locator('.upmat'), 'a requirement you cannot meet must say where to go')
-    .toContainText('from 130 m');
+    .toContainText('from 210 m');
 
   /* levels inside the free tier are still pure credits */
   await tapBay(page, 'drill');
@@ -1133,8 +1148,8 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   /* bank the emerald and the same row unlocks */
   await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem('coreward.v2') as string);
-    s.stock = { emerald: 3 };
-    s.best = { depth: 135, haul: 0 };
+    s.stock = { magmite: 3 };
+    s.best = { depth: 460, haul: 0 };
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = set;
     localStorage.setItem('coreward.v2', JSON.stringify(s));
@@ -1159,14 +1174,14 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await card.locator('button').click();
 
   /* bought: the level went up and the minerals were actually spent */
-  await expect(card).toContainText('Lv 4/9');
+  await expect(card).toContainText('Lv 4/7');
   await expect(card.locator('.upmat')).toContainText('you have 1');
 
   /* and the vault reflects it */
   await page.locator('#shopClose').dispatchEvent('click');
   await page.locator('#btnManifest').dispatchEvent('click');
-  await expect(page.locator('#vault')).toContainText('Emerald');
-  await expect(page.locator('#vault')).toContainText('from 130 m');
+  await expect(page.locator('#vault')).toContainText('Magmite');
+  await expect(page.locator('#vault')).toContainText('from 210 m');
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
@@ -1185,8 +1200,10 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
         planet: 0, credits: 0, shards: 0,
         up: { drill: 6, cargo: 3, thrust: 4, tank: 4, cool: 7, scan: 4, scrub: 0, auto: 0 },
         kit: { coolant: 1, patch: 0, cell: 0 },
-        dug: Array.from({ length: 49 }, (_, d) => '6,' + d),
-        cargo: {}, weight: 0, px: 6, pd: 48
+        /* Below the heat line, which is 199 m in the one world - it was 38 m
+           when this fixture was written to sit at 48. */
+        dug: Array.from({ length: 261 }, (_, d) => '30,' + d),
+        cargo: {}, weight: 0, px: 30, pd: 260
       }));
       const set = Storage.prototype.setItem;
       Storage.prototype.setItem = function (k, v) {
@@ -1393,7 +1410,15 @@ test('a tremor actually fires in a real run below the tremor line', async ({ pag
        A fixture that cannot reach the behaviour it names reads as coverage and
        is worse than no test, so the precondition is asserted below rather than
        assumed. */
-    for (let d = 0; d <= 50; d++) for (let x = 5; x <= 7; x++) w.g.dug.add(x + ',' + d);
+    /* Dug to the tremor line rather than to a literal 50 m. The line was 44 m
+       in a 58-metre world and is 253 m in a 452-metre one; a fixture that digs
+       to 50 is above it and can only ever assert that nothing happens. Three
+       columns wide so a collapse has somewhere to go - see the note above. */
+    const floor = Math.round(w.tremorDepth(0)) + 24;
+    const cx = Math.round(w.g.px);
+    for (let d = 0; d <= floor; d++)
+      for (let x = cx - 1; x <= cx + 1; x++) w.g.dug.add(x + ',' + d);
+    w.g.pd = floor - 2;
     const before = w.g.rubble.size;
     /* Two full tremor periods plus the jitter, so "none fired" cannot just
        mean the window was too short. */
@@ -1602,7 +1627,11 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
     const w = (window as any).__cw;
     w.stopClock();
     w.R.held = 'down';
-    for (let i = 0; i < 60; i++) w.advance(0.5);
+    /* Stopped at the cave line rather than after a fixed thirty seconds. The
+       ship digs faster through the shallow dirt of a 452-metre world than it
+       did through a 58-metre one's, and this fixture's assertions only hold in
+       solid ground. */
+    for (let i = 0; i < 60 && w.g.pd < w.CAVE_MIN_DEPTH - 4; i++) w.advance(0.5);
     w.R.held = null;
     w.advance(0.5);
 
@@ -1677,8 +1706,11 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
      for the right reason and fail this for the wrong one. */
   expect(r.depth, 'the run has to get underground for any of this to mean anything')
     .toBeGreaterThan(12);
+  /* CAVE_MIN_DEPTH, not a literal 26. The run drifts a little past wherever
+     the fixture stops, and the claim is "above the line" rather than "above
+     twenty-six" - so it is asked of the line. */
   expect(r.depth, 'and has to stay above the cave line for the rock assertions to hold')
-    .toBeLessThan(26);
+    .toBeLessThan(await page.evaluate(() => (window as any).__cw.CAVE_MIN_DEPTH));
   expect(r.rockPrograms, 'no rock programs compiled - the terrain never drew')
     .toBeGreaterThan(0);
   expect(r.unlit, r.unlit + ' of ' + r.rockPrograms +
@@ -2509,73 +2541,65 @@ test('the fuel gauge shows the climb home, and goes red before it is too late', 
   expect(seen).toEqual(['clear', 'plan', 'danger', 'stranded']);
 });
 
-test('a deep world only gives up its deep ore, and only rarely', async ({ page }) => {
-  /* The two halves of "it should feel like a prize": a material does not exist
-     above its floor, and even below it, it is rare. Asserted against the real
-     generator rather than the table, because the table is only a promise. */
+test('the shallow world holds three materials, and the deep ones are a prize', async ({ page }) => {
+  /* One world now, so "planet 0" is not a thing to sweep. The claim converts
+     to depth BANDS of the single world, which is what the ore ladder actually
+     gates on and what he asked for: three materials near the top, and the deep
+     kinds rare even where they exist.
+
+     Sixty metres, because gold starts at 64 - the band has to stop before the
+     fourth material to be a claim about the first three. */
   const counts = await page.evaluate(() => {
     const w = (window as any).__cw;
-    const out: Record<string, Record<string, number>> = {};
-    for (const leg of [0, 4, 8]) {
-      w.g.planet = leg; w.g.world = leg; w.g.coreOff = 0;
-      w.g.dug = new Set(); w.g.rubble = new Set();
+    w.g.dug = new Set(); w.g.rubble = new Set();
+    const floor = w.coreM();
+    const bands: Record<string, Record<string, number>> = {};
+    for (const [name, lo, hi] of [['shallow', 0, 60], ['deep', floor - 90, floor]] as
+         [string, number, number][]) {
       const seen: Record<string, number> = {};
       let cells = 0;
-      const core = w.coreM();
-      for (let d = 0; d < core; d++) {
-        for (let x = 0; x < 13; x++) {
+      for (let d = lo; d < hi; d++) {
+        for (let x = 0; x < w.W; x++) {
           const b = w.blockAt(x, d);
           cells++;
           if (b && b.ore && !b.core) seen[b.id] = (seen[b.id] || 0) + 1;
         }
       }
       seen.__cells = cells;
-      out[leg] = seen;
+      bands[name] = seen;
     }
-    return out;
+    return bands;
   });
 
-  /* NO cell above a material's floor ever holds it - swept, not sampled.
-
-     "The first world does not contain solmarrow" was the first version of this
-     and it passes by luck: at 0.12% of cells, a mutation that moves solmarrow
-     to 20 m still generates none at all on a 754-cell world about half the
-     time. An assertion a rare roll can satisfy by missing is not an assertion.
-     The floor is an invariant, so it is tested as one. */
+  /* NO cell above a material's floor ever holds it - the invariant, swept, not
+     a sample. A 0.12% material can miss a single band by luck; a floor cannot
+     be broken by luck. */
   const breaches = await page.evaluate(() => {
     const w = (window as any).__cw;
     const bad: string[] = [];
-    for (const leg of [0, 3, 6, 9]) {
-      w.g.planet = leg; w.g.world = leg; w.g.coreOff = 0;
-      w.g.dug = new Set(); w.g.rubble = new Set();
-      const core = w.coreM();
-      for (let d = 0; d < core; d++) {
-        for (let x = 0; x < 13; x++) {
-          const b = w.blockAt(x, d);
-          if (!b || !b.ore || b.core) continue;
-          const o = w.ORES.find((z: any) => z.id === b.id);
-          if (o && d < o.min) bad.push(o.id + ' at ' + d + ' m, above its floor of ' + o.min);
-        }
+    const floor = w.coreM();
+    for (let d = 0; d < floor; d++) {
+      for (let x = 0; x < w.W; x += 3) {
+        const b = w.blockAt(x, d);
+        if (!b || !b.ore || b.core) continue;
+        const o = w.ORES.find((z: any) => z.id === b.id);
+        if (o && d < o.min) bad.push(o.id + ' at ' + d + ' m, above its floor of ' + o.min);
       }
     }
     return bad.slice(0, 5);
   });
   expect(breaches.join('; '), 'a material generated above its own floor depth').toBe('');
 
-  /* And the tutorial world is the three shallow ones and nothing else. */
-  /* The relic and the drive component carry `ore: true` so they spray and
-     sound like something worth having; they are one buried cell each and not
-     materials. */
   const notOre = new Set(['__cells', 'geode', 'gas', 'cache', 'schematic', 'relic', 'part']);
-  const p0 = Object.keys(counts[0]).filter((k) => !notOre.has(k));
-  expect(p0.sort().join(','), 'the first world holds more than copper, iron and silver')
+  const shallow = Object.keys(counts.shallow).filter((k) => !notOre.has(k));
+  expect(shallow.sort().join(','), 'the top sixty metres holds more than the starter three')
     .toBe('copper,iron,silver');
 
-  /* And the deepest material is rare even where it exists. */
-  const deepWorld = counts[8];
-  const sol = deepWorld.solmarrow || 0;
-  expect(sol, 'solmarrow does not generate at all on planet 8').toBeGreaterThan(0);
-  expect(sol / deepWorld.__cells,
-    'solmarrow is ' + ((sol / deepWorld.__cells) * 100).toFixed(2) + '% of planet 8, which is not a prize')
-    .toBeLessThan(0.004);
+  /* And the deepest material is rare even in the band it lives in. */
+  const deep = counts.deep;
+  const sol = deep.solmarrow || 0;
+  expect(sol, 'solmarrow does not generate at all in the deepest band').toBeGreaterThan(0);
+  expect(sol / deep.__cells,
+    'solmarrow is ' + ((sol / deep.__cells) * 100).toFixed(2) + '% of the deep band, not a prize')
+    .toBeLessThan(0.006);
 });

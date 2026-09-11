@@ -1,4 +1,5 @@
-import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, ORES, matTotalFor, scrubSave, costOf,
+import { regionAt } from './region';
+import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, ORES, matTotalFor, scrubSave, costOf, traitAt,
          bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
@@ -363,8 +364,25 @@ export function load() {
    `worldTrait` falls back rather than throwing: a save carrying a trait id
    that no longer exists (a trait renamed between versions) should load as
    Stable and be playable, not refuse to start. */
+/* The trait of the ground the ship is IN.
+
+   It used to be the trait of the planet you had flown to - one value for a
+   whole visit, chosen from a menu. Now it is a property of where you are
+   standing, so flying sideways changes what the rock does. Everything that
+   reads it - the lamp's reach, the charge's blast, how fast heat soaks, how
+   hard gas hits - is asking a question about here, and here is a thing that
+   moves.
+
+   Rounded to a cell, because a trait that changed halfway through a metre
+   would make every derived stat jitter as the ship drifts. */
 export function worldTrait() {
-  return TRAIT_OF[g.trait] || TRAITS[0];
+  return traitAt(Math.round(g.px), Math.max(0, Math.round(g.pd)));
+}
+
+/* And the region index, for the map and for anything that wants to name the
+   place rather than ask what it does. */
+export function region() {
+  return regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)));
 }
 
 /* Where the core is on THIS world: the leg's baseline plus what the chart

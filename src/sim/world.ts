@@ -1,7 +1,7 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
          GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
          RELIC_COLOR, RELIC_HOST, relicAt, relicFor,
-         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES } from './config';
+         CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES, traitAt } from './config';
 import { key, mixHex, rnd } from './util';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
@@ -36,8 +36,13 @@ export function blockAt(x: number, d: number): Block | null {
   if (g.dug.has(key(x, d))) return null;
   const cd = coreM();
   if (d > cd) return { id: 'bedrock', name: 'Bedrock', color: 0x1a1820, hard: Infinity, wt: 0, value: 0, glow: 0.02 };
-  if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(g.planet), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
-  const hm = hardMult(g.planet) * (worldTrait().hard ?? 1);
+  if (d === cd) return { id: 'core', name: 'Planet Core', color: 0xfff2a0, host: 0x4a3a20, hard: 26 * hardMult(), wt: 0, value: 0, glow: 0.9, shards: 8, tone: 10, ore: true, core: true };
+  /* The trait of THIS CELL, not of the world. Hardness, caves, gas and geodes
+     are all properties of the ground you are cutting, so they answer to the
+     region the cell is in - which is what makes a region somewhere you can
+     walk into rather than a label on a save. */
+  const tr = traitAt(x, d);
+  const hm = hardMult() * (tr.hard ?? 1);
 
   /* The relic, before anything that could hide it. It is one cell on the whole
      planet and it must not lose a coin flip to a cave. */
@@ -112,7 +117,7 @@ export function blockAt(x: number, d: number): Block | null {
      Evaluated on a coarse grid and with its own seed offset, so adding them
      leaves every ore and rock roll exactly where it was. */
   if (d >= CAVE_MIN_DEPTH &&
-      rnd(Math.floor(x / 2), Math.floor(d / 2), g.planet + 77) < caveChanceOn(d, worldTrait())) {
+      rnd(Math.floor(x / 2), Math.floor(d / 2), 77) < caveChanceOn(d, tr)) {
     return null;
   }
 
@@ -122,7 +127,7 @@ export function blockAt(x: number, d: number): Block | null {
      enough to be an event rather than a resource. Gas first: it is the one you
      do not want, and it should not be crowded out by a geode roll. */
   const pr = rnd(x + 313, d + 977, g.planet + 41);
-  if (d >= GAS.min && pr < gasChanceOn(worldTrait())) {
+  if (d >= GAS.min && pr < gasChanceOn(tr)) {
     return { id: GAS.id, name: GAS.name, color: GAS.color, host: GAS.host, glow: GAS.glow,
              shards: GAS.shards, tone: GAS.tone, hard: GAS.hard * hm, wt: GAS.wt,
              value: GAS.value, ore: true, hazard: true };
@@ -135,7 +140,7 @@ export function blockAt(x: number, d: number): Block | null {
              shards: CACHE.shards, tone: CACHE.tone, hard: CACHE.hard * hm, wt: CACHE.wt,
              value: CACHE.value, ore: true, cache: true };
   }
-  if (d >= GEODE.min && pr > 1 - geodeChanceOn(worldTrait())) {
+  if (d >= GEODE.min && pr > 1 - geodeChanceOn(tr)) {
     return { id: GEODE.id, name: GEODE.name, color: GEODE.color, host: GEODE.host, glow: GEODE.glow,
              shards: GEODE.shards, tone: GEODE.tone, hard: GEODE.hard * hm, wt: GEODE.wt,
              value: GEODE.value, ore: true };

@@ -1,7 +1,7 @@
 {
-  "line": 26,
-  "repairOre": "silver",
-  "perCellAtLine": 0.004125,
+  "line": 203,
+  "repairOre": "magmite",
+  "perCellAtLine": 0.004016,
   "perCellAtCore": 0.008,
   "damageFirstFour": [
     {
@@ -33,7 +33,112 @@
     },
     {
       "d": 40,
-      "strain": 0.0691,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 60,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 80,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 100,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 120,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 140,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 160,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 180,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 200,
+      "strain": 0,
+      "quake": false
+    },
+    {
+      "d": 220,
+      "strain": 0.0705,
+      "quake": false
+    },
+    {
+      "d": 240,
+      "strain": 0.1593,
+      "quake": false
+    },
+    {
+      "d": 260,
+      "strain": 0.2546,
+      "quake": false
+    },
+    {
+      "d": 280,
+      "strain": 0.3562,
+      "quake": false
+    },
+    {
+      "d": 300,
+      "strain": 0.4644,
+      "quake": false
+    },
+    {
+      "d": 320,
+      "strain": 0.5789,
+      "quake": false
+    },
+    {
+      "d": 340,
+      "strain": 0.6999,
+      "quake": false
+    },
+    {
+      "d": 360,
+      "strain": 0.8272,
+      "quake": false
+    },
+    {
+      "d": 380,
+      "strain": 0.9611,
+      "quake": false
+    },
+    {
+      "d": 386,
+      "strain": 0.35,
+      "quake": true
+    },
+    {
+      "d": 400,
+      "strain": 0.4488,
+      "quake": false
+    },
+    {
+      "d": 420,
+      "strain": 0.5955,
+      "quake": false
+    },
+    {
+      "d": 440,
+      "strain": 0.7486,
       "quake": false
     }
   ]

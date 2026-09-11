@@ -143,38 +143,30 @@
     },
     {
       "key": "cool",
-      "mat": "emerald",
-      "mineralDepth": 130,
+      "mat": "magmite",
+      "mineralDepth": 210,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "emerald",
+          "id": "magmite",
           "need": 2
         },
         {
-          "id": "emerald",
-          "need": 3
+          "id": "magmite",
+          "need": 2
         },
         {
-          "id": "emerald",
-          "need": 4
+          "id": "magmite",
+          "need": 2
         },
         {
-          "id": "emerald",
-          "need": 4
-        },
-        {
-          "id": "emerald",
-          "need": 4
-        },
-        {
-          "id": "emerald",
-          "need": 4
+          "id": "magmite",
+          "need": 2
         }
       ],
-      "total": 21
+      "total": 8
     },
     {
       "key": "scan",
@@ -244,26 +236,26 @@
     },
     {
       "key": "auto",
-      "mat": "amethyst",
-      "mineralDepth": 95,
+      "mat": "ruby",
+      "mineralDepth": 168,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "amethyst",
+          "id": "ruby",
           "need": 2
         },
         {
-          "id": "amethyst",
-          "need": 3
+          "id": "ruby",
+          "need": 2
         },
         {
-          "id": "amethyst",
-          "need": 4
+          "id": "ruby",
+          "need": 2
         }
       ],
-      "total": 9
+      "total": 6
     },
     {
       "key": "bomb",
@@ -278,22 +270,22 @@
     },
     {
       "key": "laser",
-      "mat": "ruby",
-      "mineralDepth": 168,
+      "mat": "coreite",
+      "mineralDepth": 258,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "ruby",
+          "id": "coreite",
           "need": 2
         },
         {
-          "id": "ruby",
-          "need": 3
+          "id": "coreite",
+          "need": 2
         }
       ],
-      "total": 5
+      "total": 4
     },
     {
       "key": "hull",

@@ -41,27 +41,27 @@
   "assignment": [
     {
       "planet": 0,
-      "trait": "stable"
+      "trait": "hollow"
     },
     {
       "planet": 1,
-      "trait": "hollow"
+      "trait": "stable"
     },
     {
       "planet": 2,
-      "trait": "searing"
-    },
-    {
-      "planet": 3,
-      "trait": "hollow"
-    },
-    {
-      "planet": 4,
       "trait": "crystalline"
     },
     {
-      "planet": 5,
+      "planet": 3,
       "trait": "volatile"
+    },
+    {
+      "planet": 4,
+      "trait": "hollow"
+    },
+    {
+      "planet": 5,
+      "trait": "stable"
     },
     {
       "planet": 6,
@@ -73,7 +73,7 @@
     },
     {
       "planet": 8,
-      "trait": "hollow"
+      "trait": "volatile"
     },
     {
       "planet": 9,
@@ -81,35 +81,35 @@
     },
     {
       "planet": 10,
-      "trait": "volatile"
-    },
-    {
-      "planet": 11,
       "trait": "crystalline"
     },
     {
+      "planet": 11,
+      "trait": "searing"
+    },
+    {
       "planet": 12,
-      "trait": "volatile"
+      "trait": "hollow"
     },
     {
       "planet": 13,
-      "trait": "hollow"
+      "trait": "stable"
     },
     {
       "planet": 14,
-      "trait": "searing"
+      "trait": "crystalline"
     },
     {
       "planet": 15,
-      "trait": "hollow"
+      "trait": "volatile"
     },
     {
       "planet": 16,
-      "trait": "searing"
+      "trait": "hollow"
     },
     {
       "planet": 17,
-      "trait": "volatile"
+      "trait": "stable"
     },
     {
       "planet": 18,
@@ -117,11 +117,11 @@
     },
     {
       "planet": 19,
-      "trait": "volatile"
+      "trait": "searing"
     },
     {
       "planet": 20,
-      "trait": "hollow"
+      "trait": "volatile"
     },
     {
       "planet": 21,
@@ -129,11 +129,11 @@
     },
     {
       "planet": 22,
-      "trait": "hollow"
+      "trait": "crystalline"
     },
     {
       "planet": 23,
-      "trait": "crystalline"
+      "trait": "searing"
     }
   ],
   "caveCap": 0.17

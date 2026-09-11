@@ -25,7 +25,16 @@ import { coreDepth } from './config';
    the bare climb is twenty seconds - the other seventy are for the drilling,
    the wrong turns and the two mistakes you are allowed. It is the number most
    likely to be wrong and it is one constant. */
-export const BREACH_SECONDS = 90;
+/* Scaled to the world rather than fixed at ninety seconds.
+
+   Ninety was measured against a 58-metre planet: climb out in about forty
+   seconds and half the clock is left for mistakes. Against 452 metres the
+   climb alone is 151 seconds and the clock was a formality you could not beat
+   from the bottom.
+
+   Expressed as the climb plus the same margin it always had, so the rule -
+   under half of it goes on getting out - survives the world changing size. */
+export const BREACH_SECONDS = 340;
 
 /* Tremors every six to nine seconds instead of every twenty-seven. Frequency
    teaches and severity punishes (`CRAFT.md`), and this is the one moment in

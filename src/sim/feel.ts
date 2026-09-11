@@ -808,7 +808,17 @@ export const SETTLE_MAX = 2.1;
    below takes the depth it should compare against rather than reaching for a
    constant that is only true of one leg. See heatDepth() in config.ts. */
 export const HEAT_DEPTH_LEGACY = 70;       /* what a pre-M5 save was played on */
-export const HEAT_RAMP = 50;
+/* How many metres below the line the heat takes to reach full.
+
+   50 against a 58-metre world meant the ramp was most of the planet. Against a
+   452-metre world with the line at 199 there are 253 metres of hot ground
+   below it, and a 50-metre ramp puts every one of them past 200 m at maximum -
+   so the deep half of the world would have exactly one heat intensity in it
+   and depth would stop mattering the moment you crossed the line.
+
+   150 spreads the ramp over the hot half, which is what keeps "deeper is
+   worse" true all the way down. */
+export const HEAT_RAMP = 150;
 export const HEAT_EXPONENT = 1.3;
 export const HEAT_RATE = 4.5;
 

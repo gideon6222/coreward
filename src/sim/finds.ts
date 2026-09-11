@@ -82,9 +82,9 @@ export const FINDS: Find[] = [
     blurb: 'More power, and it comes back faster. Both weapons run off it.' },
   { key: 'drone',   from: 1, below: 78,
     blurb: 'Mends the hull slowly while you are underground.' },
-  { key: 'auto',    from: 2, below: 100,
+  { key: 'auto',    from: 2, below: 190,
     blurb: 'Flies you back to the surface on its own, and cheaply.' },
-  { key: 'laser',   from: 3, below: 170,
+  { key: 'laser',   from: 3, below: 260,
     blurb: 'Cuts a straight shaft ahead of you. Expensive in power.' }
 ];
 
