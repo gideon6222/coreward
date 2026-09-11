@@ -1208,6 +1208,439 @@ read first: of 15,639 cells, 11,053 changed rock band (already licensed), 841
 changed ore, 574 stopped being ore and 368 started, against a deliberate density
 cut from 10% to 7.5%.
 
+
+---
+
+# Round eight: one world, and a reason to be in it
+
+Written 2026-09-10 against v0.30.0, from his own brief:
+
+> *"I like how a lot of it is feeling but it still feels like there is a main
+> component missing. can you redesign how the main overall objective works? I
+> want to stay on one plannet for much longer. find more secrets, random caves,
+> and other things to make the planet feel mysterious and intriguing. I want the
+> entire game to be based around one planet ... I dont want to just try to dig to
+> the bottom. can you fully redesign the main objective into something closer to
+> dome keeper but unique. I want to remove the buildings or redesign them
+> visually and their purpose. redesign the ship to look more steam punk and
+> unique. redesign the blocks for a more interesting stylized feel."*
+
+## What is actually there today, before anything is designed
+
+An honest inventory, because most of this round is deciding what to keep.
+
+| system | what it is | fate |
+|---|---|---|
+| fly and dig | 13 columns, a fixed side camera, one block at a time | **keep** |
+| fuel as life | run dry and the ship is lost; the climb home is drawn on the dial | **keep** - this is round seven and it works |
+| heat / gas / tremors | a heat line at 66% of the core, gas pockets, quakes that collapse tunnels | **keep**, re-tuned to a bigger world |
+| ore ladder | 11 materials gated over eight planets' worth of depth | **becomes strata** |
+| 15 upgrades, 6 consumables, 7 devices | the shop, the drawer, the crates in the ground | **keep** |
+| **the star chart** | pick a destination, fly between planets | **cut** |
+| **planet traits** | 5 traits that bend hazard rates and rules | **becomes regions** |
+| **12 palettes** | a colour identity per planet: rock, fog, haze, growth | **becomes strata** |
+| **coreDepth(leg)** | 58 + 48 per leg; the world gets deeper each hop | **cut** - one fixed, much larger world |
+| **the Jump Drive** | 5 components, one per trait, across many worlds | **cut, and replaced** |
+| **relics** | one buried artefact per planet, a permanent perk | **becomes one per region** |
+| **the Heart** | the final world; breaking its core wins | **becomes the thing under this world** |
+| **the claim** | 3 surface buildings that accrue strain; damage is a discount | **cut, and replaced** |
+| caves | 2x2 blobs, 3-9% below 26 m | **kept and massively expanded** |
+| geodes, gas pockets, caches | one-cell events on their own seeds | **keep** |
+
+## Two facts about the code that shape what is cheap and what is not
+
+**The multi-planet structure can fold inward.** Twelve palettes, five traits and a
+per-leg core depth are already a description of twelve different places with
+different rules and different rock. They were spent on twelve worlds you visit
+one at a time. Spent instead on twelve REGIONS of one world, they are most of a
+large, varied planet for almost no new code - the palette applies to a depth
+band rather than a save slot, and a trait bends the rules of a region rather
+than of a visit.
+
+That is the single biggest lever in this round and it is nearly free.
+
+**There is no map. Of anything.** Not of the tunnels you have dug, not of where
+you have been, not of what you have found. That is survivable in a game whose
+world is 58 metres of straight-down and fatal in one that is meant to be wide
+and mysterious. Whatever else this round does, it has to answer that.
+
+**The world is 13 columns wide, and widening it is NOT just a constant.** The
+generator is fine - `rnd(x, d, planet)` is seeded per cell, so columns 0-12
+generate exactly as they do now and anything added is new ground, which the code
+already says in a comment. The RENDERER is the problem: `syncBlocks` streams a
+window of rows around the ship (`row - 13` to `row + 15`) and then walks
+`for (let x = 0; x < W; x++)` - the full width, every rebuild - and every
+instanced pool is allocated at `WINDOW_ROWS * W`.
+
+So at 60 columns each of about eighteen pools allocates 1,740 instances instead
+of 377, and every rebuild touches five times the cells. The streaming window has
+to gain a horizontal axis: a column range around `g.px`, a rebuild triggered by
+crossing a column as well as a row, and `MAX_CELLS` sized off the window rather
+than off `W`. That is contained, it is real work, and it is much cheaper to find
+now than halfway through the build.
+
+**The ship is coded primitives.** A box hull, a cone cowl, four struts, two
+fins, a cylinder auger, a cone cab. Nothing is imported and nothing is fixed in
+place by geometry, so a redesign is a rewrite of one file rather than an asset
+hunt.
+
+
+# What the research settled
+
+**Dome Keeper's own developer made this exact pivot, and said why.** The
+original win condition was "reach the bottom of the map." René Habermann called
+it *"seriously flawed"* and wrote, in February 2022:
+
+> *"I'm mostly thinking about searching a special underground location and to
+> recover something from it. So you'd still need to dig down, but it's not sure
+> where to and it will also need some time to recover."*
+
+That shipped as Relic Hunt mode. **"I dont want to just try to dig to the
+bottom" is the same conclusion the designer of the game he is pointing at
+reached about his own game.** This round is not a guess.
+
+**And the criticism to design against is specific.** Dome Keeper's content
+ceiling is about ten hours - "at the ten-hour mark many players will have seen
+the breadth of its unlocks" - and Eurogamer's read is that its two phases feel
+*divided*, competing for attention rather than fusing. So: do not alternate
+mining and something-else. **Fuse them.** Coreward already has the material for
+that, and it is not combat.
+
+Five devices make one map last, and four of them survive procedural generation:
+
+- **Ability gating.** Hollow Knight's rule is "each key only opens a few locks" -
+  new tools open things you have already SEEN and could not pass. Backtracking
+  with a new tool is itself content, and it costs no new world.
+- **World-state flags.** A region marked sealed, collapsed or active changes
+  meaning without changing its geometry.
+- **A world-changing event that recolours the map you already have.** Terraria's
+  Hardmode retroactively edits the existing world rather than generating new
+  space. The research calls this the strongest procgen-friendly longevity device
+  there is, and it is nearly free.
+- **Authored set-pieces dropped into procgen.** Spelunky stitches hand-made room
+  templates; Noita drops hand-placed structures into a generated world. This is
+  the one way to get authored mystery into a seeded world.
+- **Knowledge as the unlock** (Outer Wilds) - needs a journal to work at all.
+
+The one that does **not** translate is Animal Well's layered secrecy: it is
+seven years of hand placement. It needs procedural *slots* for authored content
+instead, which is the Noita answer above.
+
+**And the failure modes are named.** Mystery becomes emptiness when templates
+repeat often enough to be recognised, when there is no map to track partial
+progress against, or when too many unexplained hooks are open at once. Animal
+Well's author: *"it can be overwhelming to walk into a room and see six doors."*
+
+**A base earns stakes two ways.** Dome Keeper's dome can be damaged and lost.
+Subnautica's base has an *internal* failure mode - it consumes power and most
+bases are lost to their own hull integrity, not to attack. Deep Rock's rig is
+the anti-pattern: organisationally rich, in no jeopardy at all, which is what
+the current three buildings are. SteamWorld Dig adds the third thing worth
+stealing: the town visibly grows at underground milestones, so progress reads
+from the surface without opening a menu.
+
+---
+
+# The design
+
+## The planet is not a resource. It is a ruin, and it is waking up.
+
+One world. You are not the first here, and the thing you are standing on is not
+inert.
+
+### The objective: the Lattice
+
+Buried across the whole planet - spread **wide** as much as deep - are
+**Anchors**: parts of a structure that predates you and is still, barely,
+running. There are nine.
+
+Lighting an Anchor does three things, and the third is the point:
+
+1. it pushes the **Unrest** back in its region
+2. it reveals that region on your map
+3. **it wakes the planet a little more**
+
+The ninth opens the Vault at the centre, which is the end of the game.
+
+This is the recovery pivot, and it is not a race down a line: an Anchor's
+location is not known in advance, several are behind things you cannot open
+yet, and the map is how you hunt.
+
+### The pressure: Unrest, and it is the planet
+
+Dome Keeper alternates digging with fighting, and its own reviews call that
+division its weakness. Coreward already has the material for a version that
+**fuses**: cutting the world raises strain and the ground answers with tremors.
+
+So strain grows up into **Unrest**, and it belongs to the planet rather than to
+a building. Everything you cut raises it. It drives the tremors that already
+exist, and past thresholds it does worse. **There is no second phase** - the
+pressure is applied to the thing you are already doing, which is the fusion the
+research says Dome Keeper never got.
+
+And it is the mystery, not a meter with a monster behind it. The rules are
+withheld: you learn what Unrest does by watching it, the way Rain World teaches
+its hazards.
+
+### The surface: one thing, with a stake
+
+The refinery, the derrick and the store shed are cut. Three buildings whose
+damage was three discounts is exactly Deep Rock's rig - rich-looking, no
+jeopardy - and he is right that it is not a system.
+
+In their place, **the Ballast**: a steampunk pressure-station standing over the
+pad, and the only thing holding the planet quiet.
+
+- **It decays on its own**, faster as Unrest rises. That is Subnautica's
+  internal failure mode, which is the one that actually kills bases.
+- **You feed it ore.** Not spend - feed. The hold is now two decisions: what is
+  worth money and what is worth keeping the ground still.
+- **If it empties, a region collapses.** Not a discount: you lose access to
+  somewhere until you re-stabilise. That is Dome Keeper's stake.
+- **It visibly grows a tier with every Anchor lit.** That is SteamWorld Dig's
+  legible progress - the surface tells you how far through the game you are
+  without a menu.
+
+### The world: regions, not planets
+
+Twelve palettes and five traits already describe twelve places with different
+rock and different rules. They were spent one at a time on twelve worlds. Spent
+instead on **regions of one world** - laid out across width as well as depth -
+they are most of a large, varied planet for almost no new code.
+
+Volatile ground riddled with gas. Hollow ground that is more cave than rock.
+Crystalline seams. The Searing deep. Each with its own palette, its own rules,
+its own Anchor.
+
+### The mystery: authored rooms in a seeded world
+
+The Noita and Spelunky answer, which is the only one that works in procgen: a
+small library of **hand-authored vault templates** dropped at seeded, rare,
+region-appropriate slots. Worked stone rather than generated rock, so you know
+one when you see one.
+
+- **sealed vaults** you can see through and cannot open until you have the tool -
+  the locked door with no visible key
+- **the previous expedition**, told without text: their equipment, their
+  tunnels, where they stopped
+- **the deep quiet**: rooms that contain nothing at all, which is what makes the
+  ones that do matter
+
+Against the named failure mode - templates you start to recognise - the library
+is small but the *contents* are seeded, and most of them are rare enough that a
+first playthrough sees a fraction.
+
+### The map, which is not optional
+
+There is no map in this game of anything. That is survivable in 58 metres of
+straight-down and fatal in a world meant to be wide and mysterious - and every
+mystery device the research names needs one to work.
+
+So: a map that fills in as you dig, marks what you have found, marks what you
+have found *and not understood*, and shows Unrest by region. It is the journal
+too, because "not yet understood" has to read as a tracked goal rather than as
+confusion.
+
+### The event that recolours everything
+
+The single strongest longevity device the research found, and it costs almost
+no content: at a threshold - the fifth Anchor - **the planet answers.** Unrest
+steps permanently, a hazard appears in ground you thought you knew, and
+something new grows in old rock.
+
+The map you have filled in becomes unfamiliar. Terraria does this with
+Hardmode, and it is the cheapest possible way to make a known world strange
+again.
+
+## What this does to the session
+
+Sessions stay what they are: dive, dig, return, spend - self-contained, no
+penalty for leaving, which the mobile-pacing research is firm about. The
+campaign - map coverage, Anchors, Ballast tier, Unrest - persists quietly
+between them and is re-stated in one line when you come back, because the
+research is equally firm that a phone game must never ask you to remember where
+you were.
+
+
+# The look
+
+## The ship, designed at thirty pixels
+
+The research is blunt about this and it overturns how I would have gone at it.
+**At 30 px only things that break the OUTLINE survive.** Rivets, gauges, valve
+dials, portholes, individual pipes and brass-versus-iron all vanish - a 2-3 px
+brass trim band is not a colour, it is noise. Brass only reads at play scale if
+it covers a whole hull panel.
+
+What survives the squint test, in order of efficiency:
+
+- **a chimney or stack** - a vertical cylinder breaking the roofline is the
+  single most efficient steampunk signal there is, because it changes the
+  outline rather than the surface
+- **a boiler bulge** - a barrel-shaped body segment distinct from a flat hull
+- **asymmetry** - steampunk craft are almost never symmetric front-to-back the
+  way sci-fi ships are, and a symmetric hull reads as "generic vehicle"
+- **one big spoked wheel**, if it is 15-20% of ship height or more
+- **negative space** - an open under-frame, a gap between hull and a jutting
+  pipe. Gaps read as strongly as filled shape at distance and cost nothing
+
+And the rule that decides the rest: **one dominant feature, not several.** The
+TF2 principle - one unmistakable shape cue, everything else deliberately plain
+so the eye lands on the one thing.
+
+So the ship is designed twice, on purpose, which is what the two scales
+deserve:
+
+- **the silhouette**, authored at 30 px against the tunnel and judged blurred:
+  an off-centre stack, a boiler bulge under the cab, an open under-frame, the
+  auger still leading. Asymmetric front-to-back.
+- **the greeble**, which only exists because the Outfitter shows the ship at
+  full screen: rivet rows, a brass boiler band, a pressure gauge on the flank,
+  a valve wheel, a porthole cab.
+
+And it is TESTED at 30 px rather than judged in the shop, which is where every
+previous ship pass in this repo went wrong - the drill tier that "did not read"
+and had to become spark count was this same mistake.
+
+## The blocks: break the grid, not the texture
+
+The complaint is that blocks feel plain, and the instinct is to add texture.
+The sourced answer is the opposite: **vary the geometry and the phase, not the
+surface.** Four changes, and three of them are free at runtime.
+
+**Per-instance rotation and scale jitter.** A quarter-turn snap (90, 180, 270 -
+which keeps normals and UVs sane on a cube) and a 10-20% scale wobble, written
+into the instance matrix once at generation. Zero draw calls, zero per-frame
+cost, and it is the standard fix for "obviously a grid".
+
+**Two or three chamfered block meshes per material, swapped by index.** A
+bevelled cube stops reading as a cube, and the cost is in the source mesh
+rather than in the shader. There is no CC0 kit for this - a bevelled cube is
+cheaper to model than a licence is to vet - so it is a handful of lines of
+geometry.
+
+**Irregular band boundaries.** Right now a rock band changes at an exact
+horizontal metre, which is the most artificial line in the game. A seeded
+offset per column turns every stratum boundary into a ragged seam, and Deep
+Rock's own technique is exactly this shape: define the large forms irregularly,
+then let surface variation fill in. Large-scale irregularity does more than any
+amount of per-block noise.
+
+**Sparse decals for cracks, veins and moss**, in one instanced batch rather
+than in the shader - placed irregularly and rarely, because uniform decoration
+reads as texture and rare decoration reads as detail.
+
+Skipped, deliberately: vertex displacement and true face-blending between
+neighbours. They want either a compute step or per-vertex neighbour lookups,
+and they buy the least per unit of cost of anything on the list.
+
+## Reading a dark tunnel with no post-processing
+
+Ranked by what they buy per unit of cost, which is the only ranking that
+matters with no bloom, no SSAO and no colour grading:
+
+1. **Baked ambient occlusion at the seams**, darkened into the per-instance
+   colour the bands already use. One bake, no runtime cost, and it is the
+   single cheapest thing that makes a wall look solid rather than printed.
+2. **Rim light as a shader term**, not a pass - one dot product of view against
+   normal in the forward shader. It puts a lit contour on the edge of every
+   block and on the ship, which is the half of bloom that actually matters
+   here.
+3. **Fog**, which the game already has, tuned per stratum.
+4. **Value separation**: the tunnel dark, the rock mid, the ore and the ship
+   bright. Value carries the read; hue count does not.
+
+## The one number to respect
+
+Mobile GPUs are commonly cited as struggling past about **100 draw calls**, and
+this game's budget is already 150. That is a ceiling to stay under, not a
+target to grow into - so the decals ride one instanced batch, the block
+variants ride the pools that already exist, and nothing in this section adds a
+draw call.
+
+
+## Milestones
+
+Ordered so each one ships and is playable, and so the two that are pure
+presentation come early - they are the ones you can judge fastest, and they are
+independent of the objective work.
+
+- [ ] **W1 The ship, designed at thirty pixels.** Silhouette first: an
+      off-centre stack, a boiler bulge, an open under-frame, asymmetric
+      front-to-back, the auger still leading. Judged blurred at 30 px against
+      the tunnel, not in the shop. Then the greeble - rivets, a brass band, a
+      pressure gauge, a valve wheel - which exists only for the Outfitter.
+      *Cost: one file rewritten. No new systems.*
+
+- [ ] **W2 The blocks.** Per-instance quarter-turn and scale jitter; two or
+      three chamfered mesh variants per material; ragged stratum boundaries
+      instead of straight horizontal lines; sparse crack and vein decals in one
+      instanced batch; baked seam AO folded into the per-instance colour; a rim
+      term in the forward shader. *Cost: no new draw calls, and the ragged
+      boundaries are rock-for-rock, which the frozen baseline already permits.*
+
+- [ ] **W3 The world gets wide.** `W` from 13 to about 61, and the streaming
+      window gains a horizontal axis - a column range around the ship, a rebuild
+      on crossing a column, and `MAX_CELLS` sized off the window rather than off
+      `W`. **This is the one piece of work that is invisible from the outside
+      and is not optional**: at 61 columns the instance buffers go from 2.3 MB
+      to 10.6 MB and every rebuild touches five times the cells. Measured, not
+      estimated.
+
+- [ ] **W4 Regions.** The twelve palettes and five traits stop being planets and
+      become regions of one world, in width and depth. `coreDepth(leg)` and the
+      chart go. One fixed world about 450 m deep.
+
+- [ ] **W5 The map.** Fills in as you dig, marks finds, marks the
+      not-yet-understood, shows Unrest per region. Nothing else in this round
+      works without it.
+
+- [ ] **W6 Unrest and the Ballast.** Strain grows into a planet-wide meter that
+      everything you cut raises; the Ballast decays against it, is fed with ore,
+      collapses a region if it empties, and grows a tier per Anchor. The three
+      old buildings are cut.
+
+- [ ] **W7 Anchors, and vaults.** Nine Anchors across the regions. A small
+      library of authored vault templates dropped at seeded rare slots -
+      sealed ones you can see and not open, the previous expedition, and empty
+      ones so the full ones mean something.
+
+- [ ] **W8 The planet answers.** At the fifth Anchor, Unrest steps permanently,
+      a hazard appears in ground you already know, and something new grows in
+      old rock. The cheapest possible way to make a mapped world strange again.
+
+- [ ] **W9 The Vault.** The ninth Anchor opens the centre, and that is the end
+      of the game. Other planets are what comes after, later.
+
+- [ ] **W10 The phone pass**, and a long play of the whole thing rather than of
+      any one milestone.
+
+## What I am deliberately not doing
+
+**Not adding combat.** Dome Keeper's own reviews say its two phases feel
+divided; the fusion here is that the pressure applies to digging itself. Adding
+a second verb would import the exact criticism the research warns about.
+
+**Not hand-authoring a secret world.** Animal Well is seven years of hand
+placement and does not survive procgen. Authored templates in seeded slots is
+the version that does.
+
+**Not keeping the star chart.** It is a good screen for a game about visiting
+places and this is now a game about one place. It comes back if the sequel does.
+
+## The honest risk
+
+This is the largest change the game has had - it replaces the objective, the
+world's shape, the surface, and two art passes. **W3 and W4 together break every
+golden test in the repo**, because they change what the world IS. That is
+expected and manageable, but it means the middle of this round will have a
+stretch where the suite is red by design, and I will re-record with the diffs
+read rather than fixing them one at a time.
+
+If you would rather have it in smaller bites, the natural split is **W1-W2 first
+as a look pass you can judge in a day**, then the objective work as its own
+round.
+
 # Appendix: rounds one to three, as planned and shipped
 
 Kept because the reasoning is why the game is shaped the way it is. Everything below has
