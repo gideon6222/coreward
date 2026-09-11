@@ -464,7 +464,20 @@
     flex:0 0 auto; background:linear-gradient(180deg,rgba(9,14,22,0) 0%,rgba(9,14,22,.92) 14%,#070b12 100%);
     padding:4px 14px calc(env(safe-area-inset-bottom,0px) + 10px);
   }
-  .card{min-height:92px; margin-bottom:6px;}
+  /* The card RESERVES its tallest height rather than growing into it.
+
+     Measured: it is 92 px empty and 123 px with a two-line consumable blurb and
+     a buy button, and the room is framed against the tray ONCE when the shop
+     opens. So picking anything grew the tray by 31 px and quietly covered the
+     bottom 31 px of the room - which is where the supplies drawer is. Reserving
+     the space costs an empty strip under an unpicked card and keeps the room
+     still, and a still room is worth more than thirty pixels.
+
+     `resizeStation` also re-runs when the tray's height changes at all, so if
+     a future blurb ever runs to three lines the framing corrects itself instead
+     of silently clipping. Both, because the reserve is the one that stops it
+     happening and the re-frame is the one that stops it mattering. */
+  .card{min-height:124px; margin-bottom:6px;}
   /* Supplies were a third of the screen as a stacked list. In here they are
      three chips on one line: they are consumables with a count and a price and
      nothing else to say, and the room should keep the space. */

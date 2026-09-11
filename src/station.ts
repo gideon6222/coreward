@@ -516,6 +516,19 @@ export function paintAisleBar() {
    afternoon while a hand-tuned camera angle quietly did the job instead. It was
    found by deliberately deleting the call and watching the test that guards it
    pass anyway - which is rule 11 catching a construct that could not fail. */
+/* Re-frame only if the band has actually moved.
+
+   Called after anything that can change the tray's height. The card reserves
+   its tallest size so in practice this finds nothing to do - but a card that
+   ever outgrows the reserve would otherwise cover the bottom of the room
+   silently, which is exactly what it did before the reserve existed. */
+export function reframeIfNeeded() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const band = visibleBand();
+  if (W + ':' + H + ':' + band.top + ':' + band.bottom === lastBand) return;
+  resizeStation();
+}
+
 export function visibleBand(): { top: number; bottom: number } {
   const H = window.innerHeight;
   const bar = document.querySelector('#shop .shopbar') as HTMLElement | null;
@@ -532,9 +545,11 @@ export function visibleBand(): { top: number; bottom: number } {
   return { top, bottom };
 }
 
+let lastBand = '';
 export function resizeStation() {
   const W = window.innerWidth, H = window.innerHeight;
   const band = visibleBand();
+  lastBand = W + ':' + H + ':' + band.top + ':' + band.bottom;
   stationCamera.aspect = W / H;
   /* Slide the image up by half the difference. Same size, same field, just
      centred on the gap between the furniture instead of on the canvas. */

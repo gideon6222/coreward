@@ -12,7 +12,7 @@ import { sfx, audioState } from './audio';
 import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
 import { R } from './sim/runtime';
 import { hap, haptics, setHaptics } from './haptics';
-import { selectedBay, refreshBays, refreshKit, paintAisleBar } from './station';
+import { selectedBay, refreshBays, refreshKit, paintAisleBar, reframeIfNeeded } from './station';
 
 import { PARTS, DRIVE_SLOTS } from './sim/drive';
 
@@ -380,6 +380,8 @@ export function buildShop() {
      a purchase is the moment the shop is rebuilt either way. */
   paintAisleBar();
   buildCard();
+  /* After the card, because the card is the thing whose height can move. */
+  reframeIfNeeded();
 }
 
 export function buildCard() {

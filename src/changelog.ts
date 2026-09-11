@@ -30,6 +30,7 @@ export const CHANGELOG: Release[] = [
       'A Bulwark Field absorbs three impacts outright and used to be on sale to a first-hour player. Now it costs knowing it exists.',
       'The shop screen gave back 120 pixels of room when the grid left, and the framing picked it up on its own.',
       'The instrument dials no longer ghost through the bottom of the Outfitter.',
+      'The room no longer shifts when you tap something: the detail card reserves its full height instead of growing into the bottom of the shop.',
       'The swipe hint retires once you have walked the aisles once.',
       'Anything you could already buy stays buyable. A consumable you have spent still counts as one you have held.'
     ]
