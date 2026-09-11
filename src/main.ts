@@ -20,7 +20,7 @@ import { el, updateHUD, audioLabels, buildShop, toast, foundBanner } from './ui'
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
-import { lmDebug } from './lightmap';
+import { lmDebug, LM_COLS } from './lightmap';
 import { sfx } from './audio';
 import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCache } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
@@ -182,7 +182,7 @@ if (new URLSearchParams(location.search).has('debug')) {
        three itself - under the dev server an import() resolves to a different
        module instance than the one the loop is running, which is the trap this
        whole seam exists to avoid. */
-    Box3Ctor: THREE.Box3, Vec3Ctor: THREE.Vector3,
+    Box3Ctor: THREE.Box3, Vec3Ctor: THREE.Vector3, LM_COLS,
     /* What is buried on this world, so a test can dig up the real crate rather
        than a cell it picked out of the air. */
     findCells, blockAt,

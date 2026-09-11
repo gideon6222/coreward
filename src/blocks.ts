@@ -32,7 +32,21 @@ import type { Block } from './types';
 /* the streaming window, which must comfortably exceed the framed rows or
    terrain pops in at the edges as the camera moves */
 const WINDOW_ROWS = 29;
-const MAX_CELLS = WINDOW_ROWS * W;
+/* ---------- and a horizontal axis, which it did not have ----------
+
+   The window streamed ROWS around the ship and then walked the full width on
+   every rebuild, with every pool allocated at `WINDOW_ROWS * W`. That is fine
+   at thirteen columns and is the thing that stops the world being wider:
+   measured, at sixty-one columns the instance buffers go from 2.3 MB to
+   10.6 MB and every rebuild touches five times the cells, for ground that is
+   nowhere near the camera.
+
+   The frame shows about eight columns at this framing, so a window of
+   twenty-one is comfortably wider than anything on screen and still a fifth of
+   a wide world. The same argument as the rows: the window must exceed the
+   frame or terrain pops in at the edges as the camera moves. */
+const WINDOW_COLS = 21;
+const MAX_CELLS = WINDOW_ROWS * Math.min(W, WINDOW_COLS);
 /* up to `shards` front crystals plus two mirrored to the back face */
 const MAX_DETAILS = MAX_CELLS * 10;
 
@@ -288,9 +302,10 @@ export function dropBlock(k: string) {
 /* ---------- the instanced terrain ---------- */
 
 let lastRow: number | null = null;
+let lastCol: number | null = null;
 
 /* hardReset() used to assign lastRow directly when it lived in the same file */
-export function resetBlockCache() { lastRow = null; }
+export function resetBlockCache() { lastRow = null; lastCol = null; }
 
 /* Fake ambient occlusion.
 
@@ -378,10 +393,17 @@ function rebuild() {
   beginGrowth();
 
   const row = lastRow === null ? Math.floor(g.pd) : lastRow;
+  const col = lastCol === null ? Math.round(g.px) : lastCol;
   const d0 = Math.max(0, row - 13), d1 = row + 15;
+  /* Clamped to the world rather than centred on the ship, so standing at the
+     edge still fills the window instead of drawing half of one. */
+  const half = (WINDOW_COLS - 1) / 2;
+  let x0 = col - half, x1 = col + half;
+  if (x0 < 0) { x1 = Math.min(W - 1, x1 - x0); x0 = 0; }
+  if (x1 > W - 1) { x0 = Math.max(0, x0 - (x1 - (W - 1))); x1 = W - 1; }
 
   for (let d = d0; d <= d1; d++) {
-    for (let x = 0; x < W; x++) {
+    for (let x = x0; x <= x1; x++) {
       const b = blockAt(x, d);
       if (!b) continue;
       /* the block being drilled is a real mesh; skip it here or it draws twice */
@@ -495,7 +517,12 @@ function rebuild() {
 
 export function syncBlocks(force?: boolean) {
   const row = Math.floor(g.pd);
-  if (!force && row === lastRow) return;
+  const col = Math.round(g.px);
+  /* A rebuild on crossing a COLUMN as well as a row. Without this half of the
+     change above is inert: the window would have a horizontal axis that never
+     moved, and flying sideways would walk out of the drawn ground. */
+  if (!force && row === lastRow && col === lastCol) return;
   lastRow = row;
+  lastCol = col;
   rebuild();
 }

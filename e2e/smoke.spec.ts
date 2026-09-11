@@ -1644,7 +1644,13 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
        Column index is x + 1, because the grid carries a border column. */
     const img = w.lmDebug.U.uLmMap.value.image;
     const data = img.data;
-    const COLS = 15;
+    /* Read off the seam, not written down. This was a literal 15 - the grid's
+       width back when the world was 13 columns plus a border - and round eight
+       widened the world to 61, which made SUB come out at 12.6 instead of 3
+       and every sample land outside the image. A geometric constant that the
+       game derives should be derived here too; the literals in this suite
+       belong on EXPECTATIONS, not on the shape of the thing being read. */
+    const COLS = w.LM_COLS;
     /* Texels per cell, derived rather than assumed. The grid holds one value
        per cell but the TEXTURE carries several texels per cell, so that
        bilinear filtering only softens the seam at a cell edge instead of

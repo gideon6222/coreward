@@ -2,27 +2,27 @@
   {
     "planet": 0,
     "coreDepth": 58,
-    "cols": 13,
+    "cols": 61,
     "rowsFrom": -1,
     "rowsTo": 59,
     "counts": {
-      "(empty)": 29,
-      "dirt": 64,
-      "seam": 111,
-      "stone": 172,
-      "copper": 19,
-      "iron": 13,
-      "granite": 146,
-      "cache": 3,
+      "(empty)": 141,
+      "dirt": 264,
+      "seam": 524,
+      "stone": 817,
+      "copper": 96,
+      "iron": 81,
+      "granite": 673,
+      "cache": 12,
       "schematic": 2,
-      "silver": 11,
-      "gas": 5,
-      "scoria": 187,
+      "silver": 68,
+      "gas": 26,
+      "scoria": 890,
       "part": 1,
       "relic": 1,
       "geode": 3,
-      "core": 13,
-      "bedrock": 13
+      "core": 61,
+      "bedrock": 61
     },
     "defs": {
       "dirt:7031594": {
@@ -46,6 +46,16 @@
         "ore": false,
         "seam": true
       },
+      "stone:8419954": {
+        "id": "stone",
+        "name": "Stone",
+        "color": 8419954,
+        "glow": 0.02,
+        "hard": 2.4,
+        "wt": 0.2,
+        "value": 1,
+        "ore": false
+      },
       "seam:9406327": {
         "id": "seam",
         "name": "Mineral Seam",
@@ -56,16 +66,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "stone:8419954": {
-        "id": "stone",
-        "name": "Stone",
-        "color": 8419954,
-        "glow": 0.02,
-        "hard": 2.4,
-        "wt": 0.2,
-        "value": 1,
-        "ore": false
       },
       "copper:13136183": {
         "id": "copper",
@@ -155,17 +155,6 @@
         "value": 240,
         "ore": true
       },
-      "seam:8275759": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 8275759,
-        "hard": 7,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
       "gas:13954602": {
         "id": "gas",
         "name": "Gas Pocket",
@@ -179,6 +168,17 @@
         "value": 0,
         "ore": true,
         "hazard": true
+      },
+      "seam:8275759": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 8275759,
+        "hard": 7,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
       },
       "scoria:7023128": {
         "id": "scoria",
@@ -255,34 +255,34 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiiiiiiiiiiiiiwwiiiiiwiiiiiwiiwiiiiiiiwiiwiiizwiiiiwiiziiiwziiiiziiziwizfzwiwzwizizizzzifzzizwfzzzzzzizzwzzzfzzzzzzzzzzzzzzzzzwzzzzzzwzzzzzwzwwwzzzzwzzzzzzzzzzwzzwzzzzzzzzzwzzzzzzzzffzzzzzzffzzzzzfzzzzfzwzzzwzzzzzwzzzwzzzzzzzzzzzzzwozzfwowwzzwzzzzzzzzzozzozzzzzwzzwzzzwowzwznznznzzzzzznzwznwnznzfznnznnnnnnnzownwnnnnonnnwzwwwnnnoonnnnnwnnnnnnnnwnnnwnnnwnnwnnnnenwnnnnonnwuaannnfwnnwnnnaannnwnnnnnaannnnnnnnxnnaanwnnnnxnnnnnnnnwnnnnnnnnwnfnnwnwnfnnwnnnnnnnwnxnnnnnnwnxwnkwnnnnnxvnnnnwvfvwvfxwnnnaavvvxvnwvnxnaavwwvwnvvwfvvvvqxvwnvvovvvvvvvfvvvvvvvvvvvwwvevvvvvvwwvvvvvvwvvvvvvvwwvvvvvvvvwvvvvvvxvvvvvvvvvvvvvrwvwvvvvvvvvvvvvvvvvvvvwwwvvvwvwwvvvvvvwvvwkvvvvwvvvvvvwvvwvvvvvvvvvvelvvvvvwvkvwvwlulvvvvvvvvvvwvvvvwvvvwvwvvvwwvvvvvvvvvvvvkvaavvwvovxwkwvaavowgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaiiiiiiiiiiiiiiiiiwiiiiiiiiwiiiwiiiwiwiwiiiiwiiiiwiiiiiiiiiiwiiiiwwiiiiiwiiiwwiiiiiiwiiwiiiiiiiiiiiiiiwiiiiiiiiiiiiwiiiwiwiiiiwiiwiiiiiiiiiiiiziwiiiiiwiiiiwwiiiiiiiiiiiiwwiiiiiziwwwiwiiwiiwiiizwiiiizfzfzziwfiiiiiiiiiwwiiifiiiiiiiififwwiiziiiifiwiwiiziiiwziiifzizfzwwiiziiiziiziiifiiziiiiwwiiwiiziizzziiiziiiziiziwizfzwiizfzfwfiiizzizzzzzziwziwzizziiziiiziwzzzzzizizfwwzwizizizzzifizzzzzwiwizfizzzzzzifwfizzzwzizzzzzzfzzzwziziziwzzizwfzzzzzzizwzzwzzfwzzzzzzzzwzzzzzizzzzwwzzzzzzzzfzzzfzzzzzzzwzzzfzzzzzzwzzwzzzzzzzzwfzfzzfzwzzfzzfzzzzwzzzzzzwfwzzzzzzzzzzzzzzzzzzwzzzzzzzzwfzzzzzzzzzzwzzzzzzzzwzfzzzzwzzzzzzzzzzffzzzzzwzzzzzwzzzzzzzzzzzzffzzwwzzzwzfzfzzzzwzzwzzzzzwwfzfzzzwzwwwzzzzwzzzzzwzzffzzzzzzzzzzzfzzzzzwfzzzzzzzzzzwzzfzzzzzzzzzzzzzzzwzzwzzzzzzzzzzwzzwzzzzzzzzzwzzzzzzfzzzwzwwzzzzfwfwwzzzzwzzzzzwzzzzzzzzzwzzzzzwfzzzzzzzzzzzwzzwzzzzzzzwzwzwzzzzzzwzzzzzffzzzzzzffzzwwzzzzzzwfwwzzwwzzzzzzwzffzzzzwwzzzzwzzzzzzwzzzzzzzfzzzzfzwzzzzzzzzzwzzzzzwzzfzzwzzzfzfwzzzwzzzzzzzzzzzfzzzzwzwzzzzzwzzzwzzwwwzzzzzzzzozwzzzfozzzwzwzzzzfzzzzzzzzwzzzfzwzzzzzzzzzzzzzzwzzzzzzzwozzzwzwzozzzzozzzwzzzzzzzzzzzzfwwzwzozzzozzfwowwzzwzzzwzzwzzzzzfwzzzzzzzzzzzwwzzzzzzwzozzwzoozzzzwzwwzzzzzzzozzozzzzwzzzzzzzzwzozzzzzzzzozzzzwwzwzzzzzzzzzzzzzzzzzzzzwzzwzzzwowzzozzwwzwzzzznzzzzzzzzzzzzznzzzwnzzzznzwzznzzozzzwznznznzzzzznwzzzzzzzzzznwzwnwoznwznnnznzzwwnzozzozznwnzoozzznzwznwnznzfznzowwnwzzzznnnzwnzwowznnnnonnzzowwnzznzonononfznnnznnnnnnnzowezznnnzzzzznnnzznwnnnznnnnnnnzznnnnwowwnnwwnnnnnnwnnnnonnnwzwnwzwwnznzznnnwzznwnooznwnnnnnwonnwnnznownwnennnnwwnnnoonnnnnwwwnnnwwnwznwnnzzonnnwfnnnnwwwnnnwnnonnnnfwnwnonwnnnnnnnnwnnnwnnnnnonwonnnnnnnnwwnnnnnnnnnnnnnnnnnnnnwnnnnnofnnnnwnnwnnnnennnwnnnonwnnnwnwnnnnnnfnwnnnnnnnnnnwnnnnnnnwnnnnnwnnnnonnwnaannonnnnwwnunnnnwwnnnnnnnnnwnnnwnnnnnwnnnnnnnnnnonnnfwnnwnnnaannnnwnnnnnnnnnnnwnnnnonnnnnnnnwnwnnwnnnownnnnnwoonnwnnnnnaannnnnnnwnnnnnnnnnnnwnnnnwwnnaannnnwnxnwnnnnwwnnnnnnnnnnnxnnaanwnnnnnnxnnwnnnwnnnnxnxnnnwnaanwwnnnwnnwoxnwwnnwwnnnnnxnnnnnnnnwnxnwnnnnnxfnnonxnnnnnnwaawnnnnnnnnnnnnwnnnnnnwnnnnnnnnnnwnfnnnnnwnnwnnnnxonnnnnnowwwaaonxnnnnwnnwnxnwnnwnnnnnwnwnfnnwnnnnnwnnnnnnaawnnwaawnnnnnnnnnaannnnknaannnnwnnnnwonnnnwnxnnnnnnwnwnwwnwwaavnwnaanonnnnnennaannnnwnaannnnwnnnnwnnnxwnkwnnnnnxvnxaannvnnnvnnnwnwnnwwowknnwnnnnvwwnnonnnnkaavwxwnnnnwvfvwvfxwnwaanvvnwnvnwvnnwnnvvwonnnwnnvvvvwnwvnwxfvaawnwvvnnaavvvxvnwvnvxwnxvwvnvnnvxnvnwwvwvwnknwaawvvvnwvnvvnwvvvnaavxnaavwwvwnvvwvfvnvvnwvvnnxnvvofvvvwvnnnvaaovvvnvvvfvnvvvwnaavfvvvvvxvwnvvovvvwvvvvvvvvvwvvovvvvvvvnvwvqvvvwvvvkvvnvkvwxvvxvvvvvvvfvvvvvwvwvvvwvvvvvvvwvxvkxvvvvvvvvwvvvxxvvwvvvvvevwvwvvvvvvvwwvevvvvvxvwvvvvxvwvxvvvvvkvvvwvvvvwkvwvkvvvfvwvvvvvvvvvvvwwvvvvvvwvvvvxvvvvvvvvvvvvvvwvvvvvvfvvvvvvvkwvvwvwvvvxwwwvvvvvvvwwvvvvvvvwvwwvvwaavvovwvxvvvvxvvvxvvvvxvvwwvvvovvvvvvvvvvvwvvvvvvxvvvvvvvvfvvaavvvvwvvvvvxvvxvvvvvvvvvvvevkvvvvvvvvvvvvvvvvvvvvvwvxvvwvwvvvvvvvvvvvvwvvfvvrvwvvvvvvxvvxvkvvvvvvvvvwvvvvvvvvvvvvvxvvvvvvvwvvvvwvvkvvvvfoxvvxvvvvvvvvvxvvvkvvwvvvvvvvvvvwwwvvvvvvvvvvvvvvwvvvvvxkovwvvwvwvvvvvvvwvvvvvfvvwvwvvwvwwvvvvvvwvvvvwvvwvwwwvovvvvvvkvvvvvvovvxvvvvewwvvwvvvwwvvvvwkvvvvwvvvvvvvvvvxvvwvwvvvvwwwvvvvvvwvwvkvvvwvvwvvvvvvvaaxvvvwvvwvvvvvvvvvvvvvvvovvvvwvvvvxvvvvvvvvvvvvwvwvvvwvvvvvwaavvvvvelvvvvvwvkvvaavvvwvvvvvvfvvwvwvvvfxvvvxwvvvvwvvwwevvvvvvvvvwvwlvlvvuvvvvvaavvvvvvwvvvvvvvvkxwvvvvwvvvvwvvvvvvvvxvovwvvwvvvvwvvvvwvvvwvvvvvvwevvvaavwvvvvvvwvvvvvvwvvvvvvvvwvvvwwvwvvvvwvvvwwvvvvvvvvvvvvvwvvwaawvwvvvvvvwvvfvvvvvvvvvvvvvvvvwvvvvvvvvvvvkvaavvwvwvxvvvvvvvxowkvvkvvvaavxvvvvwvvvvvvvvwvvvvvwaavvovxwkwvaavowwvvvvvvvwvovvvvvvevvvaavxwvwvvvwvvxovvwvxvvowaawgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   },
   {
     "planet": 1,
     "coreDepth": 106,
-    "cols": 13,
+    "cols": 61,
     "rowsFrom": -1,
     "rowsTo": 107,
     "counts": {
-      "(empty)": 147,
-      "dirt": 106,
-      "seam": 181,
-      "copper": 28,
-      "stone": 282,
-      "iron": 27,
-      "cache": 8,
-      "silver": 23,
-      "gas": 10,
-      "granite": 248,
-      "geode": 9,
-      "gold": 21,
-      "scoria": 293,
+      "(empty)": 667,
+      "dirt": 469,
+      "seam": 818,
+      "copper": 130,
+      "stone": 1416,
+      "iron": 114,
+      "cache": 25,
+      "silver": 114,
+      "gas": 48,
+      "granite": 1181,
+      "geode": 35,
+      "gold": 68,
+      "scoria": 1422,
       "schematic": 4,
       "relic": 1,
       "part": 1,
-      "amethyst": 2,
-      "core": 13,
-      "bedrock": 13
+      "amethyst": 14,
+      "core": 61,
+      "bedrock": 61
     },
     "defs": {
       "dirt:7031594": {
@@ -441,6 +441,16 @@
         "value": 660,
         "ore": true
       },
+      "scoria:7023128": {
+        "id": "scoria",
+        "name": "Scoria",
+        "color": 7023128,
+        "glow": 0.1,
+        "hard": 8.96,
+        "wt": 0.3,
+        "value": 2.2,
+        "ore": false
+      },
       "seam:8275759": {
         "id": "seam",
         "name": "Mineral Seam",
@@ -451,16 +461,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "scoria:7023128": {
-        "id": "scoria",
-        "name": "Scoria",
-        "color": 7023128,
-        "glow": 0.1,
-        "hard": 8.96,
-        "wt": 0.3,
-        "value": 2.2,
-        "ore": false
       },
       "schematic:65345": {
         "id": "schematic",
@@ -541,35 +541,35 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiwwwiwiiiiiiiiiiiiwiiiiiiiiiiiwiiiiiiiiifiiiiiiiiiiiiiiiiiiiiiiiiiiwiiiwifiiifwiifiiwiwiwiiwiiiwifiiwiiiwiiiiiizifiwizzziiwizififizzzizwwzizzzizzzizwzzizzzizzzizzwzfzzzwffzfzzwzzzzzzzzzzzzzzfwzzzzzzzwwzzzzzwwzzwzzzzwzwzfozwzzzzzwzwzwzozwozzzwoowzzzzzzzzzzwzwzzzozzwzzzzzzzzzzwzzzwzzwzzzwzzzzzzozzzzzozzzzzzwzzzzzzzwzzzzzzzzzzzzzzzzzzzozozzzzzzzaazzewwzzzwzzaazzwwzzzwzzzzzaazfzzwzzzzzwaawzwzzzzaazzzzzzzzwzzaazzzzwzzzzzzzwaazzzzwzzzzwzaazzowzozxozzkwzzzzzoofzfzzzzwzzzaazzzwzxzzwwxaazzxzzzzxzzozzzzwzaazzzznzzznozaazeznwaaznzznnkzzxnaannfnnonnznnnnnnzonnnnwwnnnnnznnnnwnnnwnnnnnnnxnwnnnnwnnnnnnnnnnxwaannfnnwwnnnoaawnnwwnwnwnnwnaanwwnnnnnennaawnwnnnnnnaannnnnnnnnnnaawnnenxwnwxwwxnwaannnlnwnnwnnaannwnfxnaannnnnnwnxnxaanxnnnnxxwnnwnnnnwnnaannlwnnnwonnaanaannnnwnnnaanaannfnwnxnaannnxnnnaannnnnnnnxnnaannxnnwwnnaannnnnnannnnaannnnnnanfnnnnnnnnnnnnnwnnnnwnnwwnnnnmnnwwwmmnnnnnwnnnnnnwnnnnnnaanwkwlenwvnoaawnnvvmnaawvvnwvmvaanaavvvnnvvxaavovfvwnvvwvvvvvxwvvvkvvvvvvmmvvwvvvvvkvvvvvvvvvvvvvvvvvwvaavwvvvmvwvvwaavvovmvwvwlvvvvvvvvwvwuvvvvvwvwvvvwwwvvvmvvwwvvwvvwvvvuvvwvmwvvmaavvvvvvvvmvvaavvvvvvwvlwvaarvvvvmvvvvvaavvvvvvvvvaavvevvvwkvowaavvvvvmvvvaavwvvvvqavvvaavwvvvmaavvwaaaavwvvvvvvwauaavvvvwmvkvaaaavvvkevaavaaaavwvmvwaavvvmvvwvvvvvvvvbwvkvwwwvwvvvvvvwvaavwvvvvvvvvwaawwvvvvfvmfvvvbvvvvvvvvwvvvfwvmwkvvfvvovevvvavvvovvwvlvvvavvaavvuvvvvvvvvaawlvwvvvvlfvlvwvvvvvvvvvwvvvvwvvwwvvgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaiwwwiwiiiiiiiiiiiiwiiiwiiwiiiiwwiiwiiiiiwiwiiiwiiwiiwiiwwiiwiiiiiiwiiiiiiiiiiiiiiwiiiiiiiiiiiiiiiiwiiiiiiiiwiwwiiwiiiiiiiiiiiiwiiiiiiiiwiwiiiiwwiwiiiiiiiiiiiiiiwwwwwiiwiiiiiwiiwiiiiiiifiiiiiiiiiiiiiiifiifiiiwwwwiiiiiiiiwifiiiiiiifiiiiiiiiiiiwiiiiiiiiiiiiiiiiiiiiifwiiiiwiiiiiwiiiiiiiwfifiiiiiiwiiwiiwiiiiiiiwiiiwifiiifiiiifiiiiiwiwifiiifiwwiiiifiiwwwiiiiwiiiiiifiiifwiifiiwiwiwiifiwifiiwwwwiiiwiwiiiiiiiiiwwiiiiiiwiiiifiiiwiiiiwiiiwifiiwiiiiziwziiiiiwfiiiwiiizwiiwiiiiiwifiiiiiiiiwiiwiiiiwiiiiiizifiwifziizzizziziiiiwfiiwiiiiiwfziwfiiizwiizfiifiiizizzziiwizififizzfizzzwziziiziiiiifiiizifiziiiziiziiwzziizizizzzzzizwwzizzzizziwzzzzzzzzfwifwizzwzizzwzziwiziizifzzzzizizizzzzzizwzzizzzizziizzzzfzzzzzzwwzzziziwfzwzzzizzzzzwzzwziwizwzzzzzizzwzfzzzwzwizfzzwzzzzzwzzzzzzzzzzzzzzzwzzzzzzzzwzzizzzzzwffzfzzwzzzzzzzzwzzwzzfzfzwzzffzwzzzzzzzzzzzzzfzzwzzzzwzzzzzfwzzzzzzzzfwzzzfzzzzwzzwzzwzzfwwzzzzfwzzwwzzzzfzzzzfzzwzwfzfzzzzzzzwwzzzzzwwzzzzzwzzzzzzwzwzzzzwzzzzzzzffzzzzzzfzzzzwzzzzzzzzzwzzzzwzwzfozzzzzzozzwzzzzzzzzzwwzzoozwzzwzwwzwzzzzwzwwfwzzzzwzzzzzwzwzwzzwzzzzozzowwzzzzzzzzzfzzfzzwzwozzzzzzzzzfzzzozzzozwozzzwoowzzfzzzzzzwwzzzzzozzwzzzzzzzzzzzzzzzzzzzzzzzzzzzzzozzzzzzzzwzwzzzzzzwzzwzzzzzwzzwfzzzzzzzzzzzzzzzzzzzzzzzzwzzzzzzozzwzzzzzzzzzwzozzzzwzzzzzwzowzzwzzzzzzzzzzfzzzzzzzzzzzzwzzzzzwzzzwzzwzzzzzzzzzzzzwzzzzzzzowwzzzzzwzzzzzezzzzowzfzzwzzzzzwzzzzzzozzzzzzzzzwzzzzzwzzzzzzzozwzwzzzzwzzzewzwzzzzzzoozzwzzozzzzzzwzzzzzzzzzzzwzzzwzzwzzzozzzzzzzzwzwzzozzzzzzzzzzzzzzzzzzwzzzzzzzzzzzzzzzzezwwzzwzzzzzzzzzzzzozozzzzwzzzzzzzzzozzzzozzzzzzzzzozozzzzzzzzzzzzwfzzwzzzzzzzzozzzzzzzzzzzzzzzzzwzzzwzzzzzzzaazzewwzzwzzfzzzzzzwzzzzwzwzzzzzzzzzwzzzzzzozzwzzzzwzozzzzwzzaazzwwzzzzzzwzzwezzwzzwzfozzzzzzzzzwzozzzozzzwzzzzzwozzzzwzzzzzaazfzwzzzzwzzzozzwzzowaazzzzzzzzzzwwzwzzwzzzzzzzzzzzzzwzzzzzwaawzwzfzzwzzzozzzwwzozaawzzzzzoozzzzzzzzozzzzoozwzozzzzzzaazzzzzzzzzzzzzzzzzzzxzwzzzzzwzzwzzxxzzzwwzwzwwzowzzzzxzzzwzzaazzzzwzzzzzzzxzwwzzzxwzzzzwzzzzwzzzzzzzzzxzwzzzzxxzzzwzzzzzzzwaazzzzwzzzzzzzzzzzxzzzzzaazxwzzzzzzwzzzzowzzzzzwzwzzzzzzzzzwzaazzowzzwwxxzzzzzwzzwzzzaazzzwfzzzzwzzxwzwwzzwwwzwzzzzzozxozzkwzzzzzzzfzzzwzzezzzzzzzzzozzzzzzzzwzzzzfzzzwzzwzzzezzzoofzfzzzzwzzzzzzzzzzkzkzzzzxxzzzzzofzzzzzzzwzzzzzozzzzzzzzzzzaazzzwzxzzwwxwzzwzozzzwzzzzwzzzwaazzzzzwzzzzzwzzzwwxzxzoxzxzzaazzxzzzzxzzowzozzzzzzzzzozwzxzzaazzwwzwzzzxzzzwwzzzzzzxwzozwzzzzwzaazzzznoaazxzwzxzzzzwzaaxzzzaafzzzzxxzzzwxzznzzxwzxnnzazzznozaazeznwzaawzwzzzzzowzzaazzkwaazzxzzzzzzxzwwfnkzznzznnxaaaznzznnkzzxnnwxwwzxnzzwzzzwaaxznfznaaznnnzzznznznnzzznznnnzzaannfnnonnznnnxznzzznzzzzwznaaznnnwnaannnnxzxnznzwnnxnnwwnnzznnnnzonnnnwwnnzznnzwwwnznnnwfnwwennnzonnnnzznnwnznnxnnnnnnnznnnnnznnnnwnnnnnnnnznnnxnwnnnnwwnnnennwnnnwkznnnnnwnnnnwnfnnwnwnnnnnnnxnwnnnaannnnnnnwnnnnnnnnnnnnnnaannnwnwnnnwnnnnwnaawnnnnwnnnnnnnnnnnaannnnwnnnnnnnwnnwnnnnnnaannnnnnnnnnnwnnwnaawnnxwaannfnnwwnnnnnnnnnaannaannfnnonnnnnnnnnnaannnnnnnnnnaannnnnnoaawnnwwnwnwnnnnnnnaannaannnxnnnnnowewnnnaanwknnnnnnwaawnnennnwnaanwwnnnnnnnnonnnnnnnnaawnnnnnnnnwnwnwnxnwnnaaxnonnonnnnwnennaawnwnnnnwnenknxwnwnnnaannnnnnnnnnnnnnnnnknnaannnnnnwnnnnnnaannnnnnnnnnnxnwnknonnwnaaknnnnwnwaawnaanwaawwnnnxaannnnnnnnnaawnnenxwnwnnnnnnnnnnnnnaannnnnnnnaannaawnaawnnnwnaannnnnnwxwwxnwaannnlnwwnnnnknnnnnwwnnnnnwnnnnnaannnnnnwwxnnnwnnwwnnnnwnnwnnaannwnfwnnnnnnnnnnnwnnnwnfnnnnnnaannnnxnnfnnnnnwnnnfnwnxnaannnnnnwnxnnxaawnnnnnaanfnnaaaanonnnwnnaawxnnknwnnnnnaannnnxaanxnnnnxxwnnnaawnnnnnaanwnnaaaannnnnxonaaxxnnnnxnwnnnaannnnnwnnnnwnnaannnonwnnnxaawnaannnnnnnnnnnxaannnwnnnnnnnnxnnnnlnnlwnnnwonnaannnnnwnwnnaannaannnwwnnnknnnaanknnnnnwnnnnnnnnwnwaannnnwnnnaannnxnlnwnnaawnnwnwxnnwnnwnnnwnnwnnfnnnnnaannxnwnnaannfnwnxnaannnnnnkennaalnnnnnxnnnnnnnwxnnnnnnnnnwnwaannnnnnnnnxnnnaannnnnennnfnnaaxnnnwnnwnwnnnnaawwnnwwaannnnnnwnnnnwxnonnnxnnaannxnnnaanxnnaannnnnnnfnwnnnnaanknxwnaalxnwnnnnnnnnnnnwwnnaannnnnnaanonwxnnnwnwwaannnnnwnnnnnnnnaanwwwaannwfnwnnnnnnnnnaannnnnnaannnnxnnnwnnxaannnnnnnwnnnnnnaawnnwaanxnwnwnwwnwnfnnnnnnnnnnnnnwaannaanfnnnnaamnnnnnaanwnnnwnnaannnnfnnnwnaawnnwnnnnwnnwwnxwwaanwaawnwmnnaamnnnnwaannnmnmwwaawnnwnnnnnnaannnnmnnwwwmmnnnnnnnmnnnnnnnnnnnwnknnnnwnmxnnnnnnnnnknnnnnnnonnnnnwnnnnnnwnnnvnnnnnnmonnwwwnnnonnnnnnnnnnnnnnnnnnnnwxwnnlvvnnnnnaanwkwlennvfnnnnaavnnnlnaaaannmkaanwmvwwnnvnnvnnomnnwnvvwwvnoaawnnvvmnnvnnwnnaavnnlvwaaaanfnwaavxnvvvnwvnnvnnnnnvvnkvlaawvvnwvmvaannennvnwnnaavvvvvvaannvwwnlwvvvvnwwnnvaavnkvvnvvaaavvvnnvvxaavkvnnvvwnvaawvvvvvaavnvvvvvvvvvvnmvvnfaavvwvvwvvaovfvwnvvwvvvvvvvwvvvvvaavmvvvvvvvnvvvvvwvvaavvvvvvmnvvmvvvwvvvxwvvvkvvvvvvvwvvvwvwvaavvvowvvfvvvvvvvwvvaavfvvvvxvvvvvvmwvvmmvvwvvvvvkvvvvvvvvvvvvvwvvvaaovvvvfvvvwaawmaavvvvwvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvmvvvvvvvaawvvovvvvvvaavvaavwvvvvmwevwvvvvvvwvaavwvvvmvvvvvvvvwvvvmwaaaaaavvvvvwfvvvmvaavvvvvvwxvvwwvvlwvvwaavvovmvwvwvwvvlvvmkvvaaaaaavwvvvvwwwwwvaavvvvlvvvovvvvvvvwlvvvvvvvvwvvvvaavvvovvvwwvvvmvwvvvvvvvvvvvwwwvvvvmvvvvvvaaawvvvvvvwvwvvvvvvaavvvvouvvvvvwwwwvvvmvvmvwvvmvwvvvmvwvvvwwaaawwwvvvmvvwwvvvvvwwaaaaaavvvvvvvxvvvfvvvvlwvvaaaaaavvvvvvvvvwvwvvwvvvvvuwvmvwvflaaaaaavvvvwvvvvvvvvvevvvvwaaaaaavvvvvkvvvwwwvvmaavvvvvvvvvmvvvmvvvvvwvovwvvvvvvaavvvvvvovvvovwwvvvvaavvvvmvvaavvvvvvwvvvvvvvxwvvvvvwmvvvvvvvaavvvwvwvvvvvvwfmvvwaavvvvlwvaavvvvvmvvvvwvaamwvvrovwwvvvvvvwvvwvaavvwvvvwvvvvvaavvvvvvvvvaavvvvvvvvvwvvaavvvvmvvvvwvvvvvwvvvvaavxvvvvwvvvvvaafvvvvvvaavvevvvwkvvvvvvvvvvwvlvvvaavvxvvvwvvvaavfvvvvvvvvaalvaavvvowaavvvvvmvvvvkvwvvvvvvvvvwvaavwvvvwwvvwaavvmwvvvvfvaavvaavwvaavwvvvvaavvvvvvvvvvvwwvvvqvvkvvvvwvvvmvaavvaakvvvvvaalvvvwvaaavwvvvmaavvwvwwvvvvvfvvmvvvmvvkwvvwvvvxaaxvaavovvvvaavvvvvvaaaaavwvvvvvvwvaavvvvvvvvvmwvaavmvvvvvvaavvaaaaaaaavvaavvvvvvvaaaavvvvwmvkvvaavvvwvvwwwmmvaavvuvwvwvaavxaaaaaaaavvaavvvvvvvaaaavvvkevaavvaavvvwvvvvaavvvwvvwvaavvvvvvvvvwkvwvvvvvvvvvvovaaaavwvmvwaavvaavvvwwvvvaavvvvvlvvaavwwvkvwvvvvkwvvvvvvvwovvwvvmvvwvvvvvvvvvvxvvvaawvvlvxvvvmvvvwvvvvvvwvvvaavvaawwwvvvvvwvbwvkvwwwvwvvevvxvwvaavvwvwwvvwvwvvvvvwvvvvvvvaawvaavfvvvwwvvvvvvwvaavwvvvvvvaavvvvvvvvaaaawvvvvvvvvvkvaaaavvvvwvvvvmvfvvavvvvvwaawwvvvvwvaavvvwbvvfaaaavvvvvvvvvvvvaaaavwvvwvwvvwvbvvavfvmfvvvbvvvvvvvvvvvvvovvvvvvvvvvvvvvvaafvvbvvlvvwwvvvaavbvvvvvvvwvvvfwvmwvvmvwvvwvvvvvvvvvvlvvlvvvaavvvvvvvvvvvvvvaalvvvokvvfvvovevvvaavvaavvaawvvvvvfvaavvvwvvwvvvvvvwwvaavvaavvkoaawvvvovvwvlvvvaavvaabwaavvvvvvwmaavvvvvwvvvwvvvvwvaalvaavvwbaawvvaavvvvvvvvvvvvvvvvvvvbwvovvvaavvvvfvvvwvvvvvuvvwwkvvvvvvwvavvaawlvwvvvvlvvvvbvvwvvvvvvvvvaalvwvvvwvvvwwvbwvvvvvwkvvwvvvafvlvwvvvvvvvvvwxvvvwmvbvvvvvvfwvvovvwkvvaaaavbkvvowvvvvvaavwvvwvvvvwvvwwvvvvwvvwvvvvkvvvwvvwwvvvvvvvbaaaawovlvvvvvvvvaavvwgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   },
   {
     "planet": 2,
     "coreDepth": 154,
-    "cols": 13,
+    "cols": 61,
     "rowsFrom": -1,
     "rowsTo": 155,
     "counts": {
-      "(empty)": 139,
-      "dirt": 141,
-      "seam": 303,
-      "copper": 32,
-      "stone": 441,
-      "iron": 32,
-      "cache": 12,
+      "(empty)": 558,
+      "dirt": 674,
+      "seam": 1321,
+      "copper": 162,
+      "stone": 2106,
+      "iron": 150,
+      "cache": 42,
       "schematic": 4,
-      "silver": 26,
-      "gas": 22,
-      "geode": 13,
-      "granite": 374,
-      "gold": 14,
-      "amethyst": 17,
-      "scoria": 438,
+      "silver": 118,
+      "gas": 108,
+      "geode": 58,
+      "granite": 1813,
+      "gold": 95,
+      "amethyst": 68,
+      "scoria": 2150,
       "relic": 1,
       "part": 1,
-      "emerald": 5,
-      "core": 13,
-      "bedrock": 13
+      "emerald": 26,
+      "core": 61,
+      "bedrock": 61
     },
     "defs": {
       "dirt:7031594": {
@@ -841,36 +841,36 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiwiiwiiiiwiiiiiiiiiiiiiiiiwiiwwiiiiiiwiiiwiiiiiffffiiiiwwiiiiiiiiiiiiwiiiiwwiiiwfwiiwfiwiwiiwiwiiiiwiiwiiiiiiwiwiiiiiiiiwiiiwwiiiiwiifwiiiiiiizwiiifiiiiiwzziwiiiiiiiizzziiziiiwiwwzzziiziizziifzzzwwfwwzziwzzzzzifzfzoifzzzzowzzzzzwzwzzzzzzzwozzzwzzzzzwzozzzzzzzzzzwzzwzwewzzzzzzwzwzzzzzzzzuzzzwzwzwwzozzzzzozzzfzzwozzzzozwwzzzzwzzowzzzzzzzzzzwzwzzzzozzozzwzzzzzozzzzzwwzzzzzwzzzzzzzzzzzzzwzzzzzzwzzzzzzzzzzzzzzwwwzwzwzzzzzzzzzzzzzzzzzzzzzwzzwzaaxzzzzzzzwzzaazzzzzzzzzzzzwzwzwzzzzzzwzzzzzzwzxwzwzzwzzzzzzwzzzzwzzzzzzzzzzwxzwzzzzzwzzxwzzzzwzzwzkzzzzzzzzzozwzwwzzxzzfzzzzzzzzzzzzwxzzwwzzzezzzwkzzzzwzwzwzzzzwzzzzzzzzzzzozzzzkzaaxzzzzzzzzzzaazzozzzzxzwzzzzwzxzwzwzzzzzzwzzzwzkzzzzwlxzwzzzxzzzzzzzzzwwzxzzzzwzxzzzezzaazzzzzzzzzzzaazzzzzzzwwzzwwzzznzxzzzzzkzzzennnwzzzzwzwnznnnwnwzxzzzknnnnnwzaaaaznnwxnfnzaaaawwnnwnnnnnnxwnnwofnwnnnnnnnnnwnnwwnnnnnwknwnnnnnnnnmnaanwnnnnnnaanaanwnnnnonaaxnwwnwnnwaawnnwnnnnwwlaannnwnnnnnnnwnnwnnnnnnnnnnnnwwwnnnwnaalnnnnwnwwnwaawnnnnwnnnnnnmnnnnnnwnnwnwnnnnnnnnnnnwmmknnwnnnwwnnnnnwnwnwnmnmnnnwnnnnnnnnnunwnnnnwnwnwwwnnnnnnnnnnnnnnnnwnmnaawnnnnnnnnnnaannnnnnnnmnnnnnwnnmwaawnnnnwnnnnnaannnnnnwnwonaawnnennnunnnaannnnwnnnwwnnnnnnwnnfnnwnnewwnnnnnnnnnaawnanwnnnwnwaannalnnnnwnnwonwwnnwnnnnnnnnnnnnnnnnnnnnnnnwnbnnenwnnnnoxffnnnnnnnnnnnnnnnnnnnnnnnwnnnnnnnnnnkwnnvnwnwnfnnxvknvfnnaawnaavnkwfvnaalnaavnnvwwwwvnnaavnovvvvvxnnaavaavvvvvwbvvvvaabwvwvvwvvvvwvfvvwvvvmvvvbvwvkvvvvvwvkvvvvvvvvwvvvvxvwvvvvwvvvfvvvovvvvvvvfvwvovvvvwvvvvvvxwaavrvfvwvwvvvaavwvvvlvvvwvlvvwvvvvlvvvvwvwvvvvevbwvvaavvaavvvvvvfaavvaavvewwxvvvvvvxvvvvmbvvwqvvfvvvvvvvvvvwaavvbvvvwvkwvaavwwvwvvvbwvvvvwubvowvvwevwvvvvbvvvvmwovvvvvawvvvvovvwvwwavvwvvwwowwbkvwvwvvvvbvvvvlvxvwevvvvvkvwwvvvvwvbvvvvvwkbvvvvvvvwvwvvvwvvvovvvvvwvvvvwvwvvvvvvvvwvvvwvvvmvaavvvvaaovvwvaavvjvaavvwvwaamfvvvvbvvvvaalovvvvvvkvvvovvvvvfwvvvavvvvvwvvvvvwavvkvvvvlvvvwvwvvjjvvlvvvwvvjkwvvwvaavvvvkvvvvvvaavvvaavwvoaavvvvvaavvwvaavvvvvvvvvvvwkvvvwvbwvvfvwvwvewvvvvvwvvvlvvvvwbvvvvvvvvvvwvvaavvvwaavvvvvaavvvvaavvvaavvvvvwwvvvvaavvwvwvvwjvvgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaiiiiwiiwiiiiwiiiiwiiiiiiwwiiiiiiiiiiiiwiiwiwiiiiiwiiiiiiiiiiiiiiiiiiiiiiiiiwwiiiiiiiiiiiwwiiiiiiiiiiiiiiiiiiwiiiiiiiiwiiiiiiiwiiwwiiiiiiiiiiiiiiiiiiiwwiwiiiwiiiiiwiwiiiiwiiiwiiiiiiiiiiwiiiwiiiiiffiiifiiiiwiiiiiiiiiiiwfifiiiiiwiiiiwiwiiiwiiiiiiiffiiiiwwiiiiiiiiiiiiwiiwiwiiiiiwwiwiiifiiiiiwiiiiwiiiiiiiiiwiiiiiiiiwiiiiwwfiwiiiiiiiiiwiiiiiiwiiiiwiiiwiiiiwiwiifiiiiiiiiwiiiwfwiiwfiwiiwwiiiiiwiiiwiiifwiifiiiiiiwiiiiiwiwiwiiiiiifiiiwiiwiwiiiiwiiiwiiiiiiififiiiiiiwiiiiiiiiiiifwiiiiwiiiiiiiiiiiwiiiiiiwiwiiiiiiiiiiiwwiiiwfiiiiiwiwiwiiwiiiwiiiiiiiwifiiiwiiiiiiiwiiiwwiiiwiiiiiiiiiiiiiwiiiiiiwiiifiiiiwiiiiiifiiiiiiiiiiiwiifwiiiiiiiwiiiiiiiifiiiiwwiifiwiwiwiiiiifwiiiiwiiiiifiiiiizwiiifiiiiiiiiiiwifiiiiiiwiiiiiiiiifwwiiziiiiiziiwiiziiiwwiwzziwiiiiiiiiiiiiiiiiwiizifiwfziiwizizwiiiziwizzzwiziizfiizzizzziiziiiwiwwwifzfwiizwiwzzfifziizizwzziiiziwwzzzzizifzwiffzzzzziiziizziifiwzwiziwzwfzfwwzizizwzzzzzizizizizzwziwiizwzzzwfzzzwwfwwzziwzwfzziziizwizzwzzizfzwzfzzzzzizzwizzzziziiwzzzfzzzzzzifzfzoifzzizzzzizowzzowwzizwozzzzzwzzizzwwzzzzzwzzzzwzfzzzzzowzzzzzwzwwzzzzwzwzzwzzwzzzzzzwzozzzwzwzzzwzwzwzzwwzwzzzzzzzzzzzzwozzzwzzzzzzzzzzwozoozwzwfzwzozzzzzzzzwzzzzzzzzzzzzzzzzzzzzwzozzzzzzzzzzzwzzzzzzwzzzzzzowzzwzzzfzwwzwzzzzzozzzzzwwzzzzzzwzzwzwewzzzzwzzzzzwzzzzzzwzzzzwwzzzzezzzwzzwooozzzzzwzozzzzzzzwzwzzzzzzzzzwzzzzzfzzzzzzzzzzzzzzzzzzzwozzzozzzzzwzwzzzzzzzzzzzwzwzwzwozozozzzzuzzzwwwzzzzzwzwozzwzzzwwwzzzwzzzozzzzwzozzzzzozzzfzzzzzzzozzzwzwwozzzfzzozzwzzzzzwzzzzzzzzzzzzozzzzzwozzzzozwwzzzwzzzzwzzzzzzzozwzzzozzzzwzzzzzzzwozzwzzzzzzzzwzzzwzzowzzzzzzzezzzozzzzozzzzwzzzzzzzzzzozzwzzzwzwzzzwzewzzzzzzzzzwzwzzzzozzzzzzzzzzzzzwzzzzzzzzzzzzzzzzzwzozzzozzwzwfzzzzzzozzwzzzzzozzzzzzzzzzzwzwzzzzzzzzzzozzzzwzzzzzwwzzzwzzzwzwwzzzzzwwzzzzzwzzzfzozzzzzzwzzzzzzzzzzzzzzewzzzzzzozzwzzzzwzzzzazzzzzzzzzzzzwozzzwzzozwzzzzzzzozzzzzzzzzwzzzzzzzzwzzzzzzzwzzazzzzzzwzzzzzzzzzzzaazzzwzwwzxzzzzzzzwzzwwwzzzwzwzzzzzzzzzzwzzzzzzzzzzwwwzwzzwzzaazzwzzzzzzzwzzzwzzzzzzzzzzwfzzwzzzzzwzzxwzzwzzzzzzzzzzzzzzzfzzzzwzozaazwwzwzzzzzzzzwzzzzfzzzzzzzzzzzzwzzzzzzzzzzzwzzwzzwfzzzzzzzzaawzzzzzzzzzzzwzzzzezzzzzzzzezzzzzzwzaaxzzzzzzzwxzzxzzzwwzzzzzzzzwozzzzzzzzzzzzzzzzzzzzaazwzfzxzzzaazzzzzzzzzzzzzwzzzzzzzxzzzzzzxzwzzzzzwzzxwzzzxzxzaafxxwzzwzzzwzwzwzzzzzzzzzzfzzzzwzwzzzzzzzzwzzzzwzzzwzzxwzzwwzzxzzzwxazwzzzzzzwzxwzzzwzzzozzxzzwkzzzzzzxzwzzzzwzzzxzwzzzzwwzzxzzkzawzzwzzzzzzwzzzaazzzzzzwzzzzwzzzxzzzzwzzzwwzzzzzzzzzzzzwwzzzzwzzwzzzzzzzzzzzaazzzzxzzzwzzzwzzwzzzzzzzzzzzzxzzwzzzzxzzzwzzwzwxzwzzzzzwzzxzzzaazzwwzzzzzzzzwzozwzzwzzzzzzzzzzzwzwzzzzzwzzzwzzzzwzzwzkzzwwwaazzzzzzzzzzzzkzzzzzwzzzwzzxzzzzzzzzzwzzzozzzzzzzzzzozwzwwzzzzzzzzzzzzzkzzzwzwzaazzwzzowzwzzzzzzzzzzxzzwxxzzxzzfzzzzzzzozzzzzzzwxzzwzxzzzzzeaazzzxzzzwzzzzzzzzzzzzzzzzzzzzzzwxzzwwzzzzzzzzzzzzzzzzzwzzzzkzwxzzzzzzwwzzzaawkzzzzzzaazzezzzwkzzzzwzzwzzzzzzzzzzwzzzzzkzzzzfzzzzzzzzwzwaazzzzzzzzaazwzwzzzzwzzzzzowzxzzzzwxzzzzzzxwwzwzzzzzwzzzwzzwzwkzzaazzzzzwzzzzzzzozzzzkzzzzzzzzzzzzxzzzzwzwzzzzzzzzzzzxwzkezwzzaazwzzzzxaaxzzzzzzzzzzzozwzzzzzzzzwwwzzxozzwwozzzzzzzzwzzfzzzzzzzwzzzzaazzozzzzxzwzzwwwzzzezzzwzzwzzzwzzzzzzzwzwzzzzzzzzzzzzzzzzzzzzzzwzxzwzwzzzzzzzzzzwzzzzzaazzzzzzwwzwzfzxwzkzzzzzzwzkzzwzzzzzzzwzzzwzkzzzzxzzwzzzwzzzzaazzwzzzzwzzzzzxzzzzzzzfzzzzzzzzzzzzwlxzwzzzxzzzzzzwzzwzxzzwlwzxzezzzzzaazzzzzzzzwzkzzzwzzzzzzzzzzzzzzwwzxzzzzzwwzzzwzzzzzxzzzkzfxzzaawzzzzzzzzzzzwzzwxwzzfzzzwzxzzzezzaazzzzwzzwzlowkzzzzzzzzzzzlzzzzwzzzwwwzzzzzzwxzozzwzzzzzzzzzzaazzwzzzofozzzzzzzwzzzwzzzzzzzzxzwzwzzzzzzzzwwzzzzwzzzzzzwwzzwwzwwzezzzzzzwaazwzwzxowwzzzzzxwzzzzzzzkzzzzzzozzkzzznzxzzzzzkzznzzwzzozzzzaazzzxzxzzzzzwzzzzzlzzzzxzzzzzzwzzzzzzennnwzzzzwzwnzzznznzznwzzwzwzznzzzzwnwzlnownzzznwzznewznnnzwnznnnwnwzxzzznnzznknwzwwzzzzoznkzwzznnzzznwznzzwnzwwnnnlnnnwnknnnnnwzaaaaznwzaanownnwzzznzwnnznwenowzznznnzznnzownnnznknnwnnwxnfnzaaaawnnnaanxnnnnwzzwzwnnznnznwnxznzwkznnwnznxnnznnnnnwnnwnnnnnnxwnwnnznonnnnnnznnxnnnwnxxnwnwnwwnnznnwnznnnnxnnnnnnwofnwnnnnnnnnwnnnnwwnxnnnnnknnnnnnnnnnnwnfennnwnnnwnnnnnnnnnnnwnnwwnnnnnwnnnnnwnnwnnnnaannwnnnwwnnnnaannnmnnwnwwnnaaknnwwknwnnnnnnnnmnwnnnnnfonnwnmaaonnknnnnwnmnaanwnxnnnnnnnnaannonnaanwnnnnnnaannwnwnnnnnnmnwnnnoknonnnnnnnnknnnnnnnnnnknnnnwnnnaanwnnnnonaaxwwnnmnwnnnnnfnnnnnnnmmnnnnnnnknwnnnkxnnnnnfnlwnwnwwnwnnwaawnnnwnnnnnwnwnnnnnaannwnwwnnnnnnnnmnwnnnnwwnnonwnfnwnnnnwwlaannnnnnnnnnnnnwnnwwaanwnnnnwnnnnnnnnwnnfnnwwwnnknnnnwnnnnnnnwnnwnnknnwnwnnxnnnnnnnnnnwnnnnnnnnwxmnnnnnnnnnmnnnnnknnnnnnnnnnnwwnnnnnownnnnnnfnnnnnnnwnnnnnwnnnwnnnnnnnnnnwwnnnwwnnnwnaalnnnnmaaaannnnnnmwaanwnnnwxnnnwnnwnnnlnnnnfnmnnnnnnnnwnwwnwaawnnnnmaaaannnnownwaanmnwnwwnwnnwnnnnnnnnnnnnnwwnnnnnnwnnnnnnmnnnnnknnlnnnnwwnnnnnnnwknnnnnnxnnnnnwwnwnnnnnnnwnnmnanwnnwnwnnnnnnnnnwnnnwnnonnnknwnnwwnnfnnwmnwmnnmnnnnnnnnnnnmnannnnnwmmknnwnnnmwnnnownnnnnnwnnnlmaannnnnnmnnwnmwnnnaannnnwlmnnwwnnnnnwnwnxmnnnwnnnwnwnwonnnnnnaannnnnmmnwnnwnnnmaanwnnnonwnmnmnnnwnnnnnmnaannnwnnnnnnfwnnkwnnnnnnfnnnnnnnnwwnnnnnnnnnnnnnnnnnwnnnnwnnwaanlnnnnnnnnnnwnnwnnnnnknnnnnnnmwnnnnnwunenennwnwwwnnnnnnnnnwnnnwnnaawnfnnnnnnnnnnnfnnnfnnnnnnnnnnmaawnnnnnnnnnnnnnwnmnnnnnmnwwnaannnknnknwnknnnnnnnnnnnnnwnnnnnaannnnmaawnnnnnnnnnnnnnknnnnnnnnnnnlnnnaanwnnwnnwnnnnnmaawwnnaannnnnaannnnnnnnmnnnfnnnnnfwnnnnnnnnwwaawnwnnonwnnnnwkaannnwaannwwnnnnwnnmwaawnnnnnwnnnnnnnnnnnaanwnwknnnnnnnknwnewnnnennnnnfnonnnwnnnnnaannnnwnwnnlnwnnennnaammnnnnnonmnnnnnnlnnnnnnnnnnnnnnnnnwnwonaawnnnnmnnlnnnnnnnaannnnknwnnnlnnwnmfnnnfwwnmenfnnwmnennnnnnnaannnnownnnnwnowfnaanwonnunnnmnnnnnnnnlnnennnwnwnnnnnnwnnnwwnnnnnnnaannwmnwnnnnnnnnnnnwnnnnnnnnnnnnnnnnnnwnnnmnaanwnnfnnwnnewwnnaannwnnnnnnnnwwnnnnnnwwnnnownffnnnmnnnwwnnwnaannnnnnnnnaawnaawwnonwnnwnnnnnnwaannnnnnwknnnlenknfnnnwnnnnnnennwnnnwnwaannaawnnnnnwnnnnnwnnwaannnmmnnnnnnnnnnnnnnnnnnnnwnnnlnnnnwnnwonwwnnnwwnnnnnnnwnknmnmnwnnnnaannwnwnwnnmnnnwwnnwnnnnnwnnnnnnnnnnnnnnwnnfnnnwnwnnnwmnnnnwnaannnnlwnnnnnnwnnwwnnnnnnnnnnnnnnnnnnnknnxmwwwwnnnnnnnfwnwnnnnnnnnowwnnknonfnaawnnnnwnbnnenwnnnnolnwlnnnwnnnnnnbnnnnwnnnwnnnnwnnnnnbnnfnnlaannnwnxffnnnnnnnnnnnnnnnnnnnnnnnnwwnwnnnnwnwowwnnnnnnonnnwnnnnnnnnnnnnnnnnnnnnnnnnnnnwnnnnnnnnnnnnnwonmnnlnwnnnnnnnnnnnwnnnnnwnwwnnnnnnnnnnkwnnnnnwnwnbnnnnnaankxfnnnnnwnnnfnnnnbnnnkbnnnnwnnnnvnwnwnfnnxvvnnnwwnnnwwnnnnaawwnnnnnnlnnnvnnnnnwnnwnnnnnnwwkknvfnnaawnaavbnnnwvnnnnnonwnnnwnnmvnvnnnonvfwnnnnnnnnnwnwnvvnnkwfvnaalnaavwnvevvvvnlvnnvnbnnnnmvnvnnnvnvnvnnnnnvvnfnnwwvwnnnvwwwwvnnaavvnvnvvvvnwwnnvnnvnwwwvvvvnbvnvwvwnnbwvvfvnvwnvvanovvvvvxnnaavwnmnvvvevvmnvvnvvvwvvvvwbnbwvvkwnvvwwvvwvnwvvvvaaavvvvvwbvvvvvvevvvvwvvvkvvvvwvvvvvvlvnvvvvbaaaavvvbvvaawvwxvaabwvwvvwvvvvwwxvvvvvvvvvvvvowvvvwfvvovvvvvvaaaavvvvvvaavvvvvwvfvvwvvvmvvvvvbvvvvaavvvvvwvvvvvvwvvvvvvvvvvvovvvvvvvvvvvvvvbvwvkvvvvvwvkwvvwwvvaavovxvxvvvkvvwvvvvvvwvvvwvvowvvfvvvvwvvvvvvvvvvvwvvvvvvvvvwwvvvbffbvvwvwvvvvvvvvwwvvvwwwvvvvaavokvvvkxvwvvvvwvvvfvvvovvvvvvvvvwwvwvvvvvvvxvwvvwvvkvvvvvvvaavvvvvvwvvovvvvvvvfvwvvvxwvvfvvxvxvvvvvvwvvvaavvvwvvvwwvlvvvvvvvvvaavvovvvvwvvvvvvvvvvvvvvvvwvvmkvvvvvvvvaavfvvvwvvvvvovovvvvvvaavxwravvvfvwvwvvvvbvvvvvfvvvaavkvvvvovvvwvxvvvwvvwvwvvvvvwvwevvvvaavwvvvlvvvvfvvkvwwwwvwvaavwvwvvvvvvvvwwvvvvvvvvmvvwvvvvmbvwvlvvwvvvvlvvwwvvwvvvwvwwvvkvvaawvfwvvvvvwvvvlvwwwvvvwaavvvwvvvwvwvvvvevbwwvvokvvvvvvvxvvwvaavwvvwvvvvvwvvvvvvvwvvvaawvvvvvvaavvaavvvvvvvvvvwvvbvvwvwvvvvwvwvkwvvxwvvvvvvvmvvvvvvwvvvbfvfaavvaavvewwvwwvvbvwwvvvvvvkvvvvovvvvvvvfvwvvvbvvvvvwfvvbvvvxvvvvvvxvvvvmvvwkvvvwvbbvwvbvvvvwvvvlwvwwvvvvvvvvvvwvvvvaavwabvvqvvvfvvvvvvwvwvlwvvvvvvvvkwvvvvvvwvvvvvvbvwvvvvevvvvvaaxbavvvvvwaavvbvvvvvkvvxvvvvaaaavvvvvfvkvovvvwvvvvvvvbvvvvvvvvvvvvwvkwvaavwwvwvvvvwvvvvvvaaaavvvvvwvvvbvvvvvvvvvvvvvvvvvvwvvvvvvvbwvvvvwubvvvvwvvwowvvvvvwvvwwbvbwwvvwvvvvaavvaaaakvvwvvwvvowvvwevwvvvvbvlvwvvvvvvvvvvbvovvwvbwvvvwbvvwaavvaaaafvwlvwvvvvvvvmwovvvvvaavwaavvwwwvwbvvvvwvvvvvvvaavvwvwwwvvvwvvvaavvvvwwvvvvovvwvwwaavvaavfvvvvvvvvvwlvvvvwvwaavvvvvvvvvvvvwvaavbvfvvvwvvwwowwbkvvvvvvaaaavvwvvwvvwvvvvvfvaavvvwwvvvwwwvvmvvvwvkvwvwvvvvbvvvvlvvvvvaaaavvvvvvvwvvvlwvvvaavvvvvvvfvvbvvvvfvvwvmvxvwevvvvvkvwvwvvvvvvvvvwvwvvvwvvvmvwvvvvvvvvvvvvvaavvvvvvvvbwvvvvwvbvvvvvvvvvvwvwvvbvvwvvvvvvvwvvwvvwwvmvblvvvaavbkvvvvvvwkbvvvvvvvwvwvvwvvvvaavvwvwvvvvvvvvfvvkvvvvvbvkvvvvvvvvvwvvvvvvvwvvvovvvvvjvwwvvwaawvwjvvwvvvvvvvvvwvvvvvvvvvvvmvvjfvvwwokwvvvvwvwvvvvvvvwvvvvaavvvvaavwkvvvfvvvvvvvvvwvbvvvvvvvvvvvvvwvvvwvvvwvvvmvlvvvvxvaawvvvaavwvvvvvvvvwvvwxfmvvvvvvvjvvwvvvvvaavvvvaaovvwvvvvaavvaaaavvvwvvvbvvvvvlvvvwbvkvvvvvaaaavvvvvvvaavvjvaavvwvwvwvaavvaaaavvvvlvvvvwvvvvvvvvvvvwvovvaaaavwvvvvvaamfvvvvbvvvvfwvvvvvxvvvjvwwvvvvvjwvvvvvvvvvaakjvvaawvvvvvwvaaalovvvvvvkvvvvvvvvvvvvwvvmwkvvvvwvjvvvvvvvwaajwvvaawmvvvvvvavovvvvvfwvvvaawvvwvvwvvvvvwvaaaamvvvmvvvwbvvvvvvvevwvvwvvwlwvvvvvvwvvvvvwaavvwvvvvvvvvvvvaaaavmwvvvlvwwvvvojvvwvvvwvvvvvmvvvkvvvvlvvvwvvvvaaaavvwvvvaavvvvvvvwaavbvvvvvvvvvvwvvvvwvvvvvwvvjjvvlvvvwvvvvaaaawvvvvvaavvvwfvvvaawvwvvvvvvvvvvvlvbvvvvvvvjkwvvwvaavvvjvvvvvovvvvvvvvwvvvvvvvaamvvvvffvvvwvvvvovvvvwwavkvvvvvvaavvvvvvvvvvvvwvvvkvvvvvwvvvaavvvvvwwovvvwvwvjvvvvvvaaavwvoaavvvvvvvvvvvwwvwvlvvwvvaawvvvvvvvvmbvvwvvvvkvaavxvvwvvaavvwvaavvvvvvvvvwvwvvwvvvvewfaavwvvvvvvmvvvwxvvvvvwaavvlvvvwvvvvvvwkvvvwvvvfvvvvvvvvvvvwvvaavvwvwvwvvwvvvvvvfwvvvvvvvvaavbwvvfvwvwvewvvwovvvvvvwvvvvwvxaavfvwwvwkvwvwvvvvxvvvmvvvwwaavvvvvwvvvlvvvvvvfvvvvvwvkvvvwlvaawvwvaavvxwovvwvvvfjwkvvvvvvvvwbvvvvvvvvvvwwvvvvwvowvvvmwvvjaawvwvaavvvvvwvvbvvvwwvwvvvvvvvvvaavvvwaavvvvvvaavjvvvwvvvvaaovvwfvwvvjvvvwvvvvvvvvvvaavvvvvvvaavvvvaavvvvvwaavvvvwvvvvvaavvvfvvvvwvvvvvwjvvjvvvvvaawvwwvaavvvvvwwvvvvwvvwvwvvvmmvvvvjvwwaavovwvvvkwvvovwxvwvvvaaaavjvaavvwvwvvwjvvfvvvkvwvvvvvvvvvvjvaavvvvvvvvvfwvwvvvvovvaaaavvvgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   },
   {
     "planet": 3,
     "coreDepth": 202,
-    "cols": 13,
+    "cols": 61,
     "rowsFrom": -1,
     "rowsTo": 203,
     "counts": {
-      "(empty)": 376,
-      "dirt": 185,
-      "seam": 328,
-      "copper": 36,
-      "stone": 535,
-      "iron": 36,
-      "cache": 11,
-      "silver": 29,
+      "(empty)": 1683,
+      "dirt": 881,
+      "seam": 1561,
+      "copper": 189,
+      "stone": 2541,
+      "iron": 187,
+      "cache": 48,
+      "silver": 152,
+      "gas": 135,
       "schematic": 4,
-      "gas": 23,
-      "geode": 17,
-      "gold": 12,
-      "granite": 434,
-      "amethyst": 18,
+      "geode": 79,
+      "gold": 111,
+      "granite": 2048,
+      "amethyst": 99,
       "relic": 1,
-      "scoria": 574,
-      "emerald": 17,
+      "scoria": 2588,
+      "emerald": 51,
       "part": 1,
-      "ruby": 2,
-      "core": 13,
-      "bedrock": 13
+      "ruby": 24,
+      "core": 61,
+      "bedrock": 61
     },
     "defs": {
       "dirt:7031594": {
@@ -968,20 +968,6 @@
         "value": 240,
         "ore": true
       },
-      "schematic:65345": {
-        "id": "schematic",
-        "name": "Sealed Crate",
-        "color": 65345,
-        "host": 1058840,
-        "glow": 1,
-        "shards": 9,
-        "tone": 9,
-        "hard": 18.400000000000002,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "find": true
-      },
       "gas:13954602": {
         "id": "gas",
         "name": "Gas Pocket",
@@ -995,6 +981,20 @@
         "value": 0,
         "ore": true,
         "hazard": true
+      },
+      "schematic:65345": {
+        "id": "schematic",
+        "name": "Sealed Crate",
+        "color": 65345,
+        "host": 1058840,
+        "glow": 1,
+        "shards": 9,
+        "tone": 9,
+        "hard": 18.400000000000002,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "find": true
       },
       "geode:8388576": {
         "id": "geode",
@@ -1155,37 +1155,37 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiwiwwiiiiiiwwiwwiiwiiiiiiiwiiiiiiiiiiiiiwiiiiiiiiiiwiwiwiiiwiiiiwiifiiifiiiwwiiffiiwiiiiiiiiiiwwiiifiifiiiiiiiiwiwiiiiiiwfiiwiiiiiiiiiiiiiiiiiiiwiwfifwwiiiiifwiwiiiiwiiiiiiiiiiiiwiiifiwiiiwiiiiiiiiiiiiiziwifwiiifiizziiiiwiwiziwozwwiizizoziizwfiiizzzifzizzzizwzwzzzzzzzwwzzzzzzzzfzzzzzzzzzozzzzzozzzfzzzzzwzzzzzzzzzozzwzzzzwozzwzzzzzwzzaazzzzzowzwzzaawzzzzzzzzzzzzzzzzoezzzzzwzzzzzzzzzzzozzzzzzzxaazzzzzzxzzzzaawzzzwzwzzzzzzaazzzzzzzezzzaazzzzezzfzzzzzzzzzwzzzxzzwzzaazzwxzuwwzzzaazzxzzzxzzzzzwwzzwaaaazzzxzwzzzaaaawzwzzkwzzzozzwzzzzzzzzwzzxzzzzzzwzzaazwzzzwzxwzzaazzzzzaazzwzzwzzzzaaazzfzzwzzzzazzzzzzwzzxkzwzzzfzzzzzzxzzxwzzaazzzzaaazzzwaazzzzaaazzwzzwwzzwxzozzzzzzzzzwzzzxzzfzzwzzzzzozzzxwwxzzzwzzzzzzzzzzzlzwwzzzwkwzzzzzxzzzzwzzxwaawzzzzzzxzzzaazzzzzwxaazzwzzzzzzzzaazzfwzwwzxzzzzwzaazkzzzwzzzzzaazzzzwwzzozzaazzzzwzzzzkzaazzzzzfzzzaaaawzzzzzwzzaaaazzwzzzzzwzzaazzzwwzzwwzzaazzzaazezlzlzozzzaazzzzwwwzzzzmzzzzzaazzzzlzzzzzzaazzzzzaazzzwzzzzzwzaazzzzwzzzwzzaakmaawzzzzmzaazzaazzzzzzzmwzzzzzlzzznnzzzwnznwzzznnzzzzwwnzaaznnzzwnwwnzaawnnwnaaaawznnnnnnnaaaannnnnnwknxnnwnnnnwnnnnnnnmnwwwnnnnonwnnaaaannnennnnnaaaannnnnnonnwnnmaannnwwwnnnnnaanaannmnnwnnnknaannnwnunkeonnnwnaannaannnnnonaannaannnnnnnnnwnnwnnannnnnwnwnwnnawnnnwnaannnnnnnnnnnaannnkwnnaannaannnnanwaannaannnwannneaaaannwwwnennaaaawnnnnbnnfnbaawwnkonnnonlaannnnwbnnnaannaannnfnwnaanbaannnaawnknnwwnnnnaannnnnnnnwrnnbwwmnnnfnwwnbnnwwnnnnnnnnnnnnnnnnnnbwawnnwnnknnnlwaknnnnnnnaannnnlnnwnnnaanwnnnnwnnnnaanwnnnnwbnnbaawnnnnnwnwnnnnwwnnnnnnwnnnnmwnnnexnbnnnnnnannnnwnnnnnlnannnbnwnnaannnnnnnnnnnaannnwfnbnnwnwnnnnnnnnnnnwnnnnnnnnnaawwaannnnnnnaanoaannnnnuawnwwwnnnnnwaannwnnnnnbnkaabwaaaannnonaawnaaaanwnknwnaanknnaawwnnnaannnwaanvwnnnnnnnnnwnwnovjnwvjvnwnwnnwwvnvwvnnnvvnvwvnwnvwjvwvvvvvwwnjnnvvvvvvvvvnvvnvvvvvvvvvuwovavvvvvvlljvvkavvvvvvvwwvvvvvwvvvvvvvjvvjaavvaavvvvaaaaajvaavvvvaaawwvwvvvwvvvjvvvvvwvvvvvvvlvvvvvvvwvvvwvvwvvvvwvwovvfvvvwwvvvvvbvmvojvvvvvvvvvvvvvvvvwvvvevavvvvvvjvvvvvavvvvvvvqaavvvvvwwvvvvaafvvvjvvvvvvwvvvvvxvvvvvvvvvvvvvlvaavwaawvvvvvjaavvaavkwvvvvvvvvvwaaawvwvvvowvvaaaaavvaavvvvvvwaavvaavvwvvvvwvaavvvvaaaaakvaavvvvaaaaaaawvvvvvwvaavaavvvvvvvvaavwvvbvlvvvvvvvvvvxewvvwvvwvvvvvvvvvvvvvovwvkfjvvvvvvvvvwwaavlvvaaawvvvaavvvvaaabvvvvvvwvlvvavvvvwvkvvwvvavvvvwvfvkvvvvvvvvvwvwovwvvfvvwvvvwaaaavvvvwvvvvaaaavvvvvxvvvvwvwvvvvvwwvvvvvvvvvvvaawvvwaatvvvwaavwvvaawvvvvaaaawoaavvwvvaaaawvaavvvvtvvvvjvaavwjvwwvvlwwaavvwovvvaavvvxvvwvfvwaavvwvwwwvvwvvwvvvvvvvvvwwvwvvvvvaaaavjvvvwvvvaaaavvvvvvvvwaaaavvovaawvvaaaavwvvaavvwfvwvvfwvvvvvvvvvvvmvvvvvvvvvvvwvvvvwxvwvwvvvvwvwvvvvvwvvmvvxaavvwvvwvvvbvaavvvvwaavvvvvvvvavvaavvvvvwvvavovvvvvfaavovvvvvvvwvaavoogggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaiiiiwiwwiiiiiiiiiwiiiiiiiiwwiiiiwiwiiiwiiwiiiiiiiiiwiiiiiiwiiiwwiwwiiwiiiiiiiiwiiiiiwiiiiiiiwiiiiiiiwiiwiiiiiiiiiwiiwiiiiiiiiwiiiiiiiiiiwwiwwiiiwiiiiwiiiiiiiiiiiiwiiiwiiiiiiwiiiwiiiiiiiiiwiiiiiiiiiiiififfiwiiiiiiiiwifwiwiiiiiiifiiiiifiiiiwiiwiwiiwiwiwiiiwiiiiiiiiiwiiwiifiiiwiiwiwiiiiifiiwffiiiiiiwiiiiiiwiiwiifiiifiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiwiiiwiwiiiiwiiwiwwiiffiiwiiiiiwwiiiiiiiiiiiwfiiiwfiiiiiiiiiwiiiiiiiiiiiiiiiiiiiiiiiwwiiifiiiiiiiiiifiiifiiiwiiiifiiififiiiiiiiiiiiiiiwiiififiiiiiiiiwiwiiiiiiwiwiiiiiiiifiiiiiiiiiiwiiiiiiiiiiiiiiiiiiiiiiiiiwfiiwiiiifiifwwiiiiiiiiiiiiiiiiiiiiiiiiiiiifiiiiiiiiifiiiiiiiiiiiiiiwiwiiiiwiiiiwiiiiiiwifiiiiiiiiiiiiiiwiiiiiiiiwwiiiiiwiwfifwwiwiwwiwiwiiifwiiiwiiiiiiwwiiwiiiiiiiiiiiiiiwiwiwiiiiifwiwiiiiwiwiiiiiiiiiiiwifiifiwwiiiiiiiiiiiiiiiiwiiiiifiifiiiiiiiiiiiiwiiiiiwfiiiiiiiiiiiwififiiiiiifiiiiiiiwfiwiiiwiiiiiifiwiiiwiiiiiiiwiiiiiiiifiiiifiiiiiwwiiiiiifwiiiwiiiiiiwiiiiiiiiiiiiiziwiizwiziiiiiiiiiiifwwiwiiiiwiiiiiwiiiiwiiiziwiffiifwiiifiizziioiziioiwiiizziizwioiiiwowiiiiiwiwoiwziiiizizizwiiiwiwiziwozwwiizizwwiowizzwiwiiiiiwiiiiiiwizzzzziwizzizizizziiizizoziizwfiiozizzizzwizzzzzzwwziiiwiwiiziozzzzzzizzfzizifwwiizzzifzizzzizzzzzzfzzizwzwozzzzzizzzwzzwziwzzzzzwizzwzzzizzizwzwzzzzzzzwwozzzwzzzzizzwzowzzzwfzzzzwzzzzzzozzwziwzzwzziwzfzzzzzzzzfzzzzzwzowzzzzzwozzzzzzzwzwzzzwwzfzfzwzzzzozzzzzwzzzozzzzzozzzzzozzzzzzwzzzzzozzzzzwwzfozzzzwzzzzzzozzwzzzwzzzzzzzzzfzzzzzwzzzzzwzzzzzzzwzwzzzzzzzzwzzzwzzzzzzzzzzzwzzzozzozzowzzzzzozzwzzzzwozzwzfzzwzwwzzzzzzzwwzzwzwzzzwzzwfzzzzzzozzzzzzwozzwzzzzzwzzzzzzzozzzzzzwzzzzzwzzwwwzzwzzzzwozzzwzzzzzzwzzzzaazzzzzowzwzzzzzwzzzzzzzzwwwzzzzwzowaaffzzwzzzozzzaawzzzzwofwaawzzzzzzzzzzzwzzzzwowzzzzzozzzzzzwwaazzzzfowzwzzzaazzzzzzzzzzzzzzzoezzzzzozzzzwzzoozwzzzzzzzzwzzzzzzfwzzzozzzzzzzzzwzzzzewzzzzzzzzzzzozzzzozzzzzzzzzzzzwzzzwzzzzwzwzzzwzowzzozzozzwzzzzzzzzzzxaazzzzzwwzzwzzzzzzzwwzzzwwzzzzzzwzzzzzzzzzxwzwzwzzwxzzzzxzzzzaawzzwzzzwwzzzzozzzxzxzzzzzzwzzzzzzzxzzzwzzzzwzzzzzzxzwzwzzzzzzaazzwzxoaazzwzzzaazxzzzzzzaawzaazfaazzzzzzzzwxzzzzwzzzzzzezzzaazzzzzzaazzzzzwaazwwwzzzzaazzaazzaazzzzwzzzzzowozzzzzezzfzzzzzzwzzzzzzaazwzxzzzzzzkzzxzzzzwwwzzzzzzzxzzzxzzzzzzzzzwzzzxzzwzzzwzzxzzaawzzzzxzzzzzzzzzzzzzzwzzwzzzzzwzzzzaazzzaazzwxzzwwzzzwzzaaxzzzzfzuzzzzaaxwxzzfzzfzxzzzzzzzzzzzzwowzzoaazzxzzzxzzzzzxfaazzzxzzwzzfzzaafzxzzzozzxaawzzzzzzwzzwzzzzzzzwwzzwaaaazzzzzzzzwzxwzzzzozwwzzzzzwzwzzzzzeozzzfzzxaazzzzzzzxzwzzzaaaawzwzxzzzzzzzzzzxzzwwzzzzzzzzzzzzzzzzzzzxzwaazzwzzzzzzkwzzzozzwzzzzwaazzzwzzzzwzzzzzzzzzwzzzzzzzzwzozwaakzwwaazzwzzzzzzwzzxzzzzzxaawzzzzzzzwzzzzxxzwkxzzzzzzzzzxzzzaawzwzaazwzzzzwzzaazwzzzzzwzzwzzwzfzxzwwzwzzwaawzwzzzzwzezzzwzxzzzzzwzwzwzxwzzaazzzzzzzzzzzzwwzzzzwzzzzzzzaazxzzwzwzzzzzzzzwxzzzwzzwzaazzwzzwzzzzaazzzzzkzzozzzwwzxzzzwzzxzaazzaawxzzzzzzzzzzwzzzzaazzfzzwzzzzaazzwzzzzzwwzzzwzzzfzzwzzzaazzaazwozzwzwzzzzozwzzzzzzzzwzzxkzwzwzzzzwzzaaaawzzxwkzzzzzzzzzzzozzzzzzaazzzzzzaazzzzfzzzzzzxzzzzwzwzzxkaaaazzzzzzzzkzzzwzwzwzwxzzzwaazzxzwkaazxwzzaazzzzaaaazzzzxxzzaazwzzzzaazzzwaazzwzzzzzzwzzzzzzzzwzzzzzzzwaazzzzaaaazzwzzzwzaazwzkzzaazzzzaaxzzzzzzzzzzzzzzzzzfzzwzzzwzzwwzzwxzofzwzzzzowzzzzzzzzzxzzwzzwwzzwzzwzwzzzzzzzzxzzzzzzzzzzzzzzwzzzzzzozfzzzzozzwxzzzzzzzxzzzzwzzzzzxzzzzewzkzzzeowxzzfzzwzzzzzozzzzzzzzzaazwzzwfzfwzzzaawzzlzzaawwaazzwwzzzzzzzzzzxwwxzzzwzzzzzzzwzzxaawzzzwzzzzzzxaazzzzfzaazzaazzzkzzzzoxzzzzzzzzzzlzwwzzzwzzwzwzzzzzzwzwxzzzzzoaazzzzzzzzzwzzzzoxwzzzzzzzwkwzzzzzxzzwkzzwzwzfzzzzzzzkzzzzzzzaazzzzzxzwozzzzwzzzzzzzzzzwzzxwaawzzxzzozwzaaxzzzzzzxlzzzwzzzaaxzzzaazzzwaazzzzzwaazzzzzxzzzaazzzzzzzzzzaafzzzwwzzwzzfzzzzaazzzzaazzwzaazwzzwwaazzzwxaazzwzzzzzwwaazwzzwwzzzzzwwzaazzaaaazzzwzzzzzzzzzzzwzzzzzzzzzaazzfwzwwzzzaazzzzezzwzzwfzzaazwaaaaxzozzxzzwzzzzwzzzozzzzxzzzzwzaazkzzaaxzzzzwxzaazzzwzzzzzwzxwzzzzlzzaawzzxaazwzzzzazzwzzzzzaazzzwaazzzzzzzzaawzzzzzzzzzfzzzzwzzxzaazzwzaazklzzzazwwzzozzaazzzoaawfaazzzxxzzzzzzzzwwxxwzzwzzzzzwzwzzzzzzozzaazzwzzzzkzaazzzxaazfaazxzzkzzxxzkzwzzzzzzwzzzzwzzzzkwzzzzwzwaalzzfzzzaaaawzzmaazezzkzzzzzozwzzkzzzwwzaazowxzzzzzzzzzmzwwzzmozzzwzzaaaazzwzaaozzzzzzzwwzzmzezzzzzwzaazzzzzwzzozzzzzzzzwzwwzzzzzwzzaazzzwzzzwzzzmwzzzaazzzzzzwzaazwzzzzzwzowzzzzzzzkzzzzwwzzwwzzaazzzzzzzzzzzzzzzzaazlzzmzwzaawwzzwzzzzzzwzmzzzzozzzzaazezlzlzozzzzzmaazzzzaazzzzzzzzzzzzzzzfzozwzzzzzzmzzzwzzzzzwaazzzzwwwzzzzzzzaawzzzaawwzzzzzzzzzzwzzzzzzzzzzzzzwzzzzzzzzzwmzzzzzaazzzzlzfzfzzwwzzwzzzmxzaawzzzwkzmmlzzzzzzzwzzzmzowzaaazzzzzzaazzzzzzzzzzzzzzzzzzzzzwaazzzwzzmwzzzwzzwzzzozzzzzzzaaaaazzzwzzzzzwzzzzzzzzzzzzzzaaaamozzzzzxzwzkzzmzwzzzzwzzwzzzzzzaazzzzwzzzwzzzzzzzwzwzzlzzaaaalzfzzzzmzzzzwzzzzzzzzzzzzzlzzzzaakmaawzzzzmzzzwzzwzzzaazzzzfzaazzozaazzzzzzwzzzzzzmmzaakwzzzaazzaazzzzzzzezfzmkzzzaazzzwzkaazfzzaazzzwzzzzzzozzzzwaazkwzwmwzzzzzlzzznnzkwzmwzaazwwzzzzzzzfwaaaazzzzkzzzwzaazzmnzzaanzzzzzwnznwzzznnnnwznzzaazzzwnzzzznzzaaaamzzzzzwwzzaawzzwzzaanzzzzzzwwnzaaznnnwnnwkwzwznzmnwzwwnznnzaazzmkzzxzzwzzzzznznnkaazzzwnwwnzaawnnwnnwnzzxzznzfwzzzwnznnmaazzznmzwwznnzmwnnzwnnaazwnaaaawznnnnnnnnnwnnaannzznnnnknzwnnnwwznfwzwzaalzxnnnznnwwnmnnaaaannnnnnwwnmnnlnaannmnnnnnnxnnnnnnnznnnnnzaanznonnzwwnmnnknxnnwnnnnwnnnnwnnnmxnnnnwwnnnnnnknnnkwnnnnwnnnnnnnnmnwwxnnwnnnnnnmnwwwnnnnnnwnnmnnwnwnnwnnnnnwnnnwnnnnnnmnnnnnnlfxnnwnnnwnonwnnaaaannnnnnxnneonaannaannnnnnaanwnwnnaannnnnmaawnnnnnnwnennnnnaaaannnnnnnnnnwnaannaannnnnnaaaanwwnaaknwnwmaanlnwwnnnnnnnonnwnnmaanwwxnnaalnnnnwnnnnnnnnnnwnaaaanwnnnnmnaannnnwnnnnnnwwwnnnnnaannnnnnaannnonwnnwnnnnnnnnwaaaannonnnnwaannnnnnnnwaannmnnwnnnknnnnnwnnfnwennnnonnnaaeowwnnnnaannaawnnnnnwnwnnnwaannnwnnnkeonmnnwnmnnnnnwnnnwnnnaaunnnnwnnaannaannnnknnnwnnnnnnwnaannaannnwfnnnnnnnnnaawnnnnnmnaanwaannnnaanmnnnnnnnnnnnwwnnonaannaannnnnnnnnnnnnnaannwwmnnwaannaannnnaannnfnmmnnnnnnnnnnnnnnwnnwnnaamnnnonaaaannnnnnwokenwknnmaaaaaannnnnwaaaawnnnnnnnnnwnwnwnnaannnnnnaaaalwnwnnnmnnnnnnnnaaaaaawnnnnnaaaannwnnwnnnwnaannnnnnnnnnaannwnnnnnnnnnnwwxwnnnnwaannnnokaannnnaawnannnnnnaannnkwbnnnnaaknnnnomnnwnnnnnnnnbnnnaannnnnxaannwnaannannaannaannnnaaaawnnnnwknnnfnonnnnnaannnnnnnnknaannnwaabwnnnnnnwaannaannnwaaaawwnnnwnmnnnwnbnnnnaawnnwnnnnfnaannnnaannnwnbnnnneaaaannwwwwnnwnwnnnwnaannennnnnbnaannnnnnnnnnnnnnnnnnnnwwanennaaaawnnnnnbnnwnnwwnnaanwnnnwnnnwaamnnnnnwnnnnnwlwbnwnnnnabnnfnbaawwnkonnnnnnnnwnnnnnbnwwnnkwwwnnnaannnnnwnnaawbaawnnwnnnnonlaannnnwnnknnnnnfnnbbnnwnnnwwnnnwnnaanenononnaawnaannnnnbnnnaannaannnnnnnnnnnbwnnnnnnnnnnnwwnfnnaannnnffnknnnfnfnnnnafnwnaanbaannnbnnnnnlnnnnwnnwnnnnnnwwnnnwaannnnnnnwnnnwnnnnneaaawnknnwwnnnnnnnaanwnwnnenaaaannfmnnwnnnwnaanbwnnnaannnnlnaakaannnnnnnnwnnnnwaanwnnnwnnaaaannnnwnnwnnnnaafffrnnaanfnwnxaannbwwmnnnfnwwnnnnaamnnwnnnwbnnbnnaawonnnnnnnknnnwwnnnwnnnaannnbnnwwnnnnnnnnnnnaannnnwnnnnnnklnaanbnnnnnnnnwnnnwnnnwnnnaawnnnnnnnnnnnnbwaaaanwnnknnonnwnlnaannwnaanbnnwnnwnnnknnnnnnnwenwwnnwnnknnnlwaaaannnnwbwnnnnnnnaannnwaannnnnnnnnwnwnnnnnnnnnnfknnnnnnnaannnnaannnnnnnwaaaamnnnnlwnfnnbaakenwnnnwnennlnnnnmbnlnnwnnnaanwnnaanonnnnwnaaaanwwnnnnnnwwnaannnnnnnnnnnnnnnnwwfnnnwnnnnaanwnnnnnnnnbobnnnaannnnnnnmnbnnmnaabnnwnwnlknnnbnnnnnnnwbnnbaawnnnwnnnnnwbnlwnaanwnnnnfnnwnnwnaannnnnnnnwnnwnxknnnnnwnwnnnnwwnnnnaaaamkwfknnnbnbwnnaawnnnnnaannnnwnnnnnnbnenwannnnnwnnnnmwnbnnaaaawnwnnnnnnnnwnnaannbnwlaawnnnbwnwbnnnnnnnannexnbnnnnnnaaaaaannfnnwwnwnnnnnnnnbaaaannaanennknnnownwnnnnmnnnnwnnnnnlnaaaaaannwnwknnwnnnnknnwnaaaanwaannnnonnwbnnnwnnnnnnnbnwnnaannnnnwaannnnnnnnwnnnwnnnnnxnnnnnnonnbnwnnnnnwnnnnnnnnnnnnnnaannnnnwaannnnnnnnknnnnnbnwnnnnnnbnnnnnwnonnnnnwbnnwnwfnbnnwnwnnnnnnnaannaabnnnnwnwaannnnnnonaannnnnnknnwaannnbnnknnnnnnnwnnnnnnnnaannaanknnwwnnaanwwfnnnwaannnnnfbnwmaanwwnwwnnnnnaawwaannnxnnnnnnnnaannnnnwnbnnnnaannaannnnnnonaafbaanlwnannnnaanoaannnnnnnwonwnaawnwnnnffnnnnaaonaannnnnnnwaabwaanmnnannaawnwwwnnunnnnaannnwwnonnwwnnnnnnwlnaabnnnnwwnnlaannnnnnnnnnwaannwnnnnnbwnwaannnnnwnnnnnwnnnnnnwnaannwwnnnwnnaanwwwnnnnnnkaabwaaaannnkaannnnaanwnnnnaannmnwnnnwnwnnwnnwwnnnnaannaannnonaawnaaaanwnkaannnwaannnkwkaannnnnwnwwnnnwnnnnnbnnnaannaanwnknwnaanknnaawnnnaannnnnnnxnfwwnnwfnnnnnnnnwwnnfnnnnnwwaannxnnwnnnaannnwaanwwnaannwnnnwnnwwnnnnnnnnbnnnnwnnnbnnnnwnfaanwnnfvwnnnnnnnnnwnnnnnnnnvmaannaannnnnnaaaaaanwnnwnnnnnnwnnnnnnnwlwnovjnwvjvnwnwwknnnnvwaannaanvnnnnaaaaaavvnnnwnwwnnwnwnwnvnnwwnnwwvnvwvnnnvvnnvnnvwlvvvnwnvnvaanvnnnnvvnwaaaawnkvvonwnmwvnvvnvwvnwnvwjvvvnvvvvvwvvvvwwnvnwaanvnnvwwwvoaaaanwnvvwwvvwnvnwvvvvvwwnjnnvvvvvvaaaavvwvnvmvvvnvwvnvvkjvaavwvvnnvvvvvvvwvwnvvvvvvvvnvvnvvmvwvaaaavvvovvjvovvvvvlwvwvbaavvvvvvvvvvvwvvwvvvvvvvvvvvwovaalfvvaavvvvvwvvvvvwvvwwaavjvvaaaawvaaaavvvfuwvvvvvvvvvlljvvkaavkovaavwvvvjvvvvwvvvvvaavvvvaaaawwaaaavvwvvwwvvvvvvvvvwwvvvvvvwvvvvkvvwvmovaavvaaaaaabvvwvvvjvvwvvvvvvwvvvvvvwvvvvvvvjvvjvwkvvwvxvvvvwbvaaovaaaaaavvvvvvvvvbvvvvvvvvvvkvvaavvaavvvvaaaawvaavvvvwfvvvvbwvvvvvwvvaavvvvvvvvvvvvvvvjvwvvvaajvaavvvvaaaavwaawvvvkwvvvvvvvvvvvkvvaavvvjvwvkvvwvwwvwvvvjvwwvwvvvwvvvjvvvvaavlvvvvvoaavvvxkvvvvwvvvevvvvvvvvvwaavvvvwvvvvvvwvvvvvvvlvvoaavvwwvvvvaawwwvvvwevlwvwwwvvvvvwvvwaavxvvvwmvvvvvvvwvvvwvvvvwvaavvkvwvaavvvvvvvvvvwvvvvmvwvvvkvvwvvvmwvvvvwvvvvwvwovvfvvvvvaawvvvvvaavvvjvvvvvvvvvvwvvvkvwwvwvwvelvvwvvvvwwvvvvvbvmvwwvvvvwvaavvaaaawvvwvwaavvovvvaavvvvwvvvvvaavbwvojvvvvvvvvvvjvvvwbvwvaavvaaaavvwvvvaamvwwvvaavowvvwjvvvaavwovvvvvvwvvvevaaaawovvvfwjvvjvvfvwvvvvbvwvaajvvwjvkvvvaawvwvvvvvvvvvvjvvvvvaaaaevvvwwvlvvvkvvvvvwwvfvbvaavkwvvbvvwoaavwvxvvvvvvvvvvwaavvvvvvlvaavvvvwvvoaawvvvojwvvvvjvwvvvqvvvvwvwwaaaavvvwwvvvvaafvvwvvvvaavvvfvvfkaavwvvklvwvvvvvvvwvvvvvmwovwaaaawvjvvvvvvwvvvvvweaaaavvvjvwwvvwaaaaaaaawvmvjvvvwjvwvvvvvvvwvvavxvvvvvvvvvvvwvmaaaavvvwwvvvvvaaaaaaaawvwvvvbvvvvvvvvvvkwvvvavvlvaavwaawvvvvwvvaavvvjaavwwwvbvvvvaavvvvvvvwvvvvaawffvvvvvovvvjaavvaavkwvovvvaavvevaaevwwvvvvvvaavwvvvvvvvvvvaavvvlvvvvvvvvvvvvvvwaaaavvaawvvvvvvvvwvvvwwvaavvvvvvvvvvvvvvvwvvvvvvvvvwvwvvvowvvaaaavvaavvwvvvxvvwvvvvjvaavvvvvvvfwvvvvwvvvvwvvwvvjaavvaavvvvvvwvaavvvwvvvevvvvvvvvmvvvmvvvvwaawwvfvvwvvvaawvvvvaavvaavvwvvvvvaavbvvvvvvvvvvwovwvvvvvvwvvvaavwvkvvvvewaavvvvwwvaavvvvaaaaaaaakwvvvvvvbwvvwvvvvvvwvvaaaavvaavvvwvovvvvaavvvkvaavvvvaaaaaaaavjvwvvvvvvjvvvvvvfwwvvaaaavvaawvvvwvvvwvaavvvaawvvvvvwvaavvwovvovwvvwlvvvvwwvvveevwmvwvvvvvvvjvvvvvvwxvbwwaavvvvvvvvaavvwvvvvxvvvvvvwvwvxovvvvvvvjvvvvvvvokvkvvvvovvvwwwvvbvlvvvvvvvvvvvvvvvvvvaavwvvwvvvxvvvmvvwaavvvvvvaawvvxvvaavvvvxewvvwvvwvvvwvvwvvvwvaawvfvwvwvvkvvjwovaaxvvwvvaavvvvvvaawvvvvvvvvvvvvovvvvwaawjvwvvvlwkvvaavvvfvvaavvaaaavvvvvwvvvvaawvwvkfjvvvvvvvvwvlwaaovvvwvlwwvvvaawvvwvfaavvaaaavvvwvvwvvvaaxvvwwaavlvvaaaabvvvvvaaxvaavwvwvvvwvvvwvvoxvvvvvwvvaavwaavvvvvwvvvaavvvvaaaavvvvvoaavvaavvvvvevvwvvvvvvvvvvvvvvwaatvaamvvvvbvvvvvvwvlvvaavwwvvvwvvvvwvvvvaawvomvvvvkvvwvvaamvaaaavvwvvbavvvvwvkvvwvvaavvvtvvwvvvvvvvvvaavvbvvbvvvwvvvvaavvaaaaxvvwvvavvvvwvfvkvvvvvvkvvvvwfvwaavvtvvvwvaaaaaavwjvvvvvvvvevwvwvvvvvvvvvvwvwovwvvvvvvvvvvwvlaavvvvvvvoaaaaaavvvwvvvvwwkwxwvvvvmbvfvvwvvvwaaaavvvvwwwwovvvvwvvvvvkaavvvvvtaakvvmvvvkwjvvaavvfvavvvwvvvvaaaavvwvvvwvkvwvvvvvvvvoaafvfvvvaavvvvvvwvvwvvaawtwvavvvvxvvvvwvwvvvxwwaaxvaavvvvwvvvmvvvvvvvvvvvaaaavvvmaavvaawwvvvvvwwvvvvvvvvvbvvaavvaabvvwwvmvvlvvvjtvvvvvaaaawwvvaavvaavvvvvvvaawvvwaatvwvvvwvvvvvvvvvvvfvvvvwvovvvvowvvvkvvvvvvaavvaalvvvwaavwvvaawwvvvvwkvvvvvvvvvvvvvvwvvvvvvwvvvvvvvttkvwaavvaavvvvvaaaawoaavvvvaavvvxvvaavvvvvvvvvwvvvvaalvvkwwvvwvwvvwvvvvwvwvvaaaawvaavlkvaavvevvvaavvvvvvvvxvwvvvaabwvvvvvwvvvtvwwvvwvvvvtvvvvjvaavvvvaavvvwwvaawvvfwbvvwvwvvvvwvvaavwwvaavvaavvvvvwjvwwvvlwwaavvlvaavvvvvvaavvvvvvvvvofvwvvvvvaavtovaajvaavvwwvvwovvvaavvvxvvvmvvvvvvvvaavvmvvvwvaavvkvaaaakvvvaavwaaaaaavvavwvfvwaavvwvwwvvvkwvvvvvaavvwwvvvvaavvvwaaaavvvvaavlaaaaaavvawwvvwvvwvvvvvvvvwvvvwvvvvvaavvvvvvwvvvvovwvvovvtvlbtvvvvwvvvlvvvvwwvwvvvvvvwvvvvvvwvvvvaatvwvvtvvvfvvwvvwvvvmvwvvvvvvvvvvlaaaavjvvvwvvvvxvfvwvvvwvvfaavvaavwvlwvaawvvmvvvvvmlvxwwvaawvaaaaavvvvvvvvwvvvwvvvvwvvvvaavvaawwvvvvaavvvvvvvvvvvwvvvwaavvaaaaavvovaawvvvaavwvvvvjvtwlvvkvwvvvvaavvaaaaaaaavxvvvwvvvvvvoaaaavwvvaavvwvaavvvvvvvvxvvvvvvwvvvvaavvaaaaaaaavwvwxvwkwvvvvfvwvvfwvvvvvvvvvvmbvwvaavwvvvvvvvvkvvovvvvvvvvvvkvaavvaaaavvvvvvvvmvvvvvvvvvvvvvvvvaavvvvvfvvovwvvvtvvwvvwwvvvvaawwaaaavvwvvvvwvvvvwxvwvwvwvwvvvvvtvaavvvvvvvvwkvvvvvvvvvwvvvmvvwvwvvvavwvvvvwvwvvvvvwtfvvwvwlvvvaamwvvvvvlvvvvvvvvvvvvvvvvwvvfvwvmavwvvmvvxaavvwwvvlvaaaavvvwwvvvvvaavvvvvwvvvvaavvvvvvaawbvvaavvvwvvvbvaavvvvfvvvaaaavvvvwvvvwvaawfvwvxvfvvaavvvvvvaavvvvaawvwaavvvvvvvvaaaavvaaaavvaavvvvvvaavvvvwvvvvvvvwvvwaavvaaaavmwvvaavvvvvwvvaaaavvaaaatwaavvvvwvaavvwwvvvewvvvvvvoaavvaaaavvvvovvvvvfaavovvvtvvvvaavvaavvaaaavvlwaawvvvaawvlvvtvvvvbwvvvvavvvvvvwvaavoovbvvvvvaavvaawvaaaavvtwaavmvvaavvmvvvvvvvvbvvovagggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   },
   {
     "planet": 4,
     "coreDepth": 250,
-    "cols": 13,
+    "cols": 61,
     "rowsFrom": -1,
     "rowsTo": 251,
     "counts": {
-      "(empty)": 252,
-      "dirt": 217,
-      "seam": 426,
-      "copper": 60,
-      "iron": 58,
-      "stone": 680,
-      "cache": 17,
-      "silver": 36,
-      "gas": 38,
-      "geode": 89,
-      "gold": 32,
-      "granite": 577,
-      "amethyst": 23,
+      "(empty)": 1232,
+      "dirt": 1086,
+      "seam": 1948,
+      "copper": 237,
+      "iron": 241,
+      "stone": 3214,
+      "cache": 85,
+      "silver": 159,
+      "gas": 174,
+      "geode": 379,
+      "gold": 113,
+      "amethyst": 116,
+      "granite": 2769,
       "schematic": 4,
-      "emerald": 10,
-      "scoria": 733,
-      "ruby": 5,
+      "emerald": 70,
+      "scoria": 3430,
+      "ruby": 34,
       "part": 1,
-      "magmite": 4,
+      "magmite": 18,
       "relic": 1,
-      "core": 13,
-      "bedrock": 13
+      "core": 61,
+      "bedrock": 61
     },
     "defs": {
       "dirt:7031594": {
@@ -1323,27 +1323,6 @@
         "value": 660,
         "ore": true
       },
-      "seam:7564653": {
-        "id": "seam",
-        "name": "Mineral Seam",
-        "glow": 0.07,
-        "color": 7564653,
-        "hard": 12.72,
-        "wt": 2,
-        "value": 26,
-        "ore": false,
-        "seam": true
-      },
-      "granite:6183526": {
-        "id": "granite",
-        "name": "Granite",
-        "color": 6183526,
-        "glow": 0.02,
-        "hard": 12.72,
-        "wt": 0.25,
-        "value": 1.6,
-        "ore": false
-      },
       "amethyst:10510591": {
         "id": "amethyst",
         "name": "Amethyst",
@@ -1356,6 +1335,27 @@
         "wt": 7,
         "value": 1400,
         "ore": true
+      },
+      "granite:6183526": {
+        "id": "granite",
+        "name": "Granite",
+        "color": 6183526,
+        "glow": 0.02,
+        "hard": 12.72,
+        "wt": 0.25,
+        "value": 1.6,
+        "ore": false
+      },
+      "seam:7564653": {
+        "id": "seam",
+        "name": "Mineral Seam",
+        "glow": 0.07,
+        "color": 7564653,
+        "hard": 12.72,
+        "wt": 2,
+        "value": 26,
+        "ore": false,
+        "seam": true
       },
       "schematic:65345": {
         "id": "schematic",
@@ -1483,38 +1483,38 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiwiiiiiiiwiiiiiiwiwiiwiwiwwiiwiwiiwiiiiiiiiiwiiiiwiiiiififiwiffiiiiwiiifiwiiiiiiiiiiiiwiiwiiiiifiiiiiiiiifiwifiwiiiiifiiiwiiwiwiiffiifiiiiiiiiiffiiiiwiwiiiiiiiiwfiiiiiiiwwffiiiwwiiwiiiiwwiifiwiiwwiwiiiiiiwiwiiwfiiiiiiiiiiiiioiiiwiiiiiwiiiioiioiwwiiiiiwiwioioiiiioiiwioizwoziiziwiwiizizzzizizwwiizzzowiziwiiziwzzzzzzizwizwwzzzzzziezwzizzzzzzzoozowzozezzzzzzwwzzzzzzzzzzzzzzzzwzzzwzzzzzzwzzzzzzzaazwzzzzzzwzzaazwzzwzzxzaazxzwwzzzzzzaazzfzzzwzzzzzzzzxzzzzzxzzzzzwzzzfzzzzkzzwwzkzzzzwwzzzwzzzzzxzwzzzzzzzwxwzxzzxwzzwzzwozzzzwzzzzaazzwzafzwzzzaawzzxaaazxzzwzzzzzfaazfwwxzzzzxzaawzzzzzwzzzzaazzzzzzzzzzzwzzzzzkfwwzzzzzzzwzzzzkzzzwzzzzzzzaawzzzzzzwxzzaazzzzzzzzozzwzzzwzzzzzzzwwzezzzllfzzzzzxwzawzzzzwzzzozwazzzwwzezwzkwzzzzzzwzzzzfzzxzzwzzzwzwzzzzzzzzwzzzlzzzzzzzzzzzaazzwzwzfzzkzaazzxzzzzzlzfzzzzwzzzwzzewzzzzzwzzwlzzzzwzzzzwzwwkokzzwzzwzzzzzzzzzzkwmzwzzmwzzzzzzozozzzzzzzwlzzzzzzlzzzwmzzmzzzzzzzolkzzwzzzzwwzwzzwzkzzzzzmzllzzzozzezzzzzzzzwwzzlzzzzzomwzzzzzzmwzllzlzowzzxzzzzwzlzzzzzzlzzmzzzzwzzzwzwwzzzzazzzzzzfzzzzzazmzlzwzzzwwzzzzzzzzzmzzwwzzzwzzzzzzzozazzzkzzzzwzzzazzzzzmzzzzzwzzkzzwwwzzzzzzzzwzzzzlmzzzzwwzzzzzwzlwzwzzzzxzwzwzlzzzzzzzezzzzzzzzzzzzzzfzzwzazzzwzwwwzzozalzwmzzzzaazzzzzozwzzzaamwzzzzwzzlzozlwzzzwzzzzzzzzwozzwzewzzzzzzzflzwezzzzzzzzlezzlwzzzzzzzoklnnnzlnnlnfznnlwnnzaannwznnnnnnoaanwknwonnwaannnnbnnfnonaannmwwnnnnnnnnnlnnnnwnnnknnnnnnnkwnnnnaabnnnnwonmnwaaxnnnnnnnnnbnnnnbnnnbnnnnbnbnklnwfnnnnlnwwnlannnnnnnnnnnnannnnaanlnnwnnnnnnaannnnwwnbnnnwnwnnnnnwnnnnnnnnnbnwnnnwnnnaafnnnnnnwnnnaawnnuwnbnlwnnwaannnnnnwnnwwaannnfnnennnxaannnnnnnnnnnaawnnnnnlnwnnnnaawnnwnnnnwnnaanwonwmnnwwnnbnnnbnnbmnnnnnnnbwnnnnnnnwnnlnfnnnnnknwnnlwnwnnnnennnnnnnnllnwnnnwnknnnnnnnnnnnnwnnnnnnwnlnnnnnnnnnwnnnnfnwwnnnnnnnnnnnnnaajnaannwnnnwaawnaafnnnnnnnonnnnnmwnnnnnwnwnnnnnnnnnnlnnnnnwnwawnnwnnnnwwnwaaawnnnnnnnnnbaannoonnnnnwnaanwnnwnnnnnaaawnnnnwnwknaaanwnnnnaannbaannonnnaannnnnnnnnnnelnnnnknlnwmnnnnnnnnmnnnwknmwnwjwnnnjnnnnwnnnnnnwnaalwennnnnnnfaannnnnwnaannnnnnnnnnnaannnnnnnnnwnnnnnwnnnnnnnnnnnwjlfnnnnwwnjwnnwaannnnnnnnnwnaannnnnwnbfnknwnwwnnnnnwnnwnlnwwnnfnnaalnnnnnnfnnnuannnnnnfnnnnwnwnaannnwnnmnnnbaanwnwnnnaanwknnvnwnnnaavvnvnlwvvvnaavwvvvvvvvvoaavvvwvvvvxlnvovvwvvvwvvvmvvvkvvvvlvvwvvvvwvvtwvovvvlvvwwwvvvvwvwvvvvvkvvvvvvvvvvwvvwvvvvvwwwvfvvvwvvvvfvlxkvvvwvvvwjwwvvjwvvvvvvlwwwvvvvvvvvvlvvvvwwvvkvvvwvvlvvvvvvbvvvwvwvvvvvvvxvxwlvvvvwvxvvlmvvvvvvvvvvvwvmvklmvvaavvwlvmvlvvaaavvvwvfvwvfaaaaavvvvvoaavaaaavvowvvaavvvvvvvfvaavvvvvwwwvvvaawvvvwvvaavovvmxvvevvaawvvxvvwvvaamvvwttlvvvvaawvvwvvtovvvvvvfvvaawvlovvvvvvvaavvwvvvvvvvvvvevvvvltvwvvmovvvvvvvvxvvvvvwvvvwqvbvvbvvvllwvvvwvvaaaavwvkvwvvvaaaavvvvvvvvwaavxvvvvvvvvvaavvvwvjvvvwvvvwvvvvvvwwvvllvvvvvvvvvwvvvvvawvvvvwvvvvvbaxvaaaawvvvvvvvwaaaavwlvxvvfoaavwvwvvaawvvaavvvvjvaavkvvlwlvwvvaawvvvvvvvlwvaavvvvvlwvvvvvwaxfvvxvvlvwvvaaalvvvvfaavwvaavvvvvvaawvvvvvvvwvvvxwwvvvvvvwvvvvwwvwvevvvvvvvvvwkvvfvwoowvwlbwvvvvvvvvvwwfvvvvvvwvvvvvpvvaavwvvvvvvwlvaavwvwkvkvvovwvvvvvvvwvvfvfvvwvwvvvvvwwvvvvvvvjvwvvvvvvvvvvolvvvvvvvvvvvkvvwwvwvvvwvvvvvvvvvwwvvvwvvwvvpvvvvvvvvvvvaavvvvmovvvvvaavvwvvvvvvvvowaavvvvvvvvvvvaakvvvvvvvwfvovvvkvvvvvvvvvvlvvvvvlvvwlvwaavvvvvlwvvvvaavvvvvvvvovwvuvvvouvavvvvwvrvvlvxawvwvvvvvowvvvvvvwvvvvwwvvvwvvplvaavvvvvwvvvvvaavlvvxlvvvvvvvvpwvvvvwvvvvvvvvvwaaaavvvvvwvvlaaaavvvvlvvwvgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaiiwiiiiiiiwiiiiiwiiiiiiiiiiiiiiiiiwiiiiiiiiiiiiwiiiwiiiwiiiiwiiiiwiwiiwiwiiiiiiiiiiiiiiiiiiwiiiiiiiiiiiiwiwiwiiiiiiiiwiiiiwwiiwiwiiwiiiwiiiiiiiiwiwiiwiiiwiiwiiiwwiiiiiiiiwiiiiiiiiiwwwiiiiiiwiiiiwiiiiiiiiwiiwiifiiiiiiwifiiwiiiiiiifwwiiiiiiiiiiiiiiiififiwiffifiwiiwiiifiwiiiwiwwiiiiwiiiiiiiiwwiiwiiiiiiiiwiwiiiwiiifiwiiiwfifiiiiiiiiiiiffwiiiiiwiiwiiiiiiiiiiiiiifiiiifiiiiiiiiiiwiiwiiiiwiiiwiiiwiiwiiiiiiiiwfwfiiiiiiiiwiiwiiiiiiiiiiiiifiiiiiiiifiiiiwiiiiiiiiifiiiiiiwiwiiiiiiiiifwwifiwiiiiiwiifiwifiwiiiiifiifiiiiwifiiiwfiiiiiiiwiiiiiiifiwwiiwiiifiifiiifiiiwiiwiwiififiiiiiiiiiwiifiiwwiiwiiiiiiiiiwfiiiiiiwiiiiiiiffiifiiiiiiiiiiiiiiwiwiiiiifiiiiiiiiiiiiiiiiiwiiiwiiiiiiiiiiiiffiiiiwiwiiiiiwiiwiiiiifiifiiiiiwiiiiiiiiiiiifiiwifiwfwiifiwiiiiiwfiiiiiiifiiiiiiiiiififffiiwwifiiiwiiiifiiiwiiiiiifiiiiiiwwffiiiwwiiwifwiiiwiwiiifiiiiiifiiwiiiiiiiiiiiiifiiiiiiiiiiiiiiiwwiifiwiiwifwiiwiiiiwwifiwifiifwiwiiiiiwiiiiiifwwiiiiiiwiwwiwiiiiiiwiwiifiiwwiiiiifwiiifiiiwiifiiiwfiiiifiiiiiiiwiiiiiiiwfiiiiiiiiiwoiiiwiiiiiiiiwiwiiiiiiwiwiiiiiiiiiiiiwiiiiiiwiiiiiioiiiwiiiiiiiiiioiiiiwiwiiiiiwiiiiiiiiiiiiiiiiwiiiiiiiwiiiiwiiiioiioiwwiiiiiiiwiiwiiwiiiiiioiiiiwwiiiwwiiiiwiiiwowiiiwiiiiiiwiwioioiwiiiiiiwiiwiiiiiiiiiiiiiiiiwiiiiiwiiwiiiooifiiiwiiioiiwioizwowwiiiiiiiiiziweiiiiiiiiiwiwwiiiiziiiwiiiiwiiwiiiziiziwiwiizizizwzzwiiowiwioiiiwiziiwiwiiiiiiwziiiiiiiziiizizzzzizizwwiizzzifozzziezizzizziiiiziziizzwoziiizzizfiiiziiizizzowiziwiiziwzzzzzzzziizwzzwzwziwiziziiwzziziifzwizzwiwziwzzizzzzzzizwizwwzzzzzzwwziwwzwzezzifizzzziwzzifziizzzwzoiizzwzzzzzzzzziezwzizzzzzzzzzzwozzwzzzzizizwzozzzzzzzzizzzzzzzizzzwzzzzzzzzoozowzozezzzzzwzzzzzwzozaaozzzzwwzwzzzzzzwzzzzzzzzzzezozazzzzzzwwzzzzzzwzzzzzzzzzzzzzaazzzowfzzzwzzzwwzzzwzzzzzzzzzzzazzzzzzzzzzzwzozzwzzzzzowfzzzzzzzozzzzwzozzwzzoozzzzzozzzzzwzzzzwzzzzzzwzzzwoowozzwwzzzozwzzoozwzozwzwzzzzzzzzwzzzwzwzzzzzwzzzzaazwzzzzzoaafxzzzzaawxaaxwaazzwzzzzzwzwzzzwzzxaaxezzzfzzzzwzzaazwzzwzzzaazzzzzwaazzaaaaaazzzzzzzzzzzfzzzzzzaazzzzzzzzzxzaazxzwwzzzzzzzzzzzwzzzzzezzwzzfzzzxzxwxzzzaazzzzzzzzzzozzzzzzaazzfzzzwzzwzzwzzwzzzzzzzzzzzzwfzzzzzxzxwzaawzzzzzzzwzzzwzzzzzzzzxzzzzzxzxzzzzzzwzzzzzwzwzzzzzzzzzzzzzzzzzwzzzozzzzaazzzzzzzzwzzzfzzzzkzzzzzzzzzzzzwzzzwzzzozwkwwzzzzzkwzxzwozxzaazezzkzzwwzkzzzzwzzzzzzzzzzzzfzzkzzzzzzwwzwzzwzzzzzzzozzzwozzzzzzwzzzwzzzzzxzwozzzzzwzzwxzzzzxzewzzxzzzwzzwzzzzwzwzwzzzzzwzzzzzzzzzzzwxwzxzzozzwzwxzzwzzzzzzzzxzxkwfkzzzzzxzzzzzwzzzzzzzwxzzxwzzwzzwozzzzzzzzzzwzwwxzwwzzzzzzzzzzzzzezzzzzzzzoxzzzzzzzzzzwzzzzaazzwzaazzzzzwzzwkzwxwzzzzzzwzzwzzzzzzzzzzwzzzwzzzzzzzzfzwzzzaawzzxaazzzwzzzzwwxzzzzkwzzozzzwwzzwzzzzzzzzzozzzzzzxzzaazxzzwzzzzzfzzfaawzwzxzzzzzzzzzzzzzzzzzwwaazzzzzzzwzzkzzzzzzaazfwwxzzzzxzzxzaaxxzzzzzzzzzzxwzfzzzzzozzaaewzzzzzzozzzwzzwxaawzzzzzwzzzzzwzzwzzaazxzzzzzzaazzzzxzzzwwzzzzzzzzaazwfzaazzzaazzzzzzzzzzzkzzzzwzaazzzzzzkzaafzzzzzzzzzzzzzzzzfaazzzwaazzwwzzzzzkfwwzzzzwzzzzzzzzowwzwwxwzwzzzzkzkzxwzaazzaazwzfzzkzzzzzzzzwzzzzkzzzzzzzzzzzzzzzzzzzzewzzzzzzwzzzzzaazfaawzzzzzzwzkzwzzzzzzzaawzzzxwzzzwzzzzzwzzzzzzzwwwzoxzwzzozzzzzzzzzzzzzzzzzzzzzwxzzaazzzfzzzwzzzzwzwzzzzwzfzzzzzzzzzzzwzzzzxzzzzzzzzzzzwzzzzzozzwzzzwzwzzzzzzozzzzzzzzzzzzaazzxzzzzzzzzzwfzzzzzwozzzzzzzzzzzwwzezzzzzzzzzwzwzzzzzwzzzzzaazwzzwzzzwwzzzzzzzwzzzzwxzzllfzzzzzxwzaazwzlaazlzxzzaazzzzaazwzzwzxzwzzzxzzzzwlzzzzzzzzwzzzzwzzzozwaazzzzaazzzzzwaazzzzaazzzzzwzzzzzzzkzwzwzzlzzxwzzzzzwwzezwzkwzzzwzwzzzzaazzzxzwlzwlzfzzzlzzzzaafzkzzzzzwzzxeoxzzzzzwzzzzfzzzzzxxzzzzaazzzzzzzzwzxzzzzwezwwaazfzzwzkzzzzzwozxzzwzzzwzwzzzkzzzxzzzwaazzzzaawwzzwzzzzezzzzzxaazzzzezzzwzzzzzzzzzwzzzlzzzzwzzwzzzzaazzzwaalzkzzzwwzzzzzozkaazzxzzzzzzzzzzzzzzzzzzaazzwzaazzzkzkzwzzxzzwzzwzzzzzxzwzzzzzaazzzzkzfzzwzzxzwzfzzkzaazzxzaawzlwzwzzzzzzzxzlzzlzzzzzzzzlzzaazzzzzzzzzzzzzzzzzzlzfzzzzwxzzzzzzzlwzwewzzzozaazzzzzzlzzwwzaawzwowfzzzwzfzzzzwzzewzzzzzxzzzwzzzzzzzzzwzzzzaawzwxwwwzzzzzaalzzzzlwzzzwzwwzzwlzzzzwzzzzzzzwzzzzzkzzzzzlzzzwzzzzzlzwzzzwzlzzzzwzozzzzzzzwzwwkokzzwzzzzwzwzezzkzzzzzzzzzzzzzzzzzzxzzzzwzzwwzzzlzzzzzfwzzzzzzzzzzkwlzzzkzzzzzzzwzzzzzzzzlzzzzzzzzzzwzllzzzzzzzzzzzzmzwzzmwzzzzzzkzzzzowzzzwzwzzzzzzzzzwzzzzzwzzzozzwzzzzzzzzzzzzozozzzzzzzwlzwzzzzmzmzzwzzmzzozzzwzwezzzzzzzkzmmlzzzzwzzzzzzwzzzzzlzzzwmzzzlwzolzzwzzezzzzkzzzzlwwzzlmwzzzzzzzzzzzzzzzlwzzmzzzzzzzolkzzzzwaaofzwmzzzzwzzwzfzzzzwzzzzzzzzwzzzwzwlzzzzzzwwzzzzwwzwzzwzzzzaazzzzzwlzzzwlzzwzzlwzzfzwzzzzzwmzwlzzzwzzezokzzzzzmzllzzzzzzzzwwzzzzzwzzzzaamwwzzwzmzwzwzzzzmzzwzzzzzwzzzozzezzzzzzzzwzwfzzzzzzwzzzzzzzaazzwwzkwzzzzzzzzzzzzwzzzzwzoolwzzlzzzzzomwzzzzzxzzzzlzwzwzzzzzzzwzzzwzmzzzzzzezzozzwmzzlkfazzzzzmwzllzlzzzwzzxzzzzzzwwzzzzzzzzzzzzzzzzzzzzzzzlwwzmzozzzaowzzxzzzzwzlzwwzzzzzzwzzzzzmzlzzaaaazzlxezzzzzzwlzwzzzaazzzzwzzzzzlzzmzzzzzzzzwzzzzzzzzzwzzowaaaazkzzzzfzzmzzwwzzlzaazwzzzwzzzwzwwzzzzaazwzzzzzzwzaazzwzzzzzwzzwzzzzzzzwzzzzzzzlzzzzzwwzzzzzzfzzzzzaazzzzzzllzzaawzzwzzwzzwzmzzzzzzzzwmzzzzwzzzwzzlzzmzlzwzzzwwzzwaalzzzzzzzzzzzzwzzzzzzzzzzmozzzwwwwokzzzzzzzzzwzzzzzzzmzzwwzzaazwzlwzzzzzwzzzzwwflwzozzzwzzzzzozzzzzzzzzzzzxzzwzzzzzzzozaawzaaaazzozzlzzzzzzozzwzzzwzzzzzzzzwzzzzmzozzzzwzzzkzzzzwzzzaazmaaaazzzozzzzzozzzzzzzzwzzzzzzlzwwzlzlzzzzzzzzzzzzzmzzzzzwzezzzzwzwzzzzwaaaazzzzlzzzwzzwwlzwaazzzzzzzwzzzzzzkzzwwwzzzzzzwzzzwzfzzmwozaaaazoezmzzwzzzzzzzwaazzzzzzwzzzzzzzzwzzzzlmzzzzkzzzmzzwzzzzzwzzwzzwxzfzzzzaawzzzzwzzwzzzzzozzwowwzzzzzwzlwzwzzzzzzwzwzwzzzlzmzzzzfzzwwwaazmwzzzzlzzzzzzzwzzzzzzzxzwzwzlzzzwzlmzzzzzzzkzzwwzzaazlzzwzaaaazzlzzzzzaamzzwzzzzzzzzezzzzzzzzzwzzzzzwzzzzzzmzwzaazzzzzzaaaawzzzwzfzaakzzzzzzzzzzzzzfzzwzaazzaazzaawzzzzzzzzzzzzwzzwzwzzzzzzxaazzwwzzzzzmlzzzwzwwwzzozaazzaazzaazzwzzzzzkzzzzzmzlzzzwzzzzwaalwmzzfzzzzzlzwmzzzzaazzzkwlzzwzzzwzzwzzzzzzzzwzzzzwzzzzmzzzzzwwzzwzaazwzzzozwzzzaamwzzzzzzwwozmzzzlzzzwzzwzzzzwzzfzzzzzzwzzzzwzzaazlxzzzwzzlzozlwzlzzzzzzaazzwzzzzzzzaazzwmzzzzzzfzwwzzzzzzzowzzzzzzwzzzzzzzzwozzzzzzzaazzkmzzzzwwaazzzzzmzzzzzzzlzzzzzwwzwzzwzzzwzewzzzzzzzzlzozzzzwaazzzzzwzzwwzzlzzzzzzkzzzzzzzzwlzzzzwzzflzwezzzzzzzzzzwbwzbzzaazwzzbnzwzkzzzzfzzzzwnwkwlzzzzzzlzzzlwlezzlwzzzzzzzzzzzzzblzznzlznzbzzaanznlznwnzznzzwzzzwzxnwznnznoklnnnzlnnlnfkzznzzzznnnzznnnlzzaanwbzznznzwwxwzznwnzlnwznnznznnlwnnzaannwnzznzzzzbnnzoknaaaawnnwnzwnzwzznnznznnnlznzaaezwznnnnnnoaanwknlznknnznnwnwwnaaaannnlwnznwnlznnkkznnnnbnzaanwnnwonnwaannnnbnnnnnnnnwnnnzwnnwnknwnnaannznnnaannlnnnnwnzwnnnannfnonaannmwwnnnnnwlbnwnnwnnnnknwnnnaawnnxnwaawnnnnnnwonnnlnannnnnnnnnlnnnnnnnnnbnnnwnnnonwnnnnnnnnnmnnnnnwnnnnnnaannnwnfnnwnnnknnnnnnnwnnnbnnnnnnnnnnnnbnwnnnnnnnennwnknnnnnnaawnnnwnnkwnnnnaabnnnnnnnwwbnnnnnnwaannmwnnnwnnnnnnbnnlnnnnaannnnnnnnnwonmnwaaxnnnnnnbkwknnnnnnnaannnnnnnnnnwnwnnwnwbwwnaanwnlnnnnwnnnnnbnnnnbnnnnnwnnnnnwnnnwnonaannnnnnbnnnnnnnnnnnnnnnnwnbnnnnbnnnnbnbnklnnnnnnnnnnnnnnnnnnaawnnnwnnnnnnfwnnnxnnnnnnnwnnnnwfnnnnlnwwnlaannwnnnwmnnnlnnnnnllnnbnnnnnnnennnnnnnnnnwbwnnnnnnnnnnnnnnnnaalnonnnnnnnmnwnfnnnwnnnnnnbnnwnnnnbnnnnnnnnnnnnnnnnnaanlnnwnnnwbnnwwwnnnnnnnnnnnwnaannnnnnnnnonnaannnwlbnnaannnnnaannnnwwnnnnnnnkwnnnwnbwnnbnnnaannwbnnnnnnnbaannnnnnkxaanbnnnwnwnnnnnwwnnwnnnnnnbnnnnnnnnlnnnnnnlaanenwnnnnaaonnnnnnnnnnnnnnnnnbnwnwnnwonbnnnneknnkwnnknnnnnnnaannwxnnnnaannxlnnnnnnnwnnnaafnnnnnnnnnknaabnaannwnwnnnlnnnnfnnnfnlwnnnnbwwwwnnbnwnnwnnnaawnnnwnnnnlnnaannaaknnnbmwnnkknwwwnnnennwwwnwnwnenuenwnbnlwnnwaannnwnnnnwnnnnonwennnnbnnwnnnnnwnwnnnnnwnnnnnlnnennnnnnwnnwwaannnwnnbwownnnnnnnnnnwnnlnnwnkwnnbnwnnnnwnxnlnfnnnwnfnnennnxaannnnnfwnlnnnnnwnnnnnnbnnnnnnnnnnnnnnnbnnnnwnnnnwnnnnnnnnnnnaawnnbnnnmwwwnnnnnbwelnwwnnnnnnnnwnwnnnnnnnnnnnnwnwwnnnnlnwnnnnaawnwnnnxnnnnonnnbnennnnaaaannnnnnaanlnnnnlwxfwwblnnnwnnnnwnnaannnnnnnlnnlknnfbwnnknnaaaannnnknaannnnnnwwnnnnnnnwonwmnnwwnnbnwnnkwnnwnnnnnnnnnwnwwbnnnnwnnwnnnnnnnnnnnnnnnnnnnnbnnbmnnnnnnnnnnnnnnnnnnlnnwbbnnnnnnnnnnnwnnlnnnbnnnwnnnfnnnnbwnnnnnnnwnnnaannnnnnwnnnnnnnnnnlffnnnbbfnnaaaannnnwwmnxnnnnlnfnnnnnknwnnnaannnnonwwnnwnnnnonnnnnnfnnnnoaaaannwnnnwennnwwlwnwnnnnennnnnwnnnnknnnwnnnnnnnnaaaanbnnaannnnnnnnnnnnaanwnnnnnnnllnwnnnwnnnnwbnbwnnbnwnbnnnnaaaalnnwaanwnnnnnnnnnwaannnwnknnnnnnnnnnnnnnnkknnnnnnwnnonnnnnnwnnnnwnxnnwnnlnnnnnnnnwmnnawnnnnnnwnlnnnnnnwnnnwnnnnnnnnnnwfnnnnwnknwnwwnnwnnnnnonnlnwnannnnnnwnnnnfnnlnwnnwaabnnnnnnnnnnnnnnnnfnnnnnnnnwnnnnwnnnnnnjwwnnnnnnnnnnnnnnnnwnaannnnnnnnnnmlnnnnnnnnnnwnlnwwkwnnnwwnnnnnnaajnaannwnnnnnnnnnnwnnnonxjnnnnnnwonwnmnnnknnwfjjnnnnnwnnnnnwaawnaafnnnnnnnnnnnnnnlwwnnnwnwnnnwnnnnnnonwnxwnnnnnnnnnnnlwnnnonnnnnmwnnnnnnnnnnwnennnnnnnjbnnnnnaannnnwnnnnnnnnnnwnnlnlnnnwnwnnnnnnnnknonwbnnnnnwnnnnnllnnnnnaanwnnnnlwnnnnnnnnnnnnnnnnlnnnnnwnwaannnnnoaannnnnnnnnnnnnnnnaawnnonfnnaannnonnnnlnnwnnwnnnnwwnwaanlnnnnaannnnbnnnknnnwwnnaannonlnwnaannnnnnnnwnnaawnnnnnnnnnbjlmaannwnwnnnlnwnaawwwnnnnnnnnnwwnnnownwnonnnnnnaannoonnnnnwnnonaannnlmlnnjonjaannjnnnwnwwnnnnnwnwwenwnnwnnwnaanwnnwnnnnnaannnnnnnnnwjnnnnwxnwnnjnnnnnwnnfnnwxnwnwnnbnnnnnaawnnnnwnwknaanwnnnwnwnnnwnnwnnnnnwnnwnnnnnnnnnnnnwfnnnnbnnwnaanwnnnnaannbwnnwennnnwnnwwnnnnnnnnnnnnnnnwnaanwnnaanwnnknnnaaannonnnaannnnnnnnnnwnnnwnwnwnlnlnnnnnlnwnnwaannwnaannnnnwnwannnnnnnnelnnnwnnwnnfnnknknwnnwwnaannlnnwnnnnnnnnkwwonnnnnwnnjnknlnwmnnnnnnwnnjownnwnnnlwnnwnnaanewwwnnnnfnwllnnwnnnnnnnlwnnnmnnnwknmwnwnaannnnlwnnwnaaaajnnlnfjwnnlnwnnnnnnnnnnnwjaafnajwnnnjnnnnwnnnaannnwnnwnnnaaaannnjjnnnnwnnnwnnmwwnnnnnnnaannannnnwnaalwennnnnnnwnnnnnnnnnnnnnwnwnnnaalnaaaannnnnnnnnnwnwnnnnnnnfaannnnnnlnnwnnnmnnlnnnnnnnwnnnenaawjaaaanwnnnnwnnnnnnnnwnaannnnnnnnnwwnnnknnjaaaannmknjwlwnwnnlnnaawjwwnnknwwnnnxnnnnnaannnnnnnnnnnblnnnnnaaaannnnnwnnnmnwnknnaawnnfnnnnnnmnnwnwwwnnnnnwnnnnnnnonwnnnnnjnnnnnnlxnaaknaawnnnnxfnnwnnnnnnnnnnwnannnnnwjlfnnnnwwwnnwlnnnwnnwnnnnnaannaannnnkwnnnnlnnnnnnnwnwwawwnjwnnwaannnnaannnnnnlnaannwnwnwnnnnnnnnnaanwnwjennnnnnnnnnnnnnnnnwnaannnnaanlwnnnnwaannnnnnlnnnnonnnnaannnwnwnnnwnnnnjnnnnwnbfnknwnwwnwnnwlnnbaannnwonnjnnaanlnnnjnlnmwnbnnnnwnwnlwwnnnnnnwnnwnlnwnnnnwnnnwaalnnnnjwnnwaannnwnnwnwnonnnknnwlnnnnnnwnnfnnaalnnnnlwnnnnnnwwoaannnnnfnnnnaannnlonnnwlnnnnnwwoennnnnnfnnnaannnnnnjnnlwnnknnaawnnnnnnouwaanwnlnknnnnnnnnonlnnnnwnnfnnnnwnwnaannnnnnnnxnnnnownnnnnaablnfnnnnaannnnmnwnwwnnwnnwnnnwnnmnnnbaannnnnnwfnnnnnwnonwnlaannnnnnnnaannnnwknnwlnnnnlnnwnwnnnaanwknnnnnnnnkevaannwjnjnnvkxwnnnxnnvnwonnwnnnnnnvfwnwnvnwnnnaavvnvnnnnvnwwnvaawnvnwnnnvennnnkvnnwnnnwwnnnnnjnvnnnnwlwvvvnaavwvvvwnnvnaanvvnnnvwnnlnmvnnwnnvvvvvaakvwwaaaavwjvwnwvvvvvoaavvvwvnlnvnaaovvvwnvvnnnnvxnnwnnvvvvvaanvvwaaaavvewvnlvvvxlnvovvwvvvaawnvnnvvvnnvkwvvnvwvnnnvvvfvwnvnvvnaawvvvwvvvwvwvvvmvvvkvvvvaavvwjnwvvnwvvnvfvvvvwmvlvwvwwvwvvvnaavvvvvvvvwvlvvwvvvvwvvtvvwvvvwvvvvvvvwvvvvvwvvvvvvvvvvvvvvvvvvwvvmvvkfvwvovvvlvvwwwvvwlvvvwvvvvwvvvvvfjvvvwvvlvvwvvvvvvwvwvvvvvvvwvvvvvwvwvvvvvkvvwvvvvvvvvvvwvtvwvvvwvvwwvvvvvvvvwvaavvvvvvvvwwvvvvvvvvvvwvvwvlvvvvwvvvovklvvvvvvwvvvvvkvvvvovtvaavvvvvvokvvvvvvvvwwwvfvvvvkvvvvvvfaavvvwvvaavvvwvvvlaavvaavlaavvkvvvaavvwwvvvvfvlxkvvvvvvvvvwvoaavvvvvvaavwvwlvvwaavvaavvaavvvovvaavlvwvvvwjwwvvjwvvwtvvvvaavlvlaavvvvvvvvvjvvwvaalwvxwvwvvvjmvvwvvvvvvvlwwwvvvvvvvwvvvaavvvvaawfvvvvvvwvvvvvaavvvlvvwlvtvlvvvvvvvvvvlvvvvwwvvwvvfwvwwvvtmvevlvvvvwwvvfvvbvvvvevvvvvvvvvaavwwvkvvvwvvlvvvvvvvvwvlvwvvvvvvvvvvwvvvwvvvvvvlvvvvvvvvwvvvaawvvvvbvvvwvwvvvvvvvvvwvvvvvvvaavvwvaavvaavvwvvvvvvvaavvvvwvvvvwwvvvxvxwlvvvvwvvvvvvvvvvvvwaavvvvaavvaavvvvovvtvjaafvwvvvlvvvwvxvvlmvvvvvvvwxvvmwovfvvwvvvvvvvfvvwwvaavvvvwvwwaavvwvvvlvvvvvvvvwvmvklmvvvvvvvwovovvvvvvvwvwvvvwvvaavvvvvvovaavvvvvvvvvvvaavvwlvmvlvvaavvwvvvwvmvwwvlvvvvvowkvvvxvwvvwvvvvvvvwwwkvwwxvaavvvwvfvwvfaavwvvvwvvvvvvfvvlxvvvvvvwvvvvvtvvvevevwvvvvvwlovaaaavvvvvoaavvvvvvvvbwvvevwvvvvvwwvtwvaalvwvvvwwvtvwwvvwvbvvvaaaavvowvvaavxvvvvvvwwwvvvwwvvvlvvvvvvaavvvvvvvwvvvvlvvvvvvowvvvvvvfvaavvvllllvvvaavtvlvvvvvwvvvvvlvlvkvvvlvvvvaatbwvwvvvvvvwwwvvvaawvvvvvvlvwaavvvvovwvvwvvvwbvwvjvvvxlvvwvaavvvvlwvovvwvvaavovvmxvvvmaavvvvvvaawvvvvvwvvkvvvvvvvvvvvvvlvvvvvmvvvvvvevvaawvvxvvwwvvaavvvvvwaavvvvwfvvwvvvlvwvvvvvvvvvvvvovvvvvvvvvaamvvwttlvvvaavvvvvvwvaavvvwvfvvvvlvvvvvaavwlklvvvvvxvvvlvevvaawvvwvvtovwaavwvvwvwvaavwvvvvvvwvlwvvvfaavvvvvvwwmmtvvwvvvvvvvvfvvaawvlvwvvvvvvvvwfwvvlvvvwwvvvtaaaavvvwvvvvvwvwvvwvvvwovvvvvvvaavvwwvvvlvvvvovkvlvvvvvolktvvaaaavwwvjvvvevvvvvvmwvvvvvvvvvvvvevvxvkvvvvvvvwwvowvvvvvvvjvwvvwvvvkvvwvmvvvwvwvvvwfvvltvwvvmovvvvvvvvwwwvvvbvvvvvvwwlvvvvvvmvvvwvvwwowvlvbvwvwvvvvvvvxvvvvvwvvaawvvwvwvvvvvvvvaavtvevlaakvvwtvwvvvvvvvaaaavvwvvwvvbvvbvvvlvaalvvwvvvvqvvvkvaavwkvvvaavvwwkvjvjvlwvvaaaavvvlwvvvwvvaaaavwvvvlaavwvvvvvvvvvvvvvvvvwvvvaavvvvvvaavvvvvvvvvwvkvwvvvaaaavvwvbvaavvxvvxwevvvwvvvvvvwwffaawvkvvvaawvvvvvwvvvvvvvvvwaavxvwvwvvvkovvwaawvvwvvvvvvvvtvvwwvvvvvvwvvwvaavvwtvvvvvvvvvaavvvvvvlvvvvvwvaalvvvvvvvvwwvvvvlvvvlvvvvvvvvaavvvvvwvjvvvwvvvwvvvvvvwvlvbvjvvvxvvvwvvvvvwvvvvvvvwvvvvvwvvwvvvvvvvvvvwwvvllvvvvvvwvvvvwvlvvvvvwvvwvvvvvjkxwvwvwvvvvvvvwvwvvvtvvvvvvvwvvvvvaavvvvlvvvvvvvvvvfvvvvfvxvaavvvxvvaavvwvvtaavvwvvwvvvvwvvvvvbaavwwvvvfvvvvwvvvwvvvvvvvwaavvvwvlaavvvjvvaavvvvvxvaaaawvvvvvvvaavvfvvvjvvvvvwvvvaavvevvfvovvvvwvaavlvwvvvvaalvwaaaavwlvxvvkaabvvvvvvvvvkvveowaavvvbvvvvwvvvlvaavvxfvvveaaofoaavwvwvvaawvvwvvvvvwvbaavvvvvvvlvvkovwvvvvvbaavvaawvvvvvaavvvaavvvvjvaavkwwvvwvvvvvaavvwwtokvvvvkwlvvvvvwaavvaavwvvvwaawkvvlwlvwvvaawvaavvvwvvvwvvvvwvfxwvvevvvvvvvvvlvowvvvvmvvvvvvvvvvvvvvlwvaaveaavvwvovvvvvvvwevvvvwvvvwvvvvvvvvvvvpvvwwvvvwvvvvvvlwvvvvvwaavvvwfvwvvbwvaavwvoaavvwvvvvvwvvvxvaaovvvvvvwvwlxfvvxvvlvwvvaavvvvvvkvvvwvaavvvvaavwvvvvvvvwvvvvaavvvvvvvvvvvaalvvvvfaavwvvvvaavvvvvvxvvvvwvvvvvvlwvvvvvlvekvvoaavvvvvvvvpaavvvvvvaawvvlvvaavvvvvwvvvvtvvvwvvwvvjvvvvvwvvvvvaawvvvvvvvwvvvvvwvvvxwwvvvwvvvvbvvvvwvwjvaavvvvvvvvvvvvkvxlaavwaavvvvvvvvvvvvwvvvvwwvvvvwfvvwwvbvvvvlvaavvvvvvvvvvwvvovwaavvaavvvvvvvwvevvvvvvvvvwvvvvomfvvaavvvlvvwvvvvvvvaavwvvvvvvvvvvvvvpvvvvvkvvfvwoowvwlbvvvovvvvvaavvvvvvvvbvvvvwaavwjvvvvvwpvvvvvwvfvvvwvvvvvvvvvwwfvmxaaaaaavvaavvwvvvlvaavvvvvwvvaavvwlfwxovwaavjvvvvvvvwvvvvvppvxaaaaaavvaavvvvvvvwaawlxwwvvvaavvvwvvwwvwaawvvvvaavwvvvvvvwvaavvvvvvlwvvvvvvvvvbvvvvvvwvwvvvvvaavwvvobvvvvvlvaavwvwkvkvvwaavvvvvvvvvwvvvvvvvvvwbwvvvwovvvwvaaovvlvvkvvvlovwvvvvvvvwvvvvvvvvvaavvfvvwwvwwaavvvvvtvfvvaavvjvwwvvvvvvovafvfvvwvwvvvvvlvvvvvvaavvvvwtvvvvaavllvvvvvvvaavvvwvvwvvwvvwvawwvvvvvvvjvwvvvwvwaavvaavvvwvvaavvvvwvvvvtwvwvvvpfvvvvwfaaaawvvvvvvvvvolvvvvowvaalmaawljwvvaavvvvvvvlvwwvvvvvvvbvvwvvaaaalvvvvvvvvvkvvwvwvvvvvvvvvwvvvvwvovvwvvvovvwvwwwvxvwwvvvaavvaavwvwvvvwvvvvvvvvvvvlwvvwokvvvvevvvovpvvvkvvvvvvvvvvvvvvaavoaapvvvwwvvvwvvwvvvvwvvvvvwvaavvwvaavwvvjvvvvvvvvwvwvvvvlvaavvmvavpvvvvvvvvvvvvvvwvwvvvvvaavvwvaawxvvkvvvvvwvwlvvwvvbvvaalvkvaaavvvvmovvvvvvvvvvvvvvvvwvvoaavwvvvwlvvvvvvvvvvvvvvvvvvvvwvvvaavvwvvvvvvvvvvvvvvvvvvvvvvvaavvvvvvvvvvvkvvvvvwmlvvwwvvevvvvowaavvvvvvvvvvvvaavxwvvwvvvlaavxwvvwvvvvwvjvvvvvvvvkvwaaaavvvvvaakvvvvvvvwvvvaapvxvbvvvvvaavvvvwvvvvvlvvvvvvvvvwvvvaaaavwwfvovvvkvvvvvvvaaaavvvwvvvvvwwvfvwvaavwvwvvaaovvvvvwvvvbvvvwwavvvvlvvvvvlvvvaaaavvwvvvvtwvvjlvvwaamvvwvwaavlvvwwvvvvvkpvvwawlvwaavvvvvlwvvvvvwwevvvaavvvvaavvvvvvwvvjvvvvlvvvvvvvvvvvvvvvvvvaavvvvvvvvlvvfvvwvvvaaovvvaavwvvwvvvvvvevwvvvpvvvvwvvvvovvovwvvvvvovvualvvvvvwvvvvlvvvvbvvvwuvvfvvwvwvvvvvvwvvvfbvkvvavvvvwvvvvlvxaavvvvvvvvvvvwwvwvvvvrvvwvvvvvvvvevvwkvvwvwvvvvvawvwvvvvvowvvvxwfvvaavvlvvvvvvvfvwvaavvvvvvvvvvaavvvwvvwwmlmwvvvvwvvvvwwvvvvvvvvaavvvvvvvvvwvvlwaalvvvvvvvvvaalvwvvvvwvvvvwwvvplvaavvvvvvaavvtvwvtvaaaavovvaaaavvwlvvaavpvvvvvotvvvvvovwwvvvvvaavlvvxwaajvvvwvlvaaaawvvvaaaavvmvvvaaowvwvwvvvvpvvvvvllvvvvvvvvpwvvvvwvvvvvvvvxvvvvvlvvwvvvpokwvvwvvvvvlvvvvwvvvvvvvvwvvvvvvvvvwvvvmwvvvvvfwvvvvvwwvvwvvvvvvvvvwvwvwvvvvvvvlvvvwaaaavvvvvwvvlwwvvvvvvbvvvvaajovvvovvwvvlvvvvvvvvvvbvvoaavvvvvaaaavvvvlvvwvwwvvvvwlwvwvwaavwvvvvvvvvvwvvvwvwwvvvwvwvaavvjvvgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   },
   {
     "planet": 5,
     "coreDepth": 298,
-    "cols": 13,
+    "cols": 61,
     "rowsFrom": -1,
     "rowsTo": 299,
     "counts": {
-      "(empty)": 279,
-      "seam": 506,
-      "dirt": 273,
-      "copper": 44,
-      "iron": 66,
-      "stone": 834,
-      "silver": 42,
-      "gas": 93,
-      "cache": 15,
-      "geode": 29,
-      "gold": 37,
+      "(empty)": 1366,
+      "seam": 2370,
+      "dirt": 1281,
+      "copper": 262,
+      "iron": 260,
+      "cache": 85,
+      "stone": 3891,
+      "silver": 182,
+      "gas": 451,
+      "geode": 153,
+      "gold": 159,
       "schematic": 4,
-      "amethyst": 23,
-      "granite": 727,
-      "emerald": 14,
-      "ruby": 13,
-      "scoria": 881,
-      "magmite": 4,
-      "coreite": 1,
+      "amethyst": 121,
+      "granite": 3332,
+      "emerald": 91,
+      "ruby": 49,
+      "scoria": 4154,
+      "magmite": 21,
+      "coreite": 5,
       "relic": 1,
       "part": 1,
-      "core": 13,
-      "bedrock": 13
+      "core": 61,
+      "bedrock": 61
     },
     "defs": {
       "seam:8282429": {
@@ -1564,6 +1564,20 @@
         "value": 95,
         "ore": true
       },
+      "cache:16743120": {
+        "id": "cache",
+        "name": "Supply Cache",
+        "color": 16743120,
+        "host": 3813440,
+        "glow": 0.62,
+        "shards": 6,
+        "tone": 8,
+        "hard": 8.16,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "cache": true
+      },
       "stone:8419954": {
         "id": "stone",
         "name": "Stone",
@@ -1611,20 +1625,6 @@
         "value": 0,
         "ore": true,
         "hazard": true
-      },
-      "cache:16743120": {
-        "id": "cache",
-        "name": "Supply Cache",
-        "color": 16743120,
-        "host": 3813440,
-        "glow": 0.62,
-        "shards": 6,
-        "tone": 8,
-        "hard": 8.16,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "cache": true
       },
       "geode:8388576": {
         "id": "geode",
@@ -1825,6 +1825,6 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaawiwwiiiiiiiwiiiiiiwiwiiwiwiiiiiwiwiiiiiwiiiiffiiiifiiiiiiwiiiwfiwiwiiiiiiiiiiffiiwiiifiiiiiiwiiiiiiiiiiiiiiiiiiiiiiiiiiwiwifiiiiiiiiiiiififiiiiwiwiiwifwfiiiwiiiwiiwfiiiiiiwiiiiiiiiwiiiiiiwfwiiiifiiiiiiiiwiiwiiiiiiiiiiiiiiioiiiiwiiiiiiiiiiiiiiiiiwiiiiiiwwwiiiwiiifiiiiiwiiwiiiiwiiiwiiiwiwiiiiwowoiwiiiiiiiiiiiiiiwioiiiifziiiiiiwiiioiwziowiizoiiwiwziiwwzzoizizwziwzzzzzwzizzzoizozzzzzzzzzzzzwzzzzzzzozzwzwzzzzwzwzzzzzwzzzwzzzzzzxzawwzwwzzzzzzzazzzzzzzzzzzzzzwzzkzzzzzwxwkozzwwowzzwwzzwzzxzzzkzzzzzwzwwzzzzzzzzzzzkzzzzkzzzwkzaazzxzwzzxzzzaazzzwzzxzzzwaazzzzzzwzzzzaazzxzzzzzzzzwkwzwzzwzzzzzzzwzzwzzzkzkzzwzxzzezzzazzkwzzzzzezxafzzwzxzzzzzzawwzxzzwzowzzazzzzzwzzzwzzzzzzzzzzkzwzozzzzzzwzzzwwzzzzzzzwzwzzzzzzzzzzxxwzxzxzzwwxwzzzzzzzwzzzwzxzwzzzzzlzzzzzwzzzzzzzwzzzzkzwzzwazzxzzwzwzzzwafzzzkwwwzzzwzzzzzzzzwzzzxzzzwzzzzwkzzzwezzzzzzwzzzzwwmzflzzzzozzzwzzwzzzzzzzzzzzzzzzzkzzzwzzmwzkzzzzzkwozzzzzzzzaazzzzmzzzzkzaazzzzlzzzzaazzzzzzwzzzzaawzzzzzwzzzwzzwzzzwzzwzzwwzmzzzzzzzzzzlzzzzzzzzzwwmzzwwffzwzzmzzzzuwwzzzzzzzzzwzzwzzzzzzzwzzzzzzzwzzmzzxmzzwzzozzzzzzzmzwzkzzzzzzozozozzzzzzzzzzzzzzzzmwzzwwzzzzzzaazzwzkzzzwmzaazzzozkzzwezaazwzzzzzwzzzaazzzzzzzwzzzzmzzzezzmwaamzzzzzzzzmmaazzzzzzwkzzzzzzzfwzzzzozzzzzwzzmzzwzzzwzwzwzzzwzzzzzkwzzzwzwwzzzzzzzzzzzzzzzzzzkzzfwzzzzzwzzzwzzzfzzzzzzzzaazwzzxzwzzzmaakzzzkzzzzbzozkzaawbzzlzzwzozaazzzzzzwzzozzzzzzzzzzzkzwzmzmlzzzzbzzzzzzzzzzzzzzzzzzzzzzzzzmzwzzzzzzzzzzzzwzzzwwzzzzzzzaazwzzzzzzozzaazzozzzzzzwzzobzzzzkaazzwzzzzwzzzaawzzzzwzzzzzbzzwzzzwwzzzmzzwznzwnwzzzzzzzznzzwzozwzzwznnaanwzzznznnwwaaknznzbznnknnnaannaankwnwnnaawnaanwnnnnnnnnnnwnnnnwnnnknnnnfnnnnnnnnlfnnnlnwknnxnbnxnnonnnnnnnnnnfnnnnnnnnnnnwnnnnnnaannwnnnnnxnnaanwkwnnnnnwennnnnnnbnnnnwnnmnnwnnnnnknjjjnnnbnaawnnnnnnnnnnaanaawonnnnwnnnoaannnnnnnnnwnnwelnnnnxwnnnnwnnwnnnnnnnnnwnnnnnnnnnnnnnnnwnnonfnnnwwnwwnnnnwnnwnnnnnnnnwnnnnnwfmnonlwnnnwnnnnnnnnnnwwnknnonxnnnnnnnlnnwnwknnnwnnaawnnnnfnnnnnaannnnnnnnxnkwnaannwnnnwnnnnaanwwnnnkfwwwwnnnnnonbwnnnlxnnwnnnnnnnnkbnnwnnnnnnnnnmnnnnjnnxnnnnnnnnnnnnnannnnwnnnnnnnannwjnwnnmjnwwnknnnnwjnnnnnnnwnknnnnknnnnnknnnnnwnnnelnnnwnaannnnnnnnwnnaannnnnknnnwnaaownonknnwxnaannnnnnnwnnwnwnwnnankwnwnnnnnnnaaannaannnnnnfaannaanwnwwnnnknnnonnonjnanfwnnnnnnnwnannwnnnbnnnnnnnbnownnnnnwnnwnnwmfnnnunnnnnnwnwwnwnnonnnkwnnwnnwnnnnnwnnnxnnnnnnnnwnaaaannnnnnnwnaaaanennnnnnnnnnnwnnnnwnnuntnwnxnnnaawwnnmnnwnnnaawnnnnnnnwnnwnnnnnaanfnnnwnnnnnaamnwnnnnnwaaaanntnnnnnnaaaannnwnnnnkwnnnaanwnnnwwnnnnaannnnnaannknnnnnnnnaannwnnnnnnnnnnnnnwnnnnannnwnnnnwnnnannnwntnwnwaanwnnnnnnnwnaanknnnnnnnnnnnwnnnwnnnnnnnnnnnknnnnonnnnnnvvnnnnnwnbvnovwwonnwaanvnnvvvnjwnaalvnvvvwnwvnvwaavvvwvvvwvvvaavvvwomtwvvvvvvvvvvwvvwwvvkvvvlfvvvwvvvvvvvkowvvvvvwvvvbvvwovtwvvvvjvvvvvvvvvxvvkoaavvovvvaavwvaavlvvvvaavvvaavvvvvvwvvvvaakvwvvovvvvxvvvwvvfvvwvjvvvvvvvvvvvxwvwvaavwwuvwwvvvvaakvkvvvvvwvvwvvvvvvvvwvvkpvvvvvvwwaavvvvvwwwwvvaawpvvvwvvvvvvvvvvvaavvvvovvvvvvaavvwvvvvvvwwwvbvvvbvvvvvwvvvvmvvvvvvwvvvkxvvvvvvwvvvvvvvvvvvvkvwvtvvvvvvlvvvvvvvvvmkvvvwovvvvvlvvvxvvwvvvvvvvvvvovvvwvvtvvvwvvvvvwvvvevvwvvvvvkvvvvvavvvfvwlvvvvlavwvvaavwvvkwvvwvwaavvkvvvvvvvvwvovaawvvvvvvvvvvaawvvwovbvvvvvjvwvvvxtvvvvvvvwvvwaavvvwwvvwvvvaavlkvvvvwvvwvvvlvvvwvvvvvvvvvvvvvvvvevaaaaaavwvvvvvaaaaaavvvjvvvvvvwvvvpvvvvvvwwvkfvvvvvkvvvvvvvvvwflvvovvwvvfvvvvvwvvfwwvlwwvvwvvvwvvvvvvwvwvaavvvvaawwvvvaavvvvaawvvvxmwvvvvwvwvvwvvvvwvvvvwvvvtvvvvkvvvwovvvwvvvwwvvvvvvvvbvvwvvkvvvvvwvvkvvvvvvvvvvvaaaavvvvvvvvvaaaavwvwvvvvvvwwwvvvwwvvvvvvvvvvvvwaavvvvaavvvtkaavvvhaavwwvvvvvvvvvvvokvvkvvvvtvkvvvvvvowvvrvvvvvvvvvvvvwwvwvwvvaawvwvvvvvvokaavwovwvvvwkvvwvvvvvtvwvvmvwvwvpvvvewvvvwwvwwvvlvwvvvvvvvtvwvvvwvvvwvwvqvvwvvvwvvvvvwvvvvwvwvvvvjaavvaakwvvvlvaavvaakvvvovvvvwvvvvwvvvvvvvwvvvwwvvevvvvwvaavvvkvvvvvvvaawlvkvvkvvvwvvwwxwvvvvvvkvwvvvvmvvvvvvvvvvvbwemvbwvxwvvvvvwvwkvvvvvvvkvvvwvvvvvvvvvwwvvmvwvvavvvvwolvvvwkavvaavvaavvvvvvvaakvaavvvvvvvvfbvvxvvvvvwwkvvvvvvovvvvvvbaavvkvvvvvvvvaaewvvvvvvkkvvwaavwaaavlvvwwaavvaaagggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaawiwwiiiiiiiwiiiiiiiwiiiiiiwiiiiiiwiiiiiiiiiiwiwwiwiiiiiiiiiiiiiiiiwiwiiwiwwiwiiiiiiiiiiiwiiiwiiwiiwiiiiiiiiiiwiiiiwiiwwiiiiiiiiwiwiiiiiiiiiiiiiiiiiiiiiwiiiiiwiiiiiiiiiwiiiiiiiiiiiiiwiwiiiiffiiiifiiiiiiwiiiffiiiiiwiiffiiiiwwiwiiiiiiiwiiiiiiifiifiiiiiwiiiwfiwiiiiwiiiwiiwiiifiiiiwiiiiiiiiiiiiiiiiiiiwiwiiiiwiwiiiiiiiiiifiiwiiwiiiiiiiiiiwiiiiwiiwiwifiiiiiifiwiiiwiwifiifiiwiiifiiiiiiiiiiiiiiiiifwiiiiiiiiiifiwwiiiwifiiiwiiwwiiwiiiiwiiiiiiiiiiiiiiiifwiwiiiiiiwwiiiwiiiiiiiiiiiiiwiiifiiiifiiiiiiiiiiiiiiiiiiiiwwiififiiifiiwwfiiiiffiiiiiiiiiwiifwiwiiiwiiiiiwiwifiiiiiiwiiiiiiiwifiiiiiiiiiiifffwiiwiwiiiiiiiiifiiiiwiiiiiiiififiiiiiiiwwiiwififiiiwiiiiiiifwiwiiiiwiiiiwiiiiiiiiiwiwiwiiwifwfiiiiiiwfiifiiiiiiiiwiwiiiifiiiwiffiwiiwiifiiiiiwifiwiiiwiiwfiiiiiwiwiiifiiiiiiiiiiiiifiiiiiiiiiiiiwiiiiiwiiiiiwiiiwiiiiiiiiwiiiiiwiwiwiiiiiiiiiiwiiiiiiiiwiiiiiiiiiiiiiiiiwiwiiiiiwfwiiiifiiiiiiiifwiififwifiiifiiiiiiiiwifiiiiiwwfiiiiiiiiiiiiiiiwiiwiiwwiwiifiiiiiiifiiiwfiiiwiiiiiiiwiiiiiwwiiiiiiiiiiiiiiiiiiiiiwiiiiiwiwiwiiiiiioiiiifiwwiiiifwwwiiiiiwiiiwwiiiioiiiiwiiiiiiiifwiiooiiiiiwiiiiioiiiiiiowiiiwiiiiiiwiiiiiwwifiiiiiiiiiiiwiiiiiiiiiiiioiiiiiiiiiiiiiiwiwwiiiiiiwiowiiiiwiiiiiiiiwwwiiiwiiiiiiiiiifoiiiwiiiiiiwiiwiiiiwiiiiiwiwiiwiiiiiiiiifiiiiiwiiwiiwiiwwiiiiiiioiiiiiiiwiiiiiwwiwiiiwiiiiiiiiiiiiiiiiwiiiwiiiwiiiwwiiwiiiiiiiiiiiiwiiiioiiiwiiwiwiwwiiiiwiwiwiiwiiiiwowoiwiiiiiiiiiiwiiiiwwiiwiwwiiiiiwiiiiiiiiieiiiiiiiiowiiiiiiiiiiiiiwiiwifiiiioiiiiiiiiiiiiiiiiiiiiiiwiiiiiiiiiiiiiiiioiiiifziiiiiiwwizfizoiiiiiiwwzoioiiiiwiiiiioiziiiiwzwiiwwiiiiwiiioiwziowifiiiziizzowiiioizzwiziiiziiiifiiiziwwiowzioiiwizizoiiwiwziiwwwaaizwizzaaiiizzzzzowiiizziwizwoiziiiiizziiiziwzzzoizizwziwzzfaazzwzzzaaifizzzzwizziiwzizzzwiwzizwiwzzzziziiozzzwzizzzoizowzizzzzwziziwwewzzzizzizzwizowiwizwzzizzwzzizzwzzzzzzzzzzzzzwzzzzowfwzzwizzzzzzwzzzzzzwzzzozozzzzzizwfzzzzzzzzzzzzzzozzwzwzzzzzzzzzzwzzzzzzzwzzxwzzozzzzzzzzzzzzzzzzzzzzzzzzzzwzwzzzzzwzzwzzzxzzzzwzwzzzozzzwwwzwxzzzzzzwzwzzzzzzzzzzzzzzzwzzzzzzxzaazzzzzzzzzwaaxzzzzzzzzzzzwzzzzzwzzfzzzzzzzzzzzzwwwzwwzzzzzzzaazzzzzwzzzzaazzwzozzzzzzzwxzzzwzzzxwwzwzzzzzzzzzzzzzzzzzzzzzzzzzozzzzwzzzzzwowzwzzkzzzzzzzwzxzaazzwxzowzzzzzzzwzzkzzzzzwxwzzzzzzzzzzzzzzwzzzzzzzzzzwzzzzzzzaazzzzwzzzzzxozkozzwwowzzwwzzzozwzwwzzzzzzkzwwxzzzzwkozzwzfxzzzzzzzaazzzzzzzzwzzxzzzkzzzzzwzzezzwozzzzzzwwzzzzzzzzwzzzzffzzzzzzzaazzzzzzzzwzwwzzzzzzzzzkzzkaafzzzwzzkzzzzzzzzzzwzwwzzwzzzzzwzkwaazwzzzzzzkzzzzkzzzwzzwkzaazzwozzzwzxzzzzzzzzzwzzzwzzzzzzzzzzaazfzkzkzaazzxzwzzxzzwzzzzzzzzwzzzkzzzzwzwzwwzzkzwzzwzzzwzzzzzzwwzzzzzaazzzwzzxzzzzzzzwzzzzzzfzzxzzzzzzwzzzwzwzzzzzwzzzowzzzzzzzzzwaazzzzzzwzzzwzzzzwzzwzkzzwaazzzzzzzzzzozzzwwzwzzzzzwwzwzzzwzzaazzxzzzzzzwzzzzzzzzzzzxwzaaxzwzwzzzwzzkozwzzzzzfwzzzzzkzzzzzwkwzwzzwzzzzzzzzzwxwzwzzaazzwwzwzzxwzzxzzzkzzzzzzzzxzwzzzzzzzzzwzzwzzzkzkzzzwzzxzwzzzaazzzzkkzxzzzzzzxzxzzzzzzzzzzwzozozkzzwzxzzezzzaawzzzzzzwzzzzzezwzzzzzzwzzzwzozzzwzzzzzzzzwzzxzzzzkwzzzzzezxaazwzwwzzwzxwzwzzzxzzzzxzwxzzzzzzzzzzwzzzwzzzwzzzfzzwzxzzzzzzaakzaazzzzaazwxzaazzzfxxzzwwzzzzzzzzzzwzzzzxwzzzxwwzxzzwzowzzaawzaazzzzaaowzzaazfzzzzwzzzzwzzzzzozzzzwwzzzwzzzzzzzzwzzzwzzzzzzwkzwzzfzwzzwzzzzzzzzwzwzzzzxzzxxzzxxzzzzzozzazzzzzzzkzwzozzzzwzfzzzzzxkezzzkzzwzzfzzzzzzzzwzozzzzzzwzzwozazzzzzwzzzwwzzezzzzzzzzzzwzzzzxzzzozzzzzzzzzwzzzzkzzwzfxzzzzkzzzzzzwzwzzzzzlkzzwzzzwzwzzwzzzzzzwwwzzzzzzxzozzzzzzzzwzzzzzzwzzzzzxxwzxzxzwxkzzzzzfzzzwaazzzzzzxzzwzzzzzzzzzzzzwwzzzwzkzzzzwwxwzzzzzzzwzzxzzwkzzzzwzaazxzwzwzzzwzzxxzzzzzzzzzzzzezzzzxwzzzwzxzwzzzzzzkzaawzaazzzwwzzzzzzzzzzzxkzzzzwzzxkfzzzzzzzzzzzlzzzzzwzzzzzzzzzaazzaazxzzzzzowzzzxezzwexzzzzxzzwzkzwzwzwzzwwzwzzzzkzwzzwaazzzzzzzzzzzzzlzzzzzxwzzzzwzzlzzzzzzzzoaazzwzzzzzzxzzwzwzzzwaazwfxxzfzzzzxozwxzzzzwfzzzzzwzzzkzzzwzzaazwxzzwzfzzzkwwwzzzwzzzzzzzzzzfzzzzwzkzkzzzzkzxzwzzzzzzzwzzzzzzwzzzkkzzzzzzzwzzzxzzzzzxwxwzzzzwzzzzzzzzzzzzwxzzzzzzzzwzzzzkzzzzzzzzzwzzzzwkzzzwzzzzzzzzzzzwzaazzzzzzzzzzzzzzwzzzzxzzzfwzzzzzkzzezzzzzzwzzzzwzzzzzzzzzwwzzaawzzzzzzzzzwzzzxzzzzzzwlzwzzzzkzlzwmzflzzzzozzzzzzzzkzzmzzwwwzzzzzzzwzzzaazzzzzzzzzzwzzzzzzzzzwwzzwzzzzzzzzzzzwzwzwwzzzzzzzzmzozzwwzzaazzzzzzzzzzlzzwzzzlzzzzzzzzzzkzzzwzzzzaazzwkwzzzzzmzzzzzzzzzzlaazwzzwzwlaazzzzmzzzzzmwzkzzzzzkwozwzaazzkzzzzzzzzkzzzozzowmzaazzzwwzzzaazzmzexwmzzzzzzzzzaazzzwzzzzkzaazmzwzwwzezzzzzaazwzzzzzlzzwzozzzzzzzwzzzmzzzzkzaazzzzzkfzzmaazzzzzzzzzzzzzzaazzzomzzzwfzzzzzzzzzzxzmzlzzzzaazzzzzmwzzzaaaazzwzzzfwzxwwzzkmzzzzmwzwzzzzzzzzzzzzwwzzwzzzzaawzzzzzwwzzaaaawzozzzzzmzzzzzzzzzzzzwzzzzzlwzzzzzlzzzzzwzzzwzzwzzzwzzkzzzmzzkwwwzkzwxzzzzzzzzlzzweaalzzzwzzzzzwzzzzzzwzzwwzmzzzzzzzzzzzwzwwzzzzwozwzzwzzwzzzzzlaazfzlzwzzzzzezmzzzzzzzlzzzzzzzzzzzzwzzzzzzzzzzwzzzzzzzzzzzwzwzwzzzzzzzwzzzzzzzzzwwmzzwwffzlzzzzzzzzzzzzmzzzzwzzzzzzlwzzzzkzzmzzezzzzzzzzzzwzzmzzzzzwwzzuzzzzzwzzzkwzzzzzwzzzzzzzzzzzzwozzzzzzwzzaazzzzzzzzzzzzwzzwzzwzzwzzzzzzzzwzzzzzzzzzzzzzzzmzkzmzzzzwzmzaazfzzzzzzzzwzzzzzzzzzzzzaazzzmzzzzwwzzzwzmzzkwzzzfzlzzzzzwzzzzzzelzwzzmzzxmzzwzzzmzzzaazzzzzzzzzwkzwkzzzzwozmwzwzzmzzzlfzwzzzzzzozzzzzzzmzwzkzwzzzzzzzzzzzzzzzwzzolwkzaazzzwaazwzzzzzzzkzzzzmzzzzzzozozozzzzzzzzzzzzozzzzwzzzzzzezzaazzzzaazzmzzzfzezmwzzwzzzzzzzzzzzzzzaazwzzmwzzzzzzzoxzwzzzzzzzzwzzzzzzzzzwzzzzzzzxzzmwzzwwzzzzzzzaazwwzzzzwzzkwzzewzzzzzzzwzmzzzzzkwwezzzzzzzzezaazzwzkzzzwmzwzzzzwzzzwwxzzkzzozzzzzzzwzwzzzzxzzzzzzaalzzwzzzaazzzozkzzwezzzzzzzwzozwkwzzzzzwzzzzwfzwzwwzmzwzzwzlaazzkzmzfaazwzzzzzwzzzzwzmzmzzzzwzzzzzzaazzzwzzzzzwzzezzzwzzwzzzzwzzzwaazzzzzzzwzzzkkzzzzzzozzzmzzzzaazzzzlzzzzzzzzzzzwzzwzzwwwzemzzmzzzezzmwaamzwzzzzzzzzzzzfzwzzkaaaawzzzzzzzzzzwwzwzzwzzfzmzwzzzzzzzzmmaazzokzmzzmzzwzzzzzzwzaaaazzzzzmwlwzzzwzwzzzzzmzzwzzzzzzwkzzzzzzzozwzaazwzwzzzwmzmzzzzwzzzzzzzzzzzwwzzwwzzezzzwzzfwzzzzozzzzzzwwzzaazmzzzwkzzzkzkzmzzekzzzwzzzzzzzzmzzwzzzmzzwzzmzzwzzzwzwzzzzzzzzzzzkzwzzzzwzkwzzzwzzwzzzzzzzzkzzwlzaazzwzwzzzwzzzzzkwzzzzwzwzzmzzzzzzzzzzzwzmzzwzkzwzzwzwzwwzzwzaazzzzzzwzwwzzzzzzzwzwzzzaazmaazwxzzzzzkwzzaazwzzwzzzzzwzzzzwzwmzwzzzzzzzzzzzzkzzzzzzzaazzaazzzowzzzzzzzaazzzwzzzzzzzzzzzzwmzzzzzfwzzzzzwzzzzzzzzzzaawzzzzzaazzwzzmaazzwzzzzwfzwzzzzzbzwzzzzwzzzfzzzzzzzzzzzzzzzaawzzzwzaazzzzzwaazzzlbzzwwzzzzzzzxbzwwzwaazwzzxzwzzzmzzzzwzzwbmzzzkzzzzzzzwzzzzzzzzkzzzzzzaazllzbzwfbaakzzzkzzzzbzwwbzzzzzzzzzzkzzzzzzlzwzkzzzzwzzkzzzzaazzzzzzzzzozkzaawbzzlzzowbzzzwzzzzwwzwzzbbzzzzzzaazzzzwzzzzzzzzzzzzzzzzwzozaazzzzzzwzzzwwfzbzzwzwzzzbzklzkzzfaazzzmzzzlzzzzzzzzzzzzwzzozzzzzzzzzzkzzzzzzozzzzwwwzzzzzwaazzbzaazezzzzfzozzzzzzzzzmzkzwzmzmlzzzzzwzzkzzwzxxwzzzzzzzzzaazfwzaazfwzzkzzzzzzwzzxzzzbzzzzzzzzzzzzzzozzzwzzzwwzzzzzwzaazzwzwzwmzzzkaazzzezzzzwzzzzzzzzzzzzzzzzzzzzwzzzzzzzzkwkzzzzaazwzzzbzzkzfoaazozzzzzzzzzzzmzwzzzzzzzzzzzkwzzzzwzzwzzbzkbzzzzzzozzzwzaazzzzzzzzbwzzzzzzxzzwzzzwwzzzzzzwzzzkzzzzzaazzwzzzzzwzwzzzzxaazzzzzzzzbzzzozzzzzzaazwzzzzzzowzzzzzzzzzzaazxmzzzzwzzwzzzlzzzwzaazzzzzzzkzzwzzzzaazzozzzzzzzzzbzzzwzzzaakzzmzzzzzzzzzzzwwkzzaazzzwzwwwzzbzzwzzobzzzzkaazzzzlmzzzzbwzzzzaawzzzbzzzzzzozzzzwwaazzzzzzzwaawzwzzzzwzzzaawzwzzzzzzzzzzbzzaazzzzzzzzzzzzzzzzzwaazzzwzzzwaazzzzzwzzzzzbzzzzlfzkzzzzoxmwzzzzzzwkzzwzzzzzzzfzzkzzzzwzwzzzzzwzzzwwzzzmzzwzznzznzzzzzzzwzwzzzznzzzzwzzbzzzbznzzzzzozkzzzzzznzwnwzzzzzzzwznnzwzwzzwwzbzaawzznzwwnzzwzzznmknwnzwzzzzwzzzaznzzwzozwzzwzznonnnnzzzzzzzzaazzwwzzzwzznzwwnzznlnnzwzzzzzowannaanwzzznznnxnwaannnwnzzwzmzzwznwwzaakkaazznkznznnznnnzzwnoawwaaknznzbznnnnnaanwwnnzonnwznnnnnwzaafwaawwnzznlnnznnwnzwnzaknnnaannaankwbnnfbnnfnnwnnnwznnnnnaanwnwnnwknonnnnnknnaaznnnnnwnnaawnaanwnmnnnnnlnnknknnwnknnnnaannnnnwwnlnxnnnnnnnaannnnwnnnnnnnnnwnnnnnnnnknnnnkwfnfnnnnwnknnmaannknnnnnaannnnnnnknnanwnnnknnnnfnnbwwnnnnnnnnonnnnnwnnonnwwaawknnnnknaawnnnwwnnnnannnnnnlfnnnlnfnbwnknwnwnknxnnxwnwnwnwnnnaawnnwaanwnnnnnnnwnxowknnxnbnxnnonnnkwwnlwwnknbnkwnnwnnnnlnnbaanwnnaanwnwwnnnwnknnnnnnnnnnnfnnnnwnnnnnwnnnaannnnnbwnaanowwnnnnnnnfnknbnnnnnwwknnnnnnnnnwnnnnwnnnnnnnwnnaannnnwnnnaawnwnnnwnnlbnnnnnbnnnwnnnnnnaannwnnnnnxnnnaaonknnnnnnnwnwwwwnnnnnownnwnnnlnnnnbbnnwnnnnnnaanwkwnnnnnnnnaannnnnknwnnnnnmnnblwnennnnnnownnnnnkknnwennnwennnnnnnbnnnnnnnnwnnwlnnnaannnnnnnwnnnfnwnnnnnknbnnnnwnnnennnwnnmnnwnnnnnnnwknwnnwnnnnaanwnnnnnnnnennwnnnnnnwnnxwnmnnfnwnknjjjnnnbnaawmnnnwnnnnaanwnnnfnwnonwwwnnnnnnnfnwnwnnnnmnjjnnnnnnnnnnnnnaanjnnnnnnnnaannnnnnnnnnwwnnwbnnnnnbnnnnwnnnnnnnnnnaawonnnnwnnnonnnlnnwnwnnaannaannnnnnwnnnaanwnnaannnnaannnlnnnaannnnnnnnnwnnnjnnnnnnnnaaxnaannnknnnnwnaakwnxaannnnaanwnwknnnwelnnnnxwnnnnonwnnwnwnnnknnaannjknwnnaawwwwfnknnnnnnnwnnfnnnnwnnwnnnnnnnnwnnnwnowwwnnnknaajnnwnwwnaakfnnnknnnwnnnnnnnnnnnnwnnnnnnnnnnnnwnnnnmnwaannnnonfwnmnenffnaannnnwwjwnnnnnnnonwnnnnnwnnonfnnnonnnnnnwnaannnnnnnnnnnnnfnnaannnnnnnnnwwnnwjnnnnwwnwwnnnnwnnwnnjnbnnnnaannknnnnbnnaawmlnnnnnnwaannwnwnnwowwnnnnnnnnnnwnnnnnnnwwnnnnaannnnnwnwnnaawnnnnknnnnaawnnnwbnonnnennwfmnonlwnnnwnenjnnwwknnnkwfnfnnaannnnnnnnnnnnwnnnaannonnnwnknnnnnnnnnnwwnnnnnnwnnnnnnnnwnnknaannknnnwwnnwnnnnnaajnnnnwnnnknnonxnnnnnnnnaannnlkwnnnwnnonaannlnwnwnaawnknnnwnnwnnnnnnnnnlnnwnwknnnwnnjaanwknwnlnknwwnkaannnnnnnnaanjnnnwnnnnnkwnnnnnnaawnnnnfnnnnnnnnnmnnnnknknaannnnaanljnnwnnnwnnnnnnwnnnnnnwwnnaannnnnnnnxnkfnxonnnwnwmnwaannnnaanenwnwnnnnnnnnnmwfnnnknnnnnwnaannwnnnwnnnnnnnnnnnnnwwwnnnaanmnnnnfnnnwnnnaanfnnnjkewnnnknnaanwwnnnkfwnnnonnnnnjnjnnnnkaannknwnnjknnnnnaanwnfnnwnnnnnowwwnnnnnonbwnxnnnnnnnwnnnnnnnnnnwnnnnnnnnwwknnnlnnnnnwnfnjnwfnnlxnnwnnnnnnnnnknnnnnnnnwnnonwwnwnnnnnennnnnnnjnnwnnnnwwnnnnnnkbnnwnnnnnnwnnwnnnaaaannnnnnnwnwnnnwnnnnnnnnnnwnwwknnenwnnnnnnmnnnnjnnxnnnnjnnnaaaawnnbnnnnnwwnnonnwnnwwnnnnnwnwnnnnnxnnnnnnnnnnnnnnaaaannaannnwaanfwknnknwwnnaannnnnkwnwnnnnwknnwnnjnnnnwnnnnnnnaaaannaanknnaajnnownnnnnnnaanwnnnnnnnnnnnnwnnnnwnnnwjnwnnmjnwwnnwmnnnnnnwwnnnknnbnnwnnnnnnnjwwknwnnnnaannnnnnnnknnnnwjnnnnnnnnnnnnnnwnwnwknlonnnfwknnnnnnnnonwnnnnaanfknknnnnwnknnnnknnnwnnaakwnwnnnnnnnnnnnnnwaaxnnnaanwnnnnonnnnwaannfnnknnnnnwnnnennnaannnnnnknnwnnonennwaanfnnaanbnnwknnnnbnaannjlnnnwnaannnnnnknnnaannnnnnaaknnnwwnwaannnnnnnfwnknnnnwaannnonnnnwnnaannnnnnnnnwaawnnnnnaawnnnwwnlaannnwwnwnwnnwnnnnaanjnnnknnnwnaaownonnnnnnwnnnnnwnknjnwnaaaawnnnnnnnnkwwnnnnfwwnnjnnnknnwxnaannnnnnnnwnnnnnnonnnnonwwaaaannwnnnwnjnnnnnnnnnnwnwnonnnwnnwnwnwnnaanwwnaannnnnnnwwnnnnnnnnnnnewnlnknnnwnknnnonnwnnnkwnwnnnnnnnaajnbwaawnnnnnwnwnnwnnwwnknnlwnnnknnnwnnknnnnnnnkaannaannnnnnfnnjnnnjnnwwnnnnnnkfnnwnnnnjwnnnaaejnnnnaannnnnwnaannaanwnwwnnnwwwnknnnnmnnnnnkbnnnnnjnnnnnnnaanwjnxnaawnnnxnjnknnnonnonjnaaaannnnfnnwnwnwwnnnknnnnnnjnnnnnnnnnnwnnnnnnnnnnnfwnnnnnnnwnaaaannnnwnlnknnnnwnwnnnnnwnjwnnnxnnnnnnnwnnnlwnnnnnwnnnbnnnnnnnxnnnnnknwwnnaannnnnnnnnnwnnoaannonwnjnnnfknnwonnbnownnnnnwnnnnknnnwwnnnnnaamnnnnwnwnnnnnnaawwnnwnknnwnnmnnnownnwmfnnnnnnnwnnlnnnnnnnnnxntnnnwkwnnnnnnnnnunnonnaannnnnnnnnnnnwnwwnwnnonnnwwwnnnnnnnnnnnnnnnnnnxnnnnlnwnwnnwnaannennnnwnnnkwnnwnnwnnnnkwnwnnnnnxenaannnknnaanwnnnnwfnwnnnnnnnnowaannnnnwnnnxnnnnnnnnnennnnwnnnnaannlnnnaakwnnnnwnnnwnnnnnknnnaanwwnnwnaaaannnnnwwbnnnnnejnnonnownnaankbnnnnnnnnnfwnnjnnwaanwaannnwnaaaanennnnnbnnnnwnnnwnwnwnwnaannwnnnnnnnnnwwnnnnwwaannaannnnnnnnnwnnnnnaaaannwwnnnnwnnonnnntnwnnnaannbnnnnnnnnknwnnnwnwnnnntnwnxnnnnaaaawnnnnnnnnwnwnnnnnnnbnxaannwwwwwnfwnnnnnounwaawwnnmnnwnnnnwnnwnnwnnknnwwwnnnnnnnnnnonnnwnnwwnnnwnwwnoownnaawnnnnnnnwnnnnnnwnwwnnwnnjnnnnwnnfntnnnwnnnnwnnnnnnbnnknnwnnwnnnnnaanfnnnnnnnnnnnnnntnnwnkaaonwwnnnnnnnnaawnnnnnwnnnnnnnnwnnnnnaamnwnnwwnnnwnnnnwnnnnnnaannnnnnnwnnnnaanwwnnwnnnnnwnwnnnnwaaaanntnnnnnnnnnnnaaaannnnnwnfnnnnnntnnenwwwwnwnnnnwlnnnnnnnnaaaannnwnnnnnwnwnnaaaannnnnnnwnnnnnnnwwwtnwnnnwnknnnnnnnwnnnkwnnnaanwnwonnnwnnwwnnnnnnmwnnnaawnmnaanwnwnnnnnnnbnnnnnnannwwnnnnaannnnwonxnnnnnnnnnbnnnnnnaannnkaannnnnnwnnnnnnnnnwnannaannknnnnnnnwnnnwnaannntnnnnwnfknnnnnnnnaannnnwnnwnnnnknwnnnnaannwnnnnnnnnnnnwkaannnnwnnnlnnnnnfnnnwnaawnxnnkwnnwtnnnnnnnnnnnnnwnnnnaabnnnwnnnnnnkenlnaannnnnnnnnwnonnnnaaaannnnnnnnnnnnwnnnnwnnnaawnnnnnntnwwwnnnnaannnnnknnnnnbnnnwaaaankwnnnnnlnnnwntnwnwaannnnennnnnnnnnnnnnaaxnwnnnjwnnnwnnnnnnknntnnontnnwnnnnnnnwnaanmnnwonnwknnnnwnnnaaxnfnnnnnnnnnnnnnnxnnnnwnnnnnnknnnnnnnnnnnwknnnnnnnnnnjnnnnnnnnnnnnnntnwnknfwnnnwnnwwnnnnnnnnnwnnnnnnnnnnnnnnnnnnnnnnnwntnnnnnfnnnnwnnnnnnntnnnnnnnwonnnnnknnnnonnnnnnwnnnvnvnnvnnbwwwnnwnnnnnnmonnnnnnnnvnnaannnmnnnnvvnnnnnwnbvnnnwnnvnvnnonnvnvtnvnnnbonwklnnnnnnnnvnnaavnnvvnnovwwonnwaanvnnwnnlvwvvvvnnvnvvnvnnnnnnvnvvvnaannwvvvnwwnaavwwnvvvnjwnaalvnnnnvxvnvvwvvnvvvvlvnonwwnvnvvvnaanfwwwjvovnaavvvvvvwnwvnvwaavnnnaavnvvvvvwvvvvvvbnnvnlvnvvvnovnwnvwvvnvnaaxvavvwvvvwvvvaavvneaamvlvvvvvovbvvvvknvvkvvvvvwvvwvnvvvvvvfaavvavvwomtwvvvvvvvwwwvwvvvaavvovwvtvvvvvvvvvkwvvfvvmkvkvvvvwvvaavvvvvwvvwwvvkvvwvvvwvvvaavvvwvwvvwvvvvvwvwtvvvfvvwvovvvvwvvaavvvlfvvvwvvvvvvvwvwvwwvvvxwaavvvvaaaavvvwvvvkvvvvvvvwwvkvvvaaavvkowvvvvvwvvvvvvvvvvbvvvwaavvvwaaaavvvvvvvvvtovvvtvwvkvmvaaavbvvwovtwvvvvowvvtvvvvvvvvwvwvvovvfwvkvvvvvvvvvvlvwvvvvvvvvvvjvvvvvvvvvxvvvvvvvvvvvvfvewwvvvvvwvkvvowvvvvvvvvvvvwwwvvvvvwbkoaavvovvvaavvwwaaaavvvlkwvvwvvwvvwvaavvvwvvaavvaavvvvwvkvwvawvaavlvvvvaavvvvaaaavvvvvvwvvvvvvvvkaawvfvvoaavvaavwvvwtvvvvavvaavvvvvvwvvvwvaavvvvvvvvvvvvvvvvvwvvwvvvvvvwvvvvaavvvvvvvwvvvaakvwvvovvvvvvaavvvvvvvvvvvvwvvvvvkvvvvvvvvvvvvfaavwveovwvvvxvvvwvvfvvwvvvvevwvovaaaavvvvvwvvvvwvvvxvvvkvvvvvwvvvwvvvvvvjvvvvvvvvvvvxvtvwvvvvvaaaavvovwvvkvwvvvvvvvvvvvvwvwvvwwvvvvvvwvwvaavwwvvwwvvvaavvwwvwvvvvvvaavvauvvwwvvaavvvvvwvfvwvvaavvvvvvvaakvkvvvvxvvaavvvpvevkvvvvaaovaavvvvvvaavemvvvvvvvvwaaevvvwvvwvvvvvvvvvaawmvwojaavvmkvvvwvwvvvvvwwvaavmwvfkvvkvvvvvvvwwvvkpvvvvvvwwvaamwvvvvaavwvwvvvvwlovvvmwvoaavfvvvvvvvkvvvvvovaavvvvvwwwwvvvaavvvvvkvvvvwvaavfwvvvvvpvkvvbvvvvvvvwaavvvvvkwaawpvvvwvvvvvvaavvfvvvkvvvvwaavvvvvvfvvowvwvvvvvvvbwaavvvjvvvvvvvvvaavvvvovvvaavvvvvvaavvevaavvaaewvvvvvwvwvvvvwvvwvvwvvvvvvvvvvaavvwvvvvvaavvvvvvaavvvwaavvaavovlvvvvvvvwvwvjvvvvvwvvvvvvvwwwvbvvvbwkvaawovvvvwvvvjvvvvvvvvvvvaavvvvvkvvaavvvwwlvvavvvvvwvvvvmvvvfvaawxvvvwvvvwkvkvvvvvfxvwaawvvwwvbvaavvvvvvvvavvvvwvvvkxvvvvvvpvpvvvvvvvaavvjvvwwpvvvvvwvvvevwvvaavvvvvwvvvvvvwvvvvvvvvvvvvvvvvvmkwvwaavvvvvvvovvmvvvwvvwvwvlaatvvwwvvvvvvvkvwvtvvvvvvvvvvvvvvlvvvvvvvvvvwewvwvwvvvvvvvvvwwvvvvvvvxvvvlvvvvvvvvvmkvvvvlwwvvvvvlvvvvvvvvvwvvvwwvkbvvvvvvvvpvfvvmvvvvvvwovvvvvlvvvvvvvvvkwvvvvvvvfvvwmvwkvvwwvaavvvvvwvvvvvvwwvvavxvvwvvvvvvvvvvvvvvvvvvvvvwvvvvkvovpvvvvvkaavvkvwwwvvlvvvvvvavvovvvwvvtvvvvovvvveaawwvwvvfvlvvwvvvvvwaavvvvvvvbwvvvvtfvvlvwvvvvvwvvvevvvvvvvvvaavvvvvvkfvvvfevowvvaavvwvvvvvovvvvwvvmfvwvvvvvkvvvvvaavvvvvvkvevvvvvvvwmvvxvvvvvwvvvvvvlvxwvmvaavwkwvvvvfvwlvvvvlaavvvvkvmxvvvvvvvvvvvvtvvvwvvvvvvvvvvwvkvvaakvwvvvwvvaavwvvkwvvvvvvwvvvvwvvvwvvvvvkvvvwwvvbaavvvvvvvvaavkaavjvvwvwaavvkvvvvvvwvwvvvvkwvpvvvvvvpjvvwfvvvvaavvvvvvvwaavvaavvvvvvvwvovaawvvvvvvewvvvwvvvvvvvwvvwmvwvwwvvolvvwvvwwvwvkvvvvwvvvvvvvvvaawvvvvvvvwvkvvvvmvvvvvvwvvvvlvvvvvvvvvvvwvvvvvvvvjwvwovbvvvvvjvwvwvwaaaaaawvvvvwwvvxfvwvvvwvfvvvvwvwvkvwwvlvaavvvvvxtvvvvvvvwvwvwaaaaaavmwvvvvvvvvvvvvvwvklkvvvvvkvvvwvvvaavvwvwaavvvwwvvwvvaawvvvvkvvwxvvvwaavwvvkwaavvvvvvvwvvvvvvvwvvvvwvvaavlkvvvvwvvaavvvvwmvvvvvwwwaawfvwfvaavwvvkvfvvvvvwwvvjvvvvvwvvvlvvvwvvvvvvvvwvvwvvwjvvvvvwvvvvvvvvvvvvvvvvvvvwvvvvvlvvvvvvvvvvvvvvvvvvvvvvwvvwvvvvkvvvvvvvvvvvvvvwvvblwpwmwvvevvpvvvevaaaaaavwvvvklwvvaavwvvaaaavvvvvvwvvvvfvvvvvwvwvvvvvktovwaavvvaaaaaavvvjvvkvvvaavwvvaaaavkbvvvvwxvvvvwvvvvvvvvwvvvvvwvaaovvvvvwvvvpvvvvvvvvvvljvvaavvvvaavvvvwwvvwvvvvvkvvvvvvvaakvvvwvvvwwvkfvvvvvvvvvvvkvvvbaawvvvaakvwvlvvvwvvvvwvvvvvvvvaafvvvvkvvvvvvvvvwflwvwaavwbvvwvvvvjvfvvvvwaaaavvvpvwvwvvaavvvvwvvovvvovvwvvfvvvvvvvaavwvvvwvvvkwwwvvvvwaaaavvvvvjvvvvaavvvwevvvvvwvvfwwvlwwvvvvvvvvvvvkwaajvvvvvvvwwvvvvvvfvpvxvvvvfvvmvwwxvvwvvvwvvvvvvwvvvvvvwvvvvwaavvvvvvvvvvvwvvvvvvvvkvvvvvvwwvvvvwvwvaavvvvaawwvvvvvvvvvvvwkvvxvvwvvvvvwvtvwvvvvvvfvxjvaawvvvvvvvvaavvvvaawvvvevwwvemvvvvlvvtvvvpvvwlvkwvwbvvvvvvvvvaavvbvwvvvxmwvvvvwvwvvvaavvvvaaxvtvvvvvvvvwvvvwvvvvvvlmvvkwkvaavvwwvvvwvvvvwvvvvwvvvaavvvvaavvvvvwkxvvvvvvewvvvvvvwvwvvvvvaavvvvvvvvtvvvvkvvvwovwvvvvvvvvvwlvvkvvvfvvvvvvvvvvvvwvfpvvvvpvwwaalvvvvwvvvwwvvvvvvwvvvvvwvjvvvvvvvwvvvxvwvwvwvvvvwvvvwvvvvvvaavwvvvvbvvwvvkvvvvlvvkwvvvvvvvvvvvaavvvvvvvokjvvvwlwwvaavvvvvvvvvvvwvvkvvvvvvvvvvvvvvvwvvvvvvvwaavwvvvvvvvvvwwvvvvvaaktvvbvwvvvvvvaaaavvvvvvvwvvaavkvvvvovvvvvwwvwvvvvvvwvvwvvvvvvwwvvvvlvwvvvvaaaavwvwvvvwvvaavwwvvvvvvwbvwvvvvfvvwwvwvwvpwvwwvvvwfvxowvvvvvwwwvvvwwvvvvvvvvvaawvvvaavvvvvvaavfvvvwvvvvwvvvvxwvvwvwwvvvvvvvvvvvvwvvvwvvwfvaavvvkaahvvvvwaavvvvvwwvvvwwvwvvvvvvxvvaavvvvaavvvtkvwwwvwvvvvvwvvvvwwvvvaabvaavvvvvvvvxwvwaalbvvvwvaavvvhaavwwvvvwfvvvvvwmvvvvvvvvfkvaakvaavvvvvvwvvvvvaavwvvwvvvvvvvvvvvokvvvvvvvaalvvvvmvvaavvvvvvvvvvvvvvvvvvjwvhvvvwvvaavkvvvvtvkvvvvvvvvkvaavvfkvvvvaatvvvvxvwvvvvvvvvkvovvvovvvwvaavvowvvwvvvvvrvvvvvvjkvwvvvvvwvvvkvvwvkvvvvvvvvvaavvvwfvwwvvvvfvvvvvwwvwvwvvvvvvvvvwvvvvwvvbwvvvvvvwvvvvvvvwvaavvvwvwvhkvlvvaawvwvvvvvvokovvvvvvvvvvaavvvvvvbvovaavvvvwvvvvvwlovvvvvvvvvvaavwovwvvvwkvwvvvvvvvvvvaaxvvfvvvvkwaalvvvvvwvvfkvvvvvkjvvvvovwvvvvvtvwvvmtvvwvwjvvvvvvvvaaaaolaawbvvaavvvwvvvvaavvvvvvvvvvwvwvpvvvewvvwvvfwwvvvfvvvvvaaaawvaavvvlaavvvvkvvvaavvvvvovvwvwwvwwvvlvwvvvvwvvvvvvwvvvowvvvvvwkvvvvvbvvvvvxvvvvwlvvvlvvvjvvvvvtvwvvvwvovvwvvjvvktvvvvvvvvwvowvvwmvvvvvvvvvvvbvmvwvvvvvvvwvwvvvvqvvvvvwvvvvvvvvvvvvvvkvvvvkvvvvvbvvaawvvvvvvvvvvvaavwvvvvvwvvvvwvvvvvvvwwwvvwlvvwvkvvkwvwvvvvwvvaavvvvvwvvvvlvaavwvvvvjaavvaakvvvvvwvwvvvvvvvvvvvaavvvvvvwvvkvvvkwvaawvvfxvvvkwvvvlvaavvaakvvlvvwvvvvvwvvvvwwvaavkvwvvbvvwvvvvvvaawvvvvwvvvvvvovvvvwvvvvkkvvvvvvjvvwbvwvvvvaavvvvvvwwvvbwwvwwvvaavvvvvwkwvvvvvvvwvvvwwwvvvvvvvvvvwmvvvvvaavvvvvvvvvvvwmvwvvkaavvvvvfvwvvevvvvwvaavvvvkvvvvwvvvvvvvvvvvwwwvvvwaavvvvwwwvvwvovvwvaawvvkvvvvvvvaawvvvwvbwjvvvvvvvvvvvvkovvwvvaavvvvvvfvwvkvvvmvaawlvkvvkvvvwvvwwvvvvwvvoaawvvvvwvwkvvvvkvvvvvvvvaavvvvvvwvvvvtbwxwvvvvvvkvwvvvvwvvvvvaavvvvvvvvvvvlvvvwlvvvvvaavvvwvvvvvvwvvvvvmvvvvvvvvvvvvvvlfaavwvwvvvvvvwvvvvvwfwwwvvvvvvwvvvvwvwvvvwvvbwemvbwvxwvvwvkwvvaavvvwjvvvvwvvvkvlvvkvvwvwwvwvvlvvvvvwvlvvvvvwvwkvvvvvvwvvvvwvwvvvkvwvwvwvvwvvxvvvvwvvvvvwvvvwvvvwwvvavvkvvvwvvvvvvvvvvvvvvvvvvvvwkvvvvvlvvwvvvvvwwvwvvvvvwvjvvvvvavvvwwvvmvwvvaavvvvvwwvkkvvwvvwaawvvvwvwvvvvvkvvvvwkvkvvwvwvfavvvvwolvvvwkaavvvkmvvwvvkkvvvvaavxvtvvvvvvvkwvvlvvvwovvvwvovavvaavvaavvvvvvvwvvwvwhwwvvaavvvvaavvvvvkvwvkvwwfvfwvvvvwmvvvvvvaakvaavvvvvvvvvvvvvvvvvvaavwvvaavwvvjvvvvwvvvvwvvbvvvvvvvvvvvvfbvvxvvvvvvkvvvwvvvvfaavvvbvwaavvvvvkvvvvwvkvvvvfvfvvvvwvwwwkvvvvvvovvvvvvvwvfvwvvaavwmvvvaavvvvvvvvwwvvvvvvwvvvvkvvvvvvvvbaavvkvvvvvvvovvvvwvvvvvkwvvvvvvvjvvfvvwwwwaavwaavvvvaavvvvvvvaaewvvvvvwvvewvvvvwvvwvvtvvvlwvvvvvfvvvwevaawvaavwwwaavvvvkkvvwaavwaaaavbvwvwvjkvvvaavvkwvvvkvvvvkvvvvfwkevaakwwwvvvvvvlvvwwaavvaaaavwvvvlwvvvvvaavvwvvvvvvvvwvwvvvvvvwjaavvvwbvvvvgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   }
 ]

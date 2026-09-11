@@ -92,8 +92,11 @@ test('ore and rock definition tables are unchanged', () => {
 });
 
 test('constants that gate progression are unchanged', () => {
-  assert.equal(H.W, 13);
-  assert.equal(H.START_X, 6);
+  /* 61, not 13. Round eight widened the world so the objective could stop
+     being depth - see the note on W. The assertion stays a literal on purpose:
+     the width is a thing somebody should have to mean to change. */
+  assert.equal(H.W, 61);
+  assert.equal(H.START_X, 30);
   assert.equal(H.START_X, Math.floor(H.W / 2), 'the pad must stay centred');
   assert.equal(H.HULL_MAX, 100);
   assert.equal(H.DIG_BASE, 0.5);

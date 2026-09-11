@@ -12,7 +12,18 @@ import { FOUND_KEYS } from './finds';
    Widening this does not change the blocks in columns 0-8 - rnd() is seeded on
    (x, d, planet), so existing columns generate exactly as before and the new
    ones are simply additional world. */
-export const W = 13;
+/* Sixty-one, not thirteen.
+
+   Playtest: *"I want this one planet to feel much larger and interesting. I
+   dont want to just try to dig to the bottom."* A world eight columns wide at
+   this framing is one that can only be dug DOWN; the objective cannot stop
+   being depth until there is somewhere else to go.
+
+   Widening costs nothing in generation - `rnd(x, d, planet)` is seeded per
+   cell, so columns 0-12 generate exactly as they always did and everything
+   past them is new ground. It cost real work in the RENDERER, which streamed
+   rows only: see WINDOW_COLS in blocks.ts. */
+export const W = 61;
 
 /* Column index to world X. Lives here rather than beside the renderer because
    two things that are not the renderer need it - the lighting grid and the

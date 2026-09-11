@@ -230,6 +230,19 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
         if ((was === 'core' || was === 'bedrock') && d < H.coreDepth(snap.planet)) { shortened++; continue; }
         const wasOre = !!(H.DEF[was] && H.isOre(H.DEF[was]));
         const nowOre = !!(b && b.ore && H.DEF[now] && H.isOre(H.DEF[now]));
+        /* An overwriter LEAVING a cell is as legal as one arriving.
+
+           The rule was one-directional: X becoming a pocket was fine and a
+           pocket becoming X was "the ore stream moved". That held while
+           overwriters never moved - and round eight widened the world from 13
+           columns to 61, which moves every hashed singleton, because their
+           positions are taken modulo the width. A schematic crate that used to
+           sit at (9,28) is somewhere else now and the cell underneath it went
+           back to being the granite it always was.
+
+           That is the overwriter moving, not the ore stream. Stated
+           symmetrically so the test keeps meaning what it says. */
+        if (OVERWRITERS.has(was)) { overwritten++; continue; }
         if (wasOre !== nowOre && !OVERWRITERS.has(now) && was !== 'seam' && now !== 'seam') {
           assert.fail(at + ': ' + was + ' became ' + now + ' - the ore stream moved');
         }
