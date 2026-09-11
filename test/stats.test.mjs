@@ -763,11 +763,19 @@ test('the shelf shows everything you can buy and exactly one thing you cannot', 
      false of all of them: at fifteen upgrades and six gates, a first-hour
      player was looking at five cases they could not plan toward. Showing
      exactly one keeps the entire benefit - there is always one visible reason
-     to go deeper - and removes the clutter that came with the other four. */
+     to go deeper - and removes the clutter that came with the other four.
+
+     ROUND SIX narrows the universe this is asserted over, and does not weaken
+     it. Seven of the fifteen are no longer sold at any price until they are
+     dug out of the rock, so "everything you can buy" now means the eight
+     ladders. A device is not a hidden sealed row - it is not a row. The
+     separate claim, that a device never appears unbought, is in finds.test.mjs
+     and is asserted there rather than smuggled in here. */
+  const SOLD = H.UPGRADES.filter((u) => !H.FOUND_KEYS.has(u.key));
   for (const depth of [0, 8, 25, 46, 61, 91, 300]) {
-    const stock = H.shelfStock(depth);
+    const stock = H.shelfStock(depth, []);
     const sealed = stock.filter((u) => depth < u.unlock);
-    const open = H.UPGRADES.filter((u) => depth >= u.unlock);
+    const open = SOLD.filter((u) => depth >= u.unlock);
 
     for (const u of open) {
       assert.ok(stock.includes(u),
@@ -780,7 +788,7 @@ test('the shelf shows everything you can buy and exactly one thing you cannot', 
     /* And the one shown is the NEXT one, not any of them - a teaser you reach
        last is not a reason to go anywhere. */
     if (sealed.length === 1) {
-      const shallowest = H.UPGRADES
+      const shallowest = SOLD
         .filter((u) => depth < u.unlock)
         .reduce((a, b) => (a.unlock <= b.unlock ? a : b));
       assert.equal(sealed[0].key, shallowest.key,
@@ -788,20 +796,45 @@ test('the shelf shows everything you can buy and exactly one thing you cannot', 
         ' m, but ' + shallowest.key + ' at ' + shallowest.unlock + ' m comes first');
     }
   }
+
+  /* The same claim for a player holding every device, which is the state the
+     shop spends most of a long save in. The teaser rule has to survive the
+     shelf growing back to fifteen. */
+  const ALL = H.UPGRADES.map((u) => u.key);
+  for (const depth of [0, 46, 91]) {
+    const sealed = H.shelfStock(depth, ALL).filter((u) => depth < u.unlock);
+    assert.ok(sealed.length <= 1,
+      'at ' + depth + ' m with every device in hand the shelf shows ' + sealed.length +
+      ' sealed cases: ' + sealed.map((u) => u.key).join(', '));
+  }
 });
 
 test('there is always a reason to go deeper, until there is nothing left to buy', () => {
   /* The half of the rule that must not be lost. If the shelf ever shows only
      what you already have while something is still gated, the shop has stopped
-     pointing anywhere. */
-  const deepest = Math.max(...H.UPGRADES.map((u) => u.unlock));
-  for (let d = 0; d < deepest; d += 7) {
-    const stock = H.shelfStock(d);
-    assert.ok(stock.some((u) => d < u.unlock),
-      'at ' + d + ' m nothing on the shelf is sealed, but ' + deepest + ' m is still gated');
+     pointing anywhere.
+
+     Asserted twice: for a player who has found nothing, whose gates are the
+     eight sold ladders, and for one holding every device, whose gates are all
+     fifteen. Those are the two ends of a save and the rule has to hold at
+     both - it was only ever checked at the second before round six, because
+     the second was the only one that existed. */
+  const SOLD = H.UPGRADES.filter((u) => !H.FOUND_KEYS.has(u.key));
+  const ALL = H.UPGRADES.map((u) => u.key);
+
+  for (const [held, pool, who] of [[[], SOLD, 'a player who has found nothing'],
+                                   [ALL, H.UPGRADES, 'a player holding every device']]) {
+    const deepest = Math.max(...pool.map((u) => u.unlock));
+    for (let d = 0; d < deepest; d += 7) {
+      const stock = H.shelfStock(d, held);
+      assert.ok(stock.some((u) => d < u.unlock),
+        'at ' + d + ' m nothing on the shelf is sealed for ' + who +
+        ', but ' + deepest + ' m is still gated');
+    }
+    /* Past the last gate everything is open and nothing is teased. */
+    const all = H.shelfStock(deepest + 1, held);
+    assert.equal(all.length, pool.length,
+      'the full shelf for ' + who + ' has ' + all.length + ' rows, not ' + pool.length);
+    assert.ok(!all.some((u) => deepest + 1 < u.unlock), 'a teaser survived past the last gate');
   }
-  /* Past the last gate everything is open and nothing is teased. */
-  const all = H.shelfStock(deepest + 1);
-  assert.equal(all.length, H.UPGRADES.length, 'the full shelf is missing something');
-  assert.ok(!all.some((u) => deepest + 1 < u.unlock), 'a teaser survived past the last gate');
 });

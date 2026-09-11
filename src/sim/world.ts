@@ -5,7 +5,31 @@ import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
 import { key, mixHex, rnd } from './util';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
+import { findMap, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
 import type { Block, SupplyKey } from '../types';
+
+/* The crates buried on the world you are standing on, cached.
+
+   `blockAt` is called for every cell of every rebuilt chunk, so the map cannot
+   be rebuilt inside it. The cache key is everything the map is a function of:
+   the leg, where the core is, and how many devices are in hand - that last one
+   is what makes the crate vanish the instant it is opened rather than on the
+   next world. A list length is enough because the list only ever grows. */
+let fcKey = '';
+let fcMap: Map<string, Find> = new Map();
+export function findCells(): Map<string, Find> {
+  const cd = coreM();
+  const k = g.planet + '|' + cd + '|' + g.found.length;
+  if (k !== fcKey) { fcKey = k; fcMap = findMap(g.planet, cd, g.found); }
+  return fcMap;
+}
+
+/* Which device the crate at this cell holds, or null if there is no crate
+   there. The break handlers ask this instead of reading a field off the block -
+   see the note in blockAt. */
+export function findHere(x: number, d: number): Find | null {
+  return findCells().get(x + ',' + d) || null;
+}
 
 export function blockAt(x: number, d: number): Block | null {
   if (d < 0 || x < 0 || x >= W) return null;
@@ -43,6 +67,30 @@ export function blockAt(x: number, d: number): Block | null {
     }
   }
 
+
+  /* A schematic crate, on the same footing as the relic and the component and
+     for the same reason: it is one cell carrying a whole verb, and it must not
+     lose a coin flip to a cave. AFTER those two, so if a crate hashes onto the
+     relic's cell the relic wins and the crate is simply on the next world -
+     which the design already permits, because a device is never lost.
+
+     No roll of its own: the position is a hash of the leg and the device, so
+     it consumes nothing from the ore stream. See finds.ts.
+
+     ONE id for all seven, and the device is NOT a field on the block.
+
+     The obvious shape - `id: 'find:laser'` with the key on the payload - broke
+     the golden snapshot in two ways at once, and both were the test being
+     right. Seven ids need seven legend characters, and a payload that varies
+     cell to cell within one id is exactly the drift the snapshot's payload
+     assertion exists to catch. So the crate is one block and `findHere()` says
+     what is inside it, which is also why there is only one instanced pool for
+     them rather than seven. */
+  if (findCells().has(x + ',' + d)) {
+    return { id: 'schematic', name: 'Sealed Crate', color: FIND_COLOR, host: FIND_HOST,
+             glow: 1.0, shards: 9, tone: 9, hard: FIND_HARD * hm, wt: 0, value: 0,
+             ore: true, find: true };
+  }
 
   /* Checked before generation, and only after `dug`, so a cell you have
      re-cleared stays clear. Hardness rides on the band it sits in; weight and

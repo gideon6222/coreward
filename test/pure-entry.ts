@@ -17,5 +17,6 @@ export * from '../src/sim/telemetry';
 export * from '../src/sim/light';
 export * from '../src/sim/chart';
 export * from '../src/sim/drive';
+export * from '../src/sim/finds';
 export * from '../src/sim/ambience';
 export * from '../src/sim/intro';

@@ -639,6 +639,210 @@ normal-mapped floor at low roughness so the lights streak across it.
 
 ---
 
+
+---
+
+# Round six: you find the gear, then the shop fits it
+
+Written 2026-09-10 against v0.27.0, from his own brief on the 0.27.0 build:
+
+> *"the neon lights look more like lights now which I like. it looks like the
+> description of the upgrade is cutting into the bottom upgrades in the cases.
+> also the ship is in front of the hull upgrade. For the neon, I was hoping for
+> more of a mix of cyberpunk, matrix, and steam punk. also for the 3 different
+> neon lights at the bottom, this normally signifies different categories of
+> gear. can you expand on my design ideas and feel, research how to give this
+> whole 3d space that feel, and find a way to split the upgrades into
+> categories, that aren't all shown at once. I want most of the upgrades to be
+> hidden for now and unlock later in the game, possibly after unlocking new
+> planets. and introduce some of the other power ups later as you make it
+> further into the first planet. find a way to make new items appearing feel
+> natural and an intuitive way to scroll or swap through upgrades. I also want
+> them to be explained in game. so you only unlock certain upgrades by finding
+> them initially, the game hints at what it does and you now own it, then you
+> can upgrade it at the shop."*
+
+Standing rule 9: **when he names a mechanism, build that mechanism.** He named
+one, completely, in the last two sentences. Everything below is downstream of
+it.
+
+## The two faults he can see
+
+Both are composition, not code, and both come from the same cause: the room is
+framed for the whole canvas and the canvas is not what the player can see.
+
+1. **The card cuts into the counter.** The tray is an HTML overlay held to the
+   bottom of the screen; the counter row is drawn in world space with no
+   knowledge that the bottom of the frame is spoken for. Measured, not guessed -
+   see S1.
+2. **The ship stands in front of the wall rack.** The ship is at z 0.9 and the
+   rack at z -2.15, with nine cases behind a machine parked in the middle of
+   the room. This is unfixable by nudging: with a 22 degree horizontal field
+   there is no "beside the ship" in portrait. The ship and the shelf must stop
+   sharing a shot.
+
+## What the research changed
+
+Four findings, and two of them overturned what I was about to build.
+
+**The Matrix green is exclusive, and that is the whole point of it.** Phosphor
+green near `#00FF41` on near-black is a MONOCHROME grade, not one neon among
+several. A surface that goes Matrix goes green-and-black only; put it beside
+cyan and magenta and both identities cancel into mud. So Matrix is not a
+department colour, which is what I had planned. It is **one terminal**, kept
+strictly monochrome, with code falling down it.
+
+**Gesture-only navigation is missed by most people.** NN/g measured a 21% drop
+in task completion for hidden navigation and roughly half the discoverability
+of visible navigation. So the aisle swipe ships with a visible dot row AND
+arrows from the first commit, not as a later affordance. A swipe nobody finds is
+a shop with one aisle.
+
+**Discovery does not pause the game.** Subnautica, Valheim and Hades all do this
+the same way - a short non-blocking banner at the moment of pickup, play
+continues, and the shop entry itself carries no further explanation because the
+fiction already did it. This game's own grammar pauses for a relic and a drive
+component, and those stay: a relic is the END of a search. A schematic is a
+thing you are about to USE, so it must not stop the hand that is about to use
+it.
+
+**Glow without bloom has a real technique.** A fresnel-style "fake glow" shader
+on a smooth proxy mesh around the neon prop, not an emissive material on the
+prop itself. It needs smooth normals, so it is an added cylinder around the
+tube rather than anything baked onto the low-poly edges. This is a forward-
+renderer shader, not a post pass, which is the constraint it has to satisfy.
+
+## The mechanism: seven devices are found, not bought
+
+The fifteen upgrades split cleanly in two, and the split is **already in the
+data** - it was not invented for this round, which is why it is the right one.
+
+Seven upgrades read `Not installed` at level zero. Those are devices the ship
+does not have. Eight do not, because they are ladders on gear the ship is
+already wearing - a bigger tank, a thicker hull, a better drill.
+
+So:
+
+| | what it is | how you get it |
+|---|---|---|
+| **drill, cargo, thrust, tank, scan, tow, hull, cool** | ladders on gear you already have | the Outfitter sells them, depth-gated as now |
+| **magnet, survey, bomb, laser, auto, drone, reactor** | devices you do not have | **found in the ground**, then the Outfitter improves them |
+
+Nothing about the second column is buyable until it is found. That is "most of
+the upgrades are hidden for now", and it is hidden for a reason the player can
+state: *I have not found one yet.*
+
+### Where they are, and when
+
+One per device, buried like the relic and the drive component are - a hashed
+cell on the world rather than a roll against the ore stream, so a schematic
+never loses a coin flip to a cave and never eats a roll another generator was
+using. Its own seed offset, 257, registered with the rest.
+
+Two gates decide what can be down there: the **leg** it first appears on and the
+**depth** it is buried below, which is the `unlock` depth the row already had.
+
+| device | from leg | below | what the first world holds |
+|---|---|---|---|
+| Salvage Magnet | 0 | 20 m | yes |
+| Deep Survey | 0 | 35 m | yes |
+| Seismic Charge | 0 | 40 m | yes |
+| Reactor Core | 1 | 50 m | |
+| Repair Drone | 1 | 60 m | |
+| Autopilot | 2 | 65 m | |
+| Cutting Laser | 2 | 90 m | |
+
+Leg 0's core is at 58 m, so the first planet holds exactly three of them, at 20,
+35 and 40 metres - which is his *"introduce some of the other power ups later as
+you make it further into the first planet"*, arriving at three separate moments
+of one descent rather than all at the surface. Everything past that arrives with
+a new world, which is his *"possibly after unlocking new planets."*
+
+**Missable, but never lost.** Leave one in the ground, break the core, and it
+comes back on the next world at a new position, because the candidate list is
+"everything not yet found whose leg has come". That is deliberately kinder than
+the relic. A relic is a trophy and losing one is a story; a device is a verb,
+and a save that can permanently lack a verb is a save that got worse by
+accident.
+
+### The moment itself
+
+A crate in the rock, lit, obviously not ore. Break it and a banner slides in for
+four seconds carrying three things and nothing else: what it is, one line of
+what it does, and that it is fitted. No tap, no pause, no modal - the drill keeps
+turning. Then it is on the ship, at level one, for free, and the Outfitter has a
+new row.
+
+The free first rung is the reward for the dig. It is worth 33,300 credits across
+all seven, spread over hours, and it is paid for by the fact that none of those
+seven can be bought at all until the rock gives them up.
+
+## The room: four aisles, one at a time
+
+Four departments, each with its own bay in the room, its own sign, and its own
+camera station. Swipe or tap an arrow to move along the forecourt; the camera
+glides. Never more than five cases in a shot.
+
+| aisle | holds | lit in |
+|---|---|---|
+| **RIG** | drill, cargo, thrust, magnet | brass amber |
+| **LIFE** | tank, hull, tow, cool, drone | hot magenta |
+| **SURVEY** | scan, survey, auto | cyan |
+| **ORDNANCE** | bomb, laser, reactor | violet |
+
+Ordnance is **entirely** found. Until you dig up your first charge, that aisle
+is dark and unlit and the swipe passes it by - and the first time you dock after
+finding one, the shop opens on that aisle with its sign coming up. A whole
+department lighting for the first time is a better reward than a row appearing
+in a list.
+
+This is also the honest answer to his read of the three console bars: *"this
+normally signifies different categories of gear."* He is right that coloured
+lights in a row mean categories, and the room was using them for claim strain,
+depth and stock. The bars become the aisle indicator - one per department, in
+the department's colour, the current one burning and the rest idle - which is
+both the dot row the research demands and a fitting rather than an overlay.
+
+**The ship stops sharing a shot with the shelf.** It is parked at the pump, and
+the pump is the forecourt station at one end of the sweep. Buying something cuts
+the camera to it for a beat so you see the part go on, then returns. That is a
+better feedback moment than a static ship behind the stock, and it is what
+finally kills the occlusion instead of nudging it.
+
+## The look: one identity per role
+
+The blend rule, and it is the finding that makes the three styles survive being
+in one room: **do not mix them on a surface, give each a job.**
+
+- **Steampunk is the room.** Brass, copper and riveted iron are what the
+  building is made of - the counter, the pump, the pipe runs, the gauges with
+  real needles, the valve wheels. It reads through silhouette and albedo and
+  costs no lights at all, which is why it can be everywhere.
+- **Cyberpunk is the light.** Magenta and cyan, the sourced pair, rationed
+  against a warm brass base - accents that cut through, never a wash. Two or
+  three of the seven lights are warm filament practicals, two or three are the
+  cool signage accents.
+- **Matrix is the information, on exactly one surface.** The terminal behind the
+  counter: phosphor green on black, monochrome, code falling down it, drawn to a
+  canvas at twelve frames a second with scanlines in the texture. Nothing else
+  in the room is allowed that green.
+
+And the tubes get the fresnel proxy, because an emissive material with no bloom
+behind it is a bright line and this renderer will never have bloom.
+
+## Milestones
+
+- [ ] **S1 The two faults** - the tray's height measured on the phone and the
+      room framed above it; ship and shelf separated by composition
+- [ ] **S2 `sim/finds.ts`** - seven devices, hashed positions on offset 257, the
+      block, the break, the banner, the save field, the tests
+- [ ] **S3 The shop sells what you own** - `shelfStock` gains the found gate,
+      departments become the layout, ordnance starts dark
+- [ ] **S4 The aisles** - camera stations, swipe, dot row AND arrows, the dark
+      aisle, the cut to the ship on a purchase
+- [ ] **S5 The look** - brass and rivets, rationed magenta and cyan, one Matrix
+      terminal, fresnel proxies on the tubes
+- [ ] **S6 The phone pass** - judged at 1080x2340, with the light count measured
 # Appendix: rounds one to three, as planned and shipped
 
 Kept because the reasoning is why the game is shaped the way it is. Everything below has

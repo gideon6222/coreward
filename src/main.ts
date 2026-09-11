@@ -166,9 +166,9 @@ if (new URLSearchParams(location.search).has('debug')) {
        points rather than reasoning about Euler order. Two "fixes" to the
        intro's heading were argued from the code and both were wrong. */
     rig, bit, player,
-    shelfKeys: () => shelfStock(g.best.depth).map((u) => u.key),
+    shelfKeys: () => shelfStock(g.best.depth, g.found).map((u) => u.key),
     sealedKey: () => {
-      const s = shelfStock(g.best.depth).filter((u) => g.best.depth < u.unlock);
+      const s = shelfStock(g.best.depth, g.found).filter((u) => g.best.depth < u.unlock);
       return s.length ? s[0].key : null;
     }
   };

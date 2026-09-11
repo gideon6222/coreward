@@ -2,6 +2,7 @@
 
 import type { Ore, Rock, Material, Upgrade, UpgradeKey, Supply, Trait, MatCost, Relic } from '../types';
 import { zoomForScan } from './feel';
+import { FOUND_KEYS } from './finds';
 
 /* World width in columns. Only about 8 fit on a portrait screen at the current
    framing, so the rest is lateral room to explore: which way to dig at a given
@@ -836,9 +837,18 @@ export function shelfState(
    Returned in shelf order rather than filtered at the call site, because the
    room lays itself out from this list and two places deciding what is on the
    shelf is two places to disagree. */
-export function shelfStock(bestDepth: number): Upgrade[] {
-  const open = UPGRADES.filter((u) => bestDepth >= u.unlock);
-  const sealed = UPGRADES.filter((u) => bestDepth < u.unlock)
+export function shelfStock(bestDepth: number, found: string[] = []): Upgrade[] {
+  /* The devices come off the shelf entirely until they are dug up.
+
+     This is the harder of the two gates and it is deliberately silent: a
+     sealed case says "come back at 90 m", which is a plan, but there is no
+     honest case to show for a device the player has no idea exists. Telling
+     them the Cutting Laser is out there somewhere would replace a discovery
+     with an errand. The room says nothing, and then one day there is a crate
+     in the rock. See finds.ts. */
+  const sellable = UPGRADES.filter((u) => !FOUND_KEYS.has(u.key) || found.includes(u.key));
+  const open = sellable.filter((u) => bestDepth >= u.unlock);
+  const sealed = sellable.filter((u) => bestDepth < u.unlock)
     .sort((a, b) => a.unlock - b.unlock);
   /* Exactly one teaser, and it is the shallowest thing still out of reach -
      which is also the next one you will actually get. */

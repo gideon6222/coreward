@@ -45,7 +45,11 @@ export const ui = {
   power: mustEl('power'), powerChip: mustEl('powerChip'),
   shopPlanet: mustEl('shopPlanet'),
   verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes'),
-  runlog: mustEl('runlog'), btnLog: mustEl('btnLog')
+  runlog: mustEl('runlog'), btnLog: mustEl('btnLog'),
+  /* el(), not mustEl(): the banner is new, and a save loaded into an older
+     cached shell must not take the whole HUD down with it - the same clause
+     the haptics toggle needed and for the same reason. */
+  found: el('found'), foundName: el('foundName'), foundWhat: el('foundWhat')
 };
 
 /* The run log, built on open and never in the loop.
@@ -98,6 +102,26 @@ export function tickToast(dt: number) {
   toastT -= dt;
   if (toastT <= 0) ui.toast.style.opacity = '0';
 }
+/* ---------- the discovery banner ----------
+
+   Four seconds, no tap, no pause. Long enough to read nineteen words at arm's
+   length and short enough that it is gone before the next block is through.
+   Driven off the same tick as the toast rather than a setTimeout, so it runs
+   on game time and the filmstrip can hold it still. */
+let foundT = 0;
+export function foundBanner(name: string, what: string) {
+  if (!ui.found || !ui.foundName || !ui.foundWhat) return;
+  ui.foundName.textContent = name;
+  ui.foundWhat.textContent = what;
+  ui.found.classList.add('on');
+  foundT = 4.0;
+}
+export function tickFound(dt: number) {
+  if (foundT <= 0) return;
+  foundT -= dt;
+  if (foundT <= 0 && ui.found) ui.found.classList.remove('on');
+}
+
 export function flash(color: string, ms?: number) {
   ui.flash.style.background = color;
   ui.flash.style.opacity = '1';

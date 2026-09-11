@@ -66,6 +66,10 @@ export interface Block {
   relic?: boolean;
   /* the Jump Drive component buried on this world - see drive.ts */
   part?: boolean;
+  /* A sealed crate holding a device you do not own yet. A flag and not the
+     device's name: every crate is the same block, and `findHere()` in world.ts
+     says which one this cell holds. See the note in blockAt. */
+  find?: boolean;
 }
 
 export type UpgradeKey =

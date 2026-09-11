@@ -477,7 +477,7 @@ export function refreshBays() {
      case appears the run after you first reach its depth, and the room has to
      make space for it. `shelfStock` is the single source of what is stocked -
      see the note on it in config.ts about the CRAFT.md rule this corrects. */
-  const raw = shelfStock(g.best.depth);
+  const raw = shelfStock(g.best.depth, g.found);
   /* Sorted by GROUP, not by table order.
 
      The four groups are the design's own structure and the room was throwing

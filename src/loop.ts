@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { ambienceTick } from './sim/ambience';
 import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './sim/drive';
+import { FIND_COLOR } from './sim/finds';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
          coreDepth, valueMult, skyHi, skyLo,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel } from './sim/state';
-import { blockAt } from './sim/world';
+import { blockAt, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import type { Dir } from './types';
 import {
@@ -42,9 +43,9 @@ import { hap } from './haptics';
 import { crossedMark, fadeMark } from './mark';
 import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
-import { ui, atSurface, updateHUD, toast, flash, tickToast, onQuake } from './ui';
+import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner, onQuake } from './ui';
 import { stepGauges } from './gauges';
-import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, showEvent, stopDigging, absorb, stepBreachHere } from './actions';
+import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
 import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
@@ -428,6 +429,21 @@ export function tick(raw: number, draw = true) {
           R.digging = null;
           save();
         }
+        else if (b.find) {
+          /* A device. Unlike a relic or a component this does NOT open a
+             modal: the research is consistent that a discovery announces
+             itself and lets play carry on, and this is a thing you are about
+             to use rather than the end of a search. The banner runs itself
+             out over four seconds while the drill keeps turning. */
+          const f = findHere(R.digging.x, R.digging.d);
+          if (f) grantFind(f.key);
+          spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 150, 10, 1.8);
+          spray(worldX(R.digging.x), -R.digging.d, FIND_COLOR, 120, 8, 2.2);
+          flash('rgba(80,255,140,.34)', 520);
+          R.shake = Math.max(R.shake, 0.55);
+          R.digging = null;
+          save();
+        }
         else if (b.cache) {
           /* A cache pays in something other than ore, so it never enters the
              hold - which also means it never costs you cargo weight, and a
@@ -696,7 +712,7 @@ export function tick(raw: number, draw = true) {
          fraction alone would end the sequence on its first frame. */
       if (titleLanding() && isLanding() && landingT() >= 1) finishLanding();
     }
-    tickToast(raw);
+    tickToast(raw); tickFound(raw);
     if (draw) renderTransit();
     return;
   }
@@ -708,7 +724,7 @@ export function tick(raw: number, draw = true) {
     R.transit.t += raw;
     const u = Math.min(1, R.transit.t / R.transit.dur);
     stepTransit(u, clock);
-    tickToast(raw);
+    tickToast(raw); tickFound(raw);
     if (draw) renderTransit();
     if (u >= 1) arrive();
     return;
@@ -716,7 +732,7 @@ export function tick(raw: number, draw = true) {
 
   if (isDocked()) {
     stepStation(clock, raw);
-    tickToast(raw);
+    tickToast(raw); tickFound(raw);
     updateHUD();
     stepGauges(raw);
     if (draw) renderStation();
@@ -894,7 +910,7 @@ export function tick(raw: number, draw = true) {
     R.shake = Math.max(0, R.shake - raw * SHAKE_DECAY);
   }
 
-  tickToast(raw);
+  tickToast(raw); tickFound(raw);
 
   /* The surface is drawn every frame even from underground: the lean and the
      strain lamp are what the player looks for on the way up. */

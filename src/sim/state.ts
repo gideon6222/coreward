@@ -2,6 +2,7 @@ import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, matTotalFor,
          bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
+import { FOUND_KEYS } from './finds';
 import { R } from './runtime';
 import { newClaim, loadClaim, afterCell, applyQuake, refuelMult, payoutMult,
          RICH_PER_QUAKE, type ClaimState, type Structure } from './claim';
@@ -67,6 +68,10 @@ export const g: {
      planet from the ninth onward and quietly stopped generating relics for the
      rest of the game. The perk is what you own; this is what you have done. */
   relicsTaken: number[];
+  /* Devices dug out of the rock, across every world ever visited. Like
+     `drive`, a list that only grows - and like `drive`, it is the thing that
+     decides what the Outfitter is even allowed to sell you. See finds.ts. */
+  found: string[];
   /* balance telemetry: all time in the save, this run in memory only */
   log: Log;
   /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
@@ -98,7 +103,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
-  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [],
+  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [],
   log: blankLog(),
   best: { depth: 0, haul: 0, fastest: 0, worlds: 0 },
   claim: newClaim(),
@@ -212,6 +217,7 @@ export function save() {
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
       relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
+      found: g.found,
       claim: g.claim
     }));
   } catch (e) { /* ignore */ }
@@ -249,6 +255,21 @@ export function load() {
       g.won = !!s.won;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
       g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];
+      /* Devices, and the grandfather clause that has to come with them.
+
+         Before this round the seven found devices were bought over the counter
+         like everything else, so a save in the wild can be carrying a level
+         three Cutting Laser and an empty `found` list. Loading that literally
+         would take a paid-for laser off the ship and put it back in the ground,
+         which is the single worst thing a version bump can do to somebody.
+
+         So: OWNING IT IS HAVING FOUND IT. Any device already above level zero
+         is added to the list on load, whatever the save says. New saves write
+         the list properly and this clause never fires again for them. */
+      g.found = Array.isArray(s.found) ? s.found.slice() : [];
+      for (const k of FOUND_KEYS) {
+        if ((g.up[k] || 0) > 0 && !g.found.includes(k)) g.found.push(k);
+      }
       /* loadLog defaults every field, so a save from before the log existed
          comes back zeroed rather than full of undefined that render as NaN. */
       g.log = loadLog(s.log);
@@ -269,6 +290,12 @@ export function load() {
     g.up.drill = o.drill || 0; g.up.cargo = o.cargo || 0; g.up.thrust = o.thrust || 0;
     g.up.tank = o.tank || 0; g.up.cool = o.cool || 0; g.up.scan = o.scan || 0;
     g.up.auto = Math.min(6, o.beacon || 0);
+    /* The same grandfather clause as the v2 path: a v1 save's beacon becomes
+       an Autopilot, and an Autopilot you already have is one you already
+       found. */
+    for (const k of FOUND_KEYS) {
+      if ((g.up[k] || 0) > 0 && !g.found.includes(k)) g.found.push(k);
+    }
     g.stock = grandfatherStock();
     save();
   } catch (e) { /* corrupt save, start fresh */ }

@@ -14,7 +14,7 @@ const ALPHA = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const ALL_IDS = [
   ...H.ORES.map((o) => o.id), ...H.ROCKS.map((r) => r.id),
   H.GEODE.id, H.GAS.id, H.CACHE.id, H.RUBBLE.id, H.SEAM.id,
-  'core', 'bedrock', '(empty)', 'relic', 'part'
+  'core', 'bedrock', '(empty)', 'relic', 'part', 'schematic'
 ].sort();
 const CHAR = new Map(ALL_IDS.map((id, i) => [id, ALPHA[i]]));
 assert.ok(ALL_IDS.length <= ALPHA.length, 'ran out of snapshot characters');
@@ -137,7 +137,12 @@ const PRE = JSON.parse(
    replaces whatever was generated in its cell and touches nothing else,
    because its position is a hash of the leg rather than a sample of the
    world's noise. It consumes no roll at all. */
-const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'part']);
+/* 'schematic' is a device crate - up to four cells per world, at positions
+   hashed from the leg and the device. Same argument as 'part', and it is worth
+   restating rather than lumping in, because the claim is what makes it legal:
+   it consumes NO roll. It is not sampled from the world's noise at all, so it
+   cannot move an ore, and the cells it takes are the only cells it touches. */
+const OVERWRITERS = new Set(['(empty)', H.GAS.id, H.GEODE.id, H.CACHE.id, 'relic', 'part', 'schematic']);
 
 /* Extending the ore ladder downward is the other legal change, and it is a
    NARROWER claim than the one above, so it is stated narrowly rather than by

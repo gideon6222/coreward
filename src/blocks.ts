@@ -110,7 +110,10 @@ function poolFor(b: Block): Pool {
   });
   applyLight(detailMat);
   const detail = new THREE.InstancedMesh(
-    b.cache ? crateGeo : b.ore ? shardGeo : pebbleGeo, detailMat,
+    /* A sealed crate is a crate, not a shard. It carries `ore: true` so it
+       sprays and sounds like something worth having, which would otherwise
+       have drawn it as eight floating gems - see finds.ts. */
+    b.cache || b.find ? crateGeo : b.ore ? shardGeo : pebbleGeo, detailMat,
     b.ore || b.seam ? MAX_DETAILS : MAX_CELLS
   );
   detail.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

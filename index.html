@@ -279,6 +279,38 @@
     letter-spacing:.03em; color:var(--amber); opacity:0; transition:opacity .3s; text-shadow:0 2px 10px #000;
   }
 
+  /* ---------- the discovery banner ----------
+
+     A device coming out of the rock is the one genuinely new thing that can
+     happen to you underground, and it gets a card rather than a one-line
+     toast: what it is, one line of what it does, and that it is already on the
+     ship.
+
+     IT DOES NOT PAUSE, and that is the sourced part. Subnautica, Valheim and
+     Hades all announce a discovery with a short non-blocking banner and let
+     play carry on; none of them opens a modal. This game DOES open one for a
+     relic and for a drive component, and those stay - a relic is the END of a
+     search, so stopping to look at it is the point. A device is a VERB you are
+     about to use, and stopping the hand that is about to use it is exactly
+     wrong.
+
+     Top third rather than the middle, so it is clear of the drill face and
+     clear of both thumbs. `pointer-events:none` because there is nothing to
+     tap: it goes on its own. */
+  #found{
+    position:absolute; left:14px; right:14px; top:14%;
+    padding:12px 14px 11px; pointer-events:none;
+    border:1px solid rgba(0,255,65,.45); border-left:3px solid #00ff41;
+    background:linear-gradient(180deg,rgba(6,18,10,.94),rgba(4,10,7,.96));
+    border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.6);
+    opacity:0; transform:translateY(-10px); transition:opacity .35s, transform .35s;
+  }
+  #found.on{opacity:1; transform:none;}
+  #found .fhead{font-size:9.5px; letter-spacing:.22em; color:#00ff41; opacity:.8;}
+  #found .fname{font-size:18px; font-weight:800; letter-spacing:.03em; margin-top:3px; color:#e8ffe8;}
+  #found .fwhat{font-size:12px; line-height:1.5; color:#9fd8ab; margin-top:4px;}
+  #found .ffit{font-size:9.5px; letter-spacing:.16em; color:#00ff41; margin-top:8px;}
+
   /* Bottom right, where a thumb naturally sits. */
   #ctrl{
     position:fixed; right:18px; bottom:var(--ctrl-b); z-index:9;
@@ -742,6 +774,13 @@
   </div>
   <div id="depth">DEPTH 0 m</div>
   <div id="toast"></div>
+  <!-- The discovery banner. Deliberately NOT a modal: see #found in the CSS. -->
+  <div id="found">
+    <div class="fhead">DEVICE RECOVERED</div>
+    <div class="fname" id="foundName">&mdash;</div>
+    <div class="fwhat" id="foundWhat">&mdash;</div>
+    <div class="ffit">FITTED &middot; UPGRADE IT AT THE OUTFITTER</div>
+  </div>
 </div>
 
 <div id="actions">

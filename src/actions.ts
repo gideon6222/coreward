@@ -3,9 +3,10 @@ import { isHeart } from './sim/drive';
 import { W, HULL_MAX, DEF, isOre, START_X, SAVE_KEY, OLD_KEY, SUPPLY_OF, PATCH_HULL, CELL_FUEL, RUBBLE, tremorCells, DROP_MIN_VALUE, GAS_HULL_DAMAGE, GAS_SOAK, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, OVERDRIVE_SECS, OVERDRIVE_MULT, BULWARK_HITS, PULSE_SECS, tremorDepth, UPGRADES, costOf } from './sim/config';
 import { clamp, key, stream } from './sim/util';
 import { newBreach, stepBreach } from './sim/breach';
+import { FIND_OF } from './sim/finds';
 import { hap } from './haptics';
 import { g, S, save, coreM, worldTrait, resetClaim, digStrain, padFuel, claimPayout } from './sim/state';
-import { blockAt, haulValue, findRoute, planCollapse, cachePrize } from './sim/world';
+import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
 import { worldX } from './materials';
@@ -16,10 +17,10 @@ import { takeDrop, syncDrops, leaveDrop } from './drops';
 import { fireBeam } from './beam';
 import { setMark } from './mark';
 import { setDrillTier, setUpgradeHardware } from './ship';
-import { ui, toast, flash, atSurface, updateKit, onQuake } from './ui';
+import { ui, toast, flash, atSurface, updateKit, onQuake, foundBanner } from './ui';
 import { sfx } from './audio';
 import { SHAKE_TOW, SHAKE_BOOM, CHARGE_MAX , SETTLE_FROM} from './sim/feel';
-import type { Dir, SupplyKey } from './types';
+import type { Dir, SupplyKey, UpgradeKey } from './types';
 import { mergeLog, blankLog } from './sim/telemetry';
 
 /* Stop drilling, and remember how far through the block you were.
@@ -289,6 +290,9 @@ function breakCells(cells: number[][]) {
       g.hull -= absorb(Math.round(GAS_HULL_DAMAGE * (worldTrait().gasDamage || 1)));
       g.soak = Math.min(1, g.soak + GAS_SOAK);
       R.hullCause = 'gas';
+    } else if (b.find) {
+      const f = findHere(x, d);
+      if (f) grantFind(f.key);
     } else if (b.cache) {
       grantCache(x, d);
     } else if (g.weight + b.wt <= S.cargoCap()) {
@@ -305,6 +309,29 @@ function breakCells(cells: number[][]) {
   if (quaked) onQuake();
   save();
   return { taken, dropped, gassed };
+}
+
+/* A sealed crate, opened.
+
+   Here rather than in the frame loop for exactly the reason `grantCache` is:
+   ordnance breaks cells too, and a charge that silently deleted the one crate
+   on the world carrying the Cutting Laser would be the worst surprise in the
+   game. One routine, both callers.
+
+   THE DEVICE ARRIVES AT LEVEL ONE, free. That is the pay for the dig, and it
+   is what makes `effect(1)` rather than `Not installed` the first thing the
+   shop row ever says about it. `Math.max` rather than assignment so opening a
+   crate can never take a level off something - which it could, on a save where
+   the grandfather clause put a level-three device in the list and a crate for
+   it is still in the ground on the world you were already on. */
+export function grantFind(key: UpgradeKey) {
+  if (!g.found.includes(key)) g.found.push(key);
+  g.up[key] = Math.max(g.up[key] || 0, 1);
+  const u = UPGRADES.find((x) => x.key === key);
+  const f = FIND_OF[key];
+  foundBanner(u ? u.name : key, f ? f.blurb : '');
+  sfx.relic();
+  hap.boom();
 }
 
 /* Pulled out of the frame loop so ordnance can open a cache too - a bomb that
