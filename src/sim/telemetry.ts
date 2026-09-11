@@ -34,6 +34,8 @@ export interface Log {
   sec: number; secDig: number; secFly: number;
   /* fuel spent, by what spent it */
   fuelDig: number; fuelFly: number;
+  /* Burned doing nothing, which is a real cost now - see FUEL_IDLE. */
+  fuelIdle: number;
   /* hull lost, by what took it */
   hullHeat: number; hullGas: number;
   /* credits banked at the pad, and what was dug to earn them */
@@ -52,7 +54,7 @@ export interface Log {
 export function blankLog(): Log {
   return {
     sec: 0, secDig: 0, secFly: 0,
-    fuelDig: 0, fuelFly: 0, hullHeat: 0, hullGas: 0,
+    fuelDig: 0, fuelFly: 0, fuelIdle: 0, hullHeat: 0, hullGas: 0,
     earned: 0, blocks: 0, oreBlocks: 0, metres: 0,
     bombFired: 0, laserFired: 0, ordBlocks: 0, powerSpent: 0,
     supBought: 0, supUsed: 0, towed: 0, autoUsed: 0, runs: 0
@@ -94,14 +96,15 @@ const secs = (n: number) => (n >= 60 ? Math.round(n / 60) + 'm ' + Math.round(n 
    first frame of a new game. */
 export function summarise(log: Log, fuelCap: number, hullMax: number): Row[] {
   const rows: Row[] = [];
-  const fuel = log.fuelDig + log.fuelFly;
+  const fuel = log.fuelDig + log.fuelFly + log.fuelIdle;
   const hull = log.hullHeat + log.hullGas;
 
   rows.push({
     label: 'Fuel',
     value: one(per(fuel, log.sec)) + '/s',
     note: fuel > 0
-      ? pct(log.fuelDig, fuel) + ' of it drilling, ' + pct(log.fuelFly, fuel) + ' flying'
+      ? pct(log.fuelDig, fuel) + ' of it drilling, ' + pct(log.fuelFly, fuel) + ' flying, '
+        + pct(log.fuelIdle, fuel) + ' idling'
         + (log.secDig > 0 ? ' · a full tank is ' + secs(per(fuelCap, per(log.fuelDig, log.secDig))) + ' of drilling' : '')
       : 'nothing burned yet'
   });

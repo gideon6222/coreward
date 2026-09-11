@@ -104,12 +104,30 @@ export function buildGauges() {
   weightN = needle('weightNeedle', NEEDLE_SLOW, 50, 68, 78);
   hullN = needle('hullNeedle', NEEDLE_SLOW, 50, 50, 118);
 
-  for (const id of ['weightArc', 'soakArc']) {
+  for (const id of ['weightArc', 'soakArc', 'fuelReserve']) {
     arcs[id] = document.getElementById(id) as unknown as SVGElement | null;
   }
 }
 
 /* Targets, set from game state. Nothing here draws a frame. */
+/* The reserve band, and how loud the dial is about it.
+
+   `reserve` is the climb home as a fraction of the tank, drawn up from EMPTY;
+   `state` is what to do about it. Separate from setGauges because the reserve
+   is recomputed a few times a second rather than every frame - see R.climb -
+   and writing an unchanged dasharray sixty times a second is churn. */
+export function setFuelReserve(reserve: number, state: string) {
+  if (!built) return;
+  setArc('fuelReserve', clamp(reserve, 0, 1));
+  const cluster = document.getElementById('cluster');
+  if (cluster) {
+    cluster.classList.toggle('dry', state === 'danger' || state === 'stranded');
+    cluster.classList.toggle('gone-dry', state === 'stranded');
+  }
+  const dry = document.getElementById('dry');
+  if (dry) dry.classList.toggle('on', state === 'danger' || state === 'stranded');
+}
+
 export function setGauges(fuel: number, weight: number, hull: number, soak: number) {
   if (!built) return;
   fuelN.want = clamp(fuel, 0, 1);

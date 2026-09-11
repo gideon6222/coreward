@@ -288,6 +288,24 @@ export function planCollapse(want: number, rand: () => number): string[] {
 }
 
 /* shortest route home through already dug tunnels, breadth first */
+/* How many cells of flying it is from here to the pad.
+
+   The real route through tunnel, not the depth: a shaft you have wandered
+   sideways in is longer than the metre reading, and the difference is exactly
+   the margin the Point of No Return is measured against.
+
+   Falls back to the depth plus one when there is no route at all, which means
+   you are sealed in and would have to cut your way out. That is a LOWER bound
+   on the real cost rather than an honest one - but the alternative is
+   declaring you stranded the moment a tremor closes a tunnel you could open
+   again with two cells of drilling, and a warning that cries wolf is a warning
+   nobody reads. */
+export function climbCells(): number {
+  const r = findRoute();
+  if (r) return r.length - 1;
+  return Math.max(0, Math.round(g.pd) + 1);
+}
+
 export function findRoute() {
   const sx = Math.round(g.px), sd = Math.round(g.pd);
   const goal = key(START_X, -1);

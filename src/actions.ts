@@ -436,28 +436,64 @@ export function autopilot() {
   toast('Autopilot engaged · ' + route.length + ' m of tunnel');
 }
 
-export function tow(reason: string) {
-  /* A tow ends the run too, and it is the outcome most worth counting: the
-     share of runs that end this way is the clearest read there is on whether
-     fuel and hull are priced right. Counted here rather than in sell(), which
-     is called afterwards on whatever the tow left aboard. */
+/* ---------- death ----------
+
+   Playtest: *"I dont want towing to be a thing. if you run out of gas, you
+   should game over."*
+
+   A tow used to winch you home and take 10 to 50% of the haul as a fee. That
+   is the Super Motherload panic button being handed out free, forever - the
+   sequel to the game this one descends from SELLS the rescue as a premium
+   one-use item, and the base game just explodes you. He is asking for the base
+   game.
+
+   WHAT IS LOST, AND WHERE THE LINE IS. The hold, the run and the ship. Nothing
+   else: not a credit already banked, not an upgrade level, not a relic, not a
+   drive component, not the world. That line is not caution, it is what the
+   research found - across Motherload, SteamWorld Dig, Dome Keeper, Deep Rock,
+   Subnautica and Barotrauma, not one game destroys its meta-progression on a
+   single failed run. Permadeath modes wipe a RUN or a CHARACTER; the unlocks
+   always survive. Losing the whole take is already harsher than SteamWorld Dig
+   (half your gold) or Deep Rock (you keep a quarter), and it is the most a
+   game with a fifteen-rung ladder can take without the ladder becoming the
+   thing you are afraid to risk.
+
+   And the consequence worth naming: THE FUEL CELL IS NOW THE PANIC BUTTON.
+   Thirty-five fuel straight into the tank used to be a minor convenience. With
+   no tow it is the thing that saves your life, and it is something you have to
+   find before you can buy one. An existing mechanic stopped being decoration
+   without a line of code. */
+export function die(cause: 'fuel' | 'heat' | 'gas' | 'breach', after: () => void = () => {}) {
+  /* Counted before anything is cleared, and it is still the number that says
+     most about whether the game is priced right. */
   R.run.towed++;
-  const cut = S.towCut();
-  const taken = Math.round(haulValue() * cut);
-  for (const k in g.cargo) g.cargo[k] = Math.floor(g.cargo[k] * (1 - cut));
+  const lost = haulValue();
+  g.cargo = {};
   g.weight = 0;
-  for (const k in g.cargo) g.weight += g.cargo[k] * DEF[k].wt;
   sfx.alarm();
-  flash('rgba(255,140,60,.35)', 500);
-  R.shake = SHAKE_TOW;
+  flash('rgba(255,90,60,.55)', 900);
+  R.shake = Math.max(R.shake, SHAKE_BOOM);
+  hap.boom();
+  spray(worldX(Math.round(g.px)), -g.pd, 0xff8844, 220, 13, 2.6);
+  const at = Math.round(g.pd);
+  /* The ship is put back on the pad before the card, not after: the card hands
+     control back to 'play' when it is dismissed, and handing it back to a ship
+     that is still four hundred metres down inside solid rock is the kind of
+     thing that only shows up once somebody taps CONTINUE. */
   goSurface();
-  const kept = haulValue();
-  sell();
-  showEvent('TOWED HOME',
-    reason + ' A salvage rig winched you back to the pad and took ' + Math.round(cut * 100) +
-    '% of your haul as the fee, worth ◈ ' + taken.toLocaleString() + '. You kept ◈ ' + kept.toLocaleString() +
-    '. Tow Insurance in the Outfitter lowers that cut.',
-    'CONTINUE', () => {});
+  const why = cause === 'fuel'
+    ? 'The tank ran dry at ' + at + ' m and the ship went down with everything in the hold.'
+    : cause === 'gas'
+      ? 'A gas pocket opened the hull at ' + at + ' m and the ship went down with everything in the hold.'
+      : cause === 'breach'
+        ? 'The shaft closed over you at ' + at + ' m. The world came apart with the ship still in it.'
+        : 'The heat took the hull at ' + at + ' m and the ship went down with everything in the hold.';
+  showEvent('THE SHIP IS LOST',
+    why + (lost > 0 ? ' That was ◈ ' + lost.toLocaleString() + ' of ore.' : '') +
+    '  Everything you had already banked is still yours - the credits, the rig, '
+    + 'the relics. Another hull is waiting on the pad.',
+    'AGAIN', after);
+  save();
 }
 
 /* The run report.
@@ -588,11 +624,11 @@ export function stepBreachHere(dt: number): boolean {
   }
   if (b.failed) {
     R.breach = null;
-    /* The world still breaks. You just do not get to carry anything out of it,
-       which is the same price the game already charges for running dry. */
-    toast('THE SHAFT CLOSED · TOWED OUT');
-    tow('the shaft closed');
-    onCoreBroken();
+    /* The world still breaks, and now so do you. `onCoreBroken` is handed to
+       the death card as its dismiss callback rather than called here, because
+       both of them open a screen and two modals racing each other is how you
+       get a chart behind a death notice. */
+    die('breach', onCoreBroken);
     return false;
   }
   return true;
@@ -601,7 +637,7 @@ export function stepBreachHere(dt: number): boolean {
 export function hardReset() {
   try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_KEY); } catch (e) { /* ignore */ }
   g.planet = 0; g.credits = 0; g.shards = 0;
-  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0,
+  g.up = { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, scrub: 0, auto: 0, bomb: 0, laser: 0,
     hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 };
   g.kit = { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 };
   g.stock = {};

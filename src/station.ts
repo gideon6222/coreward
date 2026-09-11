@@ -212,7 +212,7 @@ function makePart(key: UpgradeKey): THREE.Object3D {
       add(augerGeo, augerMat, 0, -0.02, 0, undefined, 0.72); break;
     /* The four with no bolt-on part still get something that says what they
        are. An empty case reads as a bug, not as "this one is abstract". */
-    case 'tow':
+    case 'scrub':
       add(new THREE.TorusGeometry(0.13, 0.035, 6, 14), HW_MAT.trim, 0, 0, 0, [Math.PI / 2.4, 0, 0]); break;
     case 'auto':
       add(new THREE.OctahedronGeometry(0.15, 0), HW_MAT.trim); break;

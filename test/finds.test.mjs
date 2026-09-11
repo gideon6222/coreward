@@ -40,11 +40,16 @@ test('every device reads Not installed at level zero, and nothing else does', ()
   }
 });
 
-test('the first world holds exactly three devices, and they are the shallow ones', () => {
+test('the first world holds exactly two devices, and they are the shallow ones', () => {
+  /* Two, not three. Round seven pushed the ore ladder out over eight worlds
+     and the devices followed the minerals they are built from - Deep Survey
+     went from 35 m to 62 m with gold, which is past the 58 m core of the
+     tutorial planet. Two discoveries in one descent is still two moments; the
+     third has simply moved to the world after. */
   const core = H.coreDepth(0);
   const on = H.findsOn(0, core, []);
-  assert.equal(on.length, 3, 'leg 0 holds ' + on.length + ' devices, not 3');
-  assert.deepEqual(on.map((f) => f.key), ['magnet', 'survey', 'bomb']);
+  assert.equal(on.length, 2, 'leg 0 holds ' + on.length + ' devices, not 2');
+  assert.deepEqual(on.map((f) => f.key), ['magnet', 'bomb']);
   for (const f of on) {
     assert.ok(f.below < core,
       f.key + ' is buried at ' + f.below + ' m on a world whose core is at ' + core);
@@ -69,10 +74,15 @@ test('a device is never buried outside the world it is on', () => {
   }
 });
 
-/* Load-bearing, and `findMap` deliberately has no collision nudge so that this
-   can fail rather than be silently repaired - see the note there. Swept across
-   every holding state as well as every leg, because which devices are in the
-   ground together changes with what is already in hand. */
+/* Two claims, and the second is the one that can actually fail.
+
+   Every device gets its own cell - which `findMap` guarantees with a nudge, so
+   on its own this asserts that the nudge works and nothing else. The claim
+   with teeth is the one after it: the nudge should almost never fire. Round
+   six removed the nudge for exactly this reason and round seven put it back,
+   because moving every device's depth made collisions inevitable rather than
+   absent - across thirteen thousand placements two overlapping bands will
+   share a cell, and that is the birthday problem, not a bad hash. */
 test('two devices on one world are never in the same cell', () => {
   for (let leg = 0; leg < LEGS; leg++) {
     const core = H.coreDepth(leg);
@@ -85,6 +95,22 @@ test('two devices on one world are never in the same cell', () => {
         ' devices into ' + m.size + ' cells');
     }
   }
+});
+
+test('the collision nudge almost never has to fire', () => {
+  H.resetFindNudges();
+  for (let leg = 0; leg < LEGS; leg++) {
+    const core = H.coreDepth(leg);
+    for (let n = 0; n <= H.FINDS.length; n++) {
+      H.findMap(leg, core, H.FINDS.slice(0, n).map((f) => f.key));
+    }
+  }
+  /* Thirteen thousand placements. A handful of nudged metres is the birthday
+     problem; hundreds would mean the hash had stopped separating devices, and
+     no assertion about the repaired POSITIONS could ever tell you that. */
+  const n = H.findNudges();
+  assert.ok(n < 12, 'the nudge moved devices ' + n + ' metres across the sweep, ' +
+    'which means the position hash has stopped separating them');
 });
 
 /* Missable, but never lost - the rule that separates a device from a relic. */

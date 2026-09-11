@@ -47,9 +47,11 @@
   },
   "cost": {
     "move": 0.8,
-    "digBase": 0.8,
-    "digPerHardness": 0.035,
-    "hullRegen": 30
+    "cellBase": 0.6,
+    "cellPerHardness": 0.3,
+    "hullRegen": 30,
+    "clear": 2.2,
+    "warn": 1.5
   },
   "heat": {
     "depth": 38,

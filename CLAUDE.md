@@ -118,7 +118,8 @@ new that generates content **must roll on its own seed offset** — caves on `pl
 pockets on `planet + 41`, seams on `(x + 61, d + 17)`. Consuming the ore roll shifts every
 value at every depth on every planet, and the diff looks like three lines.
 
-**`test/baseline/blocks-preadditive.json` is frozen and must never be re-recorded.** It is the
+**`test/baseline/blocks-frozen.json` is frozen and is re-recorded only for a deliberate ore
+rebalance** - once so far, in round seven, with the diff read first and written down. It is the
 world as it stood before pockets existed, with its own id legend, and the test asserts the only
 legal difference: a cell kept its id, or a known overwriter replaced it. Re-recording it is
 exactly the mistake it exists to catch.

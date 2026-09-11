@@ -16,9 +16,25 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.29.0';
+export const VERSION = '0.30.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.30.0', date: '2026-09-10', title: 'No tow',
+    notes: [
+      'There is no salvage rig any more. Run the tank dry or lose the hull and the ship goes down with everything in it.',
+      'You keep every credit you had already banked, every upgrade, every relic and every drive component. The world stays where it is. It is the run you lose, not the save.',
+      'Tow Insurance is gone, and every credit anybody spent on it has been refunded.',
+      'In its place, the Scrubber: up to 40% off the fuel a cell of rock costs.',
+      'Drilling is charged by the cell now, not by the second - so a better Drill gets through rock faster and pays exactly the same for it. A full tank used to be 14 cells of hard rock at the start of the game and 760 by the end of it.',
+      'The fuel gauge shows a red band: the fuel it would take to fly home from where you are. It grows as you descend. When the needle gets near it the dial goes red and pulses, and the game tells you to turn back.',
+      'The reactor idles, so sitting still underground is no longer free.',
+      'Far less ore in the ground, and the deep kinds are properly rare now - Solmarrow was turning up four times as often as Umbrite, which is worth a third as much.',
+      'New materials arrive over eight worlds instead of five. Copper, Iron and Silver on the first; Solmarrow not until 372 m, which is the eighth planet.',
+      'The first time you ever cut a new material the game stops for a beat, names it, and tells you what it is worth.',
+      'Ore is worth more per unit, and the mineral requirements at the top of a ladder stop climbing after the fourth rung.'
+    ]
+  },
   {
     version: '0.29.0', date: '2026-09-10', title: 'The drawer under the counter',
     notes: [

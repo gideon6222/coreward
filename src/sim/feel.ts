@@ -664,16 +664,110 @@ export function chargeAfter(charge: number, dt: number, atPad: boolean, bonus = 
 /* ---------- costs and damage ---------- */
 
 export const FUEL_PER_MOVE = 0.8;           /* per second while flying */
-/* Per second while drilling, and per point of hardness on top.
-   0.09 a point meant a granite cell at 50 m cost four times a dirt cell at
-   20 m, so a full tank cut 90 cells at the top of the world and 26 at the
-   bottom - the hold filled itself with weightless dirt in the shallows and the
-   tank ran dry before the hold was a quarter full in the deep. Neither
-   constraint bound where it was supposed to. At 0.035 the two swap over around
-   the middle of the world, which is where the decision belongs. */
-export const FUEL_DIG_BASE = 0.8;           /* per second while drilling */
-export const FUEL_DIG_PER_HARDNESS = 0.035;
+
+/* ---------- what a cell of rock costs ----------
+
+   Playtest: *"I want digging to cost a much larger amount of fuel than just
+   flying, so that when you get close to running out of fuel, you have a better
+   chance of getting back safely."*
+
+   The instinct is right and the diagnosis was not the ratio. MEASURED against
+   the old per-second model: one cell of rock already cost about six times a
+   metre of flight. What it did not do was STAY expensive.
+
+     leg   tank   fuel per basalt cell   climb home   cells a tank buys
+      0      90          5.02             15 (17%)          14
+      5     250          1.05             41 (16%)         199
+     11     450          0.53             50 (11%)         760
+
+   The Drill divides the seconds a cell takes, the Tank multiplies the supply,
+   and the two compound. By the end of the ladder a full tank is seven hundred
+   and sixty cells of the hardest rock in the game, which is not a resource, it
+   is a formality - and fuel stopped being a constraint at exactly the depth
+   where the stakes were highest.
+
+   So fuel is charged against PROGRESS THROUGH THE CELL rather than against
+   time spent drilling. A cell costs what it costs; a better Drill gets through
+   it faster and pays the same.
+
+   **The Drill buys speed and never efficiency.** That one sentence is the
+   whole change, and it is what keeps the constraint alive at every level. The
+   ladder that buys efficiency is the Scrubber, which is a separate decision
+   with a separate price.
+
+   Billed pro-rata rather than on the break, so half a cell costs half - a
+   charge-on-break model would make chipping at rock free, and abandoning a
+   nearly finished block the cheapest thing in the game. */
+export const FUEL_CELL_BASE = 0.6;
+export const FUEL_CELL_PER_HARD = 0.3;
+
+/* What one whole cell of this hardness costs, before the Scrubber. */
+export const fuelPerCell = (hardness: number) =>
+  FUEL_CELL_BASE + hardness * FUEL_CELL_PER_HARD;
+
+/* And the slice of it owed for `dt` seconds of work on a cell that takes
+   `secondsPerCell` in total. Guarded: a zero total would divide by zero and
+   empty the tank in one frame. */
+export const digFuelForStep = (hardness: number, secondsPerCell: number, dt: number) =>
+  secondsPerCell > 0 ? fuelPerCell(hardness) * (dt / secondsPerCell) : 0;
+
+/* ---------- getting home ----------
+
+   The Point of No Return, which is the aviation term for the moment you no
+   longer carry the fuel to return to where you started. The design writing on
+   it is explicit that it only works as TENSION if the player can compute it -
+   otherwise it is just a way to lose without warning, which is the one thing a
+   game that kills you must not be.
+
+   So the game computes it, and the dial draws it. `cells` is the real route
+   home through tunnel rather than the depth, because a tunnel is not a
+   straight line and the difference is the whole margin on a world you have
+   wandered sideways in. */
+export const fuelToClimb = (cells: number, cellsPerSecond: number) =>
+  cellsPerSecond > 0 ? (cells / cellsPerSecond) * FUEL_PER_MOVE : 0;
+
+/* How much trouble you are in, as a multiple of what the climb costs.
+
+   Thresholds, and every one of them is doing a job. Above CLEAR you are not
+   thinking about fuel. Between CLEAR and WARN you are being told to plan a
+   turn. Below WARN the reserve is close enough that the gauge goes red and
+   starts pulsing. At or below 1 the climb no longer fits in the tank and the
+   game says so plainly rather than letting you find out at the bottom.
+
+   The first warning lands around 40% of a full tank at a typical working
+   depth, which is the one sourced comparable figure - Subnautica's first
+   oxygen alert. */
+export const FUEL_CLEAR = 2.2;
+export const FUEL_WARN = 1.5;
+export const fuelState = (fuel: number, climb: number): 'clear' | 'plan' | 'danger' | 'stranded' => {
+  /* No climb to pay for - at the pad, or nowhere to go - is never a warning. */
+  if (climb <= 0.001) return 'clear';
+  const r = fuel / climb;
+  if (r > FUEL_CLEAR) return 'clear';
+  if (r > FUEL_WARN) return 'plan';
+  if (r > 1) return 'danger';
+  return 'stranded';
+};
+
+/* ---------- the drip, and why it has to exist ----------
+
+   Fuel only ever drained while flying or drilling, which was harmless while a
+   dry tank summoned a tow. It is not harmless now: at nought point nought one
+   fuel, four hundred metres down, doing nothing costs nothing, so the ship
+   sits there alive and stuck and the game never resolves. Found by driving the
+   tank to empty and watching nothing happen.
+
+   So the reactor idles. A slow drain the whole time you are underground, and
+   nothing at the pad. It closes the hole - stranded now always ends - and it
+   quietly makes fuel a clock as well as a budget, which is the Subnautica
+   oxygen shape and the right one for a game where the resource is your life.
+
+   Deliberately small: over a three minute descent this is about eleven fuel,
+   which is felt at the margin and never decides a run on its own. */
+export const FUEL_IDLE = 0.06;              /* per second, underground */
+
 export const HULL_REGEN = 30;               /* per second, at the surface */
+
 
 /* ---------- the settle ----------
 
@@ -717,9 +811,6 @@ export const HEAT_DEPTH_LEGACY = 70;       /* what a pre-M5 save was played on *
 export const HEAT_RAMP = 50;
 export const HEAT_EXPONENT = 1.3;
 export const HEAT_RATE = 4.5;
-
-export const digFuelPerSecond = (hardness: number) =>
-  FUEL_DIG_BASE + hardness * FUEL_DIG_PER_HARDNESS;
 
 /* ---------- heat soak ----------
    Depth alone made heat a place rather than a clock: at a safe-enough depth you

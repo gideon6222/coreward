@@ -51,26 +51,26 @@
       },
       {
         "id": "iron",
+        "need": 3
+      },
+      {
+        "id": "iron",
         "need": 4
       },
       {
         "id": "iron",
-        "need": 6
+        "need": 4
       },
       {
         "id": "iron",
-        "need": 8
+        "need": 4
       },
       {
         "id": "iron",
-        "need": 10
-      },
-      {
-        "id": "iron",
-        "need": 12
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
   "cargo": {
     "name": "Cargo Hold",
@@ -113,26 +113,26 @@
       },
       {
         "id": "copper",
+        "need": 3
+      },
+      {
+        "id": "copper",
         "need": 4
       },
       {
         "id": "copper",
-        "need": 6
+        "need": 4
       },
       {
         "id": "copper",
-        "need": 8
+        "need": 4
       },
       {
         "id": "copper",
-        "need": 10
-      },
-      {
-        "id": "copper",
-        "need": 12
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
   "thrust": {
     "name": "Thrusters",
@@ -175,26 +175,26 @@
       },
       {
         "id": "silver",
+        "need": 3
+      },
+      {
+        "id": "silver",
         "need": 4
       },
       {
         "id": "silver",
-        "need": 6
+        "need": 4
       },
       {
         "id": "silver",
-        "need": 8
+        "need": 4
       },
       {
         "id": "silver",
-        "need": 10
-      },
-      {
-        "id": "silver",
-        "need": 12
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
   "tank": {
     "name": "Fuel Tank",
@@ -226,55 +226,55 @@
       "410 fuel",
       "450 fuel"
     ],
-    "mat": "gold",
+    "mat": "silver",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "gold",
+        "id": "silver",
         "need": 2
       },
       {
-        "id": "gold",
+        "id": "silver",
+        "need": 3
+      },
+      {
+        "id": "silver",
         "need": 4
       },
       {
-        "id": "gold",
-        "need": 6
+        "id": "silver",
+        "need": 4
       },
       {
-        "id": "gold",
-        "need": 8
+        "id": "silver",
+        "need": 4
       },
       {
-        "id": "gold",
-        "need": 10
-      },
-      {
-        "id": "gold",
-        "need": 12
+        "id": "silver",
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
   "cool": {
     "name": "Cooling Rig",
-    "base": 5000,
+    "base": 6000,
     "mul": 1.5,
     "max": 9,
     "tiers": null,
     "costs": [
-      5000,
-      7500,
-      11250,
-      16875,
-      25313,
-      37969,
-      56953,
-      85430,
-      128145,
-      192217
+      6000,
+      9000,
+      13500,
+      20250,
+      30375,
+      45563,
+      68344,
+      102516,
+      153773,
+      230660
     ],
     "effects": [
       "0% heat shield",
@@ -299,26 +299,26 @@
       },
       {
         "id": "emerald",
+        "need": 3
+      },
+      {
+        "id": "emerald",
         "need": 4
       },
       {
         "id": "emerald",
-        "need": 6
+        "need": 4
       },
       {
         "id": "emerald",
-        "need": 8
+        "need": 4
       },
       {
         "id": "emerald",
-        "need": 10
-      },
-      {
-        "id": "emerald",
-        "need": 12
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
   "scan": {
     "name": "Scanner Array",
@@ -361,29 +361,29 @@
       },
       {
         "id": "copper",
+        "need": 3
+      },
+      {
+        "id": "copper",
         "need": 4
       },
       {
         "id": "copper",
-        "need": 6
+        "need": 4
       },
       {
         "id": "copper",
-        "need": 8
+        "need": 4
       },
       {
         "id": "copper",
-        "need": 10
-      },
-      {
-        "id": "copper",
-        "need": 12
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
-  "tow": {
-    "name": "Tow Insurance",
+  "scrub": {
+    "name": "Scrubber",
     "base": 1500,
     "mul": 1.5,
     "max": 8,
@@ -400,15 +400,15 @@
       38443
     ],
     "effects": [
-      "Tow takes 50% of haul",
-      "Tow takes 45% of haul",
-      "Tow takes 40% of haul",
-      "Tow takes 35% of haul",
-      "Tow takes 30% of haul",
-      "Tow takes 25% of haul",
-      "Tow takes 20% of haul",
-      "Tow takes 15% of haul",
-      "Tow takes 10% of haul"
+      "0% less fuel per cell cut",
+      "5% less fuel per cell cut",
+      "10% less fuel per cell cut",
+      "15% less fuel per cell cut",
+      "20% less fuel per cell cut",
+      "25% less fuel per cell cut",
+      "30% less fuel per cell cut",
+      "35% less fuel per cell cut",
+      "40% less fuel per cell cut"
     ],
     "mat": "iron",
     "mats": [
@@ -421,22 +421,22 @@
       },
       {
         "id": "iron",
+        "need": 3
+      },
+      {
+        "id": "iron",
         "need": 4
       },
       {
         "id": "iron",
-        "need": 6
+        "need": 4
       },
       {
         "id": "iron",
-        "need": 8
-      },
-      {
-        "id": "iron",
-        "need": 10
+        "need": 4
       }
     ],
-    "matTotal": 30
+    "matTotal": 17
   },
   "auto": {
     "name": "Autopilot",
@@ -462,25 +462,25 @@
       "0.25 fuel per metre",
       "0.18 fuel per metre"
     ],
-    "mat": "ruby",
+    "mat": "amethyst",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "ruby",
+        "id": "amethyst",
         "need": 2
       },
       {
-        "id": "ruby",
-        "need": 4
+        "id": "amethyst",
+        "need": 3
       },
       {
-        "id": "ruby",
-        "need": 6
+        "id": "amethyst",
+        "need": 4
       }
     ],
-    "matTotal": 12
+    "matTotal": 9
   },
   "bomb": {
     "name": "Seismic Charge",
@@ -512,27 +512,39 @@
     "name": "Cutting Laser",
     "base": 12500,
     "mul": 1.6,
-    "max": 3,
+    "max": 5,
     "tiers": null,
     "costs": [
       12500,
       20000,
       32000,
-      51200
+      51200,
+      81920,
+      131072
     ],
     "effects": [
       "Not installed",
       "5 cells straight ahead",
       "7 cells straight ahead",
-      "9 cells straight ahead"
+      "9 cells straight ahead",
+      "11 cells straight ahead",
+      "13 cells straight ahead"
     ],
     "mat": "ruby",
     "mats": [
       null,
       null,
-      null
+      null,
+      {
+        "id": "ruby",
+        "need": 2
+      },
+      {
+        "id": "ruby",
+        "need": 3
+      }
     ],
-    "matTotal": 0
+    "matTotal": 5
   },
   "hull": {
     "name": "Hull Plating",
@@ -564,37 +576,37 @@
       "300 hull",
       "325 hull"
     ],
-    "mat": "silver",
+    "mat": "iron",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "silver",
+        "id": "iron",
         "need": 2
       },
       {
-        "id": "silver",
+        "id": "iron",
+        "need": 3
+      },
+      {
+        "id": "iron",
         "need": 4
       },
       {
-        "id": "silver",
-        "need": 6
+        "id": "iron",
+        "need": 4
       },
       {
-        "id": "silver",
-        "need": 8
+        "id": "iron",
+        "need": 4
       },
       {
-        "id": "silver",
-        "need": 10
-      },
-      {
-        "id": "silver",
-        "need": 12
+        "id": "iron",
+        "need": 4
       }
     ],
-    "matTotal": 42
+    "matTotal": 21
   },
   "magnet": {
     "name": "Salvage Magnet",
@@ -631,28 +643,28 @@
       },
       {
         "id": "copper",
-        "need": 4
+        "need": 3
       },
       {
         "id": "copper",
-        "need": 6
+        "need": 4
       }
     ],
-    "matTotal": 12
+    "matTotal": 9
   },
   "survey": {
     "name": "Deep Survey",
-    "base": 2600,
+    "base": 3600,
     "mul": 1.55,
     "max": 5,
     "tiers": null,
     "costs": [
-      2600,
-      4030,
-      6247,
-      9682,
-      15007,
-      23261
+      3600,
+      5580,
+      8649,
+      13406,
+      20779,
+      32208
     ],
     "effects": [
       "Not installed",
@@ -662,35 +674,35 @@
       "Reads ore 8.4 m through rock",
       "Reads ore 10.0 m through rock"
     ],
-    "mat": "amethyst",
+    "mat": "gold",
     "mats": [
       null,
       null,
       null,
       {
-        "id": "amethyst",
+        "id": "gold",
         "need": 2
       },
       {
-        "id": "amethyst",
-        "need": 4
+        "id": "gold",
+        "need": 3
       }
     ],
-    "matTotal": 6
+    "matTotal": 5
   },
   "drone": {
     "name": "Repair Drone",
-    "base": 4700,
+    "base": 4400,
     "mul": 1.5,
     "max": 5,
     "tiers": null,
     "costs": [
-      4700,
-      7050,
-      10575,
-      15863,
-      23794,
-      35691
+      4400,
+      6600,
+      9900,
+      14850,
+      22275,
+      33413
     ],
     "effects": [
       "Not installed",
@@ -711,24 +723,24 @@
       },
       {
         "id": "amethyst",
-        "need": 4
+        "need": 3
       }
     ],
-    "matTotal": 6
+    "matTotal": 5
   },
   "reactor": {
     "name": "Reactor Core",
-    "base": 4400,
+    "base": 4000,
     "mul": 1.5,
     "max": 5,
     "tiers": null,
     "costs": [
-      4400,
-      6600,
-      9900,
-      14850,
-      22275,
-      33413
+      4000,
+      6000,
+      9000,
+      13500,
+      20250,
+      30375
     ],
     "effects": [
       "Not installed",
@@ -749,9 +761,9 @@
       },
       {
         "id": "gold",
-        "need": 4
+        "need": 3
       }
     ],
-    "matTotal": 6
+    "matTotal": 5
   }
 }

@@ -74,17 +74,17 @@ export interface Find {
 export const FINDS: Find[] = [
   { key: 'magnet',  from: 0, below: 20,
     blurb: 'Pulls loose ore toward the ship instead of making you fetch it.' },
-  { key: 'survey',  from: 0, below: 35,
-    blurb: 'Reads ore through solid rock, so you can dig at something.' },
   { key: 'bomb',    from: 0, below: 40,
     blurb: 'Breaks a pocket of cells at once. Runs on the power meter.' },
-  { key: 'reactor', from: 1, below: 50,
+  { key: 'survey',  from: 1, below: 62,
+    blurb: 'Reads ore through solid rock, so you can dig at something.' },
+  { key: 'reactor', from: 1, below: 70,
     blurb: 'More power, and it comes back faster. Both weapons run off it.' },
-  { key: 'drone',   from: 1, below: 60,
+  { key: 'drone',   from: 1, below: 78,
     blurb: 'Mends the hull slowly while you are underground.' },
-  { key: 'auto',    from: 2, below: 65,
+  { key: 'auto',    from: 2, below: 100,
     blurb: 'Flies you back to the surface on its own, and cheaply.' },
-  { key: 'laser',   from: 2, below: 90,
+  { key: 'laser',   from: 3, below: 170,
     blurb: 'Cuts a straight shaft ahead of you. Expensive in power.' }
 ];
 
@@ -140,22 +140,40 @@ export function findAt(f: Find, leg: number, coreDepthHere: number): { x: number
    One call rather than a loop at the call site, because `blockAt` runs per cell
    per frame and the thing it needs is a lookup, not a list. The caller caches
    this per world - see `findCells` in world.ts. */
+/* How many metres the collision nudge has had to move devices, ever.
+
+   A counter rather than a flag, because the claim worth testing is that the
+   nudge is doing almost nothing: across six hundred legs and every holding
+   state it should fire a handful of times out of thirteen thousand
+   placements. If a change to the hash makes it fire constantly, this number
+   grows and the test says so - which a test of the repaired positions never
+   could, because the repair is the thing hiding the damage. */
+let nudged = 0;
+export function findNudges() { return nudged; }
+export function resetFindNudges() { nudged = 0; }
+
 export function findMap(leg: number, coreDepthHere: number, found: string[]): Map<string, Find> {
   const m = new Map<string, Find>();
   for (const f of findsOn(leg, coreDepthHere, found)) {
     const p = findAt(f, leg, coreDepthHere);
-    /* No collision nudge here, deliberately, and it was written and then cut.
+    /* A deterministic nudge, which was written, then cut, and is now back with
+       a test that can see it.
 
-       Folding the device's index into both hashes already separates them: a
-       sweep of 13,176 placements across six hundred legs and every holding
-       state produced zero collisions, so the nudge never once fired. That
-       makes it dead code by rule 12 - but the reason it had to GO rather than
-       stay as insurance is sharper than that. A nudge silently repairs a
-       collision, which means `findMap` would keep returning one cell per
-       device however bad the hash got, and the test that asserts exactly that
-       would keep passing while the thing it protects rotted. The test is the
-       insurance; the nudge would have been a blindfold over it. */
-    m.set(p.x + ',' + p.d, f);
+       It was cut because a sweep of 13,176 placements found zero collisions,
+       which made it dead code - and worse, a nudge silently repairs a
+       collision, so the test asserting one cell per device would have kept
+       passing however bad the hash got. That reasoning was right and its
+       premise stopped being true the moment round seven moved every device's
+       depth: two devices whose bands overlap will eventually land on one cell,
+       and across thirteen thousand placements that is the birthday problem
+       rather than a bad hash. No per-device hash can promise otherwise.
+
+       So the nudge is back, and `findNudges()` below counts how far it has to
+       move things. The test asserts on THAT rather than on the repaired
+       result, which is a claim the nudge cannot satisfy by doing its job. */
+    let d = p.d;
+    while (m.has(p.x + ',' + d) && d < coreDepthHere - 1) { d++; nudged++; }
+    m.set(p.x + ',' + d, f);
   }
   return m;
 }

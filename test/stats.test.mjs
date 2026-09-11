@@ -41,7 +41,7 @@ test('derived stats are unchanged across the full upgrade range', () => {
   out.fuelCap = sweep('tank', 9, () => H.S.fuelCap());
   out.shield = sweep('cool', 9, () => H.S.shield());
   out.light = sweep('scan', 9, () => H.S.light());
-  out.towCut = sweep('tow', 8, () => H.S.towCut());
+  out.cellFuel = sweep('scrub', 8, () => H.S.cellFuel());
   out.autoRate = sweep('auto', 6, () => H.S.autoRate());
   /* drill is the one stat with two inputs: level and permanent core shards */
   out.drill = {};
@@ -217,13 +217,25 @@ test('the opening hour is untouched, and requirements ramp after it', () => {
     assert.ok(H.matCost(u, H.MAT_FROM_LEVEL - 1),
       u.key + ' should start wanting materials at level ' + H.MAT_FROM_LEVEL);
 
-    let prev = 0;
+    /* Ramps and then PLATEAUS, which is round seven's change and is deliberate.
+
+       The requirement used to grow by two a rung for ever. With half as much
+       ore in the ground that turned the top of a ladder into an expedition -
+       measured, maxing the tree wanted 72 iron, about sixteen hundred-cell runs
+       of nothing but looking. It grows by one and stops at four now. What still
+       has to hold is that it never goes BACKWARDS and that it does grow at
+       least once, because a flat requirement from the first rung is not a ramp
+       at all. */
+    let prev = 0, grew = 0;
     for (let lvl = H.MAT_FROM_LEVEL - 1; lvl < u.max; lvl++) {
       const m = H.matCost(u, lvl);
       assert.equal(m.id, u.mat, u.key + ' changed mineral mid-ladder');
-      assert.ok(m.need > prev, u.key + ' requirement did not grow at level ' + (lvl + 1));
+      assert.ok(m.need >= prev, u.key + ' requirement fell at level ' + (lvl + 1));
+      if (m.need > prev) grew++;
       prev = m.need;
     }
+    if (u.max > H.MAT_FROM_LEVEL)
+      assert.ok(grew >= 2, u.key + ' requirement never ramps, it is flat from the first rung');
   }
 });
 
@@ -253,7 +265,7 @@ test('the Cooling Rig is gated behind a mineral inside the heat zone', () => {
   /* Deep Survey joined this list with M5. It exists to find ore through rock
      at depth and it unlocks at 35 m, which on leg 0 is past the heat line at
      32 - it is bought BECAUSE you go deep, exactly like the other three. */
-  const deepOnly = new Set(['cool', 'auto', 'laser', 'survey', 'drone']);
+  const deepOnly = new Set(['cool', 'auto', 'laser', 'survey', 'drone', 'reactor']);
   for (const u of H.UPGRADES) {
     if (deepOnly.has(u.key)) continue;
     assert.ok(H.DEF[u.mat].min < H.heatDepth(0),
@@ -281,7 +293,7 @@ test('the mineral gates climb in the same order as the upgrades matter', () => {
      everything you need to start comes from above the heat line, and
      everything you buy because you went deep comes from below it. */
   const open = H.UPGRADES.filter((u) => (u.unlock || 0) === 0);
-  const deep = ['cool', 'auto', 'laser', 'survey', 'drone'];
+  const deep = ['cool', 'auto', 'laser', 'survey', 'drone', 'reactor'];
   const heat = H.heatDepth(0);
   for (const u of open) {
     assert.ok(depthOf(u.key) < heat,
@@ -379,18 +391,23 @@ test('the deepest ores are reachable on some planet, and not before', () => {
     for (let p = 0; p < 12 && firstPlanet < 0; p++)
       if (H.coreDepth(p) > o.min + 4) firstPlanet = p;
     assert.ok(firstPlanet >= 0, o.id + ' at ' + o.min + ' m is unreachable on any planet');
-    assert.ok(firstPlanet <= 5,
+    /* Eight worlds, not five. Round seven spread the ladder out deliberately -
+       "you only start seeing new resources when you get really deep" - so
+       Solmarrow arriving on planet 7 is the feature. The bound is still here
+       because an ore nobody reaches is still dead content; it is just drawn
+       where the ladder now ends. */
+    assert.ok(firstPlanet <= 7,
       o.id + ' only appears from planet ' + firstPlanet + ', which nobody will see');
   }
 
   /* and no long stretch of the deepest reachable ground has nothing new in it */
-  const deepest = H.coreDepth(5);
+  const deepest = H.coreDepth(7);
   const mins = H.ORES.map((o) => o.min).sort((a, b) => a - b);
   let worst = 0, at = 0;
   for (let i = 1; i < mins.length; i++)
     if (mins[i] - mins[i - 1] > worst) { worst = mins[i] - mins[i - 1]; at = mins[i - 1]; }
   const tail = deepest - mins[mins.length - 1];
-  assert.ok(worst <= 45, 'a ' + worst + ' m stretch from ' + at + ' m has no new ore in it');
+  assert.ok(worst <= 62, 'a ' + worst + ' m stretch from ' + at + ' m has no new ore in it');
   assert.ok(tail <= 55,
     'the last ' + tail + ' m before planet 5\'s core has nothing new in it');
 });
@@ -486,8 +503,14 @@ test('every upgrade has a counter and a sensible unlock depth', () => {
     assert.ok(groups.has(u.group), u.key + ' is on no counter: ' + u.group);
     /* Reachable somewhere in the early game rather than on leg 0 specifically:
        M5 ended leg 0 at 58 m, and three rows deliberately open below that. */
-    assert.ok(u.unlock >= 0 && u.unlock < H.coreDepth(2),
-      u.key + ' unlocks at ' + u.unlock + ' m, which is past the core of leg 2 at ' + H.coreDepth(2));
+    /* Reachable in the early game rather than on leg 0 - and "early" now means
+       four worlds rather than two. Round seven spread the ore ladder over eight
+       planets and the rows that are built out of deep minerals followed them
+       down; the Cutting Laser is a ruby tool and ruby starts at 168 m. The
+       bound is still here because a row nobody can reach is dead content, it
+       just sits where the ladder now does. */
+    assert.ok(u.unlock >= 0 && u.unlock < H.coreDepth(4),
+      u.key + ' unlocks at ' + u.unlock + ' m, which is past the core of leg 4 at ' + H.coreDepth(4));
     /* Anything gated has to be gated ABOVE the depth where its own mineral
        lives, or the shelf unseals at the exact moment you could already
        afford it and the gate has done nothing. */
@@ -612,11 +635,11 @@ test('every relic perk is named, described and actually does something', () => {
      described and never read is the exact failure this is here to catch. */
   const base = {};
   H.g.relics = [];
-  for (const k of ['drill', 'cargoCap', 'light', 'towCut', 'fuelUse', 'heatTake', 'gasTake', 'powerCap', 'saleBonus'])
+  for (const k of ['drill', 'cargoCap', 'light', 'cellFuel', 'fuelUse', 'heatTake', 'gasTake', 'powerCap', 'saleBonus'])
     base[k] = H.S[k]();
 
   const moves = {
-    drum: 'drill', weave: 'cargoCap', eye: 'light', rights: 'towCut',
+    drum: 'drill', weave: 'cargoCap', eye: 'light', rights: 'cellFuel',
     recyc: 'fuelUse', lattice: 'heatTake', damper: 'gasTake',
     coupler: 'powerCap', assay: 'saleBonus'
   };

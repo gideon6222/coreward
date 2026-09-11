@@ -365,7 +365,10 @@ export const RELICS: Relic[] = [
   { id: 'coupler', name: 'Charge Coupler',    blurb: 'One more power cell.' },
   { id: 'eye',     name: "Prospector's Eye",  blurb: 'The lamp reaches 3 m further.' },
   { id: 'damper',  name: 'Impact Damper',     blurb: 'Gas pockets take a third less hull.' },
-  { id: 'rights',  name: 'Salvage Rights',    blurb: 'A tow takes 10 points less of the haul.' },
+  /* Was "a tow takes 10 points less of the haul", which insured against an
+     outcome the game no longer has. Moved onto fuel, which is what the perk
+     was always really about: getting out of a bad run alive. */
+  { id: 'rights',  name: 'Salvage Rights',    blurb: 'Every cell you cut costs 8% less fuel.' },
   { id: 'assay',   name: 'Assay Charter',     blurb: 'Everything you sell is worth 4% more.' }
 ];
 export const RELIC_OF: Record<string, Relic> = {};
@@ -457,18 +460,52 @@ export const RUBBLE: Rock = {
    dangerous ground in the game with nothing new in it - which is the CRAFT
    note about unreachable content bands turned inside out: not content you
    cannot reach, but ground you can reach that has no content. */
+/* ---------- the ore ladder ----------
+
+   Playtest: *"I want there to be way less special resources to show up so it
+   actually feels like a prize when you get one. you only start seeing new
+   resources when you get really deep and even then they are rare."*
+
+   He is describing three separate faults and all three were measured before
+   anything here was touched.
+
+   **`chance` is a cumulative threshold, not a probability.** `blockAt` walks
+   this list deepest-first and takes the first entry whose `chance` the roll
+   falls under, so an ore's real share is the GAP to the one above it - except
+   the deepest, which is tested first and keeps its whole number. The old table
+   had Solmarrow, worth 132,000 and the most valuable thing in the game, at
+   2.10% - four times Umbrite at 0.50% and five times Coreite. The entire deep
+   tier was ordered backwards and had been since the day a third ore was added.
+
+   **Density did not vary with depth at all.** One cell in ten was ore at 10 m
+   and at 300 m; going deeper only changed which one. There was no scarcity
+   curve to feel.
+
+   **Every world showed you almost everything.** Five of eleven materials were
+   on the 58-metre tutorial planet.
+
+   So: the ladder now spans EIGHT worlds instead of five, total density is
+   about 5% instead of 10%, and the top four are 0.10 to 0.25% instead of 0.40
+   to 2.10%. The research is unambiguous that depth is the mechanism that makes
+   rarity read - a material that does not exist above its floor is one a player
+   who stays shallow never even rolls for, which is what stops a hunt turning
+   into a grind. The roll is the second gate, not the first.
+
+   Cores are at 58 + 48 per leg, so a new material arrives on roughly every
+   world: copper and iron on the first, silver at the bottom of it, and
+   Solmarrow not until 372 m - which is planet seven. */
 export const ORES: Ore[] = [
-  { id: 'solmarrow', name: 'Solmarrow', color: 0xfff0b0, host: 0x3a3226, hard: 23,   wt: 21,  value: 132000, min: 245, chance: 0.021, glow: 0.72, shards: 8, tone: 10 },
-  { id: 'umbrite',   name: 'Umbrite',   color: 0x9d7bff, host: 0x241f33, hard: 19.5, wt: 18,  value: 54000,  min: 210, chance: 0.026, glow: 0.58, shards: 7, tone: 10 },
-  { id: 'coreite',  name: 'Coreite',  color: 0x66fff0, host: 0x2a2f3a, hard: 16,  wt: 16,  value: 22000, min: 185, chance: 0.030, glow: 0.60, shards: 7, tone: 9 },
-  { id: 'magmite',  name: 'Magmite',  color: 0xff7a18, host: 0x2e2228, hard: 13,  wt: 13,  value: 9000,  min: 145, chance: 0.038, glow: 0.50, shards: 6, tone: 8 },
-  { id: 'ruby',     name: 'Ruby',     color: 0xff3b5c, host: 0x33303a, hard: 10,  wt: 10,  value: 3600,  min: 105, chance: 0.042, glow: 0.32, shards: 6, tone: 7 },
-  { id: 'emerald',  name: 'Emerald',  color: 0x2fd07a, host: 0x2f3a38, hard: 8.5, wt: 8.5, value: 1800,  min: 78,  chance: 0.048, glow: 0.30, shards: 5, tone: 6 },
-  { id: 'amethyst', name: 'Amethyst', color: 0xa060ff, host: 0x35323f, hard: 7,   wt: 7,   value: 900,   min: 56,  chance: 0.055, glow: 0.28, shards: 5, tone: 5 },
-  { id: 'gold',     name: 'Gold',     color: 0xffcf47, host: 0x3d3a34, hard: 5.5, wt: 9,   value: 420,   min: 36,  chance: 0.060, glow: 0.20, shards: 5, tone: 4 },
-  { id: 'silver',   name: 'Silver',   color: 0xd8e0e8, host: 0x3a3c40, hard: 4.5, wt: 6,   value: 150,   min: 22,  chance: 0.070, glow: 0.16, shards: 4, tone: 3 },
-  { id: 'iron',     name: 'Iron',     color: 0xb0b6bd, host: 0x3a3630, hard: 3.5, wt: 4.5, value: 60,    min: 11,  chance: 0.085, glow: 0.10, shards: 4, tone: 2 },
-  { id: 'copper',   name: 'Copper',   color: 0xc87137, host: 0x3c342c, hard: 2.6, wt: 3.5, value: 25,    min: 4,   chance: 0.100, glow: 0.10, shards: 4, tone: 1 }
+  { id: 'solmarrow', name: 'Solmarrow', color: 0xfff0b0, host: 0x3a3226, hard: 23,   wt: 21,  value: 196000, min: 372, chance: 0.0012, glow: 0.72, shards: 8, tone: 10 },
+  { id: 'umbrite',   name: 'Umbrite',   color: 0x9d7bff, host: 0x241f33, hard: 19.5, wt: 18,  value: 82000,  min: 312, chance: 0.0026, glow: 0.58, shards: 7, tone: 10 },
+  { id: 'coreite',  name: 'Coreite',  color: 0x66fff0, host: 0x2a2f3a, hard: 16,  wt: 16,  value: 34000, min: 258, chance: 0.0048, glow: 0.60, shards: 7, tone: 9 },
+  { id: 'magmite',  name: 'Magmite',  color: 0xff7a18, host: 0x2e2228, hard: 13,  wt: 13,  value: 14000, min: 210, chance: 0.0078, glow: 0.50, shards: 6, tone: 8 },
+  { id: 'ruby',     name: 'Ruby',     color: 0xff3b5c, host: 0x33303a, hard: 10,  wt: 10,  value: 5600,  min: 168, chance: 0.0125, glow: 0.32, shards: 6, tone: 7 },
+  { id: 'emerald',  name: 'Emerald',  color: 0x2fd07a, host: 0x2f3a38, hard: 8.5, wt: 8.5, value: 2800,  min: 130, chance: 0.0200, glow: 0.30, shards: 5, tone: 6 },
+  { id: 'amethyst', name: 'Amethyst', color: 0xa060ff, host: 0x35323f, hard: 7,   wt: 7,   value: 1400,  min: 95,  chance: 0.0290, glow: 0.28, shards: 5, tone: 5 },
+  { id: 'gold',     name: 'Gold',     color: 0xffcf47, host: 0x3d3a34, hard: 5.5, wt: 9,   value: 660,   min: 64,  chance: 0.0380, glow: 0.20, shards: 5, tone: 4 },
+  { id: 'silver',   name: 'Silver',   color: 0xd8e0e8, host: 0x3a3c40, hard: 4.5, wt: 6,   value: 240,   min: 30,  chance: 0.0460, glow: 0.16, shards: 4, tone: 3 },
+  { id: 'iron',     name: 'Iron',     color: 0xb0b6bd, host: 0x3a3630, hard: 3.5, wt: 4.5, value: 95,    min: 16,  chance: 0.0620, glow: 0.10, shards: 4, tone: 2 },
+  { id: 'copper',   name: 'Copper',   color: 0xc87137, host: 0x3c342c, hard: 2.6, wt: 3.5, value: 40,    min: 3,   chance: 0.0750, glow: 0.10, shards: 4, tone: 1 }
 ];
 
 /* ---------- rock, and the seams in it ----------
@@ -608,7 +645,7 @@ export const PULSE_SECS = 30;
 export const PULSE_REACH = 14;
 
 export const SUPPLIES: Supply[] = [
-  { key: 'coolant', name: 'Coolant Flush', icon: 'COOL', cost: 5600, max: 2,
+  { key: 'coolant', name: 'Coolant Flush', icon: 'COOL', cost: 6600, max: 2,
     blurb: 'Dumps accumulated heat soak back to zero. Does not cool the rock.',
     idle: 'no soak' },
   { key: 'patch', name: 'Hull Patch', icon: 'HULL', cost: 3900, max: 3,
@@ -638,7 +675,7 @@ export const SUPPLIES: Supply[] = [
   { key: 'bulwark', name: 'Bulwark Field', icon: 'BWK', cost: 3800, max: 2,
     blurb: 'Absorbs the next ' + BULWARK_HITS + ' impacts outright. Gas, rockfall, anything sudden.',
     idle: 'field is up' },
-  { key: 'pulse', name: 'Survey Pulse', icon: 'PLS', cost: 2900, max: 2,
+  { key: 'pulse', name: 'Survey Pulse', icon: 'PLS', cost: 4000, max: 2,
     blurb: PULSE_SECS + ' seconds of seeing every vein through the rock.',
     idle: 'pulse is live' }
 ];
@@ -662,7 +699,7 @@ export const UPGRADES: Upgrade[] = [
      The Scanner moved from amethyst at 56 m to copper at 4: amethyst is below
      every heat line and the scanner is an opening-kit row. See HEAT_FRACTION
      for why the line itself moved rather than the tank's mineral. */
-  { key: 'tank',   name: 'Fuel Tank',     base: 1100, mul: 1.55, max: 9, mat: 'gold', group: 'survival', unlock: 0,
+  { key: 'tank',   name: 'Fuel Tank',     base: 1100, mul: 1.55, max: 9, mat: 'silver', group: 'survival', unlock: 0,
     effect: (l: number) => (90 + l * 40) + ' fuel' },
   /* The expensive one, and the ladder you save for.
 
@@ -672,16 +709,26 @@ export const UPGRADES: Upgrade[] = [
      a rig that could not be paid for - two gates on one thing, and one of them
      pointing at nothing. The design it protects is unchanged: you still have to
      survive inside the heat to buy the thing that answers it. */
-  { key: 'cool',   name: 'Cooling Rig',   base: 5000, mul: 1.5, max: 9, mat: 'emerald', group: 'survival', unlock: 78,
+  { key: 'cool',   name: 'Cooling Rig',   base: 6000, mul: 1.5, max: 9, mat: 'emerald', group: 'survival', unlock: 130,
     effect: (l: number) => Math.round(Math.min(0.72, l * 0.09) * 100) + '% heat shield' },
   /* The effect line names the framing as well as the lamp, because the
      framing is now the part the player actually feels. */
   { key: 'scan',   name: 'Scanner Array', base: 700, mul: 1.55, max: 9, mat: 'copper', group: 'instruments', unlock: 0,
     effect: (l: number) => (8 + l * 2.4).toFixed(0) + 'm light · ' +
       Math.round(zoomForScan(l) * 100) + '% view' },
-  { key: 'tow',    name: 'Tow Insurance', base: 1500, mul: 1.5, max: 8, mat: 'iron', group: 'survival', unlock: 25,
-    effect: (l: number) => 'Tow takes ' + Math.round(Math.max(0.1, 0.5 - l * 0.05) * 100) + '% of haul' },
-  { key: 'auto',   name: 'Autopilot',     base: 4900, mul: 1.55, max: 6, mat: 'ruby', group: 'instruments', unlock: 65,
+  /* Tow Insurance stood here. It insured against an outcome that no longer
+     exists - running dry kills you now - so it is gone rather than repriced,
+     and everybody who bought a level gets their credits back on load.
+
+     The Scrubber takes its place on the same counter and on the axis this
+     round is about. The Drill buys speed and never efficiency (see
+     fuelPerCell), which leaves nothing in the game that makes a cell of rock
+     cheaper - so this is it, and it is the only thing that does it. Capped at
+     0.4 so the deepest rock never becomes free: a ladder that ends the
+     constraint is the fault this round exists to fix. */
+  { key: 'scrub',  name: 'Scrubber',      base: 1500, mul: 1.5, max: 8, mat: 'iron', group: 'survival', unlock: 25,
+    effect: (l: number) => Math.round(scrubSave(l) * 100) + '% less fuel per cell cut' },
+  { key: 'auto',   name: 'Autopilot',     base: 4900, mul: 1.55, max: 6, mat: 'amethyst', group: 'instruments', unlock: 100,
     effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') },
 
   /* ---------- ordnance ----------
@@ -700,7 +747,7 @@ export const UPGRADES: Upgrade[] = [
      the mineral gate was doing nothing at all behind the depth gate - one of
      the two was decoration. Ruby lives at 105 m, which puts both gates in the
      same neighbourhood, and a ruby laser is the better fiction anyway. */
-  { key: 'laser',  name: 'Cutting Laser',  base: 12500, mul: 1.6, max: 3, mat: 'ruby', group: 'ordnance', unlock: 90,
+  { key: 'laser',  name: 'Cutting Laser',  base: 12500, mul: 1.6, max: 5, mat: 'ruby', group: 'ordnance', unlock: 170,
     effect: (l) => (l === 0 ? 'Not installed' : laserRange(l) + ' cells straight ahead') },
 
   /* ---------- the second wave ----------
@@ -714,7 +761,7 @@ export const UPGRADES: Upgrade[] = [
      "the deep is chewing me up" was always a consumable, never a rig. Gated at
      45 m and on iron, both cheap, because this is the one that makes the
      middle of the game survivable rather than the end of it. */
-  { key: 'hull',   name: 'Hull Plating',   base: 3400, mul: 1.5, max: 9, mat: 'silver', group: 'survival', unlock: 45,
+  { key: 'hull',   name: 'Hull Plating',   base: 3400, mul: 1.5, max: 9, mat: 'iron', group: 'survival', unlock: 45,
     effect: (l: number) => (100 + l * 25) + ' hull' },
 
   /* SALVAGE MAGNET. Ore dropped when the hold filled has to be re-approached
@@ -728,21 +775,26 @@ export const UPGRADES: Upgrade[] = [
      buried Jump Drive component, which is the thing the goal most needs a way
      to find - a component you can only locate by digging the whole world is a
      goal made of patience. */
-  { key: 'survey', name: 'Deep Survey',    base: 2600, mul: 1.55, max: 5, mat: 'amethyst', group: 'instruments', unlock: 35,
+  { key: 'survey', name: 'Deep Survey',    base: 3600, mul: 1.55, max: 5, mat: 'gold', group: 'instruments', unlock: 62,
     effect: (l: number) => (l === 0 ? 'Not installed' : 'Reads ore ' + (2 + l * 1.6).toFixed(1) + ' m through rock') },
 
   /* REPAIR DRONE. Turns a bad run into a long one instead of a tow. Slow on
      purpose - it must never make heat survivable, only recoverable, so it is
      an order of magnitude under what soak takes at depth. */
-  { key: 'drone',  name: 'Repair Drone',   base: 4700, mul: 1.5, max: 5, mat: 'amethyst', group: 'survival', unlock: 60,
+  { key: 'drone',  name: 'Repair Drone',   base: 4400, mul: 1.5, max: 5, mat: 'amethyst', group: 'survival', unlock: 78,
     effect: (l: number) => (l === 0 ? 'Not installed' : '+' + (l * 0.55).toFixed(2) + ' hull/s underground') },
 
   /* REACTOR. Ordnance had two rungs and no ladder of its own: both weapons ran
      off a meter nothing could improve, so the answer to "I want to use these
      more" was to stop using them. */
-  { key: 'reactor', name: 'Reactor Core',  base: 4400, mul: 1.5, max: 5, mat: 'gold', group: 'ordnance', unlock: 50,
+  { key: 'reactor', name: 'Reactor Core',  base: 4000, mul: 1.5, max: 5, mat: 'gold', group: 'ordnance', unlock: 70,
     effect: (l: number) => (l === 0 ? 'Not installed' : '+' + l + ' power · ' + (1 + l * 0.35).toFixed(2) + 'x recharge') }
 ];
+/* What the Scrubber saves, as a fraction of a cell's fuel cost. Named rather
+   than inlined because state.ts and the effect line must agree, and two places
+   computing the same curve is two places to get it wrong. */
+export const scrubSave = (l: number) => Math.min(0.4, l * 0.05);
+
 export const costOf = (u: Upgrade, lvl: number) => Math.round(u.base * Math.pow(u.mul, lvl));
 
 /* ---------- material costs ----------
@@ -858,7 +910,23 @@ export function shelfStock(bestDepth: number, found: string[] = []): Upgrade[] {
 export const matCost = (u: Upgrade, lvl: number): MatCost => {
   const buying = lvl + 1;
   if (buying < MAT_FROM_LEVEL) return null;
-  return { id: u.mat, need: 2 + (buying - MAT_FROM_LEVEL) * 2 };
+  /* Grows by one a rung, not two.
+
+     Round seven halved how much ore is in the ground, which doubled every
+     mineral gate without anybody choosing to. Measured: maxing the tree wanted
+     72 iron, and at iron's own depth that is about sixteen hundred-cell runs
+     of doing nothing but looking - which is a grind, not a gate. The gate is
+     supposed to say "you have to have BEEN somewhere", and one visit says that
+     as well as three do. */
+  /* Grows by one a rung and stops at four.
+
+     Round seven halved how much ore is in the ground, which doubled every
+     mineral gate without anybody choosing to - maxing the tree wanted 72 iron,
+     about sixteen hundred-cell runs of nothing but looking. The gate is meant
+     to say "you have to have BEEN somewhere", and a fourth trip says that no
+     better than the first three. The cap is what keeps the top of a ladder a
+     purchase rather than an expedition. */
+  return { id: u.mat, need: Math.min(4, 2 + (buying - MAT_FROM_LEVEL)) };
 };
 
 /* Everything a tree will ever ask for, used to grandfather old saves and to

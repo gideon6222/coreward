@@ -944,6 +944,270 @@ The rule this earns: **a harness that measures positions cannot judge a
 composition.** Keep both. The numbers say what is provably wrong and the
 picture says what is actually wrong, and this round needed six passes of the
 second after the first had gone green.
+
+---
+
+# Round seven: fuel is the game, and a prize is rare
+
+Written 2026-09-10 against v0.29.0, from his own brief:
+
+> *"I dont want towing to be a thing. if you run out of gas, you should game
+> over. I want digging to cost a much larger amount of fuel than just flying, so
+> that when you get close to running out of fuel, you have a better chance of
+> getting back safely. when you get close to running out, make it obvious that
+> you are in danger and make the fuel flash red. I want there to be way less
+> special resources to show up so it actually feels like a prize when you get
+> one. you only start seeing new resources when you get really deep and even
+> then they are rare."*
+
+Four asks, and three of them are one system: **fuel has never actually been a
+constraint, and the tow is why nobody noticed.**
+
+## What is measured, before anything is designed
+
+### 1. Fuel stops binding exactly when the stakes rise
+
+A full tank, against cells of the hardest rock at that depth, at a player
+plausibly kitted for the leg:
+
+| leg | core | tank | fuel per cell of basalt | climb home | **cells a tank buys** |
+|---|---|---|---|---|---|
+| 0 | 58 m | 90 | 5.02 | 15 (17%) | **14** |
+| 5 | 298 m | 250 | 1.05 | 41 (16%) | **199** |
+| 11 | 586 m | 450 | 0.53 | 50 (11%) | **760** |
+
+The Drill divides the cost of a cell and the Tank multiplies the supply, and
+the two compound. By the end of the ladder a tank is seven hundred and sixty
+cells of the hardest rock in the game, which is not a resource, it is a
+formality. His *"digging should cost a much larger amount of fuel than just
+flying"* is the right instinct aimed at the wrong half: **per cell, digging
+already costs six times a metre of flight. What it does not do is stay
+expensive.**
+
+The fix is not a bigger number. It is to charge fuel per CELL rather than per
+SECOND, so the Drill buys speed and never efficiency.
+
+### 2. The climb home was always affordable, and never shown
+
+The rightmost column above is the good news: getting out costs 11 to 17% of a
+tank from the deepest cell in the world, at every stage of the game. His
+instinct - *"you have a better chance of getting back safely"* - is already
+true and has never once been communicated, because a tow meant it did not
+matter.
+
+That is what makes death fair enough to ship. The gauge can tell you exactly
+what the climb costs, because the game can compute it.
+
+### 3. The rarest thing in the game is the fourth most common
+
+`chance` in the ore table is not a probability, it is a cumulative threshold:
+`blockAt` walks ORES deepest-first and takes the first whose `chance` the roll
+falls under. So each ore's real share is the gap to the next one up - and the
+deepest ore, tested first, keeps its whole number.
+
+Measured, per cell, at depth:
+
+| depth | total ore | what is in it |
+|---|---|---|
+| 10 m | **10.0%** | copper 10.00 |
+| 60 m | **10.0%** | amethyst 5.50, gold 0.50, silver 1.00, iron 1.50, copper 1.50 |
+| 250 m | **10.0%** | **solmarrow 2.10**, umbrite 0.50, coreite 0.40, magmite 0.80, ruby 0.40, emerald 0.60, amethyst 0.70, gold 0.50, silver 1.00, iron 1.50, copper 1.50 |
+
+Three things are wrong and all three are his complaint:
+
+- **One cell in ten is ore, at every depth in the game.** Going deeper never
+  makes a find rarer or commoner, it only changes which one. There is no
+  scarcity curve at all.
+- **Solmarrow is worth 132,000 and turns up at 2.10%** - four times as often as
+  Umbrite at 54,000, five times as often as Coreite. The whole deep tier is
+  ordered backwards.
+- **Adding a deeper ore steals from the one above it** rather than adding
+  density, which is why the table has quietly flattened as it grew.
+
+### 4. Every world shows you almost everything
+
+`coreDepth(leg) = 58 + leg * 48`, and the ore gates are at 4, 11, 22, 36, 56,
+78, 105, 145, 185, 210, 245 m. So the first world, 58 m deep, already contains
+copper, iron, silver, gold AND amethyst. Five of the eleven materials in the
+game are on the tutorial planet. *"You only start seeing new resources when you
+get really deep"* is not a change of degree; it is the opposite of what the
+table does now.
+
+## What the research settles
+
+**Nobody wipes the save.** Not one comparable game destroys its meta-progression
+on a single failed run - permadeath modes wipe a *run* or a *character*, never
+the unlocks. The penalty that reads as real stakes without producing quitting
+is consistently: **the run's take is lost in full, and nothing permanent is
+touched.** SteamWorld Dig takes half your gold and drops your loot; Deep Rock
+leaves you 25% of a failed mission; Subnautica takes only what you were
+carrying.
+
+So **"game over" here means the hold, the run and the ship - and nothing else.**
+Credits already banked, every upgrade level, every relic, every drive component
+and the world itself all survive. That is already harsher than any of the games
+above, and it is where I am drawing the line: taking the upgrade ladder would be
+the one decision no shipped game in this genre makes.
+
+Two findings underneath it are worth more than the verdict:
+
+**Motherload does exactly what he asked for.** Run the tank dry and the digger
+explodes - game over, no rescue. And *Super Motherload* sells the rescue back as
+a premium panic button: a cheap teleporter that can malfunction and kill you,
+and an expensive one that always works. Coreward has been shipping the sequel's
+panic button as the default outcome.
+
+**Which means the Fuel Cell is promoted, not replaced.** The consumable that
+burns 35 fuel straight into the tank has been a minor convenience. With no tow
+it becomes the thing that saves your life - and it is now something you have to
+find first. No new mechanic needed; an existing one stops being decoration.
+
+**The Point of No Return is the name for what he described.** It is the aviation
+term for the moment you no longer carry the fuel to return, and the design
+commentary is explicit that *it only works as tension if the player can compute
+it*. That is the piece Coreward is missing - not a bigger fuel cost, a visible
+reserve.
+
+**The warning has sourced numbers.** One continuously escalating cue per
+resource rather than two discrete pops (Deep Rock keeps oxygen and health on
+different sound identities so they can never be confused). Dead Space switches
+colour at 75 / 50 / 25%. Subnautica's first oxygen warning is at about 40%
+remaining. Haptics belong only in the last seconds - a constant buzz goes numb.
+And the hard limit: **never more than three flashes a second, under 25% of the
+screen, no sequence longer than five seconds** (WCAG and the Game Accessibility
+Guidelines agree).
+
+**Rarity should come from depth, not from a low roll.** The one sourced
+mechanism is Motherload's: a material does not exist above its floor depth, so a
+player who does not go deep never rolls for it at all. That avoids the failure
+mode where a rare thing "could have dropped an hour ago" and the hunt becomes
+grinding. And the moment itself wants the withheld-then-revealed treatment: a
+distinct sound and colour beat at the reveal, not a background particle nobody
+catches.
+
+---
+
+# The build
+
+## F1. Fuel is charged by the cell, not by the second
+
+The measurement says the ratio is not the problem - per cell, drilling already
+costs six times a metre of flight. The problem is that the ratio **decays**: the
+Drill divides the cost of a cell, the Tank multiplies the supply, and by leg 11
+a tank is 760 cells of basalt.
+
+So fuel is charged against PROGRESS THROUGH THE CELL rather than against time
+spent drilling:
+
+```
+FUEL_PER_CELL(hard) = FUEL_CELL_BASE + hard * FUEL_CELL_PER_HARD
+```
+
+billed pro-rata as the cell is chewed, so a half-dug block costs half. **The
+Drill now buys speed and never efficiency**, which is what keeps the constraint
+alive at every level. A partial dig is charged fairly, which the per-second
+model also did and which a charge-on-break model would not.
+
+Flying is untouched: 0.8 a second, and the whole point.
+
+## F2. The reserve is on the dial
+
+`fuelHome()` walks the actual route back with the existing BFS - not the depth,
+because a tunnel is not a straight line - and converts it to fuel at the ship's
+current speed. From that, one ratio: `fuel / fuelHome`.
+
+- **above 2.2** clear
+- **2.2 to 1.5** amber, and the readout names it
+- **1.5 to 1.0** red, pulsing at 2 Hz, an escalating tone, a vignette
+- **below 1.0** you can no longer get home, and everything says so
+
+The dial gets a **red band that MOVES**: the reserve you need is drawn on the
+fuel gauge and grows as you descend, so you watch the arc you cannot spend eat
+into the tank. That is the Point of No Return made visible, which the research
+says is the only way it works at all.
+
+Flash rate 2 Hz, the vignette under a quarter of the screen, no sequence past
+five seconds - the accessibility limits are hard numbers and they are cheap to
+respect.
+
+## F3. Running dry kills you
+
+Both zeroes kill now, fuel and hull. The ship is lost with everything in the
+hold. A proper death - the ship breaks up, the screen goes, and a card says what
+happened and how deep.
+
+**Tow Insurance is deleted.** It is an upgrade whose entire subject no longer
+exists. Anyone who bought a level gets **every credit they spent on it back**,
+once, on load - which is the honest thing to do about deleting something
+somebody paid for.
+
+In its place, on the same axis the round is about: **the Scrubber**, which cuts
+the fuel a cell costs. The survival group gets a real ladder on the game's new
+central resource, and the shelf keeps fifteen rows.
+
+## F4. Ore, re-tabled
+
+Rarity comes from depth first, as the research says, and from the roll second.
+
+The ladder spans **eight worlds instead of five**, so a new material arrives
+roughly every planet: copper and iron on the tutorial world, and Solmarrow not
+until 372 m, which is planet 7. And the deep tier's shares are inverted back the
+right way round, so the most valuable thing in the game stops being the fourth
+most common.
+
+Total ore density drops from a flat 10% to about 5%, and the top four materials
+go from 0.4-2.1% to 0.10-0.25%.
+
+That halves mining income, so **the values and the ladder are re-tuned against
+the econ probe rather than guessed** - which is what it is for.
+
+## F5. A first find is an event
+
+The first time you ever cut a given material, the game stops for a beat and
+tells you what it is and what it is worth, with the banner the devices and
+supplies already use. Withheld, then revealed, then a sting that is not the
+ordinary collect sound.
+
+After that it is just ore. The prize is the discovery, not the pickup.
+
+## Milestones
+
+- [x] **F1** fuel per cell, drill buys speed not efficiency, measured at every leg
+- [x] **F2** `fuelHome`, the moving reserve band, the escalating warning, the red dial
+- [x] **F3** death replaces the tow; Tow Insurance deleted and refunded; the Scrubber
+- [x] **F4** the ore table: eight worlds, rarity ordering fixed, density halved
+- [x] **F5** the first-find reveal
+- [x] **F6** the economy re-tuned against the probe, goldens re-recorded with the diffs read
+
+## What the probe says afterwards
+
+| style | first upgrade | minutes to all ladders | payout spread |
+|---|---|---|---|
+| cautious | 1.4 min | 13.7 | 183 - 894 |
+| greedy | 2.3 min | **21.4** | **0 - 563** |
+| optimal | 1.0 min | 8.1 | 381 - 6841 |
+
+Greedy loses the ship twice in twenty-four runs and takes half as long again to
+get every ladder started. That is the whole round in one row: digging past your
+reserve is now the thing that costs you, and the cautious player is no longer
+the one being punished for it by a tow fee.
+
+## What had to move with it, and why
+
+The ore rebalance was not a table edit. Halving the ore doubled every mineral
+gate without anybody choosing to - maxing the tree wanted 72 iron, about sixteen
+hundred-cell runs of nothing but looking - so the requirement now grows by one a
+rung and stops at four. Five upgrades changed which mineral they are built from,
+because gold and amethyst went below the first world's core and an opening row
+cannot ask for something that is not there yet. Prices were re-ordered so a row
+that unseals deeper still costs more.
+
+And the frozen world reference was re-recorded for the first time since it was
+made - the one thing its own note always said would require it. The diff was
+read first: of 15,639 cells, 11,053 changed rock band (already licensed), 841
+changed ore, 574 stopped being ore and 368 started, against a deliberate density
+cut from 10% to 7.5%.
+
 # Appendix: rounds one to three, as planned and shipped
 
 Kept because the reasoning is why the game is shaped the way it is. Everything below has

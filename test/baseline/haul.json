@@ -53,7 +53,7 @@
       "iron": 3
     },
     "planet": 0,
-    "value": 186
+    "value": 291
   },
   {
     "cargo": {
@@ -61,7 +61,7 @@
       "iron": 3
     },
     "planet": 1,
-    "value": 298
+    "value": 466
   },
   {
     "cargo": {
@@ -69,7 +69,7 @@
       "iron": 3
     },
     "planet": 2,
-    "value": 409
+    "value": 640
   },
   {
     "cargo": {
@@ -77,7 +77,7 @@
       "iron": 3
     },
     "planet": 3,
-    "value": 521
+    "value": 815
   },
   {
     "cargo": {
@@ -86,7 +86,7 @@
       "gold": 100
     },
     "planet": 0,
-    "value": 104000
+    "value": 162000
   },
   {
     "cargo": {
@@ -95,7 +95,7 @@
       "gold": 100
     },
     "planet": 1,
-    "value": 166400
+    "value": 259200
   },
   {
     "cargo": {
@@ -104,7 +104,7 @@
       "gold": 100
     },
     "planet": 2,
-    "value": 228800
+    "value": 356400
   },
   {
     "cargo": {
@@ -113,7 +113,7 @@
       "gold": 100
     },
     "planet": 3,
-    "value": 291200
+    "value": 453600
   },
   {
     "cargo": {
@@ -123,7 +123,7 @@
       "silver": 9
     },
     "planet": 0,
-    "value": 1430
+    "value": 2240
   },
   {
     "cargo": {
@@ -133,7 +133,7 @@
       "silver": 9
     },
     "planet": 1,
-    "value": 2288
+    "value": 3584
   },
   {
     "cargo": {
@@ -143,7 +143,7 @@
       "silver": 9
     },
     "planet": 2,
-    "value": 3146
+    "value": 4928
   },
   {
     "cargo": {
@@ -153,7 +153,7 @@
       "silver": 9
     },
     "planet": 3,
-    "value": 4005
+    "value": 6273
   },
   {
     "cargo": {
@@ -163,7 +163,7 @@
       "copper": 25
     },
     "planet": 0,
-    "value": 23125
+    "value": 36000
   },
   {
     "cargo": {
@@ -173,7 +173,7 @@
       "copper": 25
     },
     "planet": 1,
-    "value": 37000
+    "value": 57600
   },
   {
     "cargo": {
@@ -183,7 +183,7 @@
       "copper": 25
     },
     "planet": 2,
-    "value": 50875
+    "value": 79200
   },
   {
     "cargo": {
@@ -193,6 +193,6 @@
       "copper": 25
     },
     "planet": 3,
-    "value": 64750
+    "value": 100800
   }
 ]

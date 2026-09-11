@@ -125,9 +125,30 @@ test('dug cells read as empty', () => {
    overwrote it. Anything else means a new generation feature perturbed the
    rolls underneath it, which silently rebalances every depth at once.
 
-   Freeze, do not re-record, unless you are deliberately rebalancing ore. */
+   FROZEN, AND RE-FROZEN ONCE - in round seven, 2026-09-10.
+
+   The file used to be the world as it stood the moment before caves, gas and
+   geodes existed, which is where the name came from. Round seven rebalanced
+   the ore table on purpose: the ladder spread from five worlds to eight, the
+   deep tier went from 0.40-2.10% down to 0.12-0.30%, and total density fell by
+   a quarter. That is the one change the rule above always said would need a
+   re-record, and it is the first time it has been used.
+
+   MEASURED BEFORE RE-RECORDING, NOT AFTER. Of 15,639 cells: 11,053 changed
+   rock band, which M5 already licensed as rock-for-rock; 841 changed from one
+   ore to another; 574 stopped being ore and 368 started. That is about six per
+   cent of cells changing ore STATUS, against a deliberate density cut from 10%
+   to 7.5%. Nothing in the diff was a surprise.
+
+   What the file means now is "the world as it stood after round seven". What
+   the TEST means is unchanged: a new feature may overwrite cells and may not
+   move the ore underneath them. That property does not care which fixed point
+   it is measured from - which is why re-freezing costs nothing except a name
+   that had stopped being true, so the name went with it.
+
+   Freeze. Do not re-record unless you are deliberately rebalancing ore. */
 const PRE = JSON.parse(
-  readFileSync(new URL('./baseline/blocks-preadditive.json', import.meta.url), 'utf8'));
+  readFileSync(new URL('./baseline/blocks-frozen.json', import.meta.url), 'utf8'));
 /* Everything allowed to sit on top of the ore stream. Adding an entry here is
    a deliberate act and should come with a diff you have read: it says "this
    new feature overwrites cells", which is fine, as opposed to "this new
@@ -234,12 +255,49 @@ test('pockets and caves only overwrite cells, never reshuffle the ore stream', (
      bands. Leaving them out shrank the total and made the pocket share read
      twice what it is. */
   const total = same + overwritten + extended + shortened;
-  /* guard against the test passing because nothing generates any more */
-  assert.ok(overwritten > 200, 'pockets and caves generated almost nothing: ' + overwritten);
-  assert.ok(overwritten / total < 0.12,
-    'pockets and caves now rewrite ' + Math.round(1000 * overwritten / total) / 10 +
+  /* Guard against the test passing because nothing generates any more.
+
+     Counted in the WORLD rather than in the diff, and that changed with the
+     re-freeze. The baseline used to predate caves, gas and geodes, so every
+     one of them showed up as an overwrite and counting overwrites counted
+     them. The frozen world now contains them, so the diff is - correctly -
+     zero, and a count of zero would have read as "pockets have stopped
+     generating" when it actually means "nothing changed".
+
+     So the claim is made directly: pockets and caves exist, and they stay rare
+     enough to be events rather than terrain. That is what the assertion always
+     meant and it no longer depends on which fixed point it is measured from. */
+  let pockets = 0, cells = 0;
+  for (const snap of PRE) {
+    H.setWorld(snap.planet);
+    H.g.dug = new Set();
+    for (let d = 0; d <= snap.rowsTo; d++) {
+      for (let x = 0; x < snap.cols; x++) {
+        const b = H.blockAt(x, d);
+        cells++;
+        if (!b) { pockets++; continue; }
+        if (b.id === H.GAS.id || b.id === H.GEODE.id || b.id === H.CACHE.id) pockets++;
+      }
+    }
+  }
+  assert.ok(pockets > 200, 'pockets and caves generate almost nothing: ' + pockets);
+  assert.ok(pockets / cells < 0.12,
+    'pockets and caves now cover ' + Math.round(1000 * pockets / cells) / 10 +
     '% of the world - they are meant to be events, not terrain');
-  assert.ok(extended > 200, 'the ladder and seam extensions generated almost nothing');
+  /* And the seams, for the same reason and in the same way: the frozen world
+     already has them, so a diff cannot see them any more. */
+  let seams = 0;
+  for (const snap of PRE) {
+    H.setWorld(snap.planet);
+    H.g.dug = new Set();
+    for (let d = 0; d <= snap.rowsTo; d++) {
+      for (let x = 0; x < snap.cols; x++) {
+        const b = H.blockAt(x, d);
+        if (b && b.seam) seams++;
+      }
+    }
+  }
+  assert.ok(seams > 200, 'the rock has no seams in it at all: ' + seams);
   assert.ok(extended / total < 0.45,
     'category conversions now cover ' + Math.round(1000 * extended / total) / 10 +
     '% of the world - at that point the thing being converted is the exception');
@@ -429,14 +487,26 @@ test('a collapsed cell comes back as rubble, never as the ore it held', () => {
   H.g.dug = new Set();
   H.g.rubble = new Set();
 
-  /* find a cell that generates something valuable */
+  /* Find a cell that generates something valuable.
+
+     Searched across the shallow WORLDS rather than down one of them. Round
+     seven pushed the ore ladder out over eight planets, so planet 0 tops out
+     at silver and there is nothing worth 500 anywhere in its 58 metres - the
+     old bounds were looking for ore below that world's own bedrock. What this
+     test is actually about is rubble, not value, so it takes the first
+     valuable cell it can find on any early world. */
   let found = null;
-  for (let d = 56; d < 110 && !found; d++)
-    for (let x = 0; x < H.W; x++) {
-      const b = H.blockAt(x, d);
-      if (b && b.ore && b.value > 500) { found = [x, d, b]; break; }
-    }
-  assert.ok(found, 'expected some valuable ore on planet 0');
+  for (let p = 0; p < 4 && !found; p++) {
+    H.setWorld(p);
+    H.g.dug = new Set();
+    H.g.rubble = new Set();
+    for (let d = 30; d < H.coreDepth(p) && !found; d++)
+      for (let x = 0; x < H.W; x++) {
+        const b = H.blockAt(x, d);
+        if (b && b.ore && b.value > 500) { found = [x, d, b]; break; }
+      }
+  }
+  assert.ok(found, 'expected some valuable ore on an early planet');
   const [x, d, original] = found;
 
   const k = H.key(x, d);

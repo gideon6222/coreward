@@ -53,8 +53,9 @@ test('feel constants are unchanged', () => {
       fogSurface: H.FOG_SURFACE, fogGain: H.FOG_GAIN, fogRush: H.FOG_COLOR_RUSH
     },
     cost: {
-      move: H.FUEL_PER_MOVE, digBase: H.FUEL_DIG_BASE,
-      digPerHardness: H.FUEL_DIG_PER_HARDNESS, hullRegen: H.HULL_REGEN
+      move: H.FUEL_PER_MOVE, cellBase: H.FUEL_CELL_BASE,
+      cellPerHardness: H.FUEL_CELL_PER_HARD, hullRegen: H.HULL_REGEN,
+      clear: H.FUEL_CLEAR, warn: H.FUEL_WARN
     },
     heat: {
       depth: H.heatDepth(0), ramp: H.HEAT_RAMP,
@@ -211,7 +212,7 @@ test('the curves are unchanged', () => {
   assertGolden('feel-curves', {
     easeInOut: at(H.easeInOut, [-0.5, 0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1, 1.5]),
     depthT: at(H.depthT, [-1, 0, 5, 20, 35, 50, 70, 100, 200]),
-    digFuel: at(H.digFuelPerSecond, [1, 2.4, 3.5, 5, 9, 16, 26]),
+    cellFuel: at(H.fuelPerCell, [1, 2.4, 3.5, 5, 9, 16, 26]),
     heatAtDepth: [0, 0.5, 0.9].map((shield) => ({
       shield,
       values: at((pd) => H.heatDamagePerSecond(pd, shield, H.heatDepth(0)), [0, 50, 70, 71, 90, 110, 150, 285])
@@ -365,11 +366,74 @@ test('heat only bites below the safe depth, and cooling reduces it', () => {
 });
 
 test('digging costs more fuel in harder rock', () => {
-  const dirt = H.digFuelPerSecond(1);
-  const basalt = H.digFuelPerSecond(9);
-  const core = H.digFuelPerSecond(26);
+  const dirt = H.fuelPerCell(1);
+  const basalt = H.fuelPerCell(9);
+  const core = H.fuelPerCell(26);
   assert.ok(basalt > dirt && core > basalt, 'fuel cost must rise with hardness');
   assert.ok(dirt > 0);
+});
+
+/* The claim the whole round turns on, and the one the old model failed.
+
+   Fuel is charged against progress through the cell rather than against time,
+   so a better Drill gets through rock faster and pays exactly the same for it.
+   Measured before: a full tank bought 14 cells of basalt at leg 0 and 760 at
+   leg 11, because the Drill divided the cost and the Tank multiplied the
+   supply and the two compounded. Fuel stopped being a constraint at the depth
+   where the stakes were highest. */
+test('a better drill buys speed and never fuel efficiency', () => {
+  for (const hard of [1, 3.5, 9, 26]) {
+    const slow = H.digFuelForStep(hard, (hard * H.DIG_BASE) / 1, 0.001);
+    const fast = H.digFuelForStep(hard, (hard * H.DIG_BASE) / 9.55, 0.001);
+    /* Faster per second, because the cell is over sooner... */
+    assert.ok(fast > slow, 'a faster drill should burn faster per second');
+    /* ...and identical per cell, which is the part that matters. */
+    /* Exactly N steps, not `t < total` accumulating a float - that runs 401
+       times as often as 400 and the extra step is the whole discrepancy. */
+    const whole = (total) => {
+      const N = 400, step = total / N;
+      let f = 0;
+      for (let i = 0; i < N; i++) f += H.digFuelForStep(hard, total, step);
+      return f;
+    };
+    const a = whole((hard * H.DIG_BASE) / 1), b = whole((hard * H.DIG_BASE) / 9.55);
+    assert.ok(Math.abs(a - b) < 1e-9,
+      'hardness ' + hard + ': a cell costs ' + a.toFixed(4) + ' at drill 1 and ' +
+      b.toFixed(4) + ' at drill 9.55 - the drill must not buy efficiency');
+    assert.ok(Math.abs(a - H.fuelPerCell(hard)) < 1e-9,
+      'a whole cell must bill exactly fuelPerCell');
+  }
+});
+
+/* The Point of No Return, which is only tension if the player can compute it. */
+test('the climb home stays affordable from the deepest cell of any world', () => {
+  for (let leg = 0; leg < 12; leg++) {
+    const L = Math.min(9, Math.round(leg * 0.8));
+    const tank = 90 + L * 40, speed = 3.0 + L * 0.7;
+    const climb = H.fuelToClimb(H.coreDepth(leg), speed);
+    assert.ok(climb < tank * 0.35,
+      'leg ' + leg + ': climbing out of the deepest cell costs ' + climb.toFixed(0) +
+      ' of a ' + tank + ' tank, which leaves nothing to have dug with');
+  }
+});
+
+test('the fuel state escalates, and never warns at the pad', () => {
+  /* No climb to pay for is never a warning, however little is in the tank -
+     the pad refuels you. */
+  assert.equal(H.fuelState(0.5, 0), 'clear');
+  const climb = 20;
+  assert.equal(H.fuelState(climb * 3, climb), 'clear');
+  assert.equal(H.fuelState(climb * 1.8, climb), 'plan');
+  assert.equal(H.fuelState(climb * 1.2, climb), 'danger');
+  assert.equal(H.fuelState(climb * 0.9, climb), 'stranded');
+  /* Monotonic: less fuel is never a better state. */
+  const order = ['clear', 'plan', 'danger', 'stranded'];
+  let last = 0;
+  for (let f = climb * 4; f > 0; f -= climb * 0.05) {
+    const i = order.indexOf(H.fuelState(f, climb));
+    assert.ok(i >= last, 'the warning went backwards as fuel fell');
+    last = i;
+  }
 });
 
 /* The Searing trait scales how fast soak builds and nothing else. Recovery

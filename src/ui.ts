@@ -1,5 +1,5 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, SUPPLY_OF, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
-import { setGauges } from './gauges';
+import { setGauges, setFuelReserve } from './gauges';
 import { clamp } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, padFuel } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
@@ -114,17 +114,19 @@ let foundT = 0;
    different promises. A device is bolted on and its ladder opens; a supply is
    in the hold and the counter will restock it. Saying "FITTED" over a Fuel
    Cell would be a small lie in the one place the game is teaching. */
-export function foundBanner(name: string, what: string, kind: 'device' | 'supply' = 'device') {
+export function foundBanner(name: string, what: string, kind: 'device' | 'supply' | 'ore' = 'device') {
   if (!ui.found || !ui.foundName || !ui.foundWhat) return;
   ui.foundName.textContent = name;
   ui.foundWhat.textContent = what;
   const head = ui.found.querySelector('.fhead');
   const fit = ui.found.querySelector('.ffit');
-  if (head) head.textContent = kind === 'device' ? 'DEVICE RECOVERED' : 'NEW SUPPLY';
+  if (head) head.textContent = kind === 'device' ? 'DEVICE RECOVERED'
+    : kind === 'supply' ? 'NEW SUPPLY' : 'NEW MINERAL';
   if (fit) {
     fit.textContent = kind === 'device'
       ? 'FITTED · UPGRADE IT AT THE OUTFITTER'
-      : 'IN THE HOLD · THE OUTFITTER STOCKS IT NOW';
+      : kind === 'supply' ? 'IN THE HOLD · THE OUTFITTER STOCKS IT NOW'
+      : 'IN THE HOLD · SELL IT AT THE PAD';
   }
   ui.found.classList.add('on');
   foundT = 4.0;
@@ -222,6 +224,12 @@ export function updateHUD() {
   /* One call for every reading, so the dials cannot end up describing
      different frames. */
   setGauges(fuelFrac, weightFrac, hullFrac, clamp(g.soak, 0, 1));
+  /* The reserve, as a fraction of the TANK rather than of what is left - the
+     band is a mark on the dial, so it has to be in the dial's own units. */
+  setFuelReserve(R.climb / Math.max(1, S.fuelCap()), R.fuelState);
+  /* And the printed figure takes the state's colour, because somebody reading
+     the number rather than the needle must get the same warning. */
+  ui.fuelTxt.className = 'fuel-' + R.fuelState;
 
   /* Ember edges are heat. They hold a floor the moment you cross the line,
      because damage starts there whether or not you have soaked yet, and fade

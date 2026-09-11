@@ -1,4 +1,4 @@
-import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, matTotalFor,
+import { HULL_MAX, SAVE_KEY, OLD_KEY, START_X, UPGRADES, SUPPLIES, ORES, matTotalFor, scrubSave, costOf,
          bombRadius, laserRange, traitOf, TRAIT_OF, TRAITS, coreDepth,
          valueMult , OVERDRIVE_MULT, PULSE_REACH} from './config';
 import { CHARGE_MAX } from './feel';
@@ -75,6 +75,9 @@ export const g: {
   /* Consumables ever held. The Outfitter will not sell one you have never had
      in your hands - see the note on supplies in finds.ts. */
   foundKit: string[];
+  /* Every material you have ever cut out of the rock. The first of each is an
+     event; after that it is just ore. See the reveal in loop.ts. */
+  seenOre: string[];
   /* balance telemetry: all time in the save, this run in memory only */
   log: Log;
   /* Ore dug with a full hold, left at the cell it came from. Keyed by cell,
@@ -98,7 +101,7 @@ export const g: {
   planet: 0, credits: 0, shards: 0,
   world: 0, trait: 'stable', coreOff: 0, rich: 1,
   drive: [], won: false,
-  up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0, bomb: 0, laser: 0,
+  up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, scrub: 0, auto: 0, bomb: 0, laser: 0,
     hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 },
   kit: { coolant: 0, patch: 0, cell: 0, overdrive: 0, bulwark: 0, pulse: 0 },
   dug: new Set<string>(),
@@ -106,7 +109,7 @@ export const g: {
   px: START_X, pd: -1,
   face: 'down',
   fuel: 90, hull: HULL_MAX, soak: 0, charge: CHARGE_MAX,
-  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [], foundKit: [],
+  cargo: {}, weight: 0, stock: {}, drops: {}, damage: {}, relics: [], relicsTaken: [], found: [], foundKit: [], seenOre: [],
   log: blankLog(),
   best: { depth: 0, haul: 0, fastest: 0, worlds: 0 },
   claim: newClaim(),
@@ -149,8 +152,13 @@ export const S = {
      floating point, which showed up in the golden baseline as a cut of
      9.999999999999998% - true, useless, and the kind of diff that trains you
      to re-record without reading. */
-  towCut: () => Math.max(0.05,
-    Math.round((0.5 - g.up.tow * 0.05 - (relic('rights') ? 0.1 : 0)) * 1000) / 1000),
+  /* What a cell of rock actually costs after the Scrubber and the charter.
+
+     Multiplied rather than added, so neither can take the cost to zero: the
+     whole point of charging fuel per cell is that the constraint survives the
+     ladder. At the cap, 0.6 * 0.92 leaves 55% of the list price, which is a
+     real upgrade and not an exemption. */
+  cellFuel: () => (1 - scrubSave(g.up.scrub)) * (relic('rights') ? 0.92 : 1),
   autoRate: () => (g.up.auto === 0 ? 0 : 0.55 - (g.up.auto - 1) * 0.075),
   bombR: () => bombRadius(g.up.bomb) * (worldTrait().blastR ?? 1),
   laserLen: () => laserRange(g.up.laser),
@@ -220,7 +228,7 @@ export function save() {
       kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
       drops: g.drops, damage: g.damage, charge: g.charge,
       relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
-      found: g.found, foundKit: g.foundKit,
+      found: g.found, foundKit: g.foundKit, seenOre: g.seenOre,
       claim: g.claim
     }));
   } catch (e) { /* ignore */ }
@@ -258,6 +266,25 @@ export function load() {
       g.won = !!s.won;
       g.relics = Array.isArray(s.relics) ? s.relics.slice() : [];
       g.relicsTaken = Array.isArray(s.relicsTaken) ? s.relicsTaken.slice() : [];
+      /* Tow Insurance was deleted, so anybody who bought a level gets every
+         credit they spent on it back - once, here, before anything else reads
+         `up`. Deleting a thing somebody paid for and keeping the money is the
+         one thing this must not do.
+
+         `s.up.tow` is read off the RAW save rather than off `g.up`, which no
+         longer has the key at all. It is dropped afterwards so the refund can
+         never be paid twice, and a save that has already been through this has
+         no `tow` to find. */
+      const towed = (s.up && typeof s.up.tow === 'number') ? s.up.tow : 0;
+      if (towed > 0) {
+        const tow = { key: 'scrub' as UpgradeKey, base: 1500, mul: 1.5 };
+        let back = 0;
+        for (let l = 0; l < towed; l++) back += Math.round(tow.base * Math.pow(tow.mul, l));
+        g.credits += back;
+        R.refund = back;
+      }
+      delete (g.up as Record<string, number>).tow;
+
       /* Devices, and the grandfather clause that has to come with them.
 
          Before this round the seven found devices were bought over the counter
@@ -270,6 +297,12 @@ export function load() {
          is added to the list on load, whatever the save says. New saves write
          the list properly and this clause never fires again for them. */
       g.found = Array.isArray(s.found) ? s.found.slice() : [];
+      /* A save from before this existed has plainly already seen whatever its
+         depth record says it has been standing in, so it is granted rather
+         than replayed - being told "NEW MINERAL: Copper" on your fiftieth run
+         is worse than never being told at all. */
+      g.seenOre = Array.isArray(s.seenOre) ? s.seenOre.slice()
+        : ORES.filter((o) => o.min <= (s.best && s.best.depth) || 0).map((o) => o.id);
       for (const k of FOUND_KEYS) {
         if ((g.up[k] || 0) > 0 && !g.found.includes(k)) g.found.push(k);
       }

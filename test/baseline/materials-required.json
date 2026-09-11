@@ -4,7 +4,7 @@
     {
       "key": "drill",
       "mat": "iron",
-      "mineralDepth": 11,
+      "mineralDepth": 16,
       "steps": [
         null,
         null,
@@ -15,31 +15,31 @@
         },
         {
           "id": "iron",
+          "need": 3
+        },
+        {
+          "id": "iron",
           "need": 4
         },
         {
           "id": "iron",
-          "need": 6
+          "need": 4
         },
         {
           "id": "iron",
-          "need": 8
+          "need": 4
         },
         {
           "id": "iron",
-          "need": 10
-        },
-        {
-          "id": "iron",
-          "need": 12
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
       "key": "cargo",
       "mat": "copper",
-      "mineralDepth": 4,
+      "mineralDepth": 3,
       "steps": [
         null,
         null,
@@ -50,31 +50,31 @@
         },
         {
           "id": "copper",
+          "need": 3
+        },
+        {
+          "id": "copper",
           "need": 4
         },
         {
           "id": "copper",
-          "need": 6
+          "need": 4
         },
         {
           "id": "copper",
-          "need": 8
+          "need": 4
         },
         {
           "id": "copper",
-          "need": 10
-        },
-        {
-          "id": "copper",
-          "need": 12
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
       "key": "thrust",
       "mat": "silver",
-      "mineralDepth": 22,
+      "mineralDepth": 30,
       "steps": [
         null,
         null,
@@ -85,66 +85,66 @@
         },
         {
           "id": "silver",
+          "need": 3
+        },
+        {
+          "id": "silver",
           "need": 4
         },
         {
           "id": "silver",
-          "need": 6
+          "need": 4
         },
         {
           "id": "silver",
-          "need": 8
+          "need": 4
         },
         {
           "id": "silver",
-          "need": 10
-        },
-        {
-          "id": "silver",
-          "need": 12
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
       "key": "tank",
-      "mat": "gold",
-      "mineralDepth": 36,
+      "mat": "silver",
+      "mineralDepth": 30,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "gold",
+          "id": "silver",
           "need": 2
         },
         {
-          "id": "gold",
+          "id": "silver",
+          "need": 3
+        },
+        {
+          "id": "silver",
           "need": 4
         },
         {
-          "id": "gold",
-          "need": 6
+          "id": "silver",
+          "need": 4
         },
         {
-          "id": "gold",
-          "need": 8
+          "id": "silver",
+          "need": 4
         },
         {
-          "id": "gold",
-          "need": 10
-        },
-        {
-          "id": "gold",
-          "need": 12
+          "id": "silver",
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
       "key": "cool",
       "mat": "emerald",
-      "mineralDepth": 78,
+      "mineralDepth": 130,
       "steps": [
         null,
         null,
@@ -155,31 +155,31 @@
         },
         {
           "id": "emerald",
+          "need": 3
+        },
+        {
+          "id": "emerald",
           "need": 4
         },
         {
           "id": "emerald",
-          "need": 6
+          "need": 4
         },
         {
           "id": "emerald",
-          "need": 8
+          "need": 4
         },
         {
           "id": "emerald",
-          "need": 10
-        },
-        {
-          "id": "emerald",
-          "need": 12
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
       "key": "scan",
       "mat": "copper",
-      "mineralDepth": 4,
+      "mineralDepth": 3,
       "steps": [
         null,
         null,
@@ -190,31 +190,31 @@
         },
         {
           "id": "copper",
+          "need": 3
+        },
+        {
+          "id": "copper",
           "need": 4
         },
         {
           "id": "copper",
-          "need": 6
+          "need": 4
         },
         {
           "id": "copper",
-          "need": 8
+          "need": 4
         },
         {
           "id": "copper",
-          "need": 10
-        },
-        {
-          "id": "copper",
-          "need": 12
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
-      "key": "tow",
+      "key": "scrub",
       "mat": "iron",
-      "mineralDepth": 11,
+      "mineralDepth": 16,
       "steps": [
         null,
         null,
@@ -225,50 +225,50 @@
         },
         {
           "id": "iron",
+          "need": 3
+        },
+        {
+          "id": "iron",
           "need": 4
         },
         {
           "id": "iron",
-          "need": 6
+          "need": 4
         },
         {
           "id": "iron",
-          "need": 8
-        },
-        {
-          "id": "iron",
-          "need": 10
+          "need": 4
         }
       ],
-      "total": 30
+      "total": 17
     },
     {
       "key": "auto",
-      "mat": "ruby",
-      "mineralDepth": 105,
+      "mat": "amethyst",
+      "mineralDepth": 95,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "ruby",
+          "id": "amethyst",
           "need": 2
         },
         {
-          "id": "ruby",
-          "need": 4
+          "id": "amethyst",
+          "need": 3
         },
         {
-          "id": "ruby",
-          "need": 6
+          "id": "amethyst",
+          "need": 4
         }
       ],
-      "total": 12
+      "total": 9
     },
     {
       "key": "bomb",
       "mat": "iron",
-      "mineralDepth": 11,
+      "mineralDepth": 16,
       "steps": [
         null,
         null,
@@ -279,53 +279,61 @@
     {
       "key": "laser",
       "mat": "ruby",
-      "mineralDepth": 105,
-      "steps": [
-        null,
-        null,
-        null
-      ],
-      "total": 0
-    },
-    {
-      "key": "hull",
-      "mat": "silver",
-      "mineralDepth": 22,
+      "mineralDepth": 168,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "silver",
+          "id": "ruby",
           "need": 2
         },
         {
-          "id": "silver",
+          "id": "ruby",
+          "need": 3
+        }
+      ],
+      "total": 5
+    },
+    {
+      "key": "hull",
+      "mat": "iron",
+      "mineralDepth": 16,
+      "steps": [
+        null,
+        null,
+        null,
+        {
+          "id": "iron",
+          "need": 2
+        },
+        {
+          "id": "iron",
+          "need": 3
+        },
+        {
+          "id": "iron",
           "need": 4
         },
         {
-          "id": "silver",
-          "need": 6
+          "id": "iron",
+          "need": 4
         },
         {
-          "id": "silver",
-          "need": 8
+          "id": "iron",
+          "need": 4
         },
         {
-          "id": "silver",
-          "need": 10
-        },
-        {
-          "id": "silver",
-          "need": 12
+          "id": "iron",
+          "need": 4
         }
       ],
-      "total": 42
+      "total": 21
     },
     {
       "key": "magnet",
       "mat": "copper",
-      "mineralDepth": 4,
+      "mineralDepth": 3,
       "steps": [
         null,
         null,
@@ -336,38 +344,38 @@
         },
         {
           "id": "copper",
-          "need": 4
+          "need": 3
         },
         {
           "id": "copper",
-          "need": 6
+          "need": 4
         }
       ],
-      "total": 12
+      "total": 9
     },
     {
       "key": "survey",
-      "mat": "amethyst",
-      "mineralDepth": 56,
+      "mat": "gold",
+      "mineralDepth": 64,
       "steps": [
         null,
         null,
         null,
         {
-          "id": "amethyst",
+          "id": "gold",
           "need": 2
         },
         {
-          "id": "amethyst",
-          "need": 4
+          "id": "gold",
+          "need": 3
         }
       ],
-      "total": 6
+      "total": 5
     },
     {
       "key": "drone",
       "mat": "amethyst",
-      "mineralDepth": 56,
+      "mineralDepth": 95,
       "steps": [
         null,
         null,
@@ -378,15 +386,15 @@
         },
         {
           "id": "amethyst",
-          "need": 4
+          "need": 3
         }
       ],
-      "total": 6
+      "total": 5
     },
     {
       "key": "reactor",
       "mat": "gold",
-      "mineralDepth": 36,
+      "mineralDepth": 64,
       "steps": [
         null,
         null,
@@ -397,10 +405,10 @@
         },
         {
           "id": "gold",
-          "need": 4
+          "need": 3
         }
       ],
-      "total": 6
+      "total": 5
     }
   ]
 }

@@ -2,12 +2,12 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import * as THREE from 'three';
-import { HULL_MAX, UPGRADES, SUPPLIES, shelfStock } from './sim/config';
+import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock } from './sim/config';
 import { g, S, save, load, hasSave, coreM } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
-import { findCells, blockAt, cachePrize } from './sim/world';
+import { findCells, blockAt, cachePrize, haulValue } from './sim/world';
 import { setMark } from './mark';
 import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
@@ -16,7 +16,7 @@ import { stationX } from './stationroom';
 import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen, roomDrawer,
          stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
-import { el, updateHUD, audioLabels, buildShop } from './ui';
+import { el, updateHUD, audioLabels, buildShop, toast } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
@@ -105,6 +105,14 @@ setStartHandler((fresh: boolean) => {
   if (g.pd <= 0.5) beginSettle();
   else g.mode = 'play';
   updateHUD();
+  /* Tow Insurance was deleted this version and its cost refunded during
+     `load()`, which runs before there is a HUD to say so on. Said here, once
+     the game is actually in front of somebody, because money appearing in your
+     account with no explanation is worse than the upgrade disappearing. */
+  if (R.refund > 0) {
+    toast('Tow Insurance is gone · ◈ ' + R.refund.toLocaleString() + ' refunded');
+    R.refund = 0;
+  }
   save();
 });
 wireTitle();
@@ -181,7 +189,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     drawerOpen, roomDrawer, kitCases, refreshKit,
     /* So a spec can open a cache the way the drill does, and ask what a given
        cell would pay before it opens one. */
-    cachePrize, grantCache,
+    cachePrize, grantCache, haulValue, ORES,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

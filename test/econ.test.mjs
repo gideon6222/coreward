@@ -29,8 +29,12 @@ function cellsPerTank(depth) {
   for (let i = 0; fuel > 0 && i < 4000; i++) {
     const b = H.blockAt(2 + (i % 9), depth - (i % 2));
     if (!b || b.value == null || !H.DEF[b.id]) continue;
-    const secs = (b.hard * H.DIG_BASE) / H.S.drill();
-    fuel -= (H.FUEL_DIG_BASE + b.hard * H.FUEL_DIG_PER_HARDNESS) * secs;
+    /* Per CELL, not per second. Round seven moved the charge onto progress
+       through the block so the Drill buys speed and never efficiency - see
+       fuelPerCell in feel.ts - which is exactly what this probe is measuring:
+       how many cells a tank is worth. Under the old model that answer grew
+       fifty-four fold across the upgrade ladder. */
+    fuel -= H.fuelPerCell(b.hard) * H.S.cellFuel();
     if (fuel < 0) break;
     cells++; kg += b.wt;
     /* Rock only. A corridor that happens to run through a seam is the RICH

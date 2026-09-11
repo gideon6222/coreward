@@ -498,7 +498,7 @@ test('the score layers respond to depth and to danger', async ({ page }) => {
     };
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 6, cargo: 3, thrust: 4, tank: 6, cool: 8, scan: 5, tow: 0, auto: 0 },
+      up: { drill: 6, cargo: 3, thrust: 4, tank: 6, cool: 8, scan: 5, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {},
       dug: Array.from({ length: 97 }, (_, d) => '6,' + d),
       rubble: [], cargo: {}, weight: 0, px: 6, pd: 96
@@ -615,7 +615,7 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
     const rubble = ['5,90', '7,90', '4,92', '8,92', '6,86', '9,94', '3,95', '2,91'];
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 3, credits: 0, shards: 0,
-      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 9, scan: 9, tow: 0, auto: 0 },
+      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 9, scan: 9, scrub: 0, auto: 0 },
       kit: { coolant: 2, patch: 3, cell: 3 }, stock: {},
       best: { depth: 40, haul: 0 },
       dug: dug.filter((k) => !rubble.includes(k)), rubble,
@@ -776,7 +776,7 @@ test('a full hold no longer stops the drill, and the ore waits', async ({ page }
     for (let d = 0; d <= 44; d++) dug.push('6,' + d);
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
+      up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
       best: { depth: 300, haul: 0 },
       /* Six amethyst at 7 kg is 42 of the 45 kg a stock hold carries: room for
@@ -823,7 +823,7 @@ test('ore left behind is picked up by flying back through it', async ({ page }) 
     dug.push('5,44', '4,44');
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
+      up: { drill: 8, cargo: 0, thrust: 4, tank: 8, cool: 9, scan: 4, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [],
       drops: { '5,44': 'amethyst', '4,44': 'gold' },
       best: { depth: 300, haul: 0 },
@@ -849,11 +849,16 @@ test('ore left behind is picked up by flying back through it', async ({ page }) 
       .poll(() => page.evaluate(() => Number(
         (document.querySelector('#haul') as HTMLElement).innerText.replace(/[^0-9]/g, ''))),
         { timeout: DEEP_ENOUGH })
-      .toBeGreaterThan(1200);
+      .toBeGreaterThan(1900);
   });
 
-  /* amethyst is 900 and gold 420 on planet 0, so anything over 1200 means
-     both drops were collected rather than one of them plus rock */
+  /* Amethyst is 1400 and gold 660, so anything over 1900 means BOTH drops were
+     collected rather than one of them plus rock.
+
+     1200 before round seven, when amethyst was 900 - and the threshold had to
+     move with the value, because at 1400 the amethyst alone cleared the old
+     bar and the poll stopped after one pickup. A threshold that a single item
+     can satisfy is not testing "both". */
   expect(await page.evaluate(() =>
     parseFloat((document.querySelector('#cargoTxt') as HTMLElement).innerText)),
     'both drops should be aboard').toBeGreaterThan(15);
@@ -890,7 +895,7 @@ test('a block remembers how far through it you were', async ({ page }) => {
     for (let d = 0; d <= 49; d++) dug.push('6,' + d);
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 0, cargo: 5, thrust: 3, tank: 9, cool: 9, scan: 3, tow: 0, auto: 0, bomb: 0, laser: 0 },
+      up: { drill: 0, cargo: 5, thrust: 3, tank: 9, cool: 9, scan: 3, scrub: 0, auto: 0, bomb: 0, laser: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {}, damage: {},
       relics: [], relicsTaken: [], best: { depth: 300, haul: 0 }, charge: 4,
       dug, cargo: {}, weight: 0, px: 6, pd: 49
@@ -936,7 +941,7 @@ test('the charge and the laser spend power and clear the ground', async ({ page 
     for (let d = 0; d <= 48; d++) dug.push('6,' + d);
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 2, cargo: 5, thrust: 1, tank: 6, cool: 0, scan: 3, tow: 0, auto: 0, bomb: 2, laser: 2 },
+      up: { drill: 2, cargo: 5, thrust: 1, tank: 6, cool: 0, scan: 3, scrub: 0, auto: 0, bomb: 2, laser: 2 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
       best: { depth: 120, haul: 0 }, charge: 4,
       dug, cargo: {}, weight: 0, px: 6, pd: 47
@@ -996,7 +1001,7 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
   await page.evaluate(() => {
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 8, cargo: 3, thrust: 5, tank: 6, cool: 4, scan: 6, tow: 0, auto: 0 },
+      up: { drill: 8, cargo: 3, thrust: 5, tank: 6, cool: 4, scan: 6, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {},
       best: { depth: 14, haul: 0 },
       dug: [], rubble: [], cargo: {}, weight: 0, px: 6, pd: -1
@@ -1050,7 +1055,7 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
        determinism changes. */
     /* Thirty slices, not eighty. M5 ended leg 0 at 58 m with heat from 38, so
        forty seconds of holding down now drills into the heat zone without a
-       rig and the run ends in a tow - which is the game working, and made this
+       rig and the run ends with the ship lost - which is the game working, and made this
        test about survival rather than about the record announcement. */
     for (let i = 0; i < 30; i++) {
       w.advance(0.5);
@@ -1084,13 +1089,15 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 500_000, shards: 0,
       /* cool at 3 means the next purchase is level 4, the first gated one */
-      up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 3, scan: 0, tow: 0, auto: 0 },
+      up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 3, scan: 0, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 },
       stock: {},
-      /* deep enough that the Cooling Rig is on the shelf at all - the depth
+      /* Deep enough that the Cooling Rig is on the shelf at all - the depth
          gate and the mineral gate are separate walls and this test is about
-         the second one */
-      best: { depth: 80, haul: 0 },
+         the second one. 135, not 80: round seven moved emerald from 78 m to
+         130 m and the row followed it, which is the whole point of the two
+         gates pointing at the same place. */
+      best: { depth: 135, haul: 0 },
       dug: [], cargo: {}, weight: 0, px: 6, pd: -1
     }));
     const set = Storage.prototype.setItem;
@@ -1115,7 +1122,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await expect(card.locator('.upmat')).toHaveClass(/short/);
   await expect(card.locator('.upmat')).toContainText('2 Emerald');
   await expect(card.locator('.upmat'), 'a requirement you cannot meet must say where to go')
-    .toContainText('from 78 m');
+    .toContainText('from 130 m');
 
   /* levels inside the free tier are still pure credits */
   await tapBay(page, 'drill');
@@ -1127,7 +1134,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem('coreward.v2') as string);
     s.stock = { emerald: 3 };
-    s.best = { depth: 80, haul: 0 };
+    s.best = { depth: 135, haul: 0 };
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = set;
     localStorage.setItem('coreward.v2', JSON.stringify(s));
@@ -1159,7 +1166,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
   await page.locator('#shopClose').dispatchEvent('click');
   await page.locator('#btnManifest').dispatchEvent('click');
   await expect(page.locator('#vault')).toContainText('Emerald');
-  await expect(page.locator('#vault')).toContainText('from 78 m');
+  await expect(page.locator('#vault')).toContainText('from 130 m');
   await expect(page.locator('#err')).toHaveClass(/hidden/);
 });
 
@@ -1176,7 +1183,7 @@ test('heat reads as its own channel on the hull bar, and a flush visibly drops i
     await page.evaluate(() => {
       localStorage.setItem('coreward.v2', JSON.stringify({
         planet: 0, credits: 0, shards: 0,
-        up: { drill: 6, cargo: 3, thrust: 4, tank: 4, cool: 7, scan: 4, tow: 0, auto: 0 },
+        up: { drill: 6, cargo: 3, thrust: 4, tank: 4, cool: 7, scan: 4, scrub: 0, auto: 0 },
         kit: { coolant: 1, patch: 0, cell: 0 },
         dug: Array.from({ length: 49 }, (_, d) => '6,' + d),
         cargo: {}, weight: 0, px: 6, pd: 48
@@ -1304,7 +1311,7 @@ test('a ship parked off-lane still digs instead of snagging on its own shaft', a
     for (let d = 0; d <= 44; d++) dug.push('6,' + d);
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 0, shards: 0,
-      up: { drill: 8, cargo: 4, thrust: 4, tank: 8, cool: 9, scan: 4, tow: 0, auto: 0 },
+      up: { drill: 8, cargo: 4, thrust: 4, tank: 8, cool: 9, scan: 4, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {}, rubble: [], drops: {},
       best: { depth: 300, haul: 0 },
       dug, cargo: {}, weight: 0,
@@ -1505,7 +1512,7 @@ test('hardware bought in the Outfitter is on the ship you undock with', async ({
   await page.evaluate(() => {
     localStorage.setItem('coreward.v2', JSON.stringify({
       planet: 0, credits: 400000, shards: 0,
-      up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, tow: 0, auto: 0 },
+      up: { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 },
       stock: { iron: 99, copper: 99, silver: 99, gold: 99, amethyst: 99, emerald: 99 },
       best: { depth: 300, haul: 0 }, dug: [], rubble: [], cargo: {}, weight: 0,
@@ -2010,7 +2017,7 @@ test('the Outfitter will not sell a device that has not been dug up', async ({ p
     expect(shelf, k + ' is on the shelf of a player who has never found one').not.toContain(k);
   }
   /* And the eight that ARE sold are all there, or the gate has eaten the shop. */
-  for (const k of ['drill', 'cargo', 'thrust', 'tank', 'scan', 'tow', 'hull', 'cool']) {
+  for (const k of ['drill', 'cargo', 'thrust', 'tank', 'scan', 'scrub', 'hull', 'cool']) {
     expect(shelf, k + ' is sold at the shop and is missing from the shelf').toContain(k);
   }
 
@@ -2126,7 +2133,9 @@ test('a sealed crate in the rock fits the device and stocks the shop', async ({ 
     const b = w.blockAt(x, d);
     return { count: cells.length, key: first.key, x, d, id: b ? b.id : null, hard: b ? b.hard : 0 };
   });
-  expect(where.count, 'the first world buries nothing at all').toBe(3);
+  /* Two, not three: round seven pushed Deep Survey down to 62 m with the gold
+     it is built from, which is past the 58 m core of the tutorial world. */
+  expect(where.count, 'the first world buries nothing at all').toBe(2);
   expect(where.id, 'the crate cell is not a crate').toBe('schematic');
   expect(where.hard, 'a crate with no hardness is not a dig').toBeGreaterThan(0);
 
@@ -2375,4 +2384,192 @@ test('a supply cache hands over something new, and the Outfitter stocks it', asy
     return w.kitCases.filter((c: any) => c.group.visible).map((c: any) => c.key);
   });
   expect(shown, 'the consumable was found and the drawer is still empty').toEqual(got.kit);
+});
+
+/* ---------- round seven: running dry kills you ----------
+
+   Playtest: *"if you run out of gas, you should game over."* */
+test('an empty tank loses the ship, the hold, and nothing else', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const before = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    /* A shaft to be down, a hold worth losing, and money and a rig worth
+       keeping - the whole point is which of these survives. */
+    for (let d = 0; d <= 30; d++) w.g.dug.add('6,' + d);
+    w.g.px = 6; w.g.pd = 28;
+    w.g.credits = 12345;
+    w.g.up.drill = 4;
+    w.g.relics = ['drum'];
+    w.g.found = ['magnet'];
+    w.g.cargo = { iron: 6 };
+    w.g.weight = 27;
+    w.resetBlocks();
+    w.advance(0.6);
+    return { credits: w.g.credits, drill: w.g.up.drill, relics: w.g.relics.length,
+             found: w.g.found.length, planet: w.g.planet, haulValue: w.haulValue() };
+  });
+  expect(before.haulValue, 'the hold has to be worth something for its loss to mean anything')
+    .toBeGreaterThan(0);
+
+  /* Run it dry. The reactor idles now, so this happens even standing still -
+     which is the hole the idle drain exists to close. */
+  const dead = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.fuel = 0.25;
+    w.advance(8);
+    return {
+      mode: w.g.mode,
+      title: (document.getElementById('evTitle') as HTMLElement).textContent,
+      body: (document.getElementById('evBody') as HTMLElement).textContent,
+      cargo: Object.keys(w.g.cargo).length,
+      weight: w.g.weight,
+      pd: w.g.pd,
+      credits: w.g.credits, drill: w.g.up.drill, relics: w.g.relics.length,
+      found: w.g.found.length, planet: w.g.planet
+    };
+  });
+
+  /* It is a death, not a rescue. */
+  expect(dead.title, 'running dry did not end the run').toBe('THE SHIP IS LOST');
+  expect(dead.body, 'the card must say where it happened').toContain('28 m');
+  /* The hold is gone in full - a tow used to take a percentage. */
+  expect(dead.cargo, 'the hold survived a death').toBe(0);
+  expect(dead.weight).toBe(0);
+  /* And the ship is back on the pad BEFORE the card hands control back, or
+     dismissing it drops you inside solid rock. */
+  expect(dead.pd, 'the ship was left underground').toBeLessThanOrEqual(-0.5);
+
+  /* Everything permanent survives. This is the line the whole design turns on:
+     across every comparable game the research found, not one destroys its
+     meta-progression on a single failed run. */
+  expect(dead.credits, 'banked credits were taken').toBe(before.credits);
+  expect(dead.drill, 'an upgrade level was taken').toBe(before.drill);
+  expect(dead.relics, 'a relic was taken').toBe(before.relics);
+  expect(dead.found, 'a found device was taken').toBe(before.found);
+  expect(dead.planet, 'the world was taken').toBe(before.planet);
+});
+
+test('the fuel gauge shows the climb home, and goes red before it is too late', async ({ page }) => {
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.evaluate(() => {
+    const w = (window as any).__cw;
+    for (let d = 0; d <= 40; d++) w.g.dug.add('6,' + d);
+    w.g.px = 6; w.g.pd = 38;
+    w.resetBlocks();
+    w.advance(0.6);
+  });
+
+  /* The reserve is a real number computed from the real route, not the depth,
+     and it is drawn on the dial. */
+  const band = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.fuel = w.S.fuelCap();
+    w.R.climbT = 0;
+    w.advance(0.5);
+    const d = document.getElementById('fuelReserve')!.getAttribute('stroke-dasharray') || '';
+    return { climb: w.R.climb, drawn: parseFloat(d.split(' ')[0]),
+             cap: w.S.fuelCap(), state: w.R.fuelState };
+  });
+  expect(band.climb, 'the climb home was never computed').toBeGreaterThan(0);
+  expect(band.state, 'a full tank at 38 m is not a warning').toBe('clear');
+  /* Drawn as a fraction of the TANK, because it is a mark on the dial. */
+  expect(Math.abs(band.drawn - (band.climb / band.cap) * 100),
+    'the band on the dial does not match the fuel the climb costs').toBeLessThan(1);
+
+  /* And it escalates as the tank falls, in order, with the dial and the
+     printed figure agreeing at every step. */
+  const seen: string[] = [];
+  for (const mult of [3.0, 1.8, 1.2, 0.9]) {
+    const s = await page.evaluate((m) => {
+      const w = (window as any).__cw;
+      w.g.fuel = w.R.climb * m;
+      w.R.climbT = 0;
+      w.advance(0.5);
+      return { state: w.R.fuelState,
+               cluster: document.getElementById('cluster')!.className,
+               txt: document.getElementById('fuelTxt')!.className,
+               dry: document.getElementById('dry')!.className };
+    }, mult);
+    seen.push(s.state);
+    expect(s.txt, 'the printed figure disagrees with the dial').toContain(s.state);
+    if (s.state === 'danger' || s.state === 'stranded') {
+      expect(s.cluster, 'the dial is not warning at ' + s.state).toContain('dry');
+      expect(s.dry, 'the screen edge is not warning at ' + s.state).toContain('on');
+    } else {
+      expect(s.cluster, 'the dial is crying wolf at ' + s.state).not.toContain('dry');
+    }
+  }
+  expect(seen).toEqual(['clear', 'plan', 'danger', 'stranded']);
+});
+
+test('a deep world only gives up its deep ore, and only rarely', async ({ page }) => {
+  /* The two halves of "it should feel like a prize": a material does not exist
+     above its floor, and even below it, it is rare. Asserted against the real
+     generator rather than the table, because the table is only a promise. */
+  const counts = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const out: Record<string, Record<string, number>> = {};
+    for (const leg of [0, 4, 8]) {
+      w.g.planet = leg; w.g.world = leg; w.g.coreOff = 0;
+      w.g.dug = new Set(); w.g.rubble = new Set();
+      const seen: Record<string, number> = {};
+      let cells = 0;
+      const core = w.coreM();
+      for (let d = 0; d < core; d++) {
+        for (let x = 0; x < 13; x++) {
+          const b = w.blockAt(x, d);
+          cells++;
+          if (b && b.ore && !b.core) seen[b.id] = (seen[b.id] || 0) + 1;
+        }
+      }
+      seen.__cells = cells;
+      out[leg] = seen;
+    }
+    return out;
+  });
+
+  /* NO cell above a material's floor ever holds it - swept, not sampled.
+
+     "The first world does not contain solmarrow" was the first version of this
+     and it passes by luck: at 0.12% of cells, a mutation that moves solmarrow
+     to 20 m still generates none at all on a 754-cell world about half the
+     time. An assertion a rare roll can satisfy by missing is not an assertion.
+     The floor is an invariant, so it is tested as one. */
+  const breaches = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const bad: string[] = [];
+    for (const leg of [0, 3, 6, 9]) {
+      w.g.planet = leg; w.g.world = leg; w.g.coreOff = 0;
+      w.g.dug = new Set(); w.g.rubble = new Set();
+      const core = w.coreM();
+      for (let d = 0; d < core; d++) {
+        for (let x = 0; x < 13; x++) {
+          const b = w.blockAt(x, d);
+          if (!b || !b.ore || b.core) continue;
+          const o = w.ORES.find((z: any) => z.id === b.id);
+          if (o && d < o.min) bad.push(o.id + ' at ' + d + ' m, above its floor of ' + o.min);
+        }
+      }
+    }
+    return bad.slice(0, 5);
+  });
+  expect(breaches.join('; '), 'a material generated above its own floor depth').toBe('');
+
+  /* And the tutorial world is the three shallow ones and nothing else. */
+  /* The relic and the drive component carry `ore: true` so they spray and
+     sound like something worth having; they are one buried cell each and not
+     materials. */
+  const notOre = new Set(['__cells', 'geode', 'gas', 'cache', 'schematic', 'relic', 'part']);
+  const p0 = Object.keys(counts[0]).filter((k) => !notOre.has(k));
+  expect(p0.sort().join(','), 'the first world holds more than copper, iron and silver')
+    .toBe('copper,iron,silver');
+
+  /* And the deepest material is rare even where it exists. */
+  const deepWorld = counts[8];
+  const sol = deepWorld.solmarrow || 0;
+  expect(sol, 'solmarrow does not generate at all on planet 8').toBeGreaterThan(0);
+  expect(sol / deepWorld.__cells,
+    'solmarrow is ' + ((sol / deepWorld.__cells) * 100).toFixed(2) + '% of planet 8, which is not a prize')
+    .toBeLessThan(0.004);
 });

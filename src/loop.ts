@@ -3,11 +3,11 @@ import { ambienceTick } from './sim/ambience';
 import { partFor, partName, PART_COLOR, PART_OF, DRIVE_SLOTS } from './sim/drive';
 import { FIND_COLOR } from './sim/finds';
 import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, relicFor,
-         coreDepth, valueMult, skyHi, skyLo,
+         coreDepth, valueMult, skyHi, skyLo, ORES,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, digStrain, padFuel } from './sim/state';
-import { blockAt, findHere } from './sim/world';
+import { blockAt, findHere, climbCells } from './sim/world';
 import { R } from './sim/runtime';
 import type { Dir } from './types';
 import {
@@ -23,8 +23,8 @@ import {
   VIGNETTE_CLEAR_SURFACE, VIGNETTE_CLEAR_DEEP, VIGNETTE_EDGE_SURFACE, VIGNETTE_EDGE_DEEP,
   FUEL_PER_MOVE, HULL_REGEN, FLY_ACCEL, FLY_DRAG, SHIP_R, DIG_ALIGN,
   LANE_PULL, DIG_ALIGNED,
-  depthT, heatT, easeInOut, approach, zoomForScan, digFuelPerSecond, heatDamagePerSecond, soakAfter,
-  tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter
+  depthT, heatT, easeInOut, approach, zoomForScan, digFuelForStep, heatDamagePerSecond, soakAfter,
+  tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter, fuelToClimb, fuelState, FUEL_IDLE
 , SETTLE_RATE, SETTLE_DONE, SETTLE_MAX} from './sim/feel';
 import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, renderWorld } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
@@ -45,7 +45,7 @@ import { aimRelic } from './relic';
 import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner, onQuake } from './ui';
 import { stepGauges } from './gauges';
-import { sell, goSurface, tow, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere } from './actions';
+import { sell, goSurface, die, breakCore, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, stepBreachHere } from './actions';
 import { sfx, setDepth, setMood } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
 import { isCrossing, stepTransit, renderTransit, isShowcase, stepShowcase,
@@ -307,7 +307,9 @@ export function tick(raw: number, draw = true) {
       R.vx = 0; R.vy = 0;
       if (FACE_VEC[R.digging.dir][0] === 0) g.px = approach(g.px, R.digging.x, DIG_ALIGN, raw);
       else g.pd = approach(g.pd, R.digging.d, DIG_ALIGN, raw);
-      const df = digFuelPerSecond(b.hard) * dt;
+      /* Against the cell's own total rather than against the clock, so the
+         Drill buys speed and never efficiency - see fuelPerCell in feel.ts. */
+      const df = digFuelForStep(b.hard, R.digging.total, dt) * S.cellFuel();
       g.fuel -= df;
       R.run.secDig += dt; R.run.fuelDig += df;
       const k = key(R.digging.x, R.digging.d);
@@ -485,7 +487,39 @@ export function tick(raw: number, draw = true) {
           g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
           g.weight += b.wt;
           if (b.ore) sfx.collect(b.tone);
-          if (b.value >= 400) toast(b.name + '  +◈ ' + Math.round(b.value * valueM()).toLocaleString());
+          /* ---------- the first one of its kind ----------
+
+             Playtest: *"I want there to be way less special resources to show
+             up so it actually feels like a prize when you get one."*
+
+             Rarity is manufactured by depth - a material does not exist above
+             its floor, so most runs never roll for the deep ones at all. This
+             is the other half: the MOMENT. The sourced pattern for making a
+             rare pull read as rare is withheld-then-revealed with a distinct
+             beat, rather than a background particle nobody catches, so the
+             first Solmarrow anybody ever cuts stops the frame, flashes in its
+             own colour and says what it is worth.
+
+             Once, ever, per material. After that it is ore and the toast below
+             is the right size for it - the prize is the discovery, not the
+             pickup. */
+          const ore = ORES.find((o) => o.id === b.id);
+          if (b.ore && !b.core && ore && !g.seenOre.includes(b.id)) {
+            g.seenOre.push(b.id);
+            freeze = Math.max(freeze, FREEZE_ORE * 2.5);
+            R.shake = Math.max(R.shake, 0.5);
+            spray(worldX(R.digging.x), -R.digging.d, 0xffffff, 140, 10, 2.0);
+            spray(worldX(R.digging.x), -R.digging.d, b.color, 160, 8, 2.4);
+            flash('rgba(255,255,255,.30)', 420);
+            sfx.relic();
+            hap.boom();
+            foundBanner(b.name,
+              'Worth ◈ ' + Math.round(b.value * valueM()).toLocaleString() +
+              ' a unit.' + (ore ? ' It does not exist above ' + ore.min + ' m.' : ''),
+              'ore');
+          } else if (b.value >= 400) {
+            toast(b.name + '  +◈ ' + Math.round(b.value * valueM()).toLocaleString());
+          }
           R.digging = null;
           save();
         }
@@ -667,13 +701,51 @@ export function tick(raw: number, draw = true) {
       toast(n ? 'Tremor - ' + n + ' m of tunnel caved in' : 'Tremor - the rock held');
     }
 
-    if (g.fuel <= 0) { g.fuel = 0; tow('Your tank ran dry at ' + Math.round(g.pd) + ' m.'); }
-    else if (g.hull <= 0) {
-      g.hull = 1;
-      tow(R.hullCause === 'gas'
-        ? 'A gas pocket finished your hull at ' + Math.round(g.pd) + ' m.'
-        : 'Your hull buckled in the heat at ' + Math.round(g.pd) + ' m.');
+    /* ---------- the Point of No Return ----------
+
+       Recomputed a few times a second rather than every frame: the route home
+       is a breadth-first search over every dug cell, and the answer does not
+       move in sixteen milliseconds. See the note on R.climb. */
+    /* The reactor idles while you are down here. See FUEL_IDLE: without it a
+       ship at nought fuel simply sits in the dark for ever, because fuel only
+       ever drained while flying or drilling and a tow used to be what ended
+       that. Found by driving the tank to empty and watching nothing happen. */
+    if (!atSurface()) {
+      const idle = FUEL_IDLE * S.fuelUse() * dt;
+      g.fuel -= idle;
+      R.run.fuelIdle = (R.run.fuelIdle || 0) + idle;
     }
+
+    R.climbT -= raw;
+    if (R.climbT <= 0) {
+      R.climbT = 0.35;
+      R.climb = atSurface() ? 0 : fuelToClimb(climbCells(), S.speed());
+      R.fuelState = fuelState(g.fuel, R.climb);
+    }
+    /* Announced on the EDGE, once per step down, so the tone and the haptic
+       are an event rather than a noise that runs for a minute. One escalating
+       cue per resource is the sourced pattern; the hull has its own and they
+       are deliberately different sounds. */
+    if (R.fuelState !== R.warnedFuel) {
+      const worse = ['clear', 'plan', 'danger', 'stranded'].indexOf(R.fuelState) >
+                    ['clear', 'plan', 'danger', 'stranded'].indexOf(R.warnedFuel);
+      R.warnedFuel = R.fuelState;
+      if (worse && R.fuelState === 'plan') {
+        toast('Fuel: enough to get home and little else');
+        sfx.rumble();
+      } else if (worse && R.fuelState === 'danger') {
+        toast('TURN BACK - the climb is nearly all you have left');
+        sfx.alarm();
+        hap.hurt();
+      } else if (worse && R.fuelState === 'stranded') {
+        toast('You cannot reach the surface on what is left');
+        sfx.alarm();
+        hap.quake();
+      }
+    }
+
+    if (g.fuel <= 0) { g.fuel = 0; die('fuel'); }
+    else if (g.hull <= 0) { g.hull = 0; die(R.hullCause === 'gas' ? 'gas' : 'heat'); }
   }
 
   stepParticles(dt);

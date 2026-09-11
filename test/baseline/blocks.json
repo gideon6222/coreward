@@ -7,22 +7,20 @@
     "rowsTo": 59,
     "counts": {
       "(empty)": 29,
-      "dirt": 54,
-      "seam": 108,
-      "copper": 18,
-      "stone": 182,
-      "iron": 16,
-      "silver": 14,
-      "granite": 134,
+      "dirt": 55,
+      "seam": 111,
+      "stone": 185,
+      "copper": 19,
+      "iron": 13,
+      "granite": 139,
       "cache": 3,
-      "schematic": 3,
-      "gold": 8,
+      "schematic": 2,
+      "silver": 11,
       "gas": 5,
-      "scoria": 185,
+      "scoria": 190,
       "part": 1,
       "relic": 1,
       "geode": 3,
-      "amethyst": 3,
       "core": 13,
       "bedrock": 13
     },
@@ -48,19 +46,6 @@
         "ore": false,
         "seam": true
       },
-      "copper:13136183": {
-        "id": "copper",
-        "name": "Copper",
-        "color": 13136183,
-        "host": 3945516,
-        "glow": 0.1,
-        "shards": 4,
-        "tone": 1,
-        "hard": 2.6,
-        "wt": 3.5,
-        "value": 25,
-        "ore": true
-      },
       "stone:8419954": {
         "id": "stone",
         "name": "Stone",
@@ -82,6 +67,19 @@
         "ore": false,
         "seam": true
       },
+      "copper:13136183": {
+        "id": "copper",
+        "name": "Copper",
+        "color": 13136183,
+        "host": 3945516,
+        "glow": 0.1,
+        "shards": 4,
+        "tone": 1,
+        "hard": 2.6,
+        "wt": 3.5,
+        "value": 40,
+        "ore": true
+      },
       "iron:11581117": {
         "id": "iron",
         "name": "Iron",
@@ -92,20 +90,7 @@
         "tone": 2,
         "hard": 3.5,
         "wt": 4.5,
-        "value": 60,
-        "ore": true
-      },
-      "silver:14213352": {
-        "id": "silver",
-        "name": "Silver",
-        "color": 14213352,
-        "host": 3816512,
-        "glow": 0.16,
-        "shards": 4,
-        "tone": 3,
-        "hard": 4.5,
-        "wt": 6,
-        "value": 150,
+        "value": 95,
         "ore": true
       },
       "granite:6183526": {
@@ -157,17 +142,17 @@
         "ore": true,
         "find": true
       },
-      "gold:16764743": {
-        "id": "gold",
-        "name": "Gold",
-        "color": 16764743,
-        "host": 4012596,
-        "glow": 0.2,
-        "shards": 5,
-        "tone": 4,
-        "hard": 5.5,
-        "wt": 9,
-        "value": 420,
+      "silver:14213352": {
+        "id": "silver",
+        "name": "Silver",
+        "color": 14213352,
+        "host": 3816512,
+        "glow": 0.16,
+        "shards": 4,
+        "tone": 3,
+        "hard": 4.5,
+        "wt": 6,
+        "value": 240,
         "ore": true
       },
       "gas:13954602": {
@@ -246,19 +231,6 @@
         "value": 6200,
         "ore": true
       },
-      "amethyst:10510591": {
-        "id": "amethyst",
-        "name": "Amethyst",
-        "color": 10510591,
-        "host": 3486271,
-        "glow": 0.28,
-        "shards": 5,
-        "tone": 5,
-        "hard": 7,
-        "wt": 7,
-        "value": 900,
-        "ore": true
-      },
       "core:16773792": {
         "id": "core",
         "name": "Planet Core",
@@ -283,7 +255,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiiiiiiiiiiiiiwwiiiiiwiiiiiwiiwiiiiiiiwiiwiiiiwiiiiwiiiiiiwfiiizzzzzzwzzfzwzfzwzzzzzzzzzfzzzzwfzzzzzzzzzfzzzfzzzzzzzzzzzzzzzzzwzzzzzzwzzzzzwzwwwzffzwzzzzzzzzzzwzzwzzzzzzfzzwzzzzzzzzoozzzzzzoozzzzzozzzzozwzzzwzzzzzwzzzwzzzzzzzzzzzzzwozzowowwzzwzzzzzzzzzozzozzzzzwzzwzzzwowzwzzzzzzzzzzzzzzwzzwzzzzxznnnnnnnnnnnxwnwnnnfxnfnwnwwwnnnxxnnnnnwnnnnnnnnwnnnwnnnwnnwnnnfenwnnnnxnnwuaannnxwnownnnaannnwnnnnnaannnnnnnnxnnaanwnnnnxnnfnnnnnwnnnnnnnnwnonnwnwnxnnwnnnnnnnwnxnnnnnnwnmwnkwnnnnnmnnnnnwnxnwnxmwnvvaauvvmvvwvvmvaavwwfwvvvwxvvvvqmvwvvvmvovvvvvovvvvvvvvvvvwwvevvvvvvwwvvvvvvwvvvvvvvwwvvvvvvvvfvvvvvvmvvvvvvvvvvvvvrwvwvuvvvvvvvvvvvvvvvvvwwwvfvwvwwvvvvvvwvvwkvvvvwvvvvvvwvvwvvvvvvvvvvelvvvvvwvkvwvwlvlvvvvvvvvvvwvvvvwvvvwvwvvvwwvvvvvvvfvvvvkvaavvwvbvbwkwvaavbwgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiiiiiiiiiiiiiiiwwiiiiiwiiiiiwiiwiiiiiiiwiiwiiiiwiiiiwiiiiiiwiiiizzzzzzwzzfzwzwzwzzzzzzzzzfzzzzwfzzzzzzzzzwzzzfzzzzzzzzzzzzzzzzzwzzzzzzwzzzzzwzwwwzzzzwzzzzzzzzzzwzzwzzzzzzzzzwzzzzzzzzffzzzzzzffzzzzzfzzzzfzwzzzwzzzzzwzzzwzzzzzzzzzzzzzwozzfwowwzzwzzzzzzzzzozzozzzzzwzzwzzzwowzwzzzzzzzzzzzzzzwzzwzzzzfznnnnnnnnnnnownwnnnnonnnwnwwwnnnoonnnnnwnnnnnnnnwnnnwnnnwnnwnnnnenwnnnnonnwuaannnfwnnwnnnaannnwnnnnnaannnnnnnnxnnaanwnnnnxnnnnnnnnwnnnnnnnnwnfnnwnwnfnnwnnnnnnnwnxnnnnnnwnxwnkwnnnnnxnnnnnwnfnwnfxwnvvaavvvxvvwvvxvaavwwvwvvvwfvvvvqxvwvvvovvvvvvvfvvvvvvvvvvvwwvevvvvvvwwvvvvvvwvvvvvvvwwvvvvvvvvwvvvvvvxvvvvvvvvvvvvvrwvwvvvvvvvvvvvvvvvvvvvwwwvvvwvwwvvvvvvwvvwkvvvvwvvvvvvwvvwvvvvvvvvvvelvvvvvwvkvwvwlulvvvvvvvvvvwvvvvwvvvwvwvvvwwvvvvvvvvvvvvkvaavvwvovxwkwvaavowgggggggggggggddddddddddddd"
   },
   {
     "planet": 1,
@@ -292,24 +264,23 @@
     "rowsFrom": -1,
     "rowsTo": 107,
     "counts": {
-      "(empty)": 148,
+      "(empty)": 147,
       "dirt": 104,
-      "seam": 178,
-      "copper": 20,
-      "stone": 282,
+      "seam": 181,
+      "copper": 28,
+      "stone": 288,
       "iron": 27,
-      "silver": 19,
       "cache": 8,
+      "silver": 23,
       "gas": 10,
-      "gold": 25,
-      "granite": 234,
+      "granite": 242,
       "geode": 9,
+      "gold": 21,
+      "scoria": 295,
       "schematic": 4,
-      "amethyst": 17,
-      "scoria": 291,
-      "emerald": 13,
       "relic": 1,
       "part": 1,
+      "amethyst": 2,
       "core": 13,
       "bedrock": 13
     },
@@ -345,7 +316,7 @@
         "tone": 1,
         "hard": 3.3280000000000003,
         "wt": 3.5,
-        "value": 25,
+        "value": 40,
         "ore": true
       },
       "stone:8419954": {
@@ -379,20 +350,7 @@
         "tone": 2,
         "hard": 4.48,
         "wt": 4.5,
-        "value": 60,
-        "ore": true
-      },
-      "silver:14213352": {
-        "id": "silver",
-        "name": "Silver",
-        "color": 14213352,
-        "host": 3816512,
-        "glow": 0.16,
-        "shards": 4,
-        "tone": 3,
-        "hard": 5.76,
-        "wt": 6,
-        "value": 150,
+        "value": 95,
         "ore": true
       },
       "cache:16743120": {
@@ -409,6 +367,19 @@
         "ore": true,
         "cache": true
       },
+      "silver:14213352": {
+        "id": "silver",
+        "name": "Silver",
+        "color": 14213352,
+        "host": 3816512,
+        "glow": 0.16,
+        "shards": 4,
+        "tone": 3,
+        "hard": 5.76,
+        "wt": 6,
+        "value": 240,
+        "ore": true
+      },
       "gas:13954602": {
         "id": "gas",
         "name": "Gas Pocket",
@@ -422,19 +393,6 @@
         "value": 0,
         "ore": true,
         "hazard": true
-      },
-      "gold:16764743": {
-        "id": "gold",
-        "name": "Gold",
-        "color": 16764743,
-        "host": 4012596,
-        "glow": 0.2,
-        "shards": 5,
-        "tone": 4,
-        "hard": 7.04,
-        "wt": 9,
-        "value": 420,
-        "ore": true
       },
       "granite:6183526": {
         "id": "granite",
@@ -470,31 +428,17 @@
         "value": 6200,
         "ore": true
       },
-      "schematic:65345": {
-        "id": "schematic",
-        "name": "Sealed Crate",
-        "color": 65345,
-        "host": 1058840,
-        "glow": 1,
-        "shards": 9,
-        "tone": 9,
-        "hard": 12.8,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "find": true
-      },
-      "amethyst:10510591": {
-        "id": "amethyst",
-        "name": "Amethyst",
-        "color": 10510591,
-        "host": 3486271,
-        "glow": 0.28,
+      "gold:16764743": {
+        "id": "gold",
+        "name": "Gold",
+        "color": 16764743,
+        "host": 4012596,
+        "glow": 0.2,
         "shards": 5,
-        "tone": 5,
-        "hard": 8.96,
-        "wt": 7,
-        "value": 900,
+        "tone": 4,
+        "hard": 7.04,
+        "wt": 9,
+        "value": 660,
         "ore": true
       },
       "seam:8275759": {
@@ -518,18 +462,19 @@
         "value": 2.2,
         "ore": false
       },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
-        "shards": 5,
-        "tone": 6,
-        "hard": 10.88,
-        "wt": 8.5,
-        "value": 1800,
-        "ore": true
+      "schematic:65345": {
+        "id": "schematic",
+        "name": "Sealed Crate",
+        "color": 65345,
+        "host": 1058840,
+        "glow": 1,
+        "shards": 9,
+        "tone": 9,
+        "hard": 12.8,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "find": true
       },
       "relic:16773375": {
         "id": "relic",
@@ -559,6 +504,19 @@
         "ore": true,
         "part": true
       },
+      "amethyst:10510591": {
+        "id": "amethyst",
+        "name": "Amethyst",
+        "color": 10510591,
+        "host": 3486271,
+        "glow": 0.28,
+        "shards": 5,
+        "tone": 5,
+        "hard": 8.96,
+        "wt": 7,
+        "value": 1400,
+        "ore": true
+      },
       "core:16773792": {
         "id": "core",
         "name": "Planet Core",
@@ -583,7 +541,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiwwwiwiiiiiiiiiiiiwiiiiiiiiiiiwiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiwiiiwifiiifwiifiiwiwiwiiwiiiwifiiwiiiwiiifiiiifiwiiiiiiwiiifififzzzzwwzzzzzzzzzzzwzzzzzzzzzzzzzwzozzzwoozozzwzzzzzzzzzzzzzzowzzzzzfzwwzzzzzwwzzwzzzzwzwzoozwzozzzwzwzwzozwozzzwoowzzzzzzzzzzwzwzzzozzwzzzzzzzzzzwzzzwzzwzzzwzzzzzzxzzzzzxzzzzzzwzzzzzzzwzzzzzzzzzzzzzzzzzzzxzxzzzzzzzaazfewwzzzwzzaazzwwzzzwzzzzzaazofzwzzzzzwaawzwzzzzaazzzzzzzzwzzaazzzzwzzzzzzzwaazzzzwzzzzwzaazzxwzxzxxzzkwzzzzzxxxzozzzzwzzzaazzzwzmzzwwmaazzmzzzzmzzmzzzzwoaazzzzzzzzzmzaazezzwaazzzzzzkzzmzaannxnnmnnnnnnnnnnmnnnnfwnnnnnnnnnnwnnnwnnnnnnnmnwnfnnwnnnnnnnnnnmwaannonnwwnnnmaawnnwwnwnwnnwnaanwwnnnonennaafnwnnnnnnaannnnnnnnnnnaawnnenmwnwmwwmnwaannnlnwnnwnnaannwnomnaannnnnnwnmnmaanmunnnmmwnnwnnnnwnnaannlwonnwmnnaanaannnnwnnnaanaannxfwnbnaannnbnnnaannnnnnnnbnnaannbnnwwnnaannnnnnannnnaanonnnnanxnnnnnnnnnnnnnwoonnwnnwwnnnnbnnwwwbbnnnnnwnnnnnnwnnnnnnaanwkwlenwnnmaawnnnnbnaawvvvwvbfaavaavvvvvvvbaavbvovwvvvwvvvvvbwvvvkvvvvvvbbvvwvvvvvkvvvvvvvvvvvvvvvvvwvaavwvvvbvwvvwaavvbvbvwvwlvvvvvvvvwfwuvvvvvuvwvvvwwwvvvjvvwwvvwvvwvvvvvvwvjwvvjaavvvvvvvvjvvaavvvvvowvlwvaarvvvvjvvvvvaavvvvvovvvaavvevvvwkvmwaavvvvvjvvvaafwvvvvqavvvaavwvvvjaavvwaaaavwvvvfvvwaaaavvvvwjvkvaaaavvvkevaavaaaavwvjvwaavvvjvvwvvvvvvvvuwvkvwwwvwvvvvvvwvaavwvvvvvvvvwaawwvvvvxvjovvvjvvvvvvvvwvvvxwvjwkvvxvvmvevvvavvvxvvwvlvvvavvaavvvvvvvvvvvaawlvwvvvvlxvlvwvvvvvvvvvwvvvvwvvwwvvgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiwwwiwiiiiiiiiiiiiwiiiiiiiiiiiwiiiiiiiiifiiiiiiiiiiiiiiiiiiiiiiiiiiwiiiwifiiifwiifiiwiwiwiiwiiiwifiiwiiiwiiiiiiiifiwiiiiiiwiiififizzzzzwwzzzzzzzzzzzwzzzzzzzzzzzzzwzfzzzwffzfzzwzzzzzzzzzzzzzzfwzzzzzzzwwzzzzzwwzzwzzzzwzwzfozwzzzzzwzwzwzozwozzzwoowzzzzzzzzzzwzwzzzozzwzzzzzzzzzzwzzzwzzwzzzwzzzzzzozzzzzozzzzzzwzzzzzzzwzzzzzzzzzzzzzzzzzzzozozzzzzzzaazzewwzzzwzzaazzwwzzzwzzzzzaazfzzwzzzzzwaawzwzzzzaazzzzzzzzwzzaazzzzwzzzzzzzwaazzzzwzzzzwzaazzowzozxozzkwzzzzzoofzfzzzzwzzzaazzzwzxzzwwxaazzxzzzzxzzozzzzwzaazzzzzzzzzozaazezzwaazzzzzzkzzxzaannfnnonnnnnnnnnnonnnnwwnnnnnnnnnnwnnnwnnnnnnnxnwnnnnwnnnnnnnnnnxwaannfnnwwnnnoaawnnwwnwnwnnwnaanwwnnnnnennaawnwnnnnnnaannnnnnnnnnnaawnnenxwnwxwwxnwaannnlnwnnwnnaannwnfxnaannnnnnwnxnxaanxnnnnxxwnnwnnnnwnnaannlwnnnwonnaanaannnnwnnnaanaannfnwnxnaannnxnnnaannnnnnnnxnnaannxnnwwnnaannnnnnannnnaannnnnnanfnnnnnnnnnnnnnwnnnnwnnwwnnnnmnnwwwmmnnnnnwnnnnnnwnnnnnnaanwkwlenwnnoaawnnnnmnaawvvvwvmvaavaavvvvvvvxaavovfvwvvvwvvvvvxwvvvkvvvvvvmmvvwvvvvvkvvvvvvvvvvvvvvvvvwvaavwvvvmvwvvwaavvovmvwvwlvvvvvvvvwvwuvvvvvwvwvvvwwwvvvmvvwwvvwvvwvvvuvvwvmwvvmaavvvvvvvvmvvaavvvvvvwvlwvaarvvvvmvvvvvaavvvvvvvvvaavvevvvwkvowaavvvvvmvvvaavwvvvvqavvvaavwvvvmaavvwaaaavwvvvvvvwauaavvvvwmvkvaaaavvvkevaavaaaavwvmvwaavvvmvvwvvvvvvvvbwvkvwwwvwvvvvvvwvaavwvvvvvvvvwaawwvvvvfvmfvvvbvvvvvvvvwvvvfwvmwkvvfvvovevvvavvvovvwvlvvvavvaavvuvvvvvvvvaawlvwvvvvlfvlvwvvvvvvvvvwvvvvwvvwwvvgggggggggggggddddddddddddd"
   },
   {
     "planet": 2,
@@ -593,25 +551,23 @@
     "rowsTo": 155,
     "counts": {
       "(empty)": 139,
-      "dirt": 137,
-      "seam": 297,
-      "copper": 31,
-      "iron": 28,
-      "stone": 441,
+      "dirt": 139,
+      "seam": 303,
+      "copper": 32,
+      "stone": 449,
+      "iron": 32,
       "cache": 12,
       "schematic": 4,
-      "silver": 27,
-      "gold": 17,
+      "silver": 26,
       "gas": 22,
       "geode": 13,
-      "amethyst": 19,
-      "granite": 357,
-      "emerald": 15,
-      "scoria": 428,
-      "ruby": 23,
+      "granite": 367,
+      "gold": 14,
+      "amethyst": 17,
+      "scoria": 439,
       "relic": 1,
       "part": 1,
-      "magmite": 3,
+      "emerald": 5,
       "core": 13,
       "bedrock": 13
     },
@@ -647,20 +603,7 @@
         "tone": 1,
         "hard": 3.4070400000000003,
         "wt": 3.5,
-        "value": 25,
-        "ore": true
-      },
-      "iron:11581117": {
-        "id": "iron",
-        "name": "Iron",
-        "color": 11581117,
-        "host": 3814960,
-        "glow": 0.1,
-        "shards": 4,
-        "tone": 2,
-        "hard": 4.5864,
-        "wt": 4.5,
-        "value": 60,
+        "value": 40,
         "ore": true
       },
       "stone:8419954": {
@@ -683,6 +626,19 @@
         "value": 26,
         "ore": false,
         "seam": true
+      },
+      "iron:11581117": {
+        "id": "iron",
+        "name": "Iron",
+        "color": 11581117,
+        "host": 3814960,
+        "glow": 0.1,
+        "shards": 4,
+        "tone": 2,
+        "hard": 4.5864,
+        "wt": 4.5,
+        "value": 95,
+        "ore": true
       },
       "cache:16743120": {
         "id": "cache",
@@ -722,20 +678,7 @@
         "tone": 3,
         "hard": 5.8968,
         "wt": 6,
-        "value": 150,
-        "ore": true
-      },
-      "gold:16764743": {
-        "id": "gold",
-        "name": "Gold",
-        "color": 16764743,
-        "host": 4012596,
-        "glow": 0.2,
-        "shards": 5,
-        "tone": 4,
-        "hard": 7.2072,
-        "wt": 9,
-        "value": 420,
+        "value": 240,
         "ore": true
       },
       "gas:13954602": {
@@ -765,19 +708,6 @@
         "value": 6200,
         "ore": true
       },
-      "amethyst:10510591": {
-        "id": "amethyst",
-        "name": "Amethyst",
-        "color": 10510591,
-        "host": 3486271,
-        "glow": 0.28,
-        "shards": 5,
-        "tone": 5,
-        "hard": 9.1728,
-        "wt": 7,
-        "value": 900,
-        "ore": true
-      },
       "granite:6183526": {
         "id": "granite",
         "name": "Granite",
@@ -799,17 +729,30 @@
         "ore": false,
         "seam": true
       },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
+      "gold:16764743": {
+        "id": "gold",
+        "name": "Gold",
+        "color": 16764743,
+        "host": 4012596,
+        "glow": 0.2,
         "shards": 5,
-        "tone": 6,
-        "hard": 11.1384,
-        "wt": 8.5,
-        "value": 1800,
+        "tone": 4,
+        "hard": 7.2072,
+        "wt": 9,
+        "value": 660,
+        "ore": true
+      },
+      "amethyst:10510591": {
+        "id": "amethyst",
+        "name": "Amethyst",
+        "color": 10510591,
+        "host": 3486271,
+        "glow": 0.28,
+        "shards": 5,
+        "tone": 5,
+        "hard": 9.1728,
+        "wt": 7,
+        "value": 1400,
         "ore": true
       },
       "scoria:7023128": {
@@ -832,19 +775,6 @@
         "value": 26,
         "ore": false,
         "seam": true
-      },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 13.104,
-        "wt": 10,
-        "value": 3600,
-        "ore": true
       },
       "relic:16773375": {
         "id": "relic",
@@ -874,17 +804,17 @@
         "ore": true,
         "part": true
       },
-      "magmite:16742936": {
-        "id": "magmite",
-        "name": "Magmite",
-        "color": 16742936,
-        "host": 3023400,
-        "glow": 0.5,
-        "shards": 6,
-        "tone": 8,
-        "hard": 17.0352,
-        "wt": 13,
-        "value": 9000,
+      "emerald:3133562": {
+        "id": "emerald",
+        "name": "Emerald",
+        "color": 3133562,
+        "host": 3095096,
+        "glow": 0.3,
+        "shards": 5,
+        "tone": 6,
+        "hard": 11.1384,
+        "wt": 8.5,
+        "value": 2800,
         "ore": true
       },
       "core:16773792": {
@@ -911,7 +841,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiwiiwiiiiwiiiiiiiiiiiiiiiiwiiwwiiiiiiwiiiwiiiiiiiffiiiiwwfiiiiiiiiiiiwfiiiwwifiwfwiiwfiwiwiiwiwiiiiwiiwiiiiiiwiwiiiifiiiwiiiwwiiiiwiifwiiiiiiiiwiiioiiiiiwiiiwiiiiiiiiiiiiiiiiiwiwwzzzzzzzzzzzzozzzwwowwzzzwzzzzzzozozozozzzzowzzzzzwzwzzzzzzzwozzzfzzzzzwzozzzzzzzzzzwzzwzwewzzzzzzwfwozzzzzzzuzzzwzwzwwzxzzzzzxzzzxzfwxzzzzxzwwzzzzwzzxwzzzzzzzzzzwzwzzzzxzzxzzwzzzzzxzzzzzwwzzzzzwzzzzzzzzzzzzzwzzzzzzwzzzzzzzzzzzzzzwwwzwzwzzzzzzzzzzzzzzzzzzzzzwzzwfaaxzzzzzzzwzzaazzzzzzzzzzzzfzwzwzzuzzzwzzzzzzwzmwzwzzwzzzzzzwzzzzwzzzzzzzzzzwmzwzzzzzwzzmwzzzzwzzwzkzzzzzzzfzmzwzwfzzmzzozzzzzozzzzzzwmzzwwzzzezzzwkzzzzwzwzwzzzzwzzzzzzzzzzzmzzzzkzaamzzzzzzzzzzaazzxzzzzmzwzzzzwzmzwzwzzzzzzwzzfwzkzzzzwlmzwzzzmzzzzzzzzzwwzmzzzzwzmzzzezzaazzzzzzzzzzzaazzzzzzzwwzzwwzzzzzbzzzzzkzzzezzzwzzzzwzwzzzzzfzwzbzzzknnnnnwnaaaannnwbnxnnaaaawwnnwnnnnnnbwnnwbonwnnnnnnnnnwnnwwnnnnnwknwnnnnnnnnbnaanwnnnnnnaanaanwnnnnbnaabnwwnwnnwaawfnwnnnnwwlaannnwnnnnnnnwnnonnnnnnnnnnnnwwwnonwnaalnnnnwnwwnwaawnnnnwnnnnnnbfnnnnnwnownwnnnnnnnnnnnwbbknnwnnnwwnnnnnwnwnwnjnjnnnwnnnnnnnnnnnwnnnnwnwnwwwonnnnnnnnnnnnnnnwnjnaawnnnnnnnnnnaannnnnnnnjnnnnnwnnjwaawnnnnwnnnnnaannnnnnwnwmnaawnnennnnnnnaannfnwnnnwwnnfnnnwnnonnwnnewwnnnnnnunnaawnanwnnnwnwaannalnnnnwnnwbnwwnnwnnnnnnfnnnnnnnunnnnnnnnwnjnnenwnnnnbjxxnnnnnnnnnnnnnnnnnnnnnnnwnnnnnnnnnnkwnnnnfnwnonojfknnxnnaawnaannkwxnnaalnaanvvofwwwvvvaavvjvvvvvjvvaavaavvvvvwjvvvvaatwvwvvwvfvvwvxvvwvvvtvvvtvwvkvvvvvwvkvvvvvvovwvvvvjvwvvvvwvvvxvvvxvvvvvvvxvwvbvvvvwvvvvvvtwaavrvxvwvwvvvaavwvvolvvvwvlvvwvvvvlvvvvwvwvvvfevtwvvaavvaavvvvvvxaavvaavvewwjvvfvvvjvvvvttvvwqvvxvvfvvvvvvvwaavvtvvvwvkwvaavwwvwvvvtwvvvvwwtvbwvvwevwvvvvtvvvvtwmvvovvawvvvvxvvwvwwavvwvvwwbwwtkvwvwvvvvtvvvvlvjvwevvvvvkvwwvvvvwvtvvvvvwktvfvvvvvwvwvvvwvvvmvvvvvwvvvvwvwvvvvvvvvwvvvwvvvtvaavvvvaabvvwvaavvtvaavvwvwaatxvvvvtvvvvaalxovvvvvkvvvbvvvvvowvvvavvvvvwvvvvvwavvkvvvvlvvvwvwvvttvvlvvvwvvtkwvvwvaavvvvkvvvvvvaavvvaavwvbaavvvvvaavvwvaaovvvvvvvvvvwkvvvwvpwvvxvwvwvewvvvvvwvvvlvvvvwpvvvvvvvvvvwvvaavvvwaavvvvvaavvvvaavvvaavvvvvwwvvvvaavvwvwvvwpvvgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiiiwiiwiiiiwiiiiiiiiiiiiiiiiwiiwwiiiiiiwiiiwiiiiiffffiiiiwwiiiiiiiiiiiiwiiiiwwiiiwfwiiwfiwiwiiwiwiiiiwiiwiiiiiiwiwiiiiiiiiwiiiwwiiiiwiifwiiiiiiiiwiiifiiiiiwiiiwiiiiiiiiiiiiiiiiiwiwwzzzzzzzzzzzzfzzzwwfwwzzzwzzzzzzfzfzozfzzzzowzzzzzwzwzzzzzzzwozzzwzzzzzwzozzzzzzzzzzwzzwzwewzzzzzzwzwzzzzzzzzuzzzwzwzwwzozzzzzozzzfzzwozzzzozwwzzzzwzzowzzzzzzzzzzwzwzzzzozzozzwzzzzzozzzzzwwzzzzzwzzzzzzzzzzzzzwzzzzzzwzzzzzzzzzzzzzzwwwzwzwzzzzzzzzzzzzzzzzzzzzzwzzwzaaxzzzzzzzwzzaazzzzzzzzzzzzwzwzwzzzzzzwzzzzzzwzxwzwzzwzzzzzzwzzzzwzzzzzzzzzzwxzwzzzzzwzzxwzzzzwzzwzkzzzzzzzzzozwzwwzzxzzfzzzzzzzzzzzzwxzzwwzzzezzzwkzzzzwzwzwzzzzwzzzzzzzzzzzozzzzkzaaxzzzzzzzzzzaazzozzzzxzwzzzzwzxzwzwzzzzzzwzzzwzkzzzzwlxzwzzzxzzzzzzzzzwwzxzzzzwzxzzzezzaazzzzzzzzzzzaazzzzzzzwwzzwwzzzzzxzzzzzkzzzezzzwzzzzwzwzzzzzwzwzxzzzknnnnnwnaaaannnwxnfnnaaaawwnnwnnnnnnxwnnwofnwnnnnnnnnnwnnwwnnnnnwknwnnnnnnnnmnaanwnnnnnnaanaanwnnnnonaaxnwwnwnnwaawnnwnnnnwwlaannnwnnnnnnnwnnwnnnnnnnnnnnnwwwnnnwnaalnnnnwnwwnwaawnnnnwnnnnnnmnnnnnnwnnwnwnnnnnnnnnnnwmmknnwnnnwwnnnnnwnwnwnmnmnnnwnnnnnnnnnunwnnnnwnwnwwwnnnnnnnnnnnnnnnnwnmnaawnnnnnnnnnnaannnnnnnnmnnnnnwnnmwaawnnnnwnnnnnaannnnnnwnwonaawnnennnunnnaannnnwnnnwwnnnnnnwnnfnnwnnewwnnnnnnnnnaawnanwnnnwnwaannalnnnnwnnwonwwnnwnnnnnnnnnnnnnnnnnnnnnnnwnbnnenwnnnnoxffnnnnnnnnnnnnnnnnnnnnnnnwnnnnnnnnnnkwnnnnwnwnfnnxnknnfnnaawnaannkwfnnaalnaanvvvwwwwvvvaavvovvvvvxvvaavaavvvvvwbvvvvaabwvwvvwvvvvwvfvvwvvvmvvvbvwvkvvvvvwvkvvvvvvvvwvvvvxvwvvvvwvvvfvvvovvvvvvvfvwvovvvvwvvvvvvxwaavrvfvwvwvvvaavwvvvlvvvwvlvvwvvvvlvvvvwvwvvvvevbwvvaavvaavvvvvvfaavvaavvewwxvvvvvvxvvvvmbvvwqvvfvvvvvvvvvvwaavvbvvvwvkwvaavwwvwvvvbwvvvvwubvowvvwevwvvvvbvvvvmwovvvvvawvvvvovvwvwwavvwvvwwowwbkvwvwvvvvbvvvvlvxvwevvvvvkvwwvvvvwvbvvvvvwkbvvvvvvvwvwvvvwvvvovvvvvwvvvvwvwvvvvvvvvwvvvwvvvmvaavvvvaaovvwvaavvjvaavvwvwaamfvvvvbvvvvaalovvvvvvkvvvovvvvvfwvvvavvvvvwvvvvvwavvkvvvvlvvvwvwvvjjvvlvvvwvvjkwvvwvaavvvvkvvvvvvaavvvaavwvoaavvvvvaavvwvaavvvvvvvvvvvwkvvvwvbwvvfvwvwvewvvvvvwvvvlvvvvwbvvvvvvvvvvwvvaavvvwaavvvvvaavvvvaavvvaavvvvvwwvvvvaavvwvwvvwjvvgggggggggggggddddddddddddd"
   },
   {
     "planet": 3,
@@ -920,27 +850,25 @@
     "rowsFrom": -1,
     "rowsTo": 203,
     "counts": {
-      "(empty)": 377,
+      "(empty)": 376,
       "dirt": 179,
-      "seam": 322,
-      "copper": 40,
-      "iron": 43,
-      "stone": 527,
-      "silver": 26,
+      "seam": 328,
+      "copper": 36,
+      "iron": 36,
+      "stone": 546,
       "cache": 11,
-      "gold": 24,
+      "silver": 29,
       "schematic": 4,
       "gas": 23,
       "geode": 17,
+      "gold": 12,
+      "granite": 428,
       "amethyst": 18,
-      "granite": 412,
-      "emerald": 12,
       "relic": 1,
-      "ruby": 25,
-      "scoria": 560,
-      "magmite": 15,
+      "emerald": 17,
+      "scoria": 575,
       "part": 1,
-      "coreite": 2,
+      "ruby": 2,
       "core": 13,
       "bedrock": 13
     },
@@ -976,7 +904,7 @@
         "tone": 1,
         "hard": 4.784000000000001,
         "wt": 3.5,
-        "value": 25,
+        "value": 40,
         "ore": true
       },
       "iron:11581117": {
@@ -989,7 +917,7 @@
         "tone": 2,
         "hard": 6.44,
         "wt": 4.5,
-        "value": 60,
+        "value": 95,
         "ore": true
       },
       "stone:8419954": {
@@ -1013,19 +941,6 @@
         "ore": false,
         "seam": true
       },
-      "silver:14213352": {
-        "id": "silver",
-        "name": "Silver",
-        "color": 14213352,
-        "host": 3816512,
-        "glow": 0.16,
-        "shards": 4,
-        "tone": 3,
-        "hard": 8.280000000000001,
-        "wt": 6,
-        "value": 150,
-        "ore": true
-      },
       "cache:16743120": {
         "id": "cache",
         "name": "Supply Cache",
@@ -1040,17 +955,17 @@
         "ore": true,
         "cache": true
       },
-      "gold:16764743": {
-        "id": "gold",
-        "name": "Gold",
-        "color": 16764743,
-        "host": 4012596,
-        "glow": 0.2,
-        "shards": 5,
-        "tone": 4,
-        "hard": 10.120000000000001,
-        "wt": 9,
-        "value": 420,
+      "silver:14213352": {
+        "id": "silver",
+        "name": "Silver",
+        "color": 14213352,
+        "host": 3816512,
+        "glow": 0.16,
+        "shards": 4,
+        "tone": 3,
+        "hard": 8.280000000000001,
+        "wt": 6,
+        "value": 240,
         "ore": true
       },
       "schematic:65345": {
@@ -1094,17 +1009,17 @@
         "value": 6200,
         "ore": true
       },
-      "amethyst:10510591": {
-        "id": "amethyst",
-        "name": "Amethyst",
-        "color": 10510591,
-        "host": 3486271,
-        "glow": 0.28,
+      "gold:16764743": {
+        "id": "gold",
+        "name": "Gold",
+        "color": 16764743,
+        "host": 4012596,
+        "glow": 0.2,
         "shards": 5,
-        "tone": 5,
-        "hard": 12.88,
-        "wt": 7,
-        "value": 900,
+        "tone": 4,
+        "hard": 10.120000000000001,
+        "wt": 9,
+        "value": 660,
         "ore": true
       },
       "granite:6183526": {
@@ -1128,17 +1043,17 @@
         "ore": false,
         "seam": true
       },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
+      "amethyst:10510591": {
+        "id": "amethyst",
+        "name": "Amethyst",
+        "color": 10510591,
+        "host": 3486271,
+        "glow": 0.28,
         "shards": 5,
-        "tone": 6,
-        "hard": 15.64,
-        "wt": 8.5,
-        "value": 1800,
+        "tone": 5,
+        "hard": 12.88,
+        "wt": 7,
+        "value": 1400,
         "ore": true
       },
       "relic:16773375": {
@@ -1155,17 +1070,17 @@
         "ore": true,
         "relic": true
       },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 18.400000000000002,
-        "wt": 10,
-        "value": 3600,
+      "emerald:3133562": {
+        "id": "emerald",
+        "name": "Emerald",
+        "color": 3133562,
+        "host": 3095096,
+        "glow": 0.3,
+        "shards": 5,
+        "tone": 6,
+        "hard": 15.64,
+        "wt": 8.5,
+        "value": 2800,
         "ore": true
       },
       "scoria:7023128": {
@@ -1189,19 +1104,6 @@
         "ore": false,
         "seam": true
       },
-      "magmite:16742936": {
-        "id": "magmite",
-        "name": "Magmite",
-        "color": 16742936,
-        "host": 3023400,
-        "glow": 0.5,
-        "shards": 6,
-        "tone": 8,
-        "hard": 23.92,
-        "wt": 13,
-        "value": 9000,
-        "ore": true
-      },
       "part:10484991": {
         "id": "part",
         "name": "Void Resonator",
@@ -1216,17 +1118,17 @@
         "ore": true,
         "part": true
       },
-      "coreite:6750192": {
-        "id": "coreite",
-        "name": "Coreite",
-        "color": 6750192,
-        "host": 2764602,
-        "glow": 0.6,
-        "shards": 7,
-        "tone": 9,
-        "hard": 29.44,
-        "wt": 16,
-        "value": 22000,
+      "ruby:16726876": {
+        "id": "ruby",
+        "name": "Ruby",
+        "color": 16726876,
+        "host": 3354682,
+        "glow": 0.32,
+        "shards": 6,
+        "tone": 7,
+        "hard": 18.400000000000002,
+        "wt": 10,
+        "value": 5600,
         "ore": true
       },
       "core:16773792": {
@@ -1253,7 +1155,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiiiwiwwiiiiiiwwiwwiiwiiiiiiiwiiiiiiiiiiiiiwiiiiiiiiiifiwiwiiiwiiiiwiifiiifiiiwwiiffiiwiiiiiiiiiiwwiiifiifiiiiiiiiwiwiiiiiiwfiiwiiiiiiiiiiiiiiiiiiiwiwoiowwiiiiiofiwiiiiwiiiiiiiiiiiiwiiioiwiiiwiiiiiiiiiiiiiiifiowiiioiiiiiiiiwiwiiiwoiwwzzzzzozzzzwozzzzfzzozzzzzzzwzwzzzzzzzwwzzzzzzzzozzzozzzzzxzzzzzxzzzozzzzzwzzzzzzzzzxzzwzzzzwxzzwzzzzzwzzaazzzzzxwzwfzaawzzzzzzzzzzzzzzzzxezzzzzwzzzzzzzzzzzxzzzzzzzxaazzzzzzxzzzzaawzzzwzwzzzzzzaazzzzzzzezzzaazzzzezzxfzzzzzzzzwzzzxzzwzfaazzwmzuwwzzzaazzmzzzmzzzzzwwzzwaaaazzzmzwfzzaaaawzwzzkwzzzmozwzfzzzzzzwzzmzzzzzzwzzaazwzzzwzmwzzaazzzzzaazzfzzwozzzaaazzozzwzzzzazzzzzzwzzmkzwzzzxzzzzzzmzzmwzzaazzzzaaazzzwaazzzzaaazzwzzwwzzwmzmzzzzzfzzzwzzzmozozzwzzzzzxzzzmwwmzzzwzzzzfzzzzzzlzwwzzzwkwzzzzzmzzzzwzzbwaawfzzzzzbzzzaazzzzzwbaazzwzzzzzzzzaazzowzwwzbzzzowzaazkzzzwzzzzzaazzzzwwzzmzzaazzzzwzzzzkzaazzzzzxozzaaaawzzzzzwzzaaaazzwzzzzzwzzaazzzwwzzwwzzaazzzaazezlzlzbzzzaazzzzwwwzzzzbzzzzzaazzzzlzzzzzzaazzzzzaazzzwzzzzzwzaazzzzwzzzwzzaakbaawzzzzboaazzaazzzzzzzbwzzozzlzzzzzzzuwzzfwzzzzzzzzzwwzzaazzznnwnwwnnaawnnwnaaaawnnnnnnnnaaaannnnnnwknjnnwnnnnwnnnnnnnjnwwwnnnnmnwnnaaaanfnennnnnaaaannnnnnxnnwnnjaannnwwwnnnnnaanaannjnnwnnnknaannnwnnnkemnnnwnaannaannnnnmfaannaannnnnnnnnwnnwnnannnnnwnwnwnnawnonwnaannnnnnonnnnaannnkwnnaanoaannnnanwaannaannnwannneaaaannwwwnennaaaawnnnnjnnonjaawwnkjnnnxolaannnnwjonnaannaannnxnwnaanjaannnaawnknnwwnnnnaannnnnnnnwrnntwwtnnnonwwntnnwwnnnnnnnnnnnnnnnnnntwawnnwnnknnnlwaknnnnnnnaanonnlnnwnnnaanwnnfnwnnnnaanwnnfnwtnntaawnnnnnwnwnnnnwwnonnnnwnnnntwnnnejntnnnnnnafnnnwnnnnnlnannntnwnnaannnnnnnnnnnaanonwontnnwnwnnfnfnnnnnnwnnnnnnnnnaafwaannnnnnnaanbaannnnnaawnwwwnnnnfwaannfnnnnntnkaatwaaaannnbnaawnaaaaownknwnaanknnaawwnnnaannnwaannwnnnnnnnnnwnwnbntnwntnnwnwnnwwnnnwnnnnvvvvwvvwvvwtvwvvvvvwwvtvvvvvffvvvvvvvvvvvovvvvvuwxvavvvvvvlltvvkavvvvvvvwwvvvvvwvvvvvvvtvvtaavvaavvvvaaaaatvaavvvvaaawwvwvvvwvvvtvvvvvwvvvvvvvlvvvvvvvwvvvwvvwovvvwvwbvvxvvvwwvvvvvpvpvxpvvvvvvvvvvvvvvovwvvvevavvvvvvpvvvvvavvvvvvvqaavvvvvwwvvvvaaovvvpvvvvvvwvvvvvtvvvvvvvvvvvvvlvaavwaawvvvvvpaavvaavkwvvvvvvvvvwaaawvwvvvmwvvaaaaavvaavvvvvvwaavvaavvwvvvvwvaavvvvaaaaakvaavvvvaaaaaaawvvvvvwvaavaavvvvvvvvaavwvvpvlvuvvvvvvvvtewvvwvvwvvfvvvvvvvvvvmvwvkxpvvvvvvvvvwwaavlvvaaawvvvaavvvvaaapvvvvvvwvlvvavvvvwvkvvwvvavvvvwvxvkvvvvvvvvvwvwbvwvvxvvwvvvwaaaavvvfwvvvvaaaavvvvvjvvvfwvwvvvvvwwvvvvvvvvvovaawvvwaapvvvwaavwvvaawvvvvaaaawbaavvwvvaaaawvaavvvvpvvvvpvaavwpvwwvvlwwaavvwmovvaavvvjvvwvxvwaavvwvwwwvvwvvwvvvvvvvvvwwvwvvvvvaaaafhvvvwvvvaaaavvvvvvvvwaaaavvmvaawvvaaaavwvvaavvwxvwvvowvvvvvvvfvvvpvvvvvvvvvvvwvfvvwtvwvwvvvvwvwvvvvvwvvpvvtaavvwvvwvvfhvaavvvvwaavvvvvvvvavvaavvvvvwvvavbvvvvvoaavxvvvvvvvwvaavbbgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiiiwiwwiiiiiiwwiwwiiwiiiiiiiwiiiiiiiiiiiiiwiiiiiiiiiiwiwiwiiiwiiiiwiifiiifiiiwwiiffiiwiiiiiiiiiiwwiiifiifiiiiiiiiwiwiiiiiiwfiiwiiiiiiiiiiiiiiiiiiiwiwfifwwiiiiifwiwiiiiwiiiiiiiiiiiiwiiifiwiiiwiiiiiiiiiiiiiiiwifwiiifiiiiiiiiwiwiiiwoiwwzzzzzozzzzwfzzzzzzzfzzzzzzzwzwzzzzzzzwwzzzzzzzzfzzzzzzzzzozzzzzozzzfzzzzzwzzzzzzzzzozzwzzzzwozzwzzzzzwzzaazzzzzowzwzzaawzzzzzzzzzzzzzzzzoezzzzzwzzzzzzzzzzzozzzzzzzxaazzzzzzxzzzzaawzzzwzwzzzzzzaazzzzzzzezzzaazzzzezzfzzzzzzzzzwzzzxzzwzzaazzwxzuwwzzzaazzxzzzxzzzzzwwzzwaaaazzzxzwzzzaaaawzwzzkwzzzozzwzzzzzzzzwzzxzzzzzzwzzaazwzzzwzxwzzaazzzzzaazzwzzwzzzzaaazzfzzwzzzzazzzzzzwzzxkzwzzzfzzzzzzxzzxwzzaazzzzaaazzzwaazzzzaaazzwzzwwzzwxzozzzzzzzzzwzzzxzzfzzwzzzzzozzzxwwxzzzwzzzzzzzzzzzlzwwzzzwkwzzzzzxzzzzwzzxwaawzzzzzzxzzzaazzzzzwxaazzwzzzzzzzzaazzfwzwwzxzzzzwzaazkzzzwzzzzzaazzzzwwzzozzaazzzzwzzzzkzaazzzzzfzzzaaaawzzzzzwzzaaaazzwzzzzzwzzaazzzwwzzwwzzaazzzaazezlzlzozzzaazzzzwwwzzzzmzzzzzaazzzzlzzzzzzaazzzzzaazzzwzzzzzwzaazzzzwzzzwzzaakmaawzzzzmzaazzaazzzzzzzmwzzzzzlzzzzzzzzwzzzwzzzzzzzzzwwzzaazzznnwnwwnnaawnnwnaaaawnnnnnnnnaaaannnnnnwknxnnwnnnnwnnnnnnnmnwwwnnnnonwnnaaaannnennnnnaaaannnnnnonnwnnmaannnwwwnnnnnaanaannmnnwnnnknaannnwnunkeonnnwnaannaannnnnonaannaannnnnnnnnwnnwnnannnnnwnwnwnnawnnnwnaannnnnnnnnnnaannnkwnnaannaannnnanwaannaannnwannneaaaannwwwnennaaaawnnnnbnnfnbaawwnkonnnonlaannnnwbnnnaannaannnfnwnaanbaannnaawnknnwwnnnnaannnnnnnnwrnnbwwmnnnfnwwnbnnwwnnnnnnnnnnnnnnnnnnbwawnnwnnknnnlwaknnnnnnnaannnnlnnwnnnaanwnnnnwnnnnaanwnnnnwbnnbaawnnnnnwnwnnnnwwnnnnnnwnnnnmwnnnexnbnnnnnnannnnwnnnnnlnannnbnwnnaannnnnnnnnnnaannnwfnbnnwnwnnnnnnnnnnnwnnnnnnnnnaawwaannnnnnnaanoaannnnnuawnwwwnnnnnwaannwnnnnnbnkaabwaaaannnonaawnaaaanwnknwnaanknnaawwnnnaannnwaannwnnnnnnnnnwnwnonjnwnjnnwnwnnwwnnnwnnnnvvvvwvvwvvwjvwvvvvvwwvjvvvvvvvvvvvvvvvvvvvvvvvvuwovavvvvvvlljvvkavvvvvvvwwvvvvvwvvvvvvvjvvjaavvaavvvvaaaaajvaavvvvaaawwvwvvvwvvvjvvvvvwvvvvvvvlvvvvvvvwvvvwvvwvvvvwvwovvfvvvwwvvvvvbvmvojvvvvvvvvvvvvvvvvwvvvevavvvvvvjvvvvvavvvvvvvqaavvvvvwwvvvvaafvvvjvvvvvvwvvvvvxvvvvvvvvvvvvvlvaavwaawvvvvvjaavvaavkwvvvvvvvvvwaaawvwvvvowvvaaaaavvaavvvvvvwaavvaavvwvvvvwvaavvvvaaaaakvaavvvvaaaaaaawvvvvvwvaavaavvvvvvvvaavwvvbvlvvvvvvvvvvxewvvwvvwvvvvvvvvvvvvvovwvkfjvvvvvvvvvwwaavlvvaaawvvvaavvvvaaabvvvvvvwvlvvavvvvwvkvvwvvavvvvwvfvkvvvvvvvvvwvwovwvvfvvwvvvwaaaavvvvwvvvvaaaavvvvvxvvvvwvwvvvvvwwvvvvvvvvvvvaawvvwaatvvvwaavwvvaawvvvvaaaawoaavvwvvaaaawvaavvvvtvvvvjvaavwjvwwvvlwwaavvwovvvaavvvxvvwvfvwaavvwvwwwvvwvvwvvvvvvvvvwwvwvvvvvaaaavjvvvwvvvaaaavvvvvvvvwaaaavvovaawvvaaaavwvvaavvwfvwvvfwvvvvvvvvvvvmvvvvvvvvvvvwvvvvwxvwvwvvvvwvwvvvvvwvvmvvxaavvwvvwvvvbvaavvvvwaavvvvvvvvavvaavvvvvwvvavovvvvvfaavovvvvvvvwvaavoogggggggggggggddddddddddddd"
   },
   {
     "planet": 4,
@@ -1263,28 +1165,25 @@
     "rowsTo": 251,
     "counts": {
       "(empty)": 252,
-      "dirt": 213,
-      "seam": 412,
-      "copper": 56,
-      "iron": 59,
-      "silver": 46,
-      "stone": 658,
+      "dirt": 220,
+      "seam": 426,
+      "copper": 60,
+      "iron": 58,
+      "stone": 680,
       "cache": 17,
+      "silver": 36,
       "gas": 38,
-      "gold": 28,
       "geode": 89,
-      "amethyst": 26,
-      "emerald": 24,
+      "gold": 32,
+      "granite": 584,
+      "amethyst": 23,
       "schematic": 4,
-      "granite": 571,
-      "ruby": 28,
-      "magmite": 22,
-      "scoria": 703,
-      "coreite": 9,
+      "emerald": 10,
+      "scoria": 723,
+      "ruby": 5,
       "part": 1,
-      "umbrite": 5,
+      "magmite": 4,
       "relic": 1,
-      "solmarrow": 1,
       "core": 13,
       "bedrock": 13
     },
@@ -1320,7 +1219,7 @@
         "tone": 1,
         "hard": 6.614400000000001,
         "wt": 3.5,
-        "value": 25,
+        "value": 40,
         "ore": true
       },
       "iron:11581117": {
@@ -1333,20 +1232,7 @@
         "tone": 2,
         "hard": 8.904,
         "wt": 4.5,
-        "value": 60,
-        "ore": true
-      },
-      "silver:14213352": {
-        "id": "silver",
-        "name": "Silver",
-        "color": 14213352,
-        "host": 3816512,
-        "glow": 0.16,
-        "shards": 4,
-        "tone": 3,
-        "hard": 11.448,
-        "wt": 6,
-        "value": 150,
+        "value": 95,
         "ore": true
       },
       "seam:9406327": {
@@ -1384,6 +1270,19 @@
         "ore": true,
         "cache": true
       },
+      "silver:14213352": {
+        "id": "silver",
+        "name": "Silver",
+        "color": 14213352,
+        "host": 3816512,
+        "glow": 0.16,
+        "shards": 4,
+        "tone": 3,
+        "hard": 11.448,
+        "wt": 6,
+        "value": 240,
+        "ore": true
+      },
       "gas:13954602": {
         "id": "gas",
         "name": "Gas Pocket",
@@ -1398,19 +1297,6 @@
         "ore": true,
         "hazard": true
       },
-      "gold:16764743": {
-        "id": "gold",
-        "name": "Gold",
-        "color": 16764743,
-        "host": 4012596,
-        "glow": 0.2,
-        "shards": 5,
-        "tone": 4,
-        "hard": 13.992,
-        "wt": 9,
-        "value": 420,
-        "ore": true
-      },
       "geode:8388576": {
         "id": "geode",
         "name": "Geode",
@@ -1424,45 +1310,18 @@
         "value": 6200,
         "ore": true
       },
-      "amethyst:10510591": {
-        "id": "amethyst",
-        "name": "Amethyst",
-        "color": 10510591,
-        "host": 3486271,
-        "glow": 0.28,
+      "gold:16764743": {
+        "id": "gold",
+        "name": "Gold",
+        "color": 16764743,
+        "host": 4012596,
+        "glow": 0.2,
         "shards": 5,
-        "tone": 5,
-        "hard": 17.808,
-        "wt": 7,
-        "value": 900,
+        "tone": 4,
+        "hard": 13.992,
+        "wt": 9,
+        "value": 660,
         "ore": true
-      },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
-        "shards": 5,
-        "tone": 6,
-        "hard": 21.624,
-        "wt": 8.5,
-        "value": 1800,
-        "ore": true
-      },
-      "schematic:65345": {
-        "id": "schematic",
-        "name": "Sealed Crate",
-        "color": 65345,
-        "host": 1058840,
-        "glow": 1,
-        "shards": 9,
-        "tone": 9,
-        "hard": 25.44,
-        "wt": 0,
-        "value": 0,
-        "ore": true,
-        "find": true
       },
       "granite:6183526": {
         "id": "granite",
@@ -1485,30 +1344,44 @@
         "ore": false,
         "seam": true
       },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 25.44,
-        "wt": 10,
-        "value": 3600,
+      "amethyst:10510591": {
+        "id": "amethyst",
+        "name": "Amethyst",
+        "color": 10510591,
+        "host": 3486271,
+        "glow": 0.28,
+        "shards": 5,
+        "tone": 5,
+        "hard": 17.808,
+        "wt": 7,
+        "value": 1400,
         "ore": true
       },
-      "magmite:16742936": {
-        "id": "magmite",
-        "name": "Magmite",
-        "color": 16742936,
-        "host": 3023400,
-        "glow": 0.5,
-        "shards": 6,
-        "tone": 8,
-        "hard": 33.072,
-        "wt": 13,
-        "value": 9000,
+      "schematic:65345": {
+        "id": "schematic",
+        "name": "Sealed Crate",
+        "color": 65345,
+        "host": 1058840,
+        "glow": 1,
+        "shards": 9,
+        "tone": 9,
+        "hard": 25.44,
+        "wt": 0,
+        "value": 0,
+        "ore": true,
+        "find": true
+      },
+      "emerald:3133562": {
+        "id": "emerald",
+        "name": "Emerald",
+        "color": 3133562,
+        "host": 3095096,
+        "glow": 0.3,
+        "shards": 5,
+        "tone": 6,
+        "hard": 21.624,
+        "wt": 8.5,
+        "value": 2800,
         "ore": true
       },
       "scoria:7023128": {
@@ -1532,17 +1405,17 @@
         "ore": false,
         "seam": true
       },
-      "coreite:6750192": {
-        "id": "coreite",
-        "name": "Coreite",
-        "color": 6750192,
-        "host": 2764602,
-        "glow": 0.6,
-        "shards": 7,
-        "tone": 9,
-        "hard": 40.704,
-        "wt": 16,
-        "value": 22000,
+      "ruby:16726876": {
+        "id": "ruby",
+        "name": "Ruby",
+        "color": 16726876,
+        "host": 3354682,
+        "glow": 0.32,
+        "shards": 6,
+        "tone": 7,
+        "hard": 25.44,
+        "wt": 10,
+        "value": 5600,
         "ore": true
       },
       "part:10484991": {
@@ -1559,17 +1432,17 @@
         "ore": true,
         "part": true
       },
-      "umbrite:10320895": {
-        "id": "umbrite",
-        "name": "Umbrite",
-        "color": 10320895,
-        "host": 2367283,
-        "glow": 0.58,
-        "shards": 7,
-        "tone": 10,
-        "hard": 49.608000000000004,
-        "wt": 18,
-        "value": 54000,
+      "magmite:16742936": {
+        "id": "magmite",
+        "name": "Magmite",
+        "color": 16742936,
+        "host": 3023400,
+        "glow": 0.5,
+        "shards": 6,
+        "tone": 8,
+        "hard": 33.072,
+        "wt": 13,
+        "value": 14000,
         "ore": true
       },
       "relic:16773375": {
@@ -1585,19 +1458,6 @@
         "value": 0,
         "ore": true,
         "relic": true
-      },
-      "solmarrow:16773296": {
-        "id": "solmarrow",
-        "name": "Solmarrow",
-        "color": 16773296,
-        "host": 3813926,
-        "glow": 0.72,
-        "shards": 8,
-        "tone": 10,
-        "hard": 58.512,
-        "wt": 21,
-        "value": 132000,
-        "ore": true
       },
       "core:16773792": {
         "id": "core",
@@ -1623,7 +1483,7 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaaiiwiiiiiiiwiiiiiiwiwiiwiwiwwiiwiwiiwiiiiiiiiiwiiiiwiiiiififiwiffiiiiwififiwiiiiiiiiiiiiwiiwiiiiifiiiiiiififiwifiwiiiiifiiiwiiwiwiiffiifiiiiiiiiioooiiiwiwiiiiiiiiwoiiiiiiiwwooifiwwiiwiiiowwiioiwiiwwiwiiiiiiwiwiiwoiiiiiiiiiiiiiofiioiiiiiwiiiioiioiwwiiiiiwiwioioiiiioiiwioiiwoiiiiiwiwiiiiiiiiiiiwwiiioixwzzzwzzzzwzzzzzozzwzzwwzzzzzzzezwzzzzzzfzfxxzxwzxzezzzzzzwwzzzzzzzzzzzzzzzzwzzzwzzzzzzwzzzzzzzaazwzzzzzzwzzaazwzzwzzxzaazxzwwzzzzzzaazzxzzzwzzzzzzzfxzzzzzxzzzzfwzzzxzzzzkzzfwzkzzzzwwzzzwzzzzzmzwzzzzzzzwmwzmzzmwzzwzzwmzzzzwzzzzaazzfzaxzwzzzaawzzmaaazmzzwzzzzzoaazxwomzfzzmzaawzzzzzwzzzzaazzzzzzzzzzzwzzzofkxwwzzzfzzzwzzzzkzzzwozzzzzzaawzzzzzzwmzzaazzzzzzzzmzzwzzzwzzzzzzzwwzezzzllozzzzzmwzawzzfzwzzzmzwazzzwozezwzkwzzfzzzwzzzzxzzbzzwzzzwzwzzozzzzzwzzolzzzzzzzzzzzaazzwzwzxzzkzaazzbzzzzzlzxzzzzwzzzwzzewzzzzzwzzwlzzzzwzzzzwzwwkmkzzwzzwzzzzzzzzzzkwbzwzzbwzfzzzzbzbzzozzzzwlzzzzzzlzozwbzzbzzzzzzzblkzzwzzzzwwzwzzwzkzzzzzbzllzzzbzzezzzzzzzzwwzzlzzzzzbbozzzzzzbwzllzlzmwfzbzzzzwzlzzzzzzlzzbzzzzwzzzwzwwzzzzazzzzzzxzzzzzazjzlzfzzzwwzzzzzzzozjzzwwzzzwzfzzzzzbzazzzkzzzzwzzzazzzzzjzzzzzwzzkzzwwwzzzzzzzzwzzzzljzzuzwwzzzzzwzlwzwzzzzjzwzwzlzzzzzzzezzzzzzzzzzzzzzxzzwzazzzwzwwwzzxzalzfjzzzzaazzzzzbzwzzzaajwozzzwzzlzmzlwzzzwzzzzzzzzwbzzwzewzzzzzzzxlzwezzzzzzzzlezzlwzzzzzzzjklzzzzlzzlzonnnlwnnnaannwnnnnnnnmaanwknwmnnwaannonjnnxnbnaannjwwnonnnnnnnlnnnnwnnnknnnnnnnkwnnnnaajnnnnwmntnwaatnnnnnnnnntnnnntnnntnnnntntnklnwonnnnlnwwnlannnnnnnnnnnnannnnaanlnnwnnfnnnaannnnwwntnnnwnwnnnnnwnnnnnnnnntnwnnnwnnfaaonnnnnnwnnnaawnnnwntnlwnnwaannnnnnwnnwwaannnxnnennntaannnnnnnnnnnaawnnnnnlnwnnnnaawnnwnnnnwnnaanwxnwtfnwwnntnnntnnttnnnnnnntwnnnnnnnwnnlnxnnnnnknwnnlwnwnnnnennnnnnnfllnwnnnwnknnnnnnnnnnnnwnnnnnnwnlnnnnnnnnnwnnnnxnwwnnnnnnnnnnnnnaatnaannwnnnwaawnaaonnnnnnnbnnnnntwnnnnnwnwnnnnnnnnnnlnnnnnwnwawnnwnnnnwwnwaaawnnnnnnnnntaafnxjnnnnnwnaanwnnwnnnnnaaawnnnnwnwknaaanwnnnnaanntaannmnnnaannnnnnnnnnnelnnnnknlnwpfnnnnnnnpnnnwknpwnwpwnnnpnonnwnnnnnnwnaalwennnnnnnxaannnnnwnaannnnnnnonnnaannnnnnnnnwnnnnnwnnfnnnnnnnnwplxnnnnwwnpwnnwaannnnnfnnnwnaannonnwnponknwnwwnnnnnwnnwnlnwwnnonoaalnnnnnnonnnuannnnnnxnnnnwnwnaannnwnnpnnnpaanwnwnnnaanoknnnnwnnnaannnnnlwnnnnaanwnnnvvvvvxaavvvwvvvvtlvvxvvwvvvwvvvpvvvkvvvvlvvwvvvvwvvpwvmvvvlvvwwwvvvvwfwvvvvvkvvvvvvvvvvwvvwvvvvvwwwvxvvvovvvvxvltkvvvwvvvwpwwvvuwvvvvvvlwwwvvvvvvovvlvvvvwwvvkvvvwvvlvvvfvvpvvvwvwvvvvvvvtvjwlvvvvwvjvvlpvvvvvvvvvvvwfpvklpvvaavvwlvpvlvvaaavvvwvxvwvxaaaaavvvvvmaavaaaavvbwvvaavvvvvvvxvaavvvvvwwwvvvaawvvvwvvaavbvvpjvvevvaawvvjvvwvvaapvvwhhlvvvvaawvvwvvhbvvvvvvxvoaawvlmvvvfvvvaavvwvvvvvvvvvvevvvvlhvwvfpxvvvvvvvvjvvvvvwvvvwqvhvvhvvvllwvvvuvvaaaavwvkvwvvvaaaavvvvvfvvwaavjvfvvvvvvvaavvvwvhvvvwvvvwvvvvvvwwvvllvvvvvvvvvwvvvvvawovvvwvvvvvhajvaaaawvvvvvvvwaaaavwlvtvvxjaavwvwvvaawvvaavvvvhvaavkvvlwlvwvvaawvvvvvvvlwvaavvvvvlwvvvvvwatxvvjvolvfvvaaalvvovxaavwvaavvvvvvaawvvvovvvwvvvtwwvvvvvvwvvvvwwvfvevvvvvvfvvwkvvxvwmjwvwlAwvvvvvvvvvwwxvvvvvvwvvvvvAvvaavwvvvvvvwlvaavfvwkvkvvmvwvvvvvvvwvvxvovvwvwvvvvvwwvvvvvvvAvwvvvvvvvvvvxlvvvvvvvvvvvkvvwwvwvvvwvvvvvvvvvwwvvvwvvwvvAvvvvvvvvvvvaavvvvpbvvvvvaavvwvvvvvvvvmwaavvvvvvvvvvvaakvvvvvvvwovmvvvkvvvvvvvvvvlvvffvlvvwlvwaavvvvvlwvvvvaavvvvfvvvjvwvvvvvmvvavvvvwvrvvlvjawowvvvvvbwvvvvvvwvvvvwwvvvwvvAlvaavvvvvwvvvvvaavlvvtlvvvvvovvywvfvvwvvvvvovvvwaaaavfvvvwvvlaaaavvvvlvvwvgggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaaiiwiiiiiiiwiiiiiiwiwiiwiwiwwiiwiwiiwiiiiiiiiiwiiiiwiiiiififiwiffiiiiwiiifiwiiiiiiiiiiiiwiiwiiiiifiiiiiiiiifiwifiwiiiiifiiiwiiwiwiiffiifiiiiiiiiiffiiiiwiwiiiiiiiiwfiiiiiiiwwffiiiwwiiwiiiiwwiifiwiiwwiwiiiiiiwiwiiwfiiiiiiiiiiiiioiiiwiiiiiwiiiioiioiwwiiiiiwiwioioiiiioiiwioiiwoiiiiiwiwiiiiiiiiiiiwwiiiiiowzzzwzzzzwzzzzzzzzwzzwwzzzzzzzezwzzzzzzzzzoozowzozezzzzzzwwzzzzzzzzzzzzzzzzwzzzwzzzzzzwzzzzzzzaazwzzzzzzwzzaazwzzwzzxzaazxzwwzzzzzzaazzfzzzwzzzzzzzzxzzzzzxzzzzzwzzzfzzzzkzzwwzkzzzzwwzzzwzzzzzxzwzzzzzzzwxwzxzzxwzzwzzwozzzzwzzzzaazzwzafzwzzzaawzzxaaazxzzwzzzzzfaazfwwxzzzzxzaawzzzzzwzzzzaazzzzzzzzzzzwzzzzzkfwwzzzzzzzwzzzzkzzzwzzzzzzzaawzzzzzzwxzzaazzzzzzzzozzwzzzwzzzzzzzwwzezzzllfzzzzzxwzawzzzzwzzzozwazzzwwzezwzkwzzzzzzwzzzzfzzxzzwzzzwzwzzzzzzzzwzzzlzzzzzzzzzzzaazzwzwzfzzkzaazzxzzzzzlzfzzzzwzzzwzzewzzzzzwzzwlzzzzwzzzzwzwwkokzzwzzwzzzzzzzzzzkwmzwzzmwzzzzzzozozzzzzzzwlzzzzzzlzzzwmzzmzzzzzzzolkzzwzzzzwwzwzzwzkzzzzzmzllzzzozzezzzzzzzzwwzzlzzzzzomwzzzzzzmwzllzlzowzzxzzzzwzlzzzzzzlzzmzzzzwzzzwzwwzzzzazzzzzzfzzzzzazmzlzwzzzwwzzzzzzzzzmzzwwzzzwzzzzzzzozazzzkzzzzwzzzazzzzzmzzzzzwzzkzzwwwzzzzzzzzwzzzzlmzzzzwwzzzzzwzlwzwzzzzxzwzwzlzzzzzzzezzzzzzzzzzzzzzfzzwzazzzwzwwwzzozalzwmzzzzaazzzzzozwzzzaamwzzzzwzzlzozlwzzzwzzzzzzzzwozzwzewzzzzzzzflzwezzzzzzzzlezzlwzzzzzzzoklzzzzlzzlzfnnnlwnnnaannwnnnnnnnoaanwknwonnwaannnnbnnfnonaannmwwnnnnnnnnnlnnnnwnnnknnnnnnnkwnnnnaabnnnnwonmnwaaxnnnnnnnnnbnnnnbnnnbnnnnbnbnklnwfnnnnlnwwnlannnnnnnnnnnnannnnaanlnnwnnnnnnaannnnwwnbnnnwnwnnnnnwnnnnnnnnnbnwnnnwnnnaafnnnnnnwnnnaawnnuwnbnlwnnwaannnnnnwnnwwaannnfnnennnxaannnnnnnnnnnaawnnnnnlnwnnnnaawnnwnnnnwnnaanwonwmnnwwnnbnnnbnnbmnnnnnnnbwnnnnnnnwnnlnfnnnnnknwnnlwnwnnnnennnnnnnnllnwnnnwnknnnnnnnnnnnnwnnnnnnwnlnnnnnnnnnwnnnnfnwwnnnnnnnnnnnnnaajnaannwnnnwaawnaafnnnnnnnonnnnnmwnnnnnwnwnnnnnnnnnnlnnnnnwnwawnnwnnnnwwnwaaawnnnnnnnnnbaannoonnnnnwnaanwnnwnnnnnaaawnnnnwnwknaaanwnnnnaannbaannonnnaannnnnnnnnnnelnnnnknlnwmnnnnnnnnmnnnwknmwnwjwnnnjnnnnwnnnnnnwnaalwennnnnnnfaannnnnwnaannnnnnnnnnnaannnnnnnnnwnnnnnwnnnnnnnnnnnwjlfnnnnwwnjwnnwaannnnnnnnnwnaannnnnwnbfnknwnwwnnnnnwnnwnlnwwnnfnnaalnnnnnnfnnnuannnnnnfnnnnwnwnaannnwnnmnnnbaanwnwnnnaanwknnnnwnnnaannnnnlwnnnnaanwnnnvvvvvoaavvvwvvvvxlvvovvwvvvwvvvmvvvkvvvvlvvwvvvvwvvtwvovvvlvvwwwvvvvwvwvvvvvkvvvvvvvvvvwvvwvvvvvwwwvfvvvwvvvvfvlxkvvvwvvvwjwwvvjwvvvvvvlwwwvvvvvvvvvlvvvvwwvvkvvvwvvlvvvvvvbvvvwvwvvvvvvvxvxwlvvvvwvxvvlmvvvvvvvvvvvwvmvklmvvaavvwlvmvlvvaaavvvwvfvwvfaaaaavvvvvoaavaaaavvowvvaavvvvvvvfvaavvvvvwwwvvvaawvvvwvvaavovvmxvvevvaawvvxvvwvvaamvvwttlvvvvaawvvwvvtovvvvvvfvvaawvlovvvvvvvaavvwvvvvvvvvvvevvvvltvwvvmovvvvvvvvxvvvvvwvvvwqvbvvbvvvllwvvvwvvaaaavwvkvwvvvaaaavvvvvvvvwaavxvvvvvvvvvaavvvwvjvvvwvvvwvvvvvvwwvvllvvvvvvvvvwvvvvvawvvvvwvvvvvbaxvaaaawvvvvvvvwaaaavwlvxvvfoaavwvwvvaawvvaavvvvjvaavkvvlwlvwvvaawvvvvvvvlwvaavvvvvlwvvvvvwaxfvvxvvlvwvvaaalvvvvfaavwvaavvvvvvaawvvvvvvvwvvvxwwvvvvvvwvvvvwwvwvevvvvvvvvvwkvvfvwoowvwlbwvvvvvvvvvwwfvvvvvvwvvvvvpvvaavwvvvvvvwlvaavwvwkvkvvovwvvvvvvvwvvfvfvvwvwvvvvvwwvvvvvvvjvwvvvvvvvvvvolvvvvvvvvvvvkvvwwvwvvvwvvvvvvvvvwwvvvwvvwvvpvvvvvvvvvvvaavvvvmovvvvvaavvwvvvvvvvvowaavvvvvvvvvvvaakvvvvvvvwfvovvvkvvvvvvvvvvlvvvvvlvvwlvwaavvvvvlwvvvvaavvvvvvvvovwvuvvvouvavvvvwvrvvlvxawvwvvvvvowvvvvvvwvvvvwwvvvwvvplvaavvvvvwvvvvvaavlvvxlvvvvvvvvpwvvvvwvvvvvvvvvwaaaavvvvvwvvlaaaavvvvlvvwvgggggggggggggddddddddddddd"
   },
   {
     "planet": 5,
@@ -1633,26 +1493,24 @@
     "rowsTo": 299,
     "counts": {
       "(empty)": 279,
-      "seam": 498,
-      "dirt": 270,
-      "copper": 54,
-      "iron": 48,
-      "silver": 35,
-      "stone": 806,
+      "seam": 506,
+      "dirt": 272,
+      "copper": 44,
+      "iron": 66,
+      "stone": 831,
+      "silver": 42,
       "gas": 93,
-      "gold": 32,
       "cache": 15,
-      "amethyst": 36,
       "geode": 29,
-      "emerald": 39,
+      "gold": 37,
       "schematic": 4,
-      "ruby": 19,
-      "granite": 718,
-      "magmite": 24,
-      "coreite": 11,
-      "scoria": 854,
-      "umbrite": 13,
-      "solmarrow": 8,
+      "amethyst": 23,
+      "granite": 730,
+      "emerald": 14,
+      "ruby": 13,
+      "scoria": 882,
+      "magmite": 4,
+      "coreite": 1,
       "relic": 1,
       "part": 1,
       "core": 13,
@@ -1690,7 +1548,7 @@
         "tone": 1,
         "hard": 6.240000000000001,
         "wt": 3.5,
-        "value": 25,
+        "value": 40,
         "ore": true
       },
       "iron:11581117": {
@@ -1703,20 +1561,7 @@
         "tone": 2,
         "hard": 8.400000000000002,
         "wt": 4.5,
-        "value": 60,
-        "ore": true
-      },
-      "silver:14213352": {
-        "id": "silver",
-        "name": "Silver",
-        "color": 14213352,
-        "host": 3816512,
-        "glow": 0.16,
-        "shards": 4,
-        "tone": 3,
-        "hard": 10.8,
-        "wt": 6,
-        "value": 150,
+        "value": 95,
         "ore": true
       },
       "stone:8419954": {
@@ -1740,6 +1585,19 @@
         "ore": false,
         "seam": true
       },
+      "silver:14213352": {
+        "id": "silver",
+        "name": "Silver",
+        "color": 14213352,
+        "host": 3816512,
+        "glow": 0.16,
+        "shards": 4,
+        "tone": 3,
+        "hard": 10.8,
+        "wt": 6,
+        "value": 240,
+        "ore": true
+      },
       "gas:13954602": {
         "id": "gas",
         "name": "Gas Pocket",
@@ -1753,19 +1611,6 @@
         "value": 0,
         "ore": true,
         "hazard": true
-      },
-      "gold:16764743": {
-        "id": "gold",
-        "name": "Gold",
-        "color": 16764743,
-        "host": 4012596,
-        "glow": 0.2,
-        "shards": 5,
-        "tone": 4,
-        "hard": 13.200000000000003,
-        "wt": 9,
-        "value": 420,
-        "ore": true
       },
       "cache:16743120": {
         "id": "cache",
@@ -1781,19 +1626,6 @@
         "ore": true,
         "cache": true
       },
-      "amethyst:10510591": {
-        "id": "amethyst",
-        "name": "Amethyst",
-        "color": 10510591,
-        "host": 3486271,
-        "glow": 0.28,
-        "shards": 5,
-        "tone": 5,
-        "hard": 16.800000000000004,
-        "wt": 7,
-        "value": 900,
-        "ore": true
-      },
       "geode:8388576": {
         "id": "geode",
         "name": "Geode",
@@ -1807,17 +1639,17 @@
         "value": 6200,
         "ore": true
       },
-      "emerald:3133562": {
-        "id": "emerald",
-        "name": "Emerald",
-        "color": 3133562,
-        "host": 3095096,
-        "glow": 0.3,
+      "gold:16764743": {
+        "id": "gold",
+        "name": "Gold",
+        "color": 16764743,
+        "host": 4012596,
+        "glow": 0.2,
         "shards": 5,
-        "tone": 6,
-        "hard": 20.400000000000002,
-        "wt": 8.5,
-        "value": 1800,
+        "tone": 4,
+        "hard": 13.200000000000003,
+        "wt": 9,
+        "value": 660,
         "ore": true
       },
       "schematic:65345": {
@@ -1834,17 +1666,17 @@
         "ore": true,
         "find": true
       },
-      "ruby:16726876": {
-        "id": "ruby",
-        "name": "Ruby",
-        "color": 16726876,
-        "host": 3354682,
-        "glow": 0.32,
-        "shards": 6,
-        "tone": 7,
-        "hard": 24.000000000000004,
-        "wt": 10,
-        "value": 3600,
+      "amethyst:10510591": {
+        "id": "amethyst",
+        "name": "Amethyst",
+        "color": 10510591,
+        "host": 3486271,
+        "glow": 0.28,
+        "shards": 5,
+        "tone": 5,
+        "hard": 16.800000000000004,
+        "wt": 7,
+        "value": 1400,
         "ore": true
       },
       "granite:6183526": {
@@ -1868,30 +1700,30 @@
         "ore": false,
         "seam": true
       },
-      "magmite:16742936": {
-        "id": "magmite",
-        "name": "Magmite",
-        "color": 16742936,
-        "host": 3023400,
-        "glow": 0.5,
-        "shards": 6,
-        "tone": 8,
-        "hard": 31.200000000000003,
-        "wt": 13,
-        "value": 9000,
+      "emerald:3133562": {
+        "id": "emerald",
+        "name": "Emerald",
+        "color": 3133562,
+        "host": 3095096,
+        "glow": 0.3,
+        "shards": 5,
+        "tone": 6,
+        "hard": 20.400000000000002,
+        "wt": 8.5,
+        "value": 2800,
         "ore": true
       },
-      "coreite:6750192": {
-        "id": "coreite",
-        "name": "Coreite",
-        "color": 6750192,
-        "host": 2764602,
-        "glow": 0.6,
-        "shards": 7,
-        "tone": 9,
-        "hard": 38.400000000000006,
-        "wt": 16,
-        "value": 22000,
+      "ruby:16726876": {
+        "id": "ruby",
+        "name": "Ruby",
+        "color": 16726876,
+        "host": 3354682,
+        "glow": 0.32,
+        "shards": 6,
+        "tone": 7,
+        "hard": 24.000000000000004,
+        "wt": 10,
+        "value": 5600,
         "ore": true
       },
       "scoria:7023128": {
@@ -1915,30 +1747,30 @@
         "ore": false,
         "seam": true
       },
-      "umbrite:10320895": {
-        "id": "umbrite",
-        "name": "Umbrite",
-        "color": 10320895,
-        "host": 2367283,
-        "glow": 0.58,
-        "shards": 7,
-        "tone": 10,
-        "hard": 46.800000000000004,
-        "wt": 18,
-        "value": 54000,
+      "magmite:16742936": {
+        "id": "magmite",
+        "name": "Magmite",
+        "color": 16742936,
+        "host": 3023400,
+        "glow": 0.5,
+        "shards": 6,
+        "tone": 8,
+        "hard": 31.200000000000003,
+        "wt": 13,
+        "value": 14000,
         "ore": true
       },
-      "solmarrow:16773296": {
-        "id": "solmarrow",
-        "name": "Solmarrow",
-        "color": 16773296,
-        "host": 3813926,
-        "glow": 0.72,
-        "shards": 8,
-        "tone": 10,
-        "hard": 55.20000000000001,
-        "wt": 21,
-        "value": 132000,
+      "coreite:6750192": {
+        "id": "coreite",
+        "name": "Coreite",
+        "color": 6750192,
+        "host": 2764602,
+        "glow": 0.6,
+        "shards": 7,
+        "tone": 9,
+        "hard": 38.400000000000006,
+        "wt": 16,
+        "value": 34000,
         "ore": true
       },
       "relic:16773375": {
@@ -1993,6 +1825,6 @@
         "glow": 0.02
       }
     },
-    "grid": "aaaaaaaaaaaaawiwwiiiiiiiwiiiiiiwiwiiwiwiiiiiwiwiiiiiwiiiiwiiiiiiiiiiiiwiiiwfiwiwiiiiiiiiiiffiiwiiifiiiiiiwiiiiiiiiiiiiiiiiiifiiiiiiiwiwifiiiiiiiiiiiififiiiiwiwiiwiowoiiiwiiiwiiwoiiifiiwiiiiiiiiwiiiiiiwowiiiioiiiiiiiiwiiwiiiiiiiiiiiiiiiofiiiwiiiiiiiiiiiiiiiiiwiiiiiiwwwiiiwiiioiiiiiwiiwiiiiwiiiwiiifiwiiiiwxwxiwiiiiiiiiiiiiiiwixiiiioiiiiiiiwiiixiwfixwiiixiiwiwiiiwwzzxzzzzwzzwzzzfzwzzzzzxzzxzzzzzzzzzzzzwzzzzzzzxfzwzwzzzzwzwzzzfzwzzowzzzzzzxzawwzwwzzzzzzzazzzzzzzzzzzzzzwzzkzzzzzwxwkmzzwwmwzzwwzzwzzmzzzkzzzzzwzwwzzzzzzzzzzzkzzzzkzzzwkzaazzmzwzzmfzzaazzzwzomozzwaazzzzzzwzzzzaazzmzzzzzzzzwkwzwzzwzzzzzzzwzzwzzzkzkzzwzmzzezzfazzkwzzzzzezmaxzzwzmzzzzzzawwzmzzwzmwzzazzzzzwzzfwzzzzozzzozkzwzxzzzzzzwzzzwwzzzzzzzwzwzzzzzzzzzzmmwzmzmzzwwmwzzzzzzzwzzzwzbzwzzzzzlzzzzzwzzzzzzzwzzzzkzwzzwazzbzzwzfzzfwaxzzzkwfwzzzwzzzzzzzzwzzzbzzzwzzzzwkzzzwezzzzzzwzzzzwwbzolzzzzbzzzwzzwzozzzzzzzzzzzzzzkzzzwzzbwzkzzzzzkobzzzzzzzzaazzzzbzzzzkzaazzzzlzzzzaazzzzzzwzzzzaawzzzzzwzzzwzzwzzzwzzwzzwwzbzzzzzzzzzzlzzzzzzzzzwwbzzwwxozwzzbzzozzwwzzzzzzzzzwzzwzzzfzzzwzzzzzzzwzzjzzjjzzwzzmzzzzzfzjzwzkzzzzzzmzbzbzfzzzzzzzzzzzzzzjwzzwwzzzzzzaazzwzkzzzwjzaazzzbzkzzwezaazwzzzzzwzzzaazzzozozwzzzzjzzzezzjwaajzzzzzzzzjjaazzzzfzwkzzzzzzzxwzozzbzzzzzwzzjzzwzzzwzwzwzzzwzzzzzkwzzzwzwwzzzzzzzzzzzzzzzfzzkzzxwzzzzzwzzowzzzxzzzzzzzzaazwzzjzwzzzjaakzzzkzzzzjzmzkzaawjzzlzzwzbuaazzzzzzwzzmzzzzzzzzzzzkzwzjzjlzzzzjzzzzzzzzzzzzzzzzzzzzzzzzztzwzzzzzzzzzzzzwzzzwwzzzzzzzaazwozzzzzxzzaazzbzzzzzzwzzbtzzzzkaazzwzzzzwzzzaafzzzzwzzzzztzzwzzzwwzzztzzwzzzwzwzzzzzfzzzzzwzbzwzzwznnaanwnnnnnnnwwaaknnnntnnnknnnaannaankwnwnnaawnaanwnnnnnnnnnnwnnnnwnnnknnnnonnnnnnnnlxnnnlnwknnjntntnobnnnnnnnnnnxnnnnnnnfnnnwnnonnnaannwnnnnnjnnaanwkwnnnnnwennnnnnntnnnnwnntnnwnnnnnkntttnnntnaawnnnnnnnnonaanaawxnnnnwnnnbaanonnnnnfnwnnwelnnnntwnnnnwnnwnnnnnnnnnwnnnnnnnnnnnnnnnwnnjnonnnwwnwwnnnnwnnwnnnnnnnnwnnnnnwxtnbnlwnnnwnnnnnnnnnnwwnknnmntnnnnnnnlnnwnwknnnwnnaawnnnnxnnnnnaannnnnnnftnkwnaannwnnnwnnnnaanwwnnnkxwwwwnnnnnbnpwnnnltnnwnnnnnnnnkpnnwnnnnnnnnnpnnnnpnnjnnnnnnnnnnnnnannnnwnnnnnnnannwpnwnnppnwwnknnnnwpnnnnnnnwnknnnnknnnnnknnnnfwnnnelonnwnaannnnnnnfwnnaannnnnknnnwnaabwnxnknnwjnaannnnnnnwnnwnwnwnnankwnwnnnnnnnaaannaannnnnnoaannaanwnwwfnnknnnmnnbnpnanxwnnnnnnnwnannwfnnpnnnnnnnpnbwnnnnnwnnwnnwponnnnnnnnnnwnwwnfnnbnnnkwnnwnnwnnnnnwnnnjnnnnnnnnwnaaaannnnnnnwnaaaanennnnnnnnnnnwnnnnwnnnnpnwnjnnnaawwnnpnnwnnnaawnnnnnnnwnnwnnnnnaanonnnwnnnnnaapnwnnnnnwaaaannpnnnnnnaaaannnwnnnnkwnnnaanwnnowwnnnnaannnnnaannknnnnnnnnaannwnnnonnnnnnnnnwnnnnannnwnnnnwnnnannnwnhnwnwaanwnnnnnnnwnaanknnnnnnnnnnnwnnnwnnnnnnnnnnnknnnnmnnnnnnnnnnnnnwnhnnbnwwjnnwaannnvvvvvhwvaalvvvvvwvwvvvwaavvvwvvvfvvvaavvvwmphwvvvvvvvvvvwvvwwvvkvvolxvvvwfvvvvvvkmwvvvvvwvvvhvvwbvhwvvvvhvvvvvvvvvjvvkmaavvjvvvaavwvaavlvvvvaavvvaavvvvvvwvvvvaakvwvvbvvvvjvvvwvvxvvwvAvvvvvvvvvvvjwvwvaavwwuvwwvvvvaakvkvvvvvwvvwvvvvvvvvwvvkAvvvvvvwwaavvvvvwwwwvvaawAvvvwvvvvvvvvvvvaavvvvbvvvvvvaavvwvvvvvvwwwvhvovhvvvvvwovvvpvvvvvvwvvvktvvvvvvwvvvvvvvvvvvvkvwvAvvvvvvlvvvvvvvvvpkvvvwbvvvvvlfvvjvvwvvvvvvvvvvmvvvwvvAvvvwvvvvvwvvvevvwvvvvvkvvvvvavvvxvwlvvvvlavwvvaafwvfkwvvwvwaavvkvvvvvfvvwvbvaawvvvvvvvvvvaawvvwjoAvvvvvAvwvvvjAvvvvvvvwvvwaavvvwwvvwvvvaavlkvvvvwvvwvvvlvvvwvvvvvvvvvvvvvvvvevaaaaaavwvvvvvaaaaaavvvAvvvvvvwvvvAvvvvvvwwvkxvvvvvkvvvvvvvfvwolvvbvvwvfxvvvvvwvvxwwvlwwvvwvvvwvvvvvvwvwvaavfvvaawwvvvaavvvvaawvvvjpwvvvvwvwvvfvvvvwvvvvwvvvyvvvvkvfvwmvvvwvvvwwvuvvvvvvhvvwovkvovvvwvvkvvvvvvvovvvaaaavvvvvvvvvaaaavwvwvvvvvvwwwvvvwwvvvvvvvvvvvvwaavvvvaavvvykaavvvyaavwwvvvvvovvvvvjkvvkvvvvyvkvvvvvvxwvvrvvfovvvvvvvvwwvwvwvvaawvwvvvvvvmkaavwbvwvvvwkvvwvvfvvyvwvvpvwvwvyvvvewvvvwwvwwvvlvwvvvvvvvyvwvvvwvvvwvwvqvvwvvvwvvvvvwvvvvwvwvvvvyaafvaakwvvvlvaavvaakvvvmvvvvwvvvvfvvvvvvvwvvvwwvvevvvowvaavvvkvvvvvvvaawlvkvvkvvvwvvwwjwvvvvvvkvwvvvvpvvvvvvvvvvvAwepvAwvjwvvvvvwvwkvvvvfvvkvvvwvvvvvvvvvwwvvpvwvvavvvvwblvvvwkavvaavfaavvvvvvvaakvaauvovvvvvohvvjvvvvvwwkvvvvvvmvvvfvvAaavvkvvvvvvvvaaewvvvvvvkkvvwaavwaaavlvvwwaavvaaagggggggggggggddddddddddddd"
+    "grid": "aaaaaaaaaaaaawiwwiiiiiiiwiiiiiiwiwiiwiwiiiiiwiwiiiiiwiiiiffiiiifiiiiiiwiiiwfiwiwiiiiiiiiiiffiiwiiifiiiiiiwiiiiiiiiiiiiiiiiiiiiiiiiiiwiwifiiiiiiiiiiiififiiiiwiwiiwifwfiiiwiiiwiiwfiiiiiiwiiiiiiiiwiiiiiiwfwiiiifiiiiiiiiwiiwiiiiiiiiiiiiiiioiiiiwiiiiiiiiiiiiiiiiiwiiiiiiwwwiiiwiiifiiiiiwiiwiiiiwiiiwiiiwiwiiiiwowoiwiiiiiiiiiiiiiiwioiiiifiiiiiiiwiiioiwiiowiiioiiwiwiiiwwzzozzzzwzzwzzzzzwzzzzzozzozzzzzzzzzzzzwzzzzzzzozzwzwzzzzwzwzzzzzwzzzwzzzzzzxzawwzwwzzzzzzzazzzzzzzzzzzzzzwzzkzzzzzwxwkozzwwowzzwwzzwzzxzzzkzzzzzwzwwzzzzzzzzzzzkzzzzkzzzwkzaazzxzwzzxzzzaazzzwzzxzzzwaazzzzzzwzzzzaazzxzzzzzzzzwkwzwzzwzzzzzzzwzzwzzzkzkzzwzxzzezzzazzkwzzzzzezxafzzwzxzzzzzzawwzxzzwzowzzazzzzzwzzzwzzzzzzzzzzkzwzozzzzzzwzzzwwzzzzzzzwzwzzzzzzzzzzxxwzxzxzzwwxwzzzzzzzwzzzwzxzwzzzzzlzzzzzwzzzzzzzwzzzzkzwzzwazzxzzwzwzzzwafzzzkwwwzzzwzzzzzzzzwzzzxzzzwzzzzwkzzzwezzzzzzwzzzzwwmzflzzzzozzzwzzwzzzzzzzzzzzzzzzzkzzzwzzmwzkzzzzzkwozzzzzzzzaazzzzmzzzzkzaazzzzlzzzzaazzzzzzwzzzzaawzzzzzwzzzwzzwzzzwzzwzzwwzmzzzzzzzzzzlzzzzzzzzzwwmzzwwffzwzzmzzzzuwwzzzzzzzzzwzzwzzzzzzzwzzzzzzzwzzmzzxmzzwzzozzzzzzzmzwzkzzzzzzozozozzzzzzzzzzzzzzzzmwzzwwzzzzzzaazzwzkzzzwmzaazzzozkzzwezaazwzzzzzwzzzaazzzzzzzwzzzzmzzzezzmwaamzzzzzzzzmmaazzzzzzwkzzzzzzzfwzzzzozzzzzwzzmzzwzzzwzwzwzzzwzzzzzkwzzzwzwwzzzzzzzzzzzzzzzzzzkzzfwzzzzzwzzzwzzzfzzzzzzzzaazwzzxzwzzzmaakzzzkzzzzbzozkzaawbzzlzzwzozaazzzzzzwzzozzzzzzzzzzzkzwzmzmlzzzzbzzzzzzzzzzzzzzzzzzzzzzzzzmzwzzzzzzzzzzzzwzzzwwzzzzzzzaazwzzzzzzozzaazzozzzzzzwzzobzzzzkaazzwzzzzwzzzaawzzzzwzzzzzbzzwzzzwwzzzmzzwzzzwzwzzzzzzzzzzzwzozwzzwznnaanwnnnnnnnwwaaknnnnbnnnknnnaannaankwnwnnaawnaanwnnnnnnnnnnwnnnnwnnnknnnnfnnnnnnnnlfnnnlnwknnxnbnxnnonnnnnnnnnnfnnnnnnnnnnnwnnnnnnaannwnnnnnxnnaanwkwnnnnnwennnnnnnbnnnnwnnmnnwnnnnnknjjjnnnbnaawnnnnnnnnnnaanaawonnnnwnnnoaannnnnnnnnwnnwelnnnnxwnnnnwnnwnnnnnnnnnwnnnnnnnnnnnnnnnwnnonfnnnwwnwwnnnnwnnwnnnnnnnnwnnnnnwfmnonlwnnnwnnnnnnnnnnwwnknnonxnnnnnnnlnnwnwknnnwnnaawnnnnfnnnnnaannnnnnnnxnkwnaannwnnnwnnnnaanwwnnnkfwwwwnnnnnonbwnnnlxnnwnnnnnnnnkbnnwnnnnnnnnnmnnnnjnnxnnnnnnnnnnnnnannnnwnnnnnnnannwjnwnnmjnwwnknnnnwjnnnnnnnwnknnnnknnnnnknnnnnwnnnelnnnwnaannnnnnnnwnnaannnnnknnnwnaaownonknnwxnaannnnnnnwnnwnwnwnnankwnwnnnnnnnaaannaannnnnnfaannaanwnwwnnnknnnonnonjnanfwnnnnnnnwnannwnnnbnnnnnnnbnownnnnnwnnwnnwmfnnnunnnnnnwnwwnwnnonnnkwnnwnnwnnnnnwnnnxnnnnnnnnwnaaaannnnnnnwnaaaanennnnnnnnnnnwnnnnwnnuntnwnxnnnaawwnnmnnwnnnaawnnnnnnnwnnwnnnnnaanfnnnwnnnnnaamnwnnnnnwaaaanntnnnnnnaaaannnwnnnnkwnnnaanwnnnwwnnnnaannnnnaannknnnnnnnnaannwnnnnnnnnnnnnnwnnnnannnwnnnnwnnnannnwntnwnwaanwnnnnnnnwnaanknnnnnnnnnnnwnnnwnnnnnnnnnnnknnnnonnnnnnnnnnnnnwnbnnonwwonnwaannnvvvvvjwvaalvvvvvwvwvvvwaavvvwvvvwvvvaavvvwomtwvvvvvvvvvvwvvwwvvkvvvlfvvvwvvvvvvvkowvvvvvwvvvbvvwovtwvvvvjvvvvvvvvvxvvkoaavvovvvaavwvaavlvvvvaavvvaavvvvvvwvvvvaakvwvvovvvvxvvvwvvfvvwvjvvvvvvvvvvvxwvwvaavwwuvwwvvvvaakvkvvvvvwvvwvvvvvvvvwvvkpvvvvvvwwaavvvvvwwwwvvaawpvvvwvvvvvvvvvvvaavvvvovvvvvvaavvwvvvvvvwwwvbvvvbvvvvvwvvvvmvvvvvvwvvvkxvvvvvvwvvvvvvvvvvvvkvwvtvvvvvvlvvvvvvvvvmkvvvwovvvvvlvvvxvvwvvvvvvvvvvovvvwvvtvvvwvvvvvwvvvevvwvvvvvkvvvvvavvvfvwlvvvvlavwvvaavwvvkwvvwvwaavvkvvvvvvvvwvovaawvvvvvvvvvvaawvvwovbvvvvvjvwvvvxtvvvvvvvwvvwaavvvwwvvwvvvaavlkvvvvwvvwvvvlvvvwvvvvvvvvvvvvvvvvevaaaaaavwvvvvvaaaaaavvvjvvvvvvwvvvpvvvvvvwwvkfvvvvvkvvvvvvvvvwflvvovvwvvfvvvvvwvvfwwvlwwvvwvvvwvvvvvvwvwvaavvvvaawwvvvaavvvvaawvvvxmwvvvvwvwvvwvvvvwvvvvwvvvtvvvvkvvvwovvvwvvvwwvvvvvvvvbvvwvvkvvvvvwvvkvvvvvvvvvvvaaaavvvvvvvvvaaaavwvwvvvvvvwwwvvvwwvvvvvvvvvvvvwaavvvvaavvvtkaavvvhaavwwvvvvvvvvvvvokvvkvvvvtvkvvvvvvowvvrvvvvvvvvvvvvwwvwvwvvaawvwvvvvvvokaavwovwvvvwkvvwvvvvvtvwvvmvwvwvpvvvewvvvwwvwwvvlvwvvvvvvvtvwvvvwvvvwvwvqvvwvvvwvvvvvwvvvvwvwvvvvjaavvaakwvvvlvaavvaakvvvovvvvwvvvvwvvvvvvvwvvvwwvvevvvvwvaavvvkvvvvvvvaawlvkvvkvvvwvvwwxwvvvvvvkvwvvvvmvvvvvvvvvvvbwemvbwvxwvvvvvwvwkvvvvvvvkvvvwvvvvvvvvvwwvvmvwvvavvvvwolvvvwkavvaavvaavvvvvvvaakvaavvvvvvvvfbvvxvvvvvwwkvvvvvvovvvvvvbaavvkvvvvvvvvaaewvvvvvvkkvvwaavwaaavlvvwwaavvaaagggggggggggggddddddddddddd"
   }
 ]

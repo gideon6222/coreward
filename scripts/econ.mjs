@@ -71,7 +71,7 @@ function cell(x, d) {
 
 function digCost(b) {
   const secs = (b.hard * DIG_BASE) / H.S.drill();
-  const fuel = (H.FUEL_DIG_BASE + b.hard * H.FUEL_DIG_PER_HARDNESS) * secs;
+  const fuel = H.fuelPerCell(b.hard) * H.S.cellFuel();
   return { secs, fuel };
 }
 
@@ -108,7 +108,7 @@ function simulate(st, depth, dry) {
   const cargo = {};
   let weight = 0;
   const cap = H.S.cargoCap();
-  let towed = false;
+  let lost = false;
 
   const heatTick = (pd, secs) => {
     soak = H.soakAfter(soak, pd, secs);
@@ -129,14 +129,14 @@ function simulate(st, depth, dry) {
       if (H.strainPerCell(d, core) > 0) { deepCells++; const q = H.afterCell(strain, d, core); strain = q.strain; if (q.quake) quakes++; }
       if (!dry) st.shaft = d;
     }
-    if (hull <= 0 || fuel <= 0) { towed = true; break; }
+    if (hull <= 0 || fuel <= 0) { lost = true; break; }
   }
 
   /* ---- work the seam ---- */
   const reserve = () => depth / speed() * H.FUEL_PER_MOVE * H.S.fuelUse() * (st.style === 'greedy' ? 1.05 : 1.35);
   const fill = st.style === 'cautious' ? 0.7 : 1.0;
   let x = 1, side = 1;
-  while (!towed && weight < cap * fill && fuel > reserve()) {
+  while (!lost && weight < cap * fill && fuel > reserve()) {
     for (const dd of [depth, depth - 1]) {
       const b = cell(ox + x * side, dd);
       if (!b) continue;
@@ -144,7 +144,7 @@ function simulate(st, depth, dry) {
       t += c.secs; fuel -= c.fuel * H.S.fuelUse(); heatTick(dd, c.secs);
       if (weight + b.wt <= cap) { cargo[b.id] = (cargo[b.id] || 0) + 1; weight += b.wt; }
       if (H.strainPerCell(dd, core) > 0) { deepCells++; const q = H.afterCell(strain, dd, core); strain = q.strain; if (q.quake) quakes++; }
-      if (hull <= 0) { towed = true; break; }
+      if (hull <= 0) { lost = true; break; }
     }
     side = -side;
     if (side === 1) x++;
@@ -154,14 +154,15 @@ function simulate(st, depth, dry) {
   /* ---- up ---- */
   const climb = depth / speed();
   t += climb; fuel -= H.FUEL_PER_MOVE * climb * H.S.fuelUse();
-  if (fuel <= 0 || hull <= 0) towed = true;
+  if (fuel <= 0 || hull <= 0) lost = true;
 
   /* ---- sell ---- */
   const saved = { cargo: H.g.cargo, weight: H.g.weight };
   H.g.cargo = cargo; H.g.weight = weight;
   let value = H.haulValue();
   H.g.cargo = saved.cargo; H.g.weight = saved.weight;
-  if (towed) value = Math.round(value * (1 - H.S.towCut()));
+  /* Death takes the whole hold now - there is no tow to take a cut of it. */
+  if (lost) value = 0;
   value = Math.round(value * H.S.saleBonus());
 
   if (dry) { st.shaft = shaft0; }
@@ -172,7 +173,7 @@ function simulate(st, depth, dry) {
        sell() puts nothing else in the stock. */
     for (const k in cargo) if (H.isOre(H.DEF[k])) H.g.stock[k] = (H.g.stock[k] || 0) + cargo[k];
   }
-  return { t, value, weight, cap, towed, depth, deepCells, quakes, rate: value / Math.max(t, 1) };
+  return { t, value, weight, cap, lost, depth, deepCells, quakes, rate: value / Math.max(t, 1) };
 }
 
 /* Who buys what. A style is a purchasing policy as much as a depth policy. */
@@ -229,7 +230,7 @@ function play(style, runs, ox) {
     while ((p = buy(st))) { st.bought.push(p); purchases.push(p.name + ' ' + p.level); }
     st.history.push({
       run: st.runs, min: +(st.t / 60).toFixed(1), depth, secs: Math.round(r.t),
-      paid: r.value, hold: `${Math.round(r.weight)}/${r.cap}`, towed: r.towed ? 'TOW' : '',
+      paid: r.value, hold: `${Math.round(r.weight)}/${r.cap}`, lost: r.lost ? 'LOST' : '',
       deep: r.deepCells, quakes: r.quakes,
       bank: H.g.credits, bought: purchases.join(', ')
     });

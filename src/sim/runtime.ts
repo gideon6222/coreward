@@ -85,6 +85,29 @@ export const R = {
   /* Say "hold full" once per trip, not once per block. */
   warnedFull: false,
 
+  /* Credits handed back for a deleted upgrade, so main.ts can say so once the
+     HUD exists. Set during load(), which runs long before anything can show a
+     toast. */
+  refund: 0,
+
+  /* ---------- the Point of No Return ----------
+
+     `climb` is the fuel it would take to fly the route home from here, and
+     `fuelState` is what to do about it. Both live here rather than being
+     recomputed where they are read, because the route is a breadth-first
+     search over every dug cell and three different things want the answer -
+     the dial, the readout and the warning tone.
+
+     Recomputed on `climbT`, a few times a second rather than every frame. A
+     BFS per frame at four hundred metres of tunnel is not free, and the answer
+     does not change meaningfully in sixteen milliseconds. */
+  climb: 0,
+  climbT: 0,
+  fuelState: 'clear' as 'clear' | 'plan' | 'danger' | 'stranded',
+  /* So the escalating tone and the haptic fire on the EDGE rather than every
+     frame they are true for. */
+  warnedFuel: 'clear' as 'clear' | 'plan' | 'danger' | 'stranded',
+
   /* actions -> loop, decayed by the loop */
   shake: 0,
   squash: 0,

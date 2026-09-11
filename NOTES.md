@@ -3358,3 +3358,38 @@ And then the label was truncated - INSTRUMENTS as INSTRUMEN - which is **this re
 round-two lesson arriving again**: `drawPlate()` drew at a fixed size with no width limit and
 "SALVAGE MAGNET" ran off its plate, and the fix recorded then was to measure and shrink rather
 than to shorten the name. The header now measures and steps the size down until it fits.
+
+## Round seven, 2026-09-10: the frozen world was re-recorded
+
+`test/baseline/blocks-preadditive.json` became `test/baseline/blocks-frozen.json`,
+and its contents were re-recorded for the first time since it was made.
+
+That file's own note always said it could be re-recorded for exactly one reason:
+a deliberate ore rebalance. Round seven is that - the ladder spread from five
+worlds to eight, the deep tier went from 0.40-2.10% down to 0.12-0.30%, and
+total density fell from 10% to 7.5%.
+
+**The diff was read before the file was replaced**, which is the part that
+matters. Of 15,639 cells across planets 0-5:
+
+| change | cells |
+|---|---|
+| rock band changed | 11,053 (already licensed as rock-for-rock since M5) |
+| one ore became another | 841 |
+| stopped being ore | 574 |
+| started being ore | 368 |
+
+So about six per cent of cells changed ore status, against a density cut of a
+quarter. Nothing in it was a surprise.
+
+The name went with it because the name had stopped being true: the file no
+longer predates caves, gas and geodes, it is simply the world as it stood after
+round seven. **The test's meaning is unchanged** - a new feature may overwrite
+cells and may not move the ore underneath them - and that property does not care
+which fixed point it is measured from.
+
+Two assertions inside it had to change with the re-record, and both for the same
+reason: they counted pockets and seams by looking at the DIFF, and the frozen
+world now contains both, so the diff is correctly zero. A count of zero would
+have read as "pockets have stopped generating". They count the world directly
+now, which is what they always meant.

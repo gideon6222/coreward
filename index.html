@@ -311,6 +311,39 @@
   #found .fwhat{font-size:12px; line-height:1.5; color:#9fd8ab; margin-top:4px;}
   #found .ffit{font-size:9.5px; letter-spacing:.16em; color:#00ff41; margin-top:8px;}
 
+  /* ---------- the fuel reserve, and running out of it ----------
+
+     The band is the fuel the climb home would cost, drawn up from EMPTY. The
+     needle falling toward it is the warning; the needle inside it means the
+     climb no longer fits.
+
+     The pulse is a smooth fade rather than a blink, and that is deliberate
+     rather than tasteful. The accessibility guidelines put a hard limit at
+     three flashes a second, under a quarter of the screen, and no flashing
+     sequence longer than five seconds - and a danger state here can last a
+     minute. A continuous luminance oscillation is not a flash at all, so it
+     can run as long as the danger does, and at 0.5 s a cycle it is well under
+     the rate limit either way. The dial is about 7% of the screen. */
+  #fuelReserve{fill:none; stroke:#ff3b30; stroke-opacity:.42; stroke-width:5; stroke-linecap:butt;}
+  #cluster.dry #fuelReserve{stroke-opacity:.72;}
+  #cluster.dry #fuelDial .ndl{fill:#ff5c6b;}
+  #cluster.dry{animation:fuelpulse .5s ease-in-out infinite;}
+  #cluster.gone-dry #fuelReserve{stroke-opacity:.9;}
+  @keyframes fuelpulse{0%,100%{opacity:1}50%{opacity:.55}}
+  /* The printed percentage carries the same four states as the dial. */
+  #fuelTxt.fuel-plan{color:var(--amber);}
+  #fuelTxt.fuel-danger,#fuelTxt.fuel-stranded{color:var(--red);}
+  /* A vignette at the edges when the climb is in doubt. Its own element rather
+     than the hull's, because two different emergencies sharing one red edge is
+     how a gas pocket ends up looking like heat - the mistake this game already
+     made once and fixed by splitting them. Amber, not red: red is the hull. */
+  #dry{
+    position:fixed; inset:0; pointer-events:none; z-index:6; opacity:0;
+    background:radial-gradient(ellipse at 50% 50%, rgba(255,170,40,0) 46%, rgba(255,150,30,.52) 100%);
+    transition:opacity .4s linear;
+  }
+  #dry.on{opacity:1; animation:fuelpulse 1s ease-in-out infinite;}
+
   /* Bottom right, where a thumb naturally sits. */
   #ctrl{
     position:fixed; right:18px; bottom:var(--ctrl-b); z-index:9;
@@ -821,6 +854,7 @@
 <div id="game"></div>
 <div id="vignette"></div>
 <div id="heat"></div>
+<div id="dry"></div>
 <div id="alarm"></div>
 
 <div id="hud">
@@ -879,6 +913,12 @@
          every time you move or cut turns the one instrument you check under
          pressure into something that is always moving. A gauge earns its
          movement by being read; this one was moving for decoration. -->
+    <!-- The reserve: what the climb home would cost, drawn from EMPTY upward
+         so the needle visibly approaches it. It MOVES - the deeper you are the
+         more of the dial it eats - which is the Point of No Return made into
+         something you can read at a glance instead of something you find out
+         about at the bottom of a shaft. -->
+    <path id="fuelReserve" class="rsv" d="M 17.09 69.00 A 38 38 0 1 1 82.91 69.00" pathLength="100" stroke-dasharray="0 100"/>
     <g id="fuelTicks"></g>
     <text class="lbl" x="19" y="76">E</text>
     <text class="lbl" x="81" y="76">F</text>

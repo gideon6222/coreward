@@ -1,6 +1,6 @@
 {
   "line": 26,
-  "repairOre": "gold",
+  "repairOre": "silver",
   "perCellAtLine": 0.004125,
   "perCellAtCore": 0.008,
   "damageFirstFour": [
