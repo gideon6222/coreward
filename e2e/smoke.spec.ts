@@ -3084,3 +3084,119 @@ test('an Anchor hall is shut until you cut it, and lights by standing there', as
     (window as any).__cw.blockAt(t.x, t.d).id, target);
   expect(after, 'the Anchor looks the same after being lit').toBe('anchorlit');
 });
+
+/* The planet answering.
+
+   Terraria's Hardmode is the sourced device and the whole of W8: edit the
+   world the player already has rather than building more of it. Three things
+   fire at the fifth Anchor and each one is invisible until it is not - a step
+   in a meter, a material that starts generating, and tunnels that fill in.
+
+   The load-bearing assertion is the third. A Bloom you cannot see and a meter
+   that moved are both things a player might not notice for a run; a shaft that
+   is not there when you come back is the moment the map goes stale, and it is
+   the one that can take a run if it is wrong. */
+test('the fifth Anchor wakes the planet, and the ground stops staying where you left it',
+  async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* Four Anchors lit through the real path, and nothing has woken. */
+  const before = await page.evaluate((n: number) => {
+    const w = (window as any).__cw;
+    for (let i = 0; i < n - 1; i++) w.lightAnchor(w.g.ground, i);
+    let blooms = 0;
+    for (let d = 10; d < 200; d += 3) for (let x = 0; x < w.W; x += 3) {
+      const b = w.blockAt(x, d);
+      if (b && b.id === 'bloom') blooms++;
+    }
+    return { lit: w.g.ground.lit.length, awake: w.isAwake(w.g.ground), blooms };
+  }, 5);
+  expect(before.lit).toBe(4);
+  expect(before.awake, 'the planet woke before the fifth Anchor').toBe(false);
+  expect(before.blooms, 'Blooms generated on a planet that has not answered').toBe(0);
+
+  /* The fifth, through the real path: fly to it and stand there. */
+  const target = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const a = w.anchorAt(4);
+    w.g.px = a.x; w.g.pd = a.d - 1;
+    w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+    w.advance(0.2);
+    return { region: 4, mode: w.g.mode, title: (document.getElementById('evTitle') || {}).textContent };
+  });
+  expect(target.mode, 'lighting the fifth Anchor did not stop the game').toBe('event');
+
+  /* The Anchor's own card first, then the planet's. Two modals in the order
+     the player experiences them, never stacked. */
+  expect(target.title).toMatch(/ANCHOR/i);
+  await page.locator('#evBtn').dispatchEvent('click');
+  await expect(page.locator('#evTitle')).toHaveText(/PLANET ANSWERS/i);
+  await page.locator('#evBtn').dispatchEvent('click');
+  await expect(page.locator('#event')).toHaveClass(/hidden/);
+
+  const after = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    let blooms = 0, shallow = 0;
+    for (let d = 10; d < 200; d += 3) for (let x = 0; x < w.W; x += 3) {
+      const b = w.blockAt(x, d);
+      if (b && b.id === 'bloom') { blooms++; if (d < 60) shallow++; }
+    }
+    return { awake: w.isAwake(w.g.ground), woke: w.g.ground.woke, blooms, shallow,
+             unrest: w.g.ground.unrest.slice() };
+  });
+  expect(after.awake, 'five Anchors did not wake the planet').toBe(true);
+  expect(after.woke, 'the wake was not recorded, so a reload would pay for it again').toBe(true);
+  expect(after.blooms, 'nothing new grew in the woken world').toBeGreaterThan(5);
+  expect(after.shallow,
+    'nothing grew in the shallow ground - the map the player already has is unchanged')
+    .toBeGreaterThan(0);
+  /* Every region stepped, including ones the player has never been in. */
+  expect(Math.min(...after.unrest), 'the calmest region did not step').toBeGreaterThan(0);
+
+  /* ---- and the ground closes ----
+
+     Driven through the real docking path: a shaft is cut, the region is made
+     restless, and the ship touches the pad. Nothing here calls planClose. */
+  const closed = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.dug = new Set();
+    w.g.rubble = new Set();
+    for (let d = 20; d < 220; d++) w.g.dug.add('30,' + d);
+    for (let i = 0; i < w.REGION_COUNT; i++) w.g.ground.unrest[i] = 0.95;
+    const was = w.g.dug.size;
+    /* Through the DOCKING EDGE, not by calling closeGround().
+
+       Calling the seam passed with the call removed from the frame loop
+       entirely - it proved the function works and nothing about whether
+       anything invokes it. The loop fires this on the frame the ship arrives
+       at the surface having not been there the frame before, so that is the
+       state to put it in. */
+    /* -1 and not 0: atSurface() is `pd <= -0.6`, because the pad sits a metre
+       above the first row of rock. Parked at 0 the ship is a metre INTO the
+       ground and the edge never fires. */
+    w.g.px = 30; w.g.pd = -1;
+    w.R.wasAtSurface = false;
+    w.advance(0.2);
+    return { was, now: w.g.dug.size, rubble: w.g.rubble.size };
+  });
+  expect(closed.now, 'coming home to a woken planet left every tunnel exactly as it was')
+    .toBeLessThan(closed.was);
+  expect(closed.rubble, 'the tunnels closed into nothing at all').toBeGreaterThan(0);
+  expect(closed.now + closed.rubble,
+    'cells went missing rather than filling in').toBe(closed.was);
+
+  /* And what filled in is diggable. A hazard that walls a player in is the one
+     thing CRAFT.md forbids outright. */
+  const fill = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const k = Array.from(w.g.rubble)[0] as string;
+    const i = k.indexOf(',');
+    const b = w.blockAt(+k.slice(0, i), +k.slice(i + 1));
+    return { id: b ? b.id : null, finite: !!b && Number.isFinite(b.hard) };
+  });
+  expect(fill.id, 'closed ground is not rubble').toBe('rubble');
+  expect(fill.finite, 'closed ground cannot be dug back out').toBe(true);
+});

@@ -88,9 +88,9 @@ export const UNREST_PER_CELL = 0.0007;
    relationship: three times as deep, two and a half times the anger. */
 export const UNREST_AT_FLOOR = 2.5;
 
-export function unrestPerCell(d: number): number {
+export function unrestPerCell(d: number, awake = false): number {
   const f = Math.min(1, Math.max(0, d) / WORLD_DEPTH);
-  return UNREST_PER_CELL * (1 + f * (UNREST_AT_FLOOR - 1));
+  return UNREST_PER_CELL * (1 + f * (UNREST_AT_FLOOR - 1)) * (awake ? WAKE_CUT_MULT : 1);
 }
 
 /* ---------- the bands ----------
@@ -162,6 +162,54 @@ export const tierOf = (s: GroundState) => s.lit.length;
    3. the planet wakes a little more, which is W8's business and is why this
       returns how many are now lit */
 export const UNREST_AFTER_ANCHOR = 0.15;
+
+/* ---------- the planet answers ----------
+
+   At the fifth Anchor of nine, and it is the strongest longevity device the
+   research turned up for a procedurally generated world: Terraria's Hardmode
+   does not build new space, it EDITS the world you already have. A map you
+   spent hours filling in becoming unfamiliar is worth more than a map twice
+   the size, and it costs almost no content.
+
+   Three things happen, and they are meant to be felt in this order:
+
+   1. UNREST STEPS, everywhere, permanently. Every region gains a floor it can
+      never fall below again, and every cell you cut from here costs more than
+      it did. The back half of the game is a tenser game.
+   2. THE GROUND CLOSES. Tunnels in restless regions fill in while you are
+      docked - see closeCells() in collapse.ts. The route home is computed from
+      the tunnels you cut, so this is the first thing in the game that makes a
+      MAP go stale rather than a resource.
+   3. SOMETHING GROWS. Blooms start generating at every depth, including in
+      the first hour's ground. See BLOOM in config.ts.
+
+   The third is not a consolation prize, it is the deal: the planet is more
+   dangerous and it is also worth more. Waking it has to be something a player
+   chooses to do rather than something that happens to them for playing well.
+
+   Half of nine and not all of it, so there is a whole second act after it. */
+export const WAKE_AT = 5;
+
+/* What every region gains, once and for ever. A twelfth of the meter: enough
+   that Calm ground stops being calm and not enough to push anywhere a whole
+   band on its own. */
+export const WAKE_STEP = 0.12;
+
+/* And what every cell costs after it. Deliberately modest - the step above is
+   the thing you feel on the day, and this is the thing you feel over the ten
+   runs after it. */
+export const WAKE_CUT_MULT = 1.35;
+
+export const isAwake = (s: GroundState) => s.lit.length >= WAKE_AT;
+
+/* Applied once, by the caller that lit the Anchor that crossed the line.
+   Returns true if this was the moment. */
+export function wake(s: GroundState): boolean {
+  if (s.woke) return false;
+  s.woke = true;
+  for (let i = 0; i < REGION_COUNT; i++) s.unrest[i] = clamp01(s.unrest[i] + WAKE_STEP);
+  return true;
+}
 
 export function lightAnchor(s: GroundState, region: number): number {
   if (s.lit.indexOf(region) >= 0) return s.lit.length;
@@ -251,12 +299,20 @@ export interface GroundState {
   /* Units of ore fed, all time. The only thing in here that is purely a
      readout. */
   fed: number;
+  /* Whether the planet has answered.
+
+     Stored rather than derived from `lit.length >= WAKE_AT`, and that is not
+     redundancy: waking APPLIES a one-off step to every region's Unrest, so the
+     flag is a record that the step has been paid. Derived, a save loaded after
+     the fifth Anchor would have no way to know whether it had already
+     happened, and the only two options would be paying it twice or never. */
+  woke: boolean;
 }
 
 export function newGround(): GroundState {
   return {
     unrest: new Array(REGION_COUNT).fill(0),
-    ballast: 1, lit: [], collapsed: [], pending: -1, collapses: 0, fed: 0
+    ballast: 1, lit: [], collapsed: [], pending: -1, collapses: 0, fed: 0, woke: false
   };
 }
 
@@ -283,6 +339,7 @@ export function loadGround(raw: unknown): GroundState {
   }
   if (typeof r.collapses === 'number') s.collapses = Math.max(0, r.collapses);
   if (typeof r.fed === 'number') s.fed = Math.max(0, r.fed);
+  s.woke = r.woke === true;
   return s;
 }
 
@@ -293,7 +350,7 @@ function clamp01(v: number) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 /* One cell cut. Returns the region it landed in so the caller can say so. */
 export function cutCell(s: GroundState, x: number, d: number): number {
   const r = regionAt(Math.round(x), Math.max(0, Math.round(d)));
-  s.unrest[r] = clamp01(s.unrest[r] + unrestPerCell(d));
+  s.unrest[r] = clamp01(s.unrest[r] + unrestPerCell(d, s.woke));
   return r;
 }
 

@@ -9,7 +9,7 @@ import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen,
          groundTick, hereUnrest, lightHere } from './sim/state';
 import { unrestBand, tremorScale } from './sim/unrest';
-import { landCollapse } from './collapse';
+import { landCollapse, closeGround } from './collapse';
 import { blockAt, findHere, climbCells } from './sim/world';
 import { tilesSeen } from './sim/region';
 import { R } from './sim/runtime';
@@ -627,6 +627,10 @@ export function tick(raw: number, draw = true) {
            lose - see the note at the top of unrest.ts about why a collapse
            never lands on somebody who is still down there. */
         landCollapse();
+        /* And the ground that closed while you were down there. After the
+           collapse, because a region that has just come down has no tunnels
+           left to close. */
+        closeGround();
       }
       R.wasAtSurface = now;
     }

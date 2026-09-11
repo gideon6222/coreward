@@ -7,6 +7,7 @@ import { FIND_OF } from './sim/finds';
 import { hap } from './haptics';
 import { regionName } from './sim/region';
 import { anchorAt } from './sim/vaults';
+import { wake } from './sim/unrest';
 import { g, S, save, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
@@ -730,11 +731,60 @@ export function anchorLit(region: number) {
   R.shake = Math.max(R.shake, 0.9);
   sfx.relic();
   hap.boom();
+  /* And whether that was the fifth of nine.
+
+     Decided BEFORE the card goes up and applied after it comes down, so the
+     two events are in the order the player experiences them: you lit an
+     Anchor, and then the planet reacted to it. Both at once would be one
+     confusing flash and two modals stacked. */
+  const answered = wake(g.ground);
   showEvent('THE ANCHOR WAKES',
     regionName(region) + ' settles. The Ballast holds harder now, and the ground ' +
     'here has drawn itself onto your map.' +
     (n === 1 ? ' Whatever built these left nine of them.' : ''),
     'GO ON',
-    () => { updateHUD(); });
+    () => { updateHUD(); if (answered) planetAnswers(); });
+  save();
+}
+
+
+/* ---------- the planet answers ----------
+
+   The fifth Anchor of nine. `unrest.ts` decides what it does to the state;
+   this is the half the player experiences, and it is the one moment in the
+   game where everything stops and the world talks about itself.
+
+   HERE rather than in collapse.ts, which is where the rest of the world-change
+   code lives, and for a reason worth writing down: collapse.ts would have had
+   to import `showEvent` from this file, and this file would have had to import
+   `planetAnswers` from that one. A cycle that happens to work because of the
+   order two bindings are read is a trap for whoever moves a call next - and
+   this repo has already lost an afternoon to exactly that, with the symptom
+   "Cannot access 'k' before initialization" and a shop that never opened.
+
+   The text names the ANCHORS as the cause, because the point is that the
+   player did this: it is a consequence of playing well, not weather. And it
+   does not say what any of the three changes are in numbers. You find out that
+   Blooms exist by cutting one, and that the ground closes by coming back to a
+   shaft that is not there. */
+export function planetAnswers() {
+  R.shake = Math.max(R.shake, 1.7);
+  flash('rgba(232,198,255,.30)', 900);
+  sfx.collapse();
+  hap.quake();
+  showEvent('THE PLANET ANSWERS',
+    'Five of nine. Something under all of this has noticed, and the whole ' +
+    'crust has shifted a degree - every region, at once. The ground will not ' +
+    'be as you left it any more. Watch what grows in it.',
+    'UNDERSTOOD',
+    () => {
+      /* Blooms start generating the instant this flag is set, so the window
+         the player is looking at has to be rebuilt or the change arrives
+         whenever they next cross a row - the same trap the Anchor's own
+         re-draw was. */
+      for (const k of Array.from(meshes.keys())) dropBlock(k);
+      resetBlockCache();
+      syncBlocks(true);
+    });
   save();
 }

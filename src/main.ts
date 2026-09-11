@@ -26,8 +26,8 @@ import { sfx } from './audio';
 import { setCoreHandler, breakCore, beginSettle, beginBreach, grantFind, grantCache } from './actions';
 import { openChart, arrive, skipTransit } from './chartui';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
-import { landCollapse } from './collapse';
-import { collapseTarget, lightAnchor } from './sim/unrest';
+import { landCollapse, closeGround } from './collapse';
+import { collapseTarget, lightAnchor, WAKE_AT, isAwake } from './sim/unrest';
 import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells } from './sim/vaults';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
 import './input';
@@ -228,6 +228,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT,
     /* The Anchors, so a spec can fly to one rather than dig for forty minutes
        looking for it. */
-    anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells, lightAnchor
+    anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells, lightAnchor, WAKE_AT, isAwake, closeGround
   };
 }

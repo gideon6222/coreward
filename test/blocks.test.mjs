@@ -18,7 +18,13 @@ const ALL_IDS = [
   /* The authored rooms. Four ids and not one: a wall you can cut, a wall you
      cannot, and the Anchor in two states are four different things to a player
      and must be four different things to the snapshot. */
-  'worked', 'sealed', 'anchor', 'anchorlit'
+  'worked', 'sealed', 'anchor', 'anchorlit',
+  /* W8's Bloom, which generates nowhere until the planet answers - so it never
+     appears in this snapshot and is listed anyway. A missing legend character
+     is not an error at record time, it is a silent "undefined" that two
+     different ids can both spell, and the day a woken world gets snapshotted
+     is not the day to find that out. */
+  H.BLOOM.id
 ].sort();
 const CHAR = new Map(ALL_IDS.map((id, i) => [id, ALPHA[i]]));
 
@@ -191,7 +197,11 @@ const OVERWRITERS = new Set([
      The rubble in the expedition room is the one that needs saying out loud:
      rubble was previously only ever placed by a tremor, so it appears in this
      list as a thing an authored room may leave behind. */
-  'worked', 'sealed', 'anchor', 'anchorlit', H.RUBBLE.id
+  'worked', 'sealed', 'anchor', 'anchorlit', H.RUBBLE.id,
+  /* And the Bloom, for the same reason as the pockets above it: rolled on its
+     own seed after every other roll has happened, so it can change what a cell
+     holds and can never change what any other cell holds. */
+  H.BLOOM.id
 ]);
 
 /* Extending the ore ladder downward is the other legal change, and it is a

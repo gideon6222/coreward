@@ -1,11 +1,11 @@
 import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
-         GEODE, GAS, CACHE, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
+         GEODE, GAS, CACHE, BLOOM, BLOOM_MAX, RUBBLE, RUBBLE_HARD, SEAM, SEAM_CHANCE, TREMOR_SAFE_RADIUS,
          RELIC_COLOR, RELIC_HOST, relicAt, relicFor,
          CAVE_MIN_DEPTH, caveChanceOn, gasChanceOn, geodeChanceOn, SUPPLIES, traitOf } from './config';
 import { key, mixHex, rnd } from './util';
-import { regionAt } from './region';
+import { regionAt, REGION_COUNT } from './region';
 import { vaultCells, anchorHere, WORKED_HARD, SEALED_HARD } from './vaults';
-import { isCollapsed, hardScale } from './unrest';
+import { isCollapsed, hardScale, isAwake, UNREST_BANDS } from './unrest';
 import { g , coreM, valueM, worldTrait} from './state';
 import { partAt, partFor, partName, PART_COLOR, PART_HOST } from './drive';
 import { findMap, cacheSupply, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
@@ -147,6 +147,33 @@ export function blockAt(x: number, d: number): Block | null {
              ore: true, find: true };
   }
 
+  /* Rubble, and it goes BEFORE the authored rooms rather than after them.
+
+     Found by a test: a tunnel cut through a hall wall and then closed up by
+     W8's waking ground came back as WORKED STONE, because the stamp was
+     checked first and the stamp still says there is a wall there. Coherent, in
+     a way - the hall reseals - and wrong twice over. The planet does not
+     rebuild somebody else's masonry, it fills the hole with spoil; and worked
+     stone is twice the hardness of the band while rubble is a fraction of it,
+     so the reseal was quietly harder to get back through than the wall had
+     been the first time.
+
+     Hardness rides on the band it sits in; weight and value are the flat DEF
+     numbers, because haulValue() looks those up by id and cannot know what
+     depth a given unit came from. */
+  if (g.rubble.has(key(x, d))) {
+    /* Coloured as broken pieces of whatever band it sits in rather than as one
+       fixed grey. A neutral fill dropped into the scoria zone looked like
+       sandstone boulders in a lava tube; half-blended it reads as the local
+       rock, shattered - identifiable as fill without leaving the palette.
+       Free: the pool is keyed by block id but the shade rides on the instance. */
+    const band = baseRock(d, g.planet, x);
+    return { id: RUBBLE.id, name: RUBBLE.name, glow: RUBBLE.glow,
+             color: mixHex(band.color, RUBBLE.color, 0.5),
+             hard: band.hard * hm * RUBBLE_HARD, wt: RUBBLE.wt, value: RUBBLE.value, ore: false };
+  }
+
+
   /* ---------- an authored room ----------
 
      AFTER the three singletons, so a room that happens to be stamped over the
@@ -223,22 +250,6 @@ export function blockAt(x: number, d: number): Block | null {
     }
   }
 
-  /* Checked before generation, and only after `dug`, so a cell you have
-     re-cleared stays clear. Hardness rides on the band it sits in; weight and
-     value are the flat DEF numbers, because haulValue() looks those up by id
-     and cannot know what depth a given unit came from. */
-  if (g.rubble.has(key(x, d))) {
-    /* Coloured as broken pieces of whatever band it sits in rather than as one
-       fixed grey. A neutral fill dropped into the scoria zone looked like
-       sandstone boulders in a lava tube; half-blended it reads as the local
-       rock, shattered - identifiable as fill without leaving the palette.
-       Free: the pool is keyed by block id but the shade rides on the instance. */
-    const band = baseRock(d, g.planet, x);
-    return { id: RUBBLE.id, name: RUBBLE.name, glow: RUBBLE.glow,
-             color: mixHex(band.color, RUBBLE.color, 0.5),
-             hard: band.hard * hm * RUBBLE_HARD, wt: RUBBLE.wt, value: RUBBLE.value, ore: false };
-  }
-
   /* Caves, in 2x2 blobs so they read as open ground rather than confetti.
      Evaluated on a coarse grid and with its own seed offset, so adding them
      leaves every ore and rock roll exactly where it was. */
@@ -265,6 +276,24 @@ export function blockAt(x: number, d: number): Block | null {
     return { id: CACHE.id, name: CACHE.name, color: CACHE.color, host: CACHE.host, glow: CACHE.glow,
              shards: CACHE.shards, tone: CACHE.tone, hard: CACHE.hard * hm, wt: CACHE.wt,
              value: CACHE.value, ore: true, cache: true };
+  }
+  /* A Bloom, on its own seed and only once the planet has answered.
+
+     Rolled AFTER gas, caches and geodes and on a separate hash, so turning it
+     on moves nothing that was already there - which is the invariant the
+     frozen baseline defends, and the reason this is a fourth pocket rather
+     than a twelfth entry in the ore ladder. An ore would have had to be the
+     deepest thing in the game to keep the ladder's subset property, and the
+     whole point of a Bloom is that it grows in the shallow ground you thought
+     was finished.
+
+     Its own offset: 11, 23, 41, 77, 91, 131, 137, 173, 211, 257, 311, 313,
+     421, 601, 619, 977 and 1013 are taken. */
+  if (isAwake(g.ground) && d >= BLOOM.min && d < BLOOM_MAX &&
+      rnd(x + 149, d + 683, g.planet + 643) < BLOOM.chance) {
+    return { id: BLOOM.id, name: BLOOM.name, color: BLOOM.color, host: BLOOM.host,
+             glow: BLOOM.glow, shards: BLOOM.shards, tone: BLOOM.tone,
+             hard: BLOOM.hard * hm, wt: BLOOM.wt, value: BLOOM.value, ore: true };
   }
   if (d >= GEODE.min && pr > 1 - geodeChanceOn(tr)) {
     return { id: GEODE.id, name: GEODE.name, color: GEODE.color, host: GEODE.host, glow: GEODE.glow,
@@ -415,6 +444,71 @@ export function planCollapse(want: number, rand: () => number): string[] {
     for (const k of taken) { g.rubble.delete(k); g.dug.add(k); }
     return [];
   }
+  return taken;
+}
+
+/* ---------- the ground closing behind you ----------
+
+   W8's second half, and the one that makes a MAP go stale rather than a
+   resource. Once the planet has answered, tunnels in restless ground fill in
+   while you are away, so the shaft you cut last night is not necessarily there
+   this morning - and the route home is computed from the tunnels you cut.
+
+   Terraria's Hardmode is the sourced device: edit the world the player already
+   has rather than building more of it. This is the cheapest possible version
+   and it is aimed at the one thing in this game that a player genuinely owns.
+
+   Four things keep it from taking a run, and `CRAFT.md` is absolute that it
+   must not:
+
+   1. it only ever runs WHILE DOCKED - see the caller
+   2. it fills with RUBBLE, which is diggable, not with rock
+   3. it never touches the ground around the pad, so the way down always
+      starts open
+   4. and it is proportional to how angry the region is, so quiet ground stays
+      exactly as you left it for ever */
+
+/* How much of a region's tunnels close per return, at maximum Unrest. A tenth:
+   a shaft you keep using is re-cut as you use it and stays open, and one you
+   abandoned is gone in a dozen runs. */
+export const CLOSE_RATE = 0.10;
+
+/* And the ground that never closes. Eight metres of the pad's own column, so
+   leaving is never something you have to dig out of. */
+export const CLOSE_SAFE = 8;
+
+export function planClose(rand: () => number): string[] {
+  if (!isAwake(g.ground)) return [];
+  const floor = UNREST_BANDS[1].at;
+
+  /* Bucketed by region first, because the share closing is a property of the
+     region and not of the planet - which is the whole reason Unrest is per
+     region at all. */
+  const pools: string[][] = [];
+  for (let i = 0; i < REGION_COUNT; i++) pools.push([]);
+  for (const k of g.dug) {
+    const c = k.split(',');
+    const x = +c[0], d = +c[1];
+    if (d < 0) continue;
+    if (Math.abs(x - START_X) <= 1 && d <= CLOSE_SAFE) continue;
+    pools[regionAt(x, d)].push(k);
+  }
+
+  const taken: string[] = [];
+  for (let i = 0; i < REGION_COUNT; i++) {
+    const u = g.ground.unrest[i];
+    if (u <= floor || !pools[i].length) continue;
+    const share = CLOSE_RATE * ((u - floor) / (1 - floor));
+    const want = Math.floor(pools[i].length * share);
+    if (want <= 0) continue;
+    const pool = pools[i];
+    for (let j = pool.length - 1; j > 0; j--) {
+      const n = Math.floor(rand() * (j + 1));
+      const t = pool[j]; pool[j] = pool[n]; pool[n] = t;
+    }
+    for (const k of pool.slice(0, want)) taken.push(k);
+  }
+  for (const k of taken) { g.rubble.add(k); g.dug.delete(k); }
   return taken;
 }
 

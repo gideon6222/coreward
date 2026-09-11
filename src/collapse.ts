@@ -28,6 +28,8 @@
 
 import { g, padRegion } from './sim/state';
 import { collapse, shore, isCollapsed, BALLAST_SHORE_COST } from './sim/unrest';
+import { planClose } from './sim/world';
+import { stream } from './sim/util';
 import { regionAt, regionName } from './sim/region';
 import { meshes, dropBlock, syncBlocks, resetBlockCache } from './blocks';
 import { resetLight } from './lightmap';
@@ -98,10 +100,31 @@ export function shoreUp(): number {
    back. Same three calls a world change makes, and for the same reason: easing
    the old shadows into the new ground shows as light bleeding through fresh
    rock for a fifth of a second. */
+export function rebuildWorld() { rebuild(); }
+
 function rebuild() {
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();
   resetLight();
   syncDrops();
   syncBlocks(true);
+}
+
+/* Tunnels filling in while the ship is on the pad.
+
+   Called on the docking edge, after the sale and after any pending collapse,
+   because all three are the same moment - you came home and the world had
+   moved on without you. Silent when nothing closed, which is most returns for
+   most of the game. */
+export function closeGround() {
+  const taken = planClose(stream(g.ground.collapses * 97 + g.ground.lit.length * 13 +
+                                 Math.round(g.log.runs || 0), 0, 883));
+  if (!taken.length) return;
+  rebuild();
+  /* Said plainly and without a region name: several may have closed at once,
+     and the player's question is "how much of what I cut is gone", which is a
+     number. Where it went is what the map is for. */
+  toast(taken.length + ' m of tunnel has closed up');
+  sfx.rumble();
+  save();
 }

@@ -1659,9 +1659,22 @@ independent of the objective work.
       Five characters of authored world, 1,602 cells of it, 5.8% of the planet.
       The whole library is legible as drawings in `src/sim/vaults.ts`.
 
-- [ ] **W8 The planet answers.** At the fifth Anchor, Unrest steps permanently,
+- [x] **W8 The planet answers.** At the fifth Anchor, Unrest steps permanently,
       a hazard appears in ground you already know, and something new grows in
       old rock. The cheapest possible way to make a mapped world strange again.
+
+      *Done.* Five of nine, and three things fire at once. Every region gains a
+      permanent floor in Unrest and every cell cut from then on costs 35% more.
+      Tunnels in restless ground CLOSE while you are docked - filling with
+      rubble, never rock, never the pad's own shaft, and proportional to how
+      angry that region is, so quiet ground stays exactly as you left it for
+      ever. And Blooms start generating from 4 m down to the halfway line,
+      worth more per kilo than anything in the upper half - because waking the
+      planet has to be something a player chooses, not a punishment for playing
+      well.
+
+      The hazard is aimed at the one thing in this game a player actually owns:
+      the shape they cut. The route home is computed from it.
 
 - [ ] **W9 The Vault.** The ninth Anchor opens the centre, and that is the end
       of the game. Other planets are what comes after, later.

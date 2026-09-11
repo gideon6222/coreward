@@ -371,6 +371,43 @@ export const CACHE: Ore = {
   hard: 3.4, wt: 0, value: 0, min: 20, chance: 0.006, glow: 0.62, shards: 6, tone: 8
 };
 
+/* Something new growing in old rock.
+
+   Playtest, round eight: *"find more secrets, random caves, and other things
+   to make the planet feel mysterious and intriguing."*
+
+   This is W8's half of the answer and it is the cheapest longevity device the
+   research found: Terraria's Hardmode does not generate new space, it EDITS
+   the world you already have, and a map you filled in becoming unfamiliar is
+   worth more than a map twice the size.
+
+   So a Bloom generates nowhere at all until the planet wakes at the fifth
+   Anchor, and then it generates everywhere - including in the shallow ground
+   you worked out in your first hour. Any depth, its own seed, an overwriter
+   like the pockets above it: the ore stream underneath is untouched.
+
+   And it PAYS, which is the point. Waking the planet costs you a permanent
+   step in Unrest and ground that closes behind you; if it gave nothing back,
+   lighting the fifth Anchor would be a punishment for playing well. Worth
+   more per kilo than anything above Ruby, at four metres down. */
+export const BLOOM: Ore = {
+  id: 'bloom', name: 'Bloom', color: 0xe8c6ff, host: 0x2a2038,
+  hard: 5.5, wt: 5, value: 4200, min: 4, chance: 0.009, glow: 0.82, shards: 8, tone: 9
+};
+
+/* And it stops halfway down, which is a correctness fix and not a flavour one.
+
+   A Bloom is an overwriter - it is rolled before the ore ladder and takes
+   whatever cell it lands on. Unbounded, that put a 4,200 credit growth on top
+   of Solmarrow at 196,000 and Umbrite at 82,000, so the reward for waking the
+   planet was quietly destroying the best cells in the game.
+
+   Half the world is also the truer reading of the design: "something new grows
+   in OLD rock" means the ground you worked out in your first hour, not a new
+   band at the bottom nobody has reached. Above this line a Bloom is the best
+   thing per kilo there is; below it, the deep is left alone. */
+export const BLOOM_MAX = Math.round(WORLD_DEPTH * 0.5);
+
 /* ---------- relics ----------
 
    Exactly one per planet, buried below the halfway mark, in no particular
@@ -696,6 +733,7 @@ DEF[RUBBLE.id] = RUBBLE;
 DEF[CACHE.id] = CACHE;
 DEF[SEAM.id] = SEAM;
 DEF[GAS.id] = GAS;
+DEF[BLOOM.id] = BLOOM;
 for (const r of ROCKS) DEF[r.id] = r;
 
 /* ---------- supplies ----------
