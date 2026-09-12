@@ -3752,3 +3752,154 @@ Ballast drained on schedule. Both looked exactly like balance problems.
 A bad player is a useful probe. An incoherent one is noise. It flies to a
 CONDITION now, and it turns back when the game says `danger` - which is the
 one warning the game shouts at you.
+
+---
+
+# Handover, 2026-09-12: round eight is closed
+
+Everything below was only in the session that built W5 to W10. It is written
+here so a cold session can carry on from the repo alone.
+
+## Where the game is
+
+Version **0.31.0**. Round eight (W1-W10 in `PLAN.md`) is complete. The gate is
+green: **291 unit tests, 41 e2e, typecheck, build, size guard**.
+
+**There is no `scripts/check.ps1` in this repo**, whatever a habit from the
+Godot games suggests. The gate here is **`npm run check`** - typecheck (app and
+e2e), `npm test`, build, `npm run size`, `npx playwright test`. It takes four
+to nine minutes. The e2e suite runs against `dist/`, so always build before
+running Playwright on its own, or it tests the previous build.
+
+## The shape of the game now, in one paragraph
+
+One planet, 61 columns by 452 metres, twelve regions (four depth bands by three
+lateral thirds) each with their own palette and trait. You dig, sell at the pad,
+buy upgrades, and hunt nine Anchors in hand-authored halls of cut stone.
+Lighting one calms its region, draws the whole region onto the Survey map, and
+gives the Ballast a permanent tier. The fifth wakes the planet. The ninth opens
+the Vault at the centre, which is the end. There is no core, no chart and no
+jump drive - they were deleted in W9.
+
+## Every number that was tuned, and what it was tuned against
+
+Do not change one of these without the measurement beside it.
+
+| constant | value | measured against |
+|---|---|---|
+| `UNREST_PER_CELL` | 0.0007 | ~10 runs of 60 cells in one region reaches Grinding |
+| `UNREST_AT_FLOOR` | 2.5 | a cell at 452 m against one at the surface |
+| `WAKE_AT` | 5 of 9 | leaves a whole second act after it |
+| `WAKE_STEP` | 0.12 | a twelfth of the meter: Calm stops being calm, no band jumped |
+| `WAKE_CUT_MULT` | 1.35 | felt over the ten runs after, not on the day |
+| `BALLAST_DRAIN` | 0.001/s | a full tank is **26 min of digging at 0.3 Unrest, 14 at 0.8** |
+| `BALLAST_AFTER_COLLAPSE` | 0.5 | was 0.25, and at 0.25 the 2nd loss came 4 min after the 1st |
+| `BALLAST_DOWN_RELIEF` | 0.5 | **neglect loses regions at minute 16, 29, 46 - gaps 16/13/17** |
+| `BALLAST_SAFE` / `BALLAST_SHORE_COST` | 0.7 / 0.45 | shoring is the biggest single spend in the game |
+| `BALLAST_LOW` | 0.35 | about three runs of warning. NOT the same line as `BALLAST_SAFE` |
+| `BALLAST_PER_UNIT` | 0.008 x ore `tone` | rank, not value: value spans 40 to 196,000 |
+| `MAX_COLLAPSED` | 3 | found by the long play; the cascade had no bottom |
+| `CLOSE_RATE` / `CLOSE_SAFE` | 0.10 / 8 m | a shaft you use is re-cut; one you abandon goes in a dozen runs |
+| `WORKED_HARD` / `SEALED_HARD` / `VAULT_WALL_HARD` | 2.1 / 4.4 / 6.0 | multiples of the LOCAL BAND, never flat |
+| lit Anchor hardness | band x 3 | moving a monument should be a decision |
+| `BLOOM` | min 4, max 226, chance 0.009 | bounded at halfway so it never overwrites Solmarrow |
+| `ROCK_BUMP.worked` | 0.03 | against 0.16-0.40 for rock. The whole visual read of cut stone |
+
+## Where things are in the world
+
+Seeded, so these are facts about the current seeds and they move if any offset
+changes. Tests derive them. **Never type one of these into a test.**
+
+- Anchors: Verdax (10,95), Rustmoor (31,43), Cryon (50,48), Ashvault (10,188),
+  **Kryllon (31,135) sealed**, Tessivar (50,192), **Obrinth (10,284) sealed**,
+  Palewell (31,255), **Serrik (50,306) sealed**
+- The Vault: (30,405), 15x13, the only hand-placed room
+- 23 rooms and 1,764 authored cells, 5.8% of the planet
+- Kryllon's sealed hall sits directly across the main shaft at 135 m. That is
+  deliberate, and `a locked door never locks the planet` is the test that keeps
+  it survivable: you go round it, six columns over.
+
+**Seed offsets taken: 13, 41, 91, 137, 601, 619, 643, 883, 977, 1013**, plus the
+older 11, 23, 77, 131, 173, 211, 257, 311, 313 and 421. Anything new that
+generates must take a fresh one, or it consumes a roll the ore stream was using
+and every value at every depth shifts.
+
+## Performance
+
+**86 draw calls of 150** in the worst window round eight can build: a sealed
+Anchor hall at 306 m, on a woken planet, with a region down and the laser
+aboard - worked stone, sealed stone, the Anchor, rubble and fallen ground all in
+one frame. The fixture in `stays inside the draw-call budget while underground`
+finds that hall rather than naming it.
+
+The `index` chunk is 210.8 KB, and its budget was re-recorded at W7 after
+reading the growth: W5's map, W6's Unrest and Ballast, W7's vaults.
+
+## What the long play proved, and what it did not
+
+`node scripts/longplay.mjs`, with `npm run preview -- --port 4319` up.
+
+**Proved** - the first half hour is healthy. Runs land at about three minutes of
+game time, which is what the design says a run should be. The Ballast can be
+kept full out of banked ore once income arrives. Unrest reaches 0.05 mean and
+0.11 peak at thirty minutes. The money curve climbs to about 23,000 by run 11
+with no wall in it.
+
+**Found** - the two bugs that mattered, both now fenced by tests.
+
+**NOT proved** - that a campaign can be played through to the Vault. The probe
+has never lit more than one Anchor, and every stall traced to its own policy
+rather than the game: an eighteen-cell lateral overshoot, no fuel policy at all,
+a climb that gave up because it was in danger, and then a stop condition that
+fired before the first slice whenever the ship was already deep. Its own header
+says all of this. **The game's reachability is proved by `every Anchor lights by
+digging down its own column` in the smoke suite, not by this probe.**
+
+## The traps this session walked into, so the next one does not
+
+1. **A test that re-derives the rule it tests passes with the rule deleted.**
+   The room-overlap test rebuilt the placer's own drop rule and then asserted it
+   had been applied. `vaultPlan()` exists so a test can read the OUTPUT instead.
+2. **A fixture that skips the early steps cannot test the guard on the first
+   one.** `wake()` had no threshold check - the FIRST Anchor of nine woke the
+   planet - and it survived a whole milestone because every fixture lit four
+   Anchors through the state and only the fifth through the real path.
+3. **An id that can reach `g.cargo` must have a `DEF` entry.** Cut stone did
+   not, and the manifest threw on `DEF[id].value`. It is flagged `spoil` now,
+   and a sweep test holds the general rule rather than the three ids.
+4. **A block whose id changes with state needs an explicit redraw.** The
+   instanced pools are keyed by block id. The Anchor, the Vault seal and the
+   Bloom all change id from game state and all force a rebuild at the moment
+   they do.
+5. **Two thresholds that happen to share a value are two constants.**
+   `BALLAST_SAFE` (the shoring price) was also driving the low-fuel alarm, so a
+   perfectly ordinary 60% tank drew red and the HUD button pulsed.
+6. **An additive mesh inside an opaque one is depth-rejected, not blended.** The
+   Ballast's sight glass drew nothing at all until the fluid moved in FRONT of
+   the tube instead of inside it.
+7. **A 3D object can be rendering perfectly and be behind the HUD.** The Ballast
+   was at 16-32% across, which is the action-button column. The camera shows
+   about eight world units across on this aspect; do that arithmetic before
+   theorising about shaders.
+8. **Re-recording a golden is fine; re-recording it without reading the diff is
+   not.** `test/baseline/blocks.json` was re-recorded six times this round, and
+   every time the diff was printed as counts-per-id first and read.
+   `blocks-frozen.json` was NOT touched at any point.
+9. **`part` stays in the golden's `OVERWRITERS` list for ever.** There are no
+   drive components any more, but the frozen baseline still contains them, and
+   an overwriter LEAVING a cell is as legal as one arriving. Removing the id
+   reads every one of those cells as "the ore stream moved".
+
+## What to do next, in order
+
+1. **Play it.** Round eight is a lot of work with no human minute in it, and the
+   probe cannot answer the questions that matter: does hunting Anchors feel like
+   a hunt or like a checklist, is the map worth opening, does the Ballast read as
+   a stake or as a chore, and does the fifth Anchor land.
+2. **The first hour.** Nothing in round eight touched the first-run intro, and it
+   still introduces a game about flying between planets. `src/sim/intro.ts` and
+   `src/titleui.ts` have not been read since W4. This is R9a in `PLAN.md`.
+3. **Ship it.** `/ship` walks `POLISH.md`; the deploy is GitHub Pages and
+   `WEB.md` has the recipe.
+4. **Then the rest of round nine**, whose milestones are at the bottom of
+   `PLAN.md`.

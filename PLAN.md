@@ -627,15 +627,22 @@ normal-mapped floor at low roughness so the lights streak across it.
 
 ## Milestones
 
-- [ ] **R1 Neon as fittings** - tube, housing, one short-range light each, gradient pools on
+- [x] **R1 Neon as fittings** - tube, housing, one short-range light each, gradient pools on
       the wall. Replaces `neonBar` everywhere. Frame cost measured on the phone
-- [ ] **R2 The forecourt** - fascia band, totem, pump island, bollards, floor
-- [ ] **R3 The counter and the wall** - expensive under glass and spot-lit, standard on a
+- [x] **R2 The forecourt** - fascia band, totem, pump island, bollards, floor
+- [x] **R3 The counter and the wall** - expensive under glass and spot-lit, standard on a
       repeating rack behind. Retires the plinths and the group filtering
-- [ ] **R4 The pump** - hose, nozzle, ticking readout
-- [ ] **R5 Wet ground** - mirrored fittings and ship under a translucent floor
-- [ ] **R6 The phone pass** - all of it judged at 1080x2340 rather than on a contact sheet,
-      which is where the last three rounds of this room went wrong
+- [x] **R4 The pump** - hose, nozzle, ticking readout
+- [ ] **R5 Wet ground** - mirrored fittings and ship under a translucent floor.
+      *Never built, and it is the only thing from this round that was not.*
+      Left unticked on purpose rather than quietly dropped: there is no
+      reflection or translucent floor anywhere in `stationroom.ts`, and the
+      room reads well enough without one that nobody has missed it. Judge it
+      against the room as it stands before spending a day on it.
+- [x] **R6 The phone pass** - all of it judged at 1080x2340 rather than on a contact sheet,
+      which is where the last three rounds of this room went wrong.
+      *Done as part of round eight's W10*, which shot every screen in the game
+      at 1080x2340 including the Outfitter.
 
 ---
 
@@ -847,7 +854,10 @@ behind it is a bright line and this renderer will never have bloom.
       terminal, fresnel proxies on the tubes. Six measured corrections, every
       one of them found by a screenshot rather than by the numbers - see the
       note below
-- [ ] **S6 The phone pass** - judged at 1080x2340, with the light count measured
+- [x] **S6 The phone pass** - judged at 1080x2340, with the light count measured.
+      *Done as part of round eight's W10.* Draw calls in the worst window are
+      86 of 150; every screen has been looked at as a picture at the phone's
+      aspect, which is what found the manifest crash.
 
 ## S7: the kit becomes a discovery too
 
@@ -2296,3 +2306,72 @@ The risk to watch across all four is the one `CLAUDE.md` already names: **world 
 a pure seeded hash, and anything new that generates content must roll on its own seed
 offset.** Components, signatures and caverns all generate, and all three will silently shift
 every ore in the game if they consume an existing roll.
+
+
+---
+
+# Round nine
+
+Round eight closed on 2026-09-12 with W1-W10 ticked. What follows is the work
+it left open, in the order it should be done. **The first two are not features -
+they are the things that stop round eight being nine hours of unplayed work.**
+
+No new design asks came in during round eight. Every milestone below is either
+something the round left behind or something `POLISH.md` wants before a ship;
+the shape of the game is not up for revision until R9a has happened.
+
+- [ ] **R9a A human play of the whole campaign.** `/playtest`. Round eight has
+      had no human minute in it, and the long-play probe cannot answer the
+      questions that matter: does hunting Anchors feel like a hunt or like a
+      checklist, is the Survey map worth opening, does the Ballast read as a
+      stake or as a chore, and does the fifth Anchor land as an event.
+
+      Everything after this is provisional until it is done. Whatever comes out
+      of it goes to `playtests/coreward.md` verbatim, and it outranks every
+      other milestone here.
+
+- [ ] **R9b The first hour introduces the game that exists.** Nothing in round
+      eight touched the first-run intro, and it still narrates a game about
+      flying between planets - which was deleted in W9. `src/sim/intro.ts` and
+      `src/titleui.ts` have not been read since W4.
+
+      The first thirty seconds need zero reading and the first minute needs to
+      give a win (`POLISH.md`), and the win is now "you found something
+      somebody built". Rustmoor's Anchor is at 43 m, almost directly under the
+      pad, which is a gift: the first descent can walk into worked stone.
+
+- [ ] **R9c A campaign the probe can finish.** `scripts/longplay.mjs` has never
+      lit more than one Anchor, and its header says honestly why: four separate
+      policy bugs of its own. Either give it a policy that can play the game -
+      lateral travel to a column, a fuel rule, a climb that does not give up,
+      and a stop condition that fires on arrival rather than on depth - or
+      replace it with a policy-driven harness of the kind `TESTING.md`
+      describes for the Godot games.
+
+      The value is not the probe. It is that nothing currently proves the
+      campaign is completable end to end, only that each piece of it works.
+
+- [ ] **R9d Ship it.** `/ship`, which walks `POLISH.md` and refuses on a no.
+      The deploy is GitHub Pages; `WEB.md` has the recipe. Version, changelog
+      and a screenshot at the phone's aspect go out together.
+
+- [ ] **R9e The second month, sketched.** `POLISH.md` asks for the next month's
+      content to be in this file even if it is not built, and round eight ended
+      the game without sketching what follows it. The design doc's own answer
+      is "other planets are what comes after, later" - which is a direction and
+      not a plan. Worth an hour once R9a says what the game actually is.
+
+## What round eight deliberately did not do, and still has not
+
+Carried forward from the round-eight design so it is not rediscovered:
+
+**No combat.** Dome Keeper's own reviews say its two phases feel divided, and
+the fusion here is that the pressure applies to digging itself. A second verb
+imports the exact criticism the research warns about.
+
+**No hand-authored secret world.** Animal Well is seven years of hand
+placement and does not survive procgen. Authored templates in seeded slots is
+the version that does, and that is what `src/sim/vaults.ts` is.
+
+**No star chart.** It was a good screen for a game about visiting places and
+this is a game about one place. It comes back if a sequel does.
