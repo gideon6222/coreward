@@ -45,8 +45,13 @@ const A = {
   beat: 0, nextT: 0, depth: 0,
   /* what the layers are mixed against, written every frame by the loop */
   heat: 0, unstable: 0, danger: 0,
+  /* The way in holds the score down and lets it up. 1 in play. Limbo's rule:
+     silence is the tension device, and the first sound has to be alone. */
+  duck: 1,
   on: { music: true, sfx: true }
 };
+
+export function setDuck(v: number) { A.duck = clamp(v, 0, 1); }
 
 /* The graph, but only when sound is actually wanted. Returning it rather than a
    boolean is what lets every caller below narrow. */
@@ -359,6 +364,7 @@ function tick() {
   G.windGain.gain.setTargetAtTime(0.02 + deep * 0.1, now, 0.8);
   G.droneGain.gain.setTargetAtTime(0.05 + deep * 0.14, now, 0.8);
   G.leadGain.gain.setTargetAtTime(0.95 - deep * 0.45, now, 0.8);
+  G.musicBus.gain.setTargetAtTime((A.on.music ? 0.24 : 0) * A.duck, now, 0.6);
 
   /* ---------- the layers ----------
      Time constants are deliberately uneven. Heat and the unstable band fade in
@@ -397,7 +403,7 @@ export function setAudio(kind: 'music' | 'sfx', on: boolean) {
   const G = graph;
   if (!G) return;
   const t = G.ctx.currentTime;
-  if (kind === 'music') G.musicBus.gain.linearRampToValueAtTime(on ? 0.24 : 0, t + 0.5);
+  if (kind === 'music') G.musicBus.gain.linearRampToValueAtTime((on ? 0.24 : 0) * A.duck, t + 0.5);
   else G.sfxBus.gain.linearRampToValueAtTime(on ? 0.5 : 0, t + 0.15);
 }
 

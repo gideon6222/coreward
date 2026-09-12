@@ -769,41 +769,11 @@ export const FUEL_IDLE = 0.06;              /* per second, underground */
 export const HULL_REGEN = 30;               /* per second, at the surface */
 
 
-/* ---------- the settle ----------
-
-   Playtest: *"I want the ship to be shown lowering itself onto the landing pad
-   right before the player takes over."*
-
-   The arrival used to be asserted rather than shown: the descent flashed and
-   the next frame was a ship parked on a pad with the HUD up. This is the last
-   few metres of it, in the game's own scene.
-
-   Metres above the pad it starts from, and the rate it closes at. The rate is
-   an approach() smoothing like everything else in the game rather than a
-   scripted curve, so it settles the way the camera and the needles do - it
-   should look like the game, not like a cutscene bolted to the front of it. */
-/* How high above the pad a landing starts.
-
-   5.5 was a touchdown you missed; 9.5 was an approach you could watch and also
-   three and a bit seconds during which the game ignored you - the mode is
-   'settle', not 'play', so SHOP and the d-pad are both inert until it lands.
-   That surfaced as a smoke test tapping a shop button that was refusing
-   clicks, which is the mildest possible way to find out. 7.2 over 2.1 seconds
-   keeps the descent visible and gives the controls back before anyone reaches
-   for them. The crossing hands
-   over inside a white atmosphere flash and the ship is still descending when
-   the game takes the frame back, so this is the half of "show it landing" that
-   the player could actually see - the other half was always there and was
-   over before the flash had faded. */
-export const SETTLE_FROM = 7.2;
-export const SETTLE_RATE = asExpRate(3.4);
-/* Close enough to be down. Approach smoothing never quite arrives, and waiting
-   for zero would hold the controls off for a fraction of a metre nobody can
-   see. */
-export const SETTLE_DONE = 0.12;
-/* Hard ceiling on the whole thing. It plays on every crossing and every
-   CONTINUE, and the second time you see it, it is a wait. */
-export const SETTLE_MAX = 2.1;
+/* The settle - the last 7.2 m of a landing on an approach() curve - lived
+   here until 2026-09-12. *"I want the ship to be shown lowering itself onto
+   the landing pad right before the player takes over"* is now the whole
+   descent in intro.ts, on the same scene, and the settle was the stand-in for
+   it. Deleted with the thing that replaced it. */
 /* Was a global 70. It is now the world's own heat line, so every function
    below takes the depth it should compare against rather than reaching for a
    constant that is only true of one leg. See heatDepth() in config.ts. */

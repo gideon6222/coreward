@@ -42,9 +42,10 @@ The standard web stack from `WEB.md` in the notes. Coreward-specific pins and ch
   the next session something false about what is allowed.
 
   What is actually here: two `woff2` faces in `public/fonts/` (in the Workbox glob, or the
-  installed app falls back to a system face offline), and four WebP maps in `src/textures/`
-  imported through the bundler so they are hashed and precached - three rock maps for the
-  terrain and one normal map for the planets in the intro and the crossing. Every one is a
+  installed app falls back to a system face offline), and three WebP maps in `src/textures/`
+  imported through the bundler so they are hashed and precached - the rock maps for the
+  terrain. (A fourth, a normal map for the planets of the old space intro, went with that
+  scene on 2026-09-12.) Every one is a
   **normal or roughness map and never a colour map**, which is what lets a photographed
   texture into a flat-shaded game at all: the palette keeps deciding colour and the import
   only adds relief.
@@ -107,7 +108,7 @@ may import freely from `src/sim/`, never the other way.
 | `src/collapse.ts` | What a collapse and a shoring do to the world; the ground closing behind you |
 | `src/mapui.ts` | The Survey screen, on a canvas |
 | `src/ballast.ts` | The Ballast on the pad. Sight glass, dial, stack, tier collars |
-| `src/transit.ts` | The title screen's showcase, landing and launch. Its own scene |
+| `src/titleui.ts` | The title, the intro and CONTINUE, over the game's own scene. The timelines are `src/sim/intro.ts`; the loop draws them |
 | `src/changelog.ts` | Version and the player-facing what's-new list |
 
 **Import direction is one-way and load-bearing:** types → `src/sim` (config → util → runtime →

@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.32.0';
+export const VERSION = '0.33.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.33.0', date: '2026-09-12', title: 'The way in',
+    notes: [
+      'A new opening, and it happens in the planet. Tap, and a cold light comes up inside a hall somebody cut, forty metres under the pad you are about to land on. Then the surface at night, and your ship coming down out of the dark as the sky wakes. Three lines. No space, no cut.',
+      'CONTINUE takes two seconds. The ship drops onto the pad, or the camera drops down your shaft to where you left it.',
+      'The title screen is the pad at night.'
+    ]
+  },
   {
     version: '0.32.0', date: '2026-09-12', title: 'The opening tells you about this game',
     notes: [

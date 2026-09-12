@@ -2365,6 +2365,61 @@ the shape of the game is not up for revision until R9a has happened.
       is "other planets are what comes after, later" - which is a direction and
       not a plan. Worth an hour once R9a says what the game actually is.
 
+- [x] **R9f The way in, redone.** Done 2026-09-12, v0.33.0, as designed
+      below; the three things the film found and fixed are in `NOTES.md`.
+      His words on v0.32.0, 2026-09-12, three asks:
+
+      1. *"redo the intro completely ... more of an eerie and high quality
+         feel to it that matches the rest of the game."*
+      2. *"if there are any transitions from flying in a cutscene to landing,
+         I want an actual transition, not just a cut."*
+      3. *"a very short intro after hitting the continue button ... only take
+         a few seconds to start playing again."*
+
+      The first is a restatement from scratch after R9b rewrote the words over
+      the same picture, so the picture is wrong: a separate space scene with
+      billiard-ball worlds and a sun, in a game whose every praised frame is
+      dark rock under a lamp. The research (`C:\dev\plans\coreward\REFERENCE.md`)
+      converges on one rule for the second ask - God of War, Half-Life 2,
+      Journey: **do not build two cameras and hide the seam, build one camera
+      and change what it does** - and on restraint for the first: silence
+      broken by one sound (Limbo), the environment shown before the character
+      (Hollow Knight, Dome Keeper), almost no text.
+
+      So the intro plays IN THE GAME'S OWN SCENE, with the game's own camera,
+      lamp, rock and pad, and there is nothing to cut between:
+
+      - **Tap on black.** The first touch is also what lets the audio start.
+      - **The hall, 0-7 s.** The eye is inside Rustmoor's Anchor hall at 41 m
+        - the one the first descent will cut into at 48 s - and a cold light
+        breathes up over the cut stone and the Anchor in its niche. One low
+        sound. Caption: *"Whoever cut these halls is gone."*
+      - **The rise, 7-15 s.** The eye climbs to the surface through dark rock,
+        the wind coming up under it.
+      - **The surface at night, 15-21 s.** The pad and the Ballast in
+        silhouette, the vent glow and the pad lights the only light, stars.
+        Caption: *"Nine Anchors, buried across one world."*
+      - **The descent, 21-28 s.** The ship's lamp comes down out of the dark,
+        flames lit; the sky wakes from night to the world's own day as it
+        comes; touchdown, dust, the HUD fades in, controls live. Caption:
+        *"Light all nine, and the centre opens."*
+
+      Twenty words, three lines, under thirty seconds, no white flash. A player
+      who has won the game gets SKIP, which jumps to the descent.
+
+      The title screen is the same surface at night with no ship on it.
+      **CONTINUE** on a surface save drops the ship onto the pad in two
+      seconds as the sky wakes; on a mid-run save the camera drops down the
+      shaft to where the ship is and its lamp comes on, about a second and a
+      half. No flight, no launch.
+
+      `transit.ts` and `planet-normal.webp` are deleted in the same commit as
+      the thing that replaces them (rule 12). The intro's timeline stays pure
+      in `src/sim/intro.ts` so a test can walk it: the eye starts inside the
+      first Anchor's hall (derived, never typed), ends at the surface, the ship
+      ends on the pad, the first caption waits for the picture, and the whole
+      thing is shorter than forty seconds.
+
 ## What round eight deliberately did not do, and still has not
 
 Carried forward from the round-eight design so it is not rediscovered:

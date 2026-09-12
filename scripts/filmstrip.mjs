@@ -54,52 +54,66 @@ const PORT = 4321;
    frames. `setup` runs once; `step` runs before every capture after the first.
    Both are strings because they are evaluated in the page. */
 const SCENES = {
-  /* The first-run intro, from the top. */
+  /* The first-run intro, from the tap. Twenty frames a second and a half
+     apart is the whole thing on one sheet: the hall, the rise, the surface
+     at night, the descent. */
   intro: {
-    secs: 1.6,
+    secs: 1.5,
     frames: 20,
     setup: `
       localStorage.clear();
       __cw.showIntro();
+      document.getElementById('intro').click();
     `,
     step: `__cw.advance(SECS);`
   },
 
-  /* CONTINUE from a save: the ship should take off and fly to the world the
-     player is actually on. */
-  continue: {
+  /* The title screen: the pad at night, no ship. */
+  title: {
     secs: 0.5,
-    frames: 20,
+    frames: 4,
+    setup: `
+      localStorage.setItem('coreward.v2', JSON.stringify({ credits: 5000, best: { depth: 140, haul: 900 }, dug: [], up: {} }));
+      __cw.g.pd = -1; __cw.g.best.depth = 140;
+      __cw.showTitle();
+    `,
+    step: `__cw.advance(SECS);`
+  },
+
+  /* CONTINUE on a surface save: two seconds, the ship down onto the pad as
+     the sky wakes. */
+  continue: {
+    secs: 0.25,
+    frames: 10,
     setup: `
       /* A save has to exist or CONTINUE is correctly greyed and inert - which
          is what this scenario caught the first time it ran. */
-      localStorage.setItem('coreward.v2', JSON.stringify({
-        planet: 3, world: 3, trait: 'hollow', credits: 5000,
-        best: { depth: 140, haul: 900 }, dug: [], up: {}
-      }));
-      __cw.g.world = 3; __cw.g.planet = 3; __cw.g.best.depth = 140;
+      localStorage.setItem('coreward.v2', JSON.stringify({ credits: 5000, best: { depth: 140, haul: 900 }, dug: [], up: {} }));
+      __cw.g.pd = -1; __cw.g.best.depth = 140;
       __cw.showTitle();
+      __cw.advance(0.5);
       document.getElementById('btnContinue').click();
     `,
     step: `__cw.advance(SECS);`
   },
 
-  /* The crossing between worlds, which the intro's flight is meant to feel
-     like a cousin of. */
-  crossing: {
-    secs: 0.6,
-    frames: 18,
-    enter: true,
+  /* CONTINUE on a mid-run save: the dip, then the camera down the shaft to
+     the ship, which has not moved. */
+  continuedeep: {
+    secs: 0.25,
+    frames: 10,
     setup: `
-      __cw.breakCore();
+      localStorage.setItem('coreward.v2', JSON.stringify({ credits: 5000, best: { depth: 140, haul: 900 }, dug: [], up: {} }));
+      const dug = [];
+      for (let d = 0; d <= 60; d++) dug.push(__cw.g.px + ',' + d);
+      __cw.g.dug = new Set(dug);
+      __cw.g.pd = 60; __cw.g.best.depth = 140;
+      __cw.resetBlocks();
+      __cw.showTitle();
+      __cw.advance(0.5);
+      document.getElementById('btnContinue').click();
     `,
-    /* The chart opens on a timer inside breakCore, so the first steps wait for
-       it and then pick a world. */
-    step: `
-      const card = document.querySelector('#chartCards .dest');
-      if (card && __cw.g.mode === 'chart') card.click();
-      else __cw.advance(SECS);
-    `
+    step: `__cw.advance(SECS);`
   },
 
   /* The Outfitter. `enter` first, or the click lands on a button behind the
@@ -118,47 +132,20 @@ const SCENES = {
     step: `__cw.advance(SECS);`
   },
 
-  /* The touchdown on its own: skip everything and watch the last few metres
-     onto the pad, which is the part a still frame cannot show. */
-  settle: {
-    secs: 0.16,
-    frames: 10,
-    setup: `
-      localStorage.clear();
-      __cw.g.won = true;
-      __cw.showIntro();
-      const sk = document.getElementById('introSkip');
-      if (sk) sk.click();
-      __cw.advance(6);
-    `,
-    step: `__cw.advance(SECS);`
-  },
-
-  /* New Game Plus: the intro again, but with a way out of it. */
-  ngplus: {
-    secs: 1.2,
-    frames: 10,
-    setup: `
-      localStorage.clear();
-      __cw.g.won = true;
-      __cw.showIntro();
-    `,
-    step: `__cw.advance(SECS);`
-  },
-
-  /* The same run with the skip taken on the second frame: the captions go, the
-     descent does not. */
+  /* New Game Plus with the skip taken on the second frame: straight to the
+     descent, which still plays. */
   ngskip: {
     secs: 0.7,
-    frames: 10,
+    frames: 12,
     setup: `
       localStorage.clear();
       __cw.g.won = true;
       __cw.showIntro();
+      document.getElementById('intro').click();
     `,
     step: `
-      const sk = document.getElementById('introSkip');
-      if (sk && !sk.classList.contains('hidden') && !document.getElementById('intro').classList.contains('hidden')) sk.click();
+      /* Once. A second press during the descent ends it, by design. */
+      if (!window.__skipped) { window.__skipped = true; document.getElementById('introSkip').click(); }
       __cw.advance(SECS);
     `
   },

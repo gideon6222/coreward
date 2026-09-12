@@ -1786,14 +1786,20 @@ test('the lamp reaches the rock shader, and rock away from a tunnel goes dark', 
    file - the same shape of test for the ending that exists now. */
 
 test('the three ways in behave differently, and New Game Plus can skip', async ({ page }) => {
-  /* Playtest: *"if you are starting a new run, do the full intro. if you are
-     continuing a game, I want the ship to take off and fly to the planet they
-     were on last. if they have beaten the game and are doing a new game plus
-     run, do the full intro but provide a skip button. if that is pressed, skip
-     the main part of the intro but still have the ship fly to the planet."*
+  /* Playtest, round three: *"if you are starting a new run, do the full
+     intro ... if they have beaten the game and are doing a new game plus run,
+     do the full intro but provide a skip button. if that is pressed, skip the
+     main part of the intro but still have the ship fly to the planet."*
 
-     Four claims, and the interesting one is the last: a skip that also skipped
-     the arrival would drop the player onto the pad out of nowhere. */
+     Playtest, 2026-09-12: *"a very short intro after hitting the continue
+     button as well. It should only take a few seconds to start playing
+     again"*, and *"an actual transition, not just a cut."*
+
+     So: a first run gets the intro and no skip, and nothing in it moves
+     before the tap. CONTINUE is over in a couple of seconds of game time and
+     the ship is exactly where the save left it - on the pad, or ninety
+     metres down. New Game Plus gets the intro with a skip, and the skip keeps
+     the descent. */
   /* A genuinely fresh player. The beforeEach has already crossed the way in
      once, which wrote a save - so this has to clear it AND stop the outgoing
      page writing the live state back on unload, which is the trap CLAUDE.md
@@ -1820,42 +1826,90 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
      sees is the fact. */
   await expect(page.locator('#introSkip'),
     'a first run must not offer a skip - it has never seen this').toBeHidden();
+  await expect(page.locator('#introTap'), 'a first run is waiting for a tap').toBeVisible();
+
+  /* Nothing moves before the tap: the first touch is also what lets the
+     audio start, and the one sound in the hall has to be heard. */
+  const beforeTap = await page.evaluate(() => {
+    (window as any).__cw.advance(3);
+    return (window as any).__cw.R.intro.t;
+  });
+  expect(beforeTap, 'the intro ran before the tap').toBe(0);
+  await page.locator('#intro').dispatchEvent('click');
+  const afterTap = await page.evaluate(() => {
+    (window as any).__cw.advance(2);
+    const R = (window as any).__cw.R;
+    return { t: R.intro.t, ship: R.shipShown, eye: R.eye, crossing: document.body.classList.contains('crossing') };
+  });
+  expect(afterTap.t, 'the tap did not start the intro').toBeGreaterThan(1.5);
+  expect(afterTap.ship, 'the ship is in the picture before the descent').toBe(false);
+  expect(afterTap.eye, 'the eye is not in the world').not.toBeNull();
+  expect(afterTap.crossing, 'the HUD came up during the intro').toBe(true);
+  await expect(page.locator('#introTap')).toBeHidden();
 
   await enterGame(page);
+  const landed = await page.evaluate(() => ({ pd: (window as any).__cw.g.pd, eye: (window as any).__cw.R.eye }));
+  expect(landed.pd, 'the intro did not end with the ship on the pad').toBe(-1);
+  expect(landed.eye, 'the intro left the eye somewhere other than the ship').toBeNull();
 
-  /* 2. CONTINUE takes off and flies, rather than cutting into the game. The
-        launch is its own phase before the descent, so the crossing is still up
-        well after the click. */
+  /* 2. CONTINUE on a surface save: the ship comes down onto the pad, and it
+        is over inside three seconds of game time. No flight. */
   await page.evaluate(() => {
     const cw = (window as any).__cw;
-    cw.g.world = 3; cw.g.planet = 3; cw.g.best.depth = 90;
+    cw.g.pd = -1; cw.g.best.depth = 90;
     cw.showTitle();
   });
   await expect(page.locator('#btnContinue'), 'a save exists, so CONTINUE is live')
     .toBeEnabled();
   await page.locator('#btnContinue').dispatchEvent('click');
-
-  const flying = await page.evaluate(() => {
-    (window as any).__cw.advance(1.0);
-    return {
-      crossing: document.body.classList.contains('crossing'),
-      mode: (window as any).__cw.g.mode
-    };
-  });
-  expect(flying.crossing, 'CONTINUE cut straight into the game instead of flying there')
-    .toBe(true);
-  expect(flying.mode).not.toBe('play');
-
-  /* And it arrives on the world the save was on, not on Verdax. */
-  await page.evaluate(async () => {
+  const arriving = await page.evaluate(() => {
     const cw = (window as any).__cw;
-    for (let i = 0; i < 30 && document.body.classList.contains('crossing'); i++) {
-      cw.advance(1);
-      await new Promise((r) => requestAnimationFrame(r));
-    }
+    cw.advance(0.5);
+    return { mode: cw.g.mode, pd: cw.g.pd, ship: cw.R.shipShown, crossing: document.body.classList.contains('crossing') };
   });
-  expect(await page.evaluate(() => (window as any).__cw.g.world),
-    'CONTINUE landed on the wrong world').toBe(3);
+  expect(arriving.mode, 'CONTINUE cut straight into play').toBe('arrive');
+  expect(arriving.ship, 'no ship coming down').toBe(true);
+  expect(arriving.pd, 'the ship is not above the pad half a second in').toBeLessThan(-3);
+  expect(arriving.crossing).toBe(true);
+  const home = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.advance(2.2);
+    return { mode: cw.g.mode, pd: cw.g.pd, crossing: document.body.classList.contains('crossing') };
+  });
+  expect(home.mode, 'CONTINUE took more than 2.7 s of game time').toBe('play');
+  expect(home.pd, 'CONTINUE did not land on the pad').toBe(-1);
+  expect(home.crossing, 'the HUD did not come back').toBe(false);
+
+  /* And on a MID-RUN save the ship stays where it was: ninety metres down
+     with the hold full is ninety metres down, or quitting is a free ride
+     home. The camera goes to the ship, not the other way round. */
+  await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    const dug: string[] = [];
+    for (let d = 0; d <= 90; d++) dug.push(cw.g.px + ',' + d);
+    cw.g.dug = new Set(dug);
+    cw.g.pd = 90;
+    cw.showTitle();
+  });
+  await page.locator('#btnContinue').dispatchEvent('click');
+  const dip = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.advance(0.2);
+    return { dark: Number(document.getElementById('flash')!.style.opacity), ship: cw.R.shipShown, pd: cw.g.pd };
+  });
+  expect(dip.dark, 'a mid-run continue did not dip to black').toBeGreaterThan(0);
+  expect(dip.ship, 'a second ship was drawn during the drop').toBe(false);
+  expect(dip.pd, 'the ship moved').toBe(90);
+  const deep = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.advance(2.4);
+    return { mode: cw.g.mode, pd: cw.g.pd, eye: cw.R.eye, dark: Number(document.getElementById('flash')!.style.opacity), ship: cw.R.shipShown };
+  });
+  expect(deep.mode, 'a mid-run continue took more than 2.6 s of game time').toBe('play');
+  expect(deep.pd, 'CONTINUE moved a mid-run ship').toBe(90);
+  expect(deep.eye, 'play began with the eye still detached from the ship').toBeNull();
+  expect(deep.ship).toBe(true);
+  expect(deep.dark, 'still dark when play began').toBe(0);
 
   /* 3. NEW GAME PLUS: having beaten it, the intro comes back WITH a skip. The
         flag has to survive the wipe, or the one screen that should know the
@@ -1876,21 +1930,25 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
   await expect(page.locator('#introSkip'), 'a New Game Plus run must offer a skip')
     .toBeVisible();
 
-  /* 4. Skipping drops the captions and KEEPS the descent. */
+  /* 4. Skipping goes to the DESCENT and keeps it: the ship still comes down
+        onto the pad, out of the dark, and play begins when it lands. */
   await page.locator('#introSkip').dispatchEvent('click');
   const afterSkip = await page.evaluate(() => {
-    (window as any).__cw.advance(0.6);
-    return {
-      introGone: document.getElementById('intro')!.classList.contains('hidden'),
-      crossing: document.body.classList.contains('crossing'),
-      mode: (window as any).__cw.g.mode
-    };
+    const cw = (window as any).__cw;
+    cw.advance(0.6);
+    return { mode: cw.g.mode, ship: cw.R.shipShown, pd: cw.g.pd, t: cw.R.intro.t, crossing: document.body.classList.contains('crossing') };
   });
-  expect(afterSkip.introGone, 'skip left the captions up').toBe(true);
-  expect(afterSkip.crossing,
-    'skip threw away the arrival as well as the words - the ship should still fly down')
-    .toBe(true);
-  expect(afterSkip.mode).not.toBe('play');
+  expect(afterSkip.mode, 'skip threw away the arrival as well as the words').toBe('intro');
+  expect(afterSkip.ship, 'skip did not start the descent').toBe(true);
+  expect(afterSkip.pd, 'the ship is not above the pad after the skip').toBeLessThan(-4);
+  expect(afterSkip.crossing).toBe(true);
+  const skipped = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.advance(8);
+    return { mode: cw.g.mode, pd: cw.g.pd };
+  });
+  expect(skipped.mode, 'the descent after a skip never landed').toBe('play');
+  expect(skipped.pd).toBe(-1);
 });
 
 test('the HUD stays off the screen while the intro and the title are up', async ({ page }) => {
@@ -1932,40 +1990,13 @@ test('the HUD stays off the screen while the intro and the title are up', async 
   expect(await drawn(), 'the HUD never came back in play').toContain('hud');
 });
 
-/* THE HEADING. Measured, not reasoned about.
+/* ---------- what used to be here ----------
 
-   "The ship flies backwards" has now been reported three times in this game and
-   fixed wrongly twice, both times by arguing from the code about Euler order
-   and the sign of a pitch. The third fix came from measuring the vector between
-   the hull and the drill in the running game, which said the drill was pointing
-   at the camera when two rounds of arithmetic had concluded it was not.
-
-   So the arithmetic does not get another chance. This asserts the thing the
-   player actually sees: the drill leads, along the direction of travel. */
-test('the ship flies drill-first in the showcase', async ({ page }) => {
-  await page.goto('/?debug');
-  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
-  await page.evaluate(() => (window as any).__cw.showTitle());
-  await page.waitForTimeout(900);
-
-  const drill = await page.evaluate(() => {
-    const w = (window as any).__cw;
-    const at = (o: any) => { o.updateWorldMatrix(true, false); const e = o.matrixWorld.elements;
-      return { x: e[12], y: e[13], z: e[14] }; };
-    const hull = at(w.rig), tip = at(w.bit);
-    const d = { x: tip.x - hull.x, y: tip.y - hull.y, z: tip.z - hull.z };
-    const len = Math.hypot(d.x, d.y, d.z) || 1;
-    return { x: d.x / len, y: d.y / len, z: d.z / len };
-  });
-
-  /* The showcase camera sits at +z looking toward -z, so the direction of
-     travel is -z. The drill has to be pointing that way, and by most of a unit
-     vector rather than merely on the correct side of zero - it was 0.917 of
-     the way there while also pitched a quarter of a right angle nose-up, which
-     is what made it read as climbing. */
-  expect(drill.z, 'the drill must point away from the camera, along the heading').toBeLessThan(-0.9);
-  expect(Math.abs(drill.y), 'and must not be pitched up or down off that heading').toBeLessThan(0.2);
-});
+   `the ship flies drill-first in the showcase` measured the drill's heading in
+   the space scene, after "the ship flies backwards" had been reported three
+   times and fixed wrongly twice. The showcase went on 2026-09-12 - the way in
+   is played in the game's own scene now - and the ship in the descent faces
+   the way every landing ship in this game faces: drill down. */
 
 /* ---------- round six: the aisles, and what the shop is allowed to sell ----------
 

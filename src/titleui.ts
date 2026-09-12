@@ -1,21 +1,30 @@
 import { g, save, hasSave } from './sim/state';
 import { R } from './sim/runtime';
-import { sfx } from './audio';
+import { sfx, setDuck } from './audio';
 import { hardReset } from './actions';
-import { beginShowcase, endShowcase, beginLanding, beginLaunch, isLanding } from './transit';
-import { BEATS, newIntro, skip as skipIntro, advance as stepBeat, LANDING_SECS } from './sim/intro';
-import { skyLo } from './sim/config';
+import { CAPTIONS, captionAt, newIntro, begin, skip as skipIntro, newArrive } from './sim/intro';
 import { regionName, regionAt, WORLD_DEPTH } from './sim/region';
 import { tierOf } from './sim/unrest';
 import { ANCHOR_COUNT } from './sim/vaults';
-import { buildNotes, updateHUD, flash } from './ui';
+import { lamp, LAMP_COLOR } from './scene';
+import { buildNotes, updateHUD } from './ui';
 
-/* The title screen and the intro, wired up.
+/* The title screen, the intro and CONTINUE, wired up.
 
-   Kept apart from intro.ts, which is pure and holds the beats and their
-   timing. Same split as chart.ts against chartui.ts: what the sequence IS can
-   be walked by a test, what it LOOKS like cannot be tested at all, so there is
-   as little as possible in here. */
+   Kept apart from intro.ts, which is pure and holds the timelines: what the
+   sequence IS can be walked by a test, what it LOOKS like cannot be tested at
+   all, so there is as little as possible in here. The frame loop reads the
+   timelines every tick and draws them through the game's own camera - see
+   "the way in" in loop.ts - and this file only opens and closes the screens
+   over the top.
+
+   THERE IS NO SECOND SCENE ANY MORE. Until 2026-09-12 the title and the intro
+   ran on transit.ts: a starfield, planets under a sun, and a white flash to
+   hide the cut into the game. *"redo the intro completely ... an eerie and
+   high quality feel that matches the rest of the game ... an actual
+   transition, not just a cut."* The picture that did not match the game was
+   that scene. Everything here now happens in the world the game is played in,
+   and the ship's landing is the ship landing. */
 
 function el(id: string): HTMLElement {
   const e = document.getElementById(id);
@@ -37,54 +46,54 @@ export function showTitle() {
   el('pauseSub').textContent = 'Everything is frozen until you resume';
   el('btnResume').textContent = 'RESUME';
   g.mode = 'title';
+  R.intro = null;
+  R.arrive = null;
+  dipTo(0);
   /* The intro and the title are alternatives, and only one of them used to say
      so: showIntro hid the title but not the other way round, so reaching the
-     title while the intro was up drew both at once - wordmark, buttons,
-     caption and skip button stacked on one screen. */
+     title while the intro was up drew both at once. */
   el('intro').classList.add('hidden');
-  beginShowcase();
 
   /* GREYED, not hidden, and he was specific about it: *"If there is no saved
-     game, make sure the continue button is greyed out."* He is right. A button
-     that is absent tells a new player nothing; a greyed one says "this is
-     where your game will be", which is the only thing a first-time title
-     screen can usefully say about it. `disabled` rather than a class alone, so
-     it cannot be tapped either. */
+     game, make sure the continue button is greyed out."* A button that is
+     absent tells a new player nothing; a greyed one says "this is where your
+     game will be". `disabled` rather than a class alone, so it cannot be
+     tapped either. */
   const cont = el('btnContinue') as HTMLButtonElement;
   const has = hasSave();
   cont.disabled = !has;
   cont.classList.toggle('off', !has);
   /* The campaign in one line, which the round-eight design asks for at every
      return: where the ship is, how deep the run has been, how far through the
-     Anchors. It read "core at 452 m" until R9b, three days after the core was
-     deleted - the one screen every returning player sees was naming an
-     objective that no longer existed. */
+     Anchors. */
   el('titleFine').textContent = has
     ? regionName(regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)))) + ' · ' +
       Math.max(0, Math.round(g.best.depth)) + ' m of ' + WORLD_DEPTH + ' · ' +
       tierOf(g.ground) + ' of ' + ANCHOR_COUNT + ' Anchors lit'
     : 'No saved run yet';
   el('title').classList.remove('hidden');
+  /* `crossing` is the way-in flag: the HUD is hidden under it, and the smoke
+     helper waits for it to clear. The name is older than what it means. */
   document.body.classList.add('crossing');
 }
 
 function hideTitle() {
   el('title').classList.add('hidden');
-  document.body.classList.remove('crossing');
 }
 
 /* ---------- the intro ---------- */
 
-let st = newIntro();
-
 export function showIntro() {
   g.mode = 'intro';
-  st = newIntro();
-  R.intro = st;
-  beginShowcase();
+  R.intro = newIntro();
+  R.arrive = null;
   el('title').classList.add('hidden');
   el('intro').classList.remove('hidden');
+  el('introTap').classList.remove('gone');
+  el('introText').classList.remove('on');
+  el('introText').textContent = '';
   document.body.classList.add('crossing');
+  dipTo(0);
 
   /* THE SKIP BUTTON IS FOR PEOPLE WHO HAVE FINISHED THE GAME.
 
@@ -92,118 +101,93 @@ export function showIntro() {
      have beaten the game and are doing a new game plus run, do the full intro
      but provide a skip button."*
 
-     Which is the right shape, and it is worth saying why it is not the usual
-     "always let them skip". A cutscene you cannot skip is a tax on every
-     REPLAY - and until the Heart is broken there has been no replay. A first
-     run sees it once, which is the one time it is doing its job; a run started
-     after winning has seen it, and gets the way out.
-
-     Tapping still steps through it on any run, so nobody is ever stuck
-     watching a line they have finished reading. */
+     A cutscene you cannot skip is a tax on every REPLAY - and until the
+     centre is open there has been no replay. A first run sees it once, which
+     is the one time it is doing its job; a run started after winning has seen
+     it, and gets the way out. */
   el('introSkip').classList.toggle('hidden', !g.won);
-
-  const dots = el('introDots');
-  dots.innerHTML = BEATS.map(() => '<i></i>').join('');
-  paintBeat();
 }
 
-/* Repaint the caption and hand the renderer the new picture. Called only when
-   the beat actually changes - see introTick's return value. */
-export function paintBeat() {
-  const b = BEATS[st.i];
+/* The tap. Also the first touch, which is what lets the audio start - so the
+   one sound in the hall can actually be heard. Idempotent. */
+export function startIntro() {
+  if (!R.intro) return;
+  begin(R.intro);
+  el('introTap').classList.add('gone');
+}
+
+/* Repaint the caption. Called only when the visible line changes - see
+   introTick's return value - three times in the whole sequence. */
+export function paintCaption() {
+  if (!R.intro) return;
+  const i = captionAt(R.intro.t);
   const txt = el('introText');
-  /* Off, then on next frame, so the CSS transition re-runs. Setting the text
-     alone would swap it instantly under a class that is already `on`. */
+  if (i < 0) { txt.classList.remove('on'); return; }
+  /* Off, then on next frame, so the CSS transition re-runs. */
   txt.classList.remove('on');
+  const text = CAPTIONS[i].text;
   requestAnimationFrame(() => {
-    txt.textContent = b.text;
+    txt.textContent = text;
     txt.classList.add('on');
   });
-  const dots = el('introDots').children;
-  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i <= st.i);
 }
 
-/* The captions are done; hide them and let the ship come down. The intro is
-   not over until it has landed - arriving somewhere is not the cutscene, it is
-   how the game starts. */
-export function beginIntroLanding() {
-  el('intro').classList.add('hidden');
-  beginLanding(0, LANDING_SECS);
-}
-
+/* The touchdown has happened; the frame loop calls this on the same tick. */
 export function endIntro() {
   el('intro').classList.add('hidden');
-  arrive(0);
   R.intro = null;
+  leave();
   onStart(true);
 }
 
-/* The last handful of frames of a descent are the world's surface filling the
-   screen, and the first frame of the game is a ship on a pad. Cutting straight
-   between them reads as the scene failing rather than as arriving, so the
-   world's own sky takes the screen for a moment and pulls back in-game. One
-   call, and it is the difference between a transition and a jump. */
-function arrive(world: number) {
+/* ---------- CONTINUE ---------- */
+
+/* Playtest: *"a very short intro after hitting the continue button as well.
+   It should only take a few seconds to start playing again."*
+
+   Two seconds, and no flight. The title already shows the surface at night
+   with no ship on it; CONTINUE brings the ship down onto the pad as the sky
+   wakes, or - on a mid-run save - dips to black and drops the camera down the
+   shaft to where the ship is. intro.ts has the timeline; the loop draws it. */
+function startGame() {
+  hideTitle();
+  g.mode = 'arrive';
+  R.arrive = newArrive(g.pd);
+}
+
+export function endArrive() {
+  R.arrive = null;
+  leave();
+  onStart(false);
+}
+
+/* Hand the scene back to play: the eye is the ship again, the sky is the
+   world's own, the lamp is the headlamp, the HUD comes up. One place, for
+   both ways in, so they cannot leave the world in two different states. */
+function leave() {
+  R.eye = null;
+  R.shipShown = true;
+  R.dawn = 1;
+  R.lampLevel = 1;
+  lamp.color.setHex(LAMP_COLOR);
+  setDuck(1);
+  dipTo(0);
   document.body.classList.remove('crossing');
-  endShowcase();
-  const sky = skyLo(world).toString(16).padStart(6, '0');
-  flash('#' + sky, 620);
 }
 
-/* ---------- leaving ---------- */
-
-/* CONTINUE does not cut into the game. Playtest: *"if you hit continue, have
-   the ship take off and fly to the planet the player is currently at."*
-
-   The same landing the intro ends on, because it is the same event - and
-   sharing it means the arrival cannot be good in one place and stale in the
-   other. The title's buttons go, the showcase stays up, and the frame loop
-   flies it down. */
-let landingInto: boolean | null = null;
-
-function startGame(fresh: boolean) {
-  el('title').classList.add('hidden');
-  landingInto = fresh;
-  /* Take off, THEN fly there. beginLaunch runs the burn and hands over to the
-     landing itself, so this asks for a destination rather than sequencing
-     phases - see the note in transit.ts. */
-  beginLaunch(g.world);
+/* The dip to black on a mid-run CONTINUE. The flash element is a full-screen
+   sheet already in the DOM; this drives its opacity directly instead of
+   through flash()'s timer. Darkness hides a swap in a way brightness cannot -
+   the eye is not adapted to it - and here it is hiding a camera move of
+   several hundred metres. */
+export function dipTo(a: number) {
+  const f = el('flash');
+  f.style.background = '#000';
+  f.style.opacity = String(a);
 }
-
-/* Called by the frame loop when a CONTINUE landing finishes. */
-export function finishLanding() {
-  if (landingInto === null) return;
-  const fresh = landingInto;
-  landingInto = null;
-  /* The cut is hidden inside the atmosphere rather than played over it.
-
-     Playtest: *"can you make the cut from the ship flying to the planet, to it
-     landing more seamless? I want it to actually show the ship flying onto the
-     planet, then landing where befor being available to take control."*
-
-     Two scenes have to be joined here - the crossing has its own camera, its
-     own scale and its own sky - and no amount of matching makes two different
-     renderers agree frame to frame. What does work is what every film does with
-     a cut it cannot hide: put something bright over it. The landing already
-     ends with the destination's own sky washing the frame out, so the flash
-     starts in that colour and holds through the swap, and the game's first
-     frames are the ship still coming down onto the pad rather than sitting on
-     it. The descent is on the far side of the cut, which is the half he could
-     not see. */
-  flash('rgba(255,255,255,.92)', 620);
-  arrive(g.world);
-  onStart(fresh);
-}
-
-/* Is a title-screen landing in flight? The intro has its own clock and its own
-   end, so the loop has to be able to tell the two apart. */
-/* True from the moment CONTINUE is pressed until the ship is on the ground.
-   It has to cover the LAUNCH as well as the landing: `landingInto` is set at
-   the launch and the loop only stops watching once the whole thing is over. */
-export function titleLanding() { return landingInto !== null; }
 
 export function wireTitle() {
-  el('btnContinue').onclick = () => { sfx.ui(); startGame(false); };
+  el('btnContinue').onclick = () => { sfx.ui(); startGame(); };
 
   el('btnNewGame').onclick = () => {
     sfx.ui();
@@ -222,30 +206,19 @@ export function wireTitle() {
   el('introSkip').onclick = (e) => {
     e.stopPropagation();
     sfx.ui();
-    /* Skips the CAPTIONS and nothing else. Playtest: *"if that is pressed,
+    /* Skips to the DESCENT and nothing else. Playtest: *"if that is pressed,
        skip the main part of the intro but still have the ship fly to the
-       planet."*
-
-       So it hands over to the descent and the frame loop flies it down -
-       exactly as running out of captions does. This used to call endIntro()
-       straight after, which threw away the arrival with the words and dropped
-       the player onto the pad from nowhere. `skip` sets the landing; the loop
-       watches for it; there is one route to the ground. */
-    skipIntro(st);
-    beginIntroLanding();
+       planet."* The ship still comes down onto the pad; a second press during
+       the descent ends it. */
+    if (!R.intro) return;
+    skipIntro(R.intro);
+    el('introTap').classList.add('gone');
+    paintCaption();
   };
 
-  /* Tap anywhere else to go to the next beat. On a phone the natural thing to
-     do with a caption you have finished is touch the screen, and a reader
-     faster than the timer should never be waiting for it. */
-  el('intro').onclick = () => {
-    if (st.done || st.landing) return;
-    /* stepBeat returns false when it runs out of captions and enters the
-       descent, which is not a caption change - the loop watches `landing` for
-       that and starts the flight down. A tap here never ends the intro; only
-       the landing does. */
-    if (stepBeat(st)) { sfx.ui(); paintBeat(); }
-  };
+  /* The tap that begins it. A tap during the sequence is not a skip - see
+     intro.ts - so this is a no-op after the first. */
+  el('intro').onclick = () => { startIntro(); };
 }
 
 /* Settings and Notes both open the pause sheet, which already IS the settings

@@ -655,8 +655,9 @@
   #btnPause{color:var(--dim);}
 
   /* ---------- the way in ----------
-     Both screens are transparent over the 3D showcase, so the only thing they
-     draw is text and buttons. */
+     Both screens are transparent over the game's own scene - the surface at
+     night, or the intro's eye moving through the rock - so the only thing
+     they draw is text and buttons. */
   #title{
     position:fixed; inset:0; z-index:24; display:flex; flex-direction:column;
     padding:26px 22px calc(var(--ctrl-b) + 18px);
@@ -699,7 +700,10 @@
   #intro{
     position:fixed; inset:0; z-index:24; display:flex; flex-direction:column;
     justify-content:flex-end; padding:26px 24px calc(var(--ctrl-b) + 26px);
-    background:linear-gradient(180deg, rgba(4,6,12,.30) 0%, rgba(4,6,12,.10) 40%, rgba(4,6,12,.86) 100%);
+    /* Barely there. The picture under this is the intro now, and its darkness
+       is its own; the old .86 at the bottom was hiding the ground waking
+       under the ship. The caption has a text shadow to stand on. */
+    background:linear-gradient(180deg, rgba(4,6,12,0) 0%, rgba(4,6,12,0) 55%, rgba(4,6,12,.42) 100%);
   }
   #introText{
     font-size:clamp(16px, 5.2vw, 22px); line-height:1.5; color:#eef4ff; font-weight:600;
@@ -709,9 +713,17 @@
     opacity:0; transition:opacity .5s ease;
   }
   #introText.on{opacity:1;}
-  #introDots{display:flex; gap:6px; margin-top:18px;}
-  #introDots i{width:16px; height:3px; border-radius:2px; background:rgba(255,255,255,.20);}
-  #introDots i.on{background:rgba(160,210,255,.85);}
+  /* The tap. It arrives late and breathes, and it is the only thing on a
+     black screen: the first touch is also what lets the audio start, so the
+     intro cannot begin without it. */
+  #introTap{
+    position:absolute; left:0; right:0; bottom:calc(var(--ctrl-b) + 30vh);
+    text-align:center; font-size:12px; font-weight:700; letter-spacing:.34em;
+    color:rgba(196,216,255,.62); opacity:0;
+    animation:tapBreathe 2.4s ease-in-out 1.4s infinite;
+  }
+  #introTap.gone{display:none;}
+  @keyframes tapBreathe{0%{opacity:0} 50%{opacity:1} 100%{opacity:0}}
   /* THIS RULE WAS MISSING from the day the button arrived. titleui.ts toggles
      `hidden` on it for a first run - *"if you are starting a new run, do the
      full intro"* - and nothing in this stylesheet gave that class a meaning
@@ -750,6 +762,10 @@
   body.crossing #hud, body.crossing #kit, body.crossing #cluster,
   body.crossing #actions, body.crossing #ord, body.crossing #ctrl,
   body.crossing #vignette, body.crossing #heat{display:none !important;}
+  /* And when the class goes, the HUD arrives rather than appears. A display
+     change restarts an animation, so this runs once at touchdown. */
+  #hud, #ctrl, #cluster, #actions{animation:wake .7s ease-out;}
+  @keyframes wake{from{opacity:0}}
   .sheet{
     width:100%; max-width:460px; max-height:86vh; overflow:auto;
     background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px;
@@ -1203,8 +1219,8 @@
 </div>
 
 <div id="intro" class="hidden">
+  <div id="introTap">TAP</div>
   <div id="introText"></div>
-  <div id="introDots"></div>
   <button id="introSkip">SKIP &rsaquo;&rsaquo;</button>
 </div>
 

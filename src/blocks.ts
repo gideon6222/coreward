@@ -3,6 +3,7 @@ import { beginGrowth, addGrowth, finishGrowth } from './growth';
 import { W } from './sim/config';
 import { key } from './sim/util';
 import { g } from './sim/state';
+import { R } from './sim/runtime';
 import { regionAt } from './sim/region';
 import { blockAt } from './sim/world';
 import { rnd } from './sim/util';
@@ -393,8 +394,9 @@ function rebuild() {
   oreGlows.length = 0;
   beginGrowth();
 
-  const row = lastRow === null ? Math.floor(g.pd) : lastRow;
-  const col = lastCol === null ? Math.round(g.px) : lastCol;
+  const v = R.eye || g;
+  const row = lastRow === null ? Math.floor(v.pd) : lastRow;
+  const col = lastCol === null ? Math.round(v.px) : lastCol;
   const d0 = Math.max(0, row - 13), d1 = row + 15;
   /* Clamped to the world rather than centred on the ship, so standing at the
      edge still fills the window instead of drawing half of one. */
@@ -517,8 +519,12 @@ function rebuild() {
 }
 
 export function syncBlocks(force?: boolean) {
-  const row = Math.floor(g.pd);
-  const col = Math.round(g.px);
+  /* Around the EYE, not the ship, when they differ: the intro and CONTINUE
+     move the camera through the world with no ship in it, and the ground has
+     to be there when the camera arrives. In play the eye is the ship. */
+  const v = R.eye || g;
+  const row = Math.floor(v.pd);
+  const col = Math.round(v.px);
   /* A rebuild on crossing a COLUMN as well as a row. Without this half of the
      change above is inert: the window would have a horizontal axis that never
      moved, and flying sideways would walk out of the drawn ground. */

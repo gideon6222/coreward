@@ -3995,3 +3995,111 @@ The Drift is still a field of dead worlds and the ship is still on its way
 to the one that matters; the captions were written to that picture rather
 than the picture rebuilt for the captions. If R9a says the flight reads as
 "you will visit these", that is the thing to change.
+
+(He said it within the hour. See R9f below.)
+
+---
+
+# Round nine, R9f, 2026-09-12: the way in, redone
+
+His words on v0.32.0, an hour after R9b shipped: *"redo the intro
+completely ... an eerie and high quality feel that matches the rest of the
+game ... an actual transition, not just a cut ... a very short intro after
+hitting the continue button."* A restatement from scratch, so the picture
+was wrong, not the words: a separate space scene with billiard-ball worlds
+under a sun, in a game whose every praised frame is dark rock under a lamp.
+
+## What was built
+
+**The intro plays in the game's own scene, with the game's own camera.**
+There is no second scene and nothing to cut between. `src/sim/intro.ts` is a
+pure timeline that says, for every second, where the EYE is (the point the
+world streams around, the light floods from and the camera looks at) and
+whether there is a ship; the loop's "way in" block reads it and draws it
+exactly as it draws play. Tap on black. The eye inside Rustmoor's hall at
+41 m - the hall the first descent cuts into at 48 s - with a cold light
+breathing up over the cut stone and the Anchor, one rumble, one line. The
+rise to the surface through dark rock. The pad at night, the Ballast's vent
+and the pad lights the only light, one line. The ship's lamp coming down
+out of the dark, the ground waking under it, touchdown, HUD, controls.
+Three lines, twenty words, 28 s after the tap.
+
+**CONTINUE is two seconds.** The title is the pad at night with no ship.
+A surface save brings the ship down onto the pad. A mid-run save drops the
+CAMERA down the shaft to the ship - which turned out to be the best two
+seconds in the game, the lit shaft going past the hall - from the pad if the
+ship is inside 44 m, and from a window above it behind a dip to black if it
+is deeper (a 400 m drop in two seconds is a window rebuild per frame or
+worse on the phone). Measured on the real clock in headless Chrome:
+CONTINUE to play in 2.8 s wall for 2.0 s of game time.
+
+**Deleted in the same commit:** `transit.ts` (the showcase, launch and
+landing, ~520 lines), `planet-normal.webp` and its budget line, the settle
+mode and its four constants, the drill-first showcase test, and four
+filmstrip scenes.
+
+## Numbers
+
+| constant | value | why |
+|---|---|---|
+| `HALL_SECS` / `RISE_SECS` / `SURFACE_SECS` / `DESCENT_SECS` | 7 / 8 / 6 / 7 | the hall needs three seconds to breathe up and three to be read; the descent is the old settle's 2 s plus the approach |
+| `DESCENT_FROM` | 24 m | enters the frame as a light before it is a shape; the surface camera frames about 18 rows |
+| `RUMBLE_AT` | 1.4 s | rumble has a 1.6 s attack; it has arrived by the first line at 3.6 s |
+| `ARRIVE_SECS` / `ARRIVE_FROM` / `ARRIVE_FLY` | 2.0 s / 22 m / 44 m | the shallow drop peaks under 60 m/s, one row rebuild per frame at 60 fps |
+| the eye's lamp | `0x9fc4ff`, haze mixed 0.85 toward it | cold: this is not the headlamp, there is no ship yet |
+| the intro overlay | 0 to 55%, then to .42 | was .86 at the bottom and hid the ground waking under the ship |
+
+## Three things the film found, in order
+
+1. **The hall was lit warm and fully from frame 0.** The cold light never
+   breathed up because the tunnel HAZE - the additive plane that is most of
+   what a lit room looks like - has its own gain and ignores the point
+   light's intensity. `setHazeGain` scales it by the lamp level now, and the
+   haze is tinted cold while there is no ship.
+2. **The surface stayed dark until play began.** The eye sat at depth 0,
+   which is the first row of rock; the pad and a landed ship are at -1, in
+   open air. A light source inside a solid cell floods nothing. The eye ends
+   its rise at `PAD_D` now, and the test asserts the eye's cell is open at
+   every surface moment.
+3. **CONTINUE's ground looked dark to the last frame of the film and lit on
+   the real clock.** The filmstrip advances the game in quarter-second
+   chunks and draws once per chunk; the light field's smoothing is per drawn
+   frame with the skipped time carried, which is right for the game and
+   wrong for a sheet of ten frames. A run on the real clock (`rt-*.png`)
+   showed the ground lit at 1.7 s. **When a sheet shows a fade that should
+   have finished, run it on the real clock before touching the game.**
+
+## The six questions, from `film-intro.png`, `film-continue*.png`, `film-title.png`, `film-ngskip.png` and the real-clock stills
+
+1. **Feedback in the same frame as each action.** The tap starts the light;
+   the rumble is under the first line; touchdown has the dust, the supply
+   thud and the shake the settle always had; the HUD wakes over 0.7 s.
+2. **Acceleration and coasting.** The eye's rise and the ship's descent are
+   both smoothstep, and the test asserts the ship never jumps more than
+   half a metre a frame and never goes back up.
+3. **Anything popping in or drawn over what it belongs behind.** Nothing
+   now. The three above are fixed. The dip to black on a deep CONTINUE is a
+   0.3 s CSS transition on the wall clock and does not show on a sheet.
+4. **Short states visible in at least one frame.** The ship as a light
+   before it is a shape (frame 17); the hall's roof passing (frame 5); the
+   cold pool in rock (6-8).
+5. **A win and a visible next goal in the first sixty seconds.** Unchanged
+   from R9b: the hall at 48 s, the card at 56 s - and the hall is now the
+   one the intro showed in the dark, which is the "familiar, then changed"
+   device the research names (Outer Wilds).
+6. **Any frame where the player would not know what to do.** The black
+   before the tap: TAP breathes at the thumb from 1.4 s. And the hall: the
+   first line waits 3.6 s so the picture is seen before it is captioned,
+   which is a choice, and the one to watch on the phone.
+
+## Not judged here
+
+The sky. "The sky wakes from night to day" is in the design and is barely
+visible: Rustmoor's day sky is `#0d2b52` at the top and night is `#02030a`,
+so the wake is the GROUND lighting and the lamp, not the sky. If it needs
+to read, the day sky is the thing to brighten, and that is a look he has
+seen and not complained about.
+
+Sound. The rumble, the ducked score coming up under the rise and the
+tritone are in the code and cannot be filmed. First thing to listen for on
+the phone.

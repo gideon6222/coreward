@@ -202,7 +202,7 @@ export type Dir = 'up' | 'down' | 'left' | 'right';
 
 /* g.mode gates input and the frame loop. */
 export type Mode = 'play' | 'shop' | 'manifest' | 'pause' | 'event' | 'fly'
-                 | 'title' | 'intro' | 'settle' | 'map' | 'ballast';
+                 | 'title' | 'intro' | 'arrive' | 'map' | 'ballast';
 
 /* Chewing through one block. */
 export interface Dig {

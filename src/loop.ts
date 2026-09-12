@@ -28,11 +28,11 @@ import {
   LANE_PULL, DIG_ALIGNED,
   depthT, heatT, easeInOut, approach, zoomForScan, digFuelForStep, heatDamagePerSecond, soakAfter,
   tremorTick, TREMOR_EVERY, TREMOR_JITTER, chargeAfter, fuelToClimb, fuelState, FUEL_IDLE
-, SETTLE_RATE, SETTLE_DONE, SETTLE_MAX} from './sim/feel';
-import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, fog, shipKey, renderWorld } from './scene';
+} from './sim/feel';
+import { scene, camera, renderer, gameEl, amb, sun, rim, lamp, LAMP_COLOR, fog, shipKey, renderWorld } from './scene';
 import { lerpHex, worldX, crackGeo, crackMat } from './materials';
 import { meshes, syncBlocks, dropBlock, beginDig, pulseHaloes } from './blocks';
-import { updateLight, setHazeColor } from './lightmap';
+import { updateLight, setHazeColor, setHazeGain } from './lightmap';
 import { spray, stepParticles, starMat, sunSprite } from './particles';
 import { stepDust } from './dust';
 import { leaveDrop, stepDrops } from './drops';
@@ -48,12 +48,12 @@ import { stepParallax, fadeParallax, setParallaxTint } from './parallax';
 import { ui, atSurface, updateHUD, toast, flash, tickToast, tickFound, foundBanner } from './ui';
 import { stepGauges } from './gauges';
 import { sell, goSurface, die, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, anchorLit, vaultReached } from './actions';
-import { sfx, setDepth, setMood } from './audio';
+import { sfx, setDepth, setMood, setDuck } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
-import { isShowcase, stepShowcase, renderTransit,
-         landingT, isLanding } from './transit';
-import { introTick, beatT } from './sim/intro';
-import { endIntro, paintBeat, beginIntroLanding, titleLanding, finishLanding } from './titleui';
+import { introTick, eyeAt, titleEye, arriveTick, arriveEye, arriveDip,
+         RUMBLE_AT, HALL_END, RISE_SECS, ARRIVE_SURFACE, PAD_D } from './sim/intro';
+import type { Eye } from './sim/intro';
+import { endIntro, endArrive, paintCaption, dipTo } from './titleui';
 
 export const FACE_VEC: Record<Dir, number[]> =
   { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -98,6 +98,45 @@ function startDig(tx: number, td: number, dir: Dir) {
 }
 
 let camZBoost = 0, freeze = 0, thrustLevel = 0, bank = 0;
+
+/* ---------- the way in, applied ----------
+
+   intro.ts says where the eye is and whether there is a ship; this is the
+   one place that turns that into renderer state. */
+
+/* A cold lamp while there is no ship: this is not the headlamp, there is
+   nothing to carry one yet. The ship's own colour comes back with the ship. */
+const EYE_LAMP_COLOR = 0x9fc4ff;
+/* the sun sprite's size at full day; see particles.ts */
+const SUN_SIZE = 16;
+/* which run of the intro the rumble has already played for */
+let rumbledFor: object | null = null;
+
+function applyEye(e: Eye) {
+  R.eye = { px: e.px, pd: e.pd };
+  R.dawn = e.dawn;
+  R.lampLevel = e.light;
+  if (e.shipD !== null) {
+    g.pd = e.shipD;
+    R.shipShown = true;
+    thrustLevel = e.thrust;
+  } else {
+    R.shipShown = false;
+  }
+  lamp.color.setHex(e.shipD === null ? EYE_LAMP_COLOR : LAMP_COLOR);
+  syncBlocks();
+}
+
+/* The weight going onto the pad. The end of the intro and of a surface
+   CONTINUE, and the same three signals a landing has always had. */
+function touchdown() {
+  g.pd = PAD_D;
+  R.wasAtSurface = true;
+  R.held = null; R.vx = 0; R.vy = 0;
+  spray(worldX(g.px), -g.pd - 0.4, 0xcfc0a4, 26, 3.4, 0.8);
+  sfx.supply();
+  R.shake = Math.max(R.shake, 0.28);
+}
 let last = performance.now(), skyTick = 0;
 
 /* Seconds of game time since boot, accumulated from the deltas rather than read
@@ -227,28 +266,6 @@ export function tick(raw: number, draw = true) {
       sell();
       R.shake = SHAKE_LANDING;
       flash('rgba(110,220,255,.22)', 240);
-    }
-  } else if (g.mode === 'settle') {
-    /* The touchdown. The ship closes on the pad on the same approach()
-       smoothing the camera and the needles use, so it reads as the game
-       arriving rather than as a scripted move.
-
-       On `raw` rather than `dt`: nothing here is simulation, and hit-stop
-       cannot be in flight before the player has the controls anyway.
-
-       The timeout is not belt-and-braces - approach() is asymptotic and never
-       reaches its target, so something has to decide when close is down. */
-    R.settleT += raw;
-    g.pd = approach(g.pd, -1, SETTLE_RATE, raw);
-    thrustLevel = 1;
-    if (Math.abs(g.pd + 1) < SETTLE_DONE || R.settleT >= SETTLE_MAX) {
-      g.pd = -1;
-      g.mode = 'play';
-      R.wasAtSurface = true;
-      /* Dust off the pad as the weight goes on. */
-      spray(worldX(g.px), -g.pd - 0.4, 0xcfc0a4, 26, 3.4, 0.8);
-      sfx.supply();
-      R.shake = Math.max(R.shake, 0.28);
     }
   } else if (g.mode === 'play') {
     /* The only clock the run log keeps. It runs in play and nowhere else, so
@@ -780,7 +797,7 @@ export function tick(raw: number, draw = true) {
 
   stepParticles(dt);
   stepBeam(raw);
-  setDepth(g.pd);
+  setDepth((R.eye || g).pd);
   /* Hand the score what the depth actually MEANS. Danger is whichever of a
      failing hull or a full heat soak is worse, so the alarm layer answers to
      both without either drowning the other. */
@@ -795,39 +812,38 @@ export function tick(raw: number, draw = true) {
      lamp, the world ambience, the vignette - is about being underground, and
      running it against a ship that is no longer in that world would fight the
      station's own framing. So the loop stops here and draws the room. */
-  /* The title screen and the intro, before anything else. Both run on the
-     showcase - the crossing's own scene - so the ship has been reparented out
-     of the world and nothing underground applies to it.
+  /* ---------- the way in ----------
 
-     The intro's clock runs on `raw`: it is a sequence of pictures, not
-     simulation, and hit-stop cannot be in flight before the game has started
-     anyway. */
-  if (isShowcase()) {
-    if (g.mode === 'intro' && R.intro) {
-      const st = R.intro;
-      const wasLanding = st.landing;
-      if (introTick(st, raw)) paintBeat();
-      /* Entering the landing is a transition, not a caption change, so it is
-         watched for rather than returned. */
-      if (!wasLanding && st.landing) beginIntroLanding();
-      stepShowcase(raw, clock);
-      /* Ordered AFTER the step so the last frame of the descent is drawn.
-         Held in a local first, because endIntro clears R.intro and reading it
-         back on the same frame is how the old version threw every single time
-         the intro finished. */
-      if (st.done) endIntro();
-    } else {
-      stepShowcase(raw, clock);
-      /* A CONTINUE landing has no caption clock of its own - it is over when
-         the flight says it is. */
-      /* Not while it is still burning: isLanding() is false during the launch,
-         and landingT() reads 1 from the previous descent, so testing the
-         fraction alone would end the sequence on its first frame. */
-      if (titleLanding() && isLanding() && landingT() >= 1) finishLanding();
-    }
-    tickToast(raw); tickFound(raw);
-    if (draw) renderTransit();
-    return;
+     The title screen, the intro and CONTINUE all play IN THIS SCENE, with
+     this camera and this lamp. There is no second scene and nothing to cut
+     between: *"if there are any transitions from flying in a cutscene to
+     landing, I want an actual transition, not just a cut."* Each of them
+     writes where the EYE is - the point the world streams around, the light
+     floods from and the camera looks at - and whether the ship is in the
+     picture, and the rest of this tick draws that exactly as it draws play.
+     intro.ts owns the timelines; this only reads them.
+
+     On `raw`: nothing here is simulation, and hit-stop cannot be in flight
+     before the game has started. */
+  if (g.mode === 'intro' && R.intro) {
+    const st = R.intro;
+    if (introTick(st, raw)) paintCaption();
+    /* The one sound. Once, when it is due, for this run of the intro. */
+    if (st.started && st.t >= RUMBLE_AT && rumbledFor !== st) { rumbledFor = st; sfx.rumble(); }
+    /* Silence until the rise; the score is up by the surface. */
+    setDuck(st.started ? clamp((st.t - HALL_END) / RISE_SECS, 0, 1) : 0);
+    applyEye(eyeAt(st.t));
+    /* Ordered AFTER the eye so the last frame of the descent is drawn where
+       it lands. endIntro clears R.intro; `st` is held. */
+    if (st.done) { touchdown(); endIntro(); }
+  } else if (g.mode === 'arrive' && R.arrive) {
+    const st = R.arrive;
+    arriveTick(st, raw);
+    dipTo(arriveDip(st));
+    applyEye(arriveEye(st));
+    if (st.done) { if (st.fromD <= ARRIVE_SURFACE) touchdown(); endArrive(); }
+  } else if (g.mode === 'title') {
+    applyEye(titleEye());
   }
 
   if (isDocked()) {
@@ -839,14 +855,21 @@ export function tick(raw: number, draw = true) {
     return;
   }
 
-  /* ship transform */
+  /* ship transform. `v` is the EYE - the ship in play, and wherever the way
+     in has put it otherwise; the world, the lamp and the camera follow the
+     eye, the hull follows the ship. */
+  const v = R.eye || g;
   const px = worldX(g.px), py = -g.pd;
+  const vx = worldX(v.px), vy = -v.pd;
   player.position.set(px, py, SHIP_Z);
+  player.visible = R.shipShown;
   R.squash *= SQUASH_DECAY;
   const sq = 1 + R.squash * SQUASH_SCALE;
   player.scale.set(1 / sq, sq, 1);
   rig.rotation.y = bank;
-  lamp.position.set(px, py, 1.7);
+  /* The lamp rides the ship when there is one, and stands in for it when
+     there is not. */
+  if (R.shipShown) lamp.position.set(px, py, 1.7); else lamp.position.set(vx, vy, 1.7);
   /* the ship's own key travels with it, slightly in front and above */
   shipKey.position.set(px + 0.35, py + 0.5, 1.5);
   lamp.distance = S.light();
@@ -890,7 +913,7 @@ export function tick(raw: number, draw = true) {
      by the smoothed facing gives world (sin, -cos) - which in the grid's
      frame, where +y is deeper, is (sin, cos). */
   const fz = rig.rotation.z;
-  updateLight(g.px, g.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw,
+  updateLight(v.px, v.pd, S.light() * LM_RANGE_MULT, Math.sin(fz), Math.cos(fz), raw, draw,
               S.surveyM());
 
   const fscale = 0.25 + thrustLevel * 1.15;
@@ -901,28 +924,37 @@ export function tick(raw: number, draw = true) {
   }
 
   /* world ambience */
-  const tDeep = depthT(g.pd);
+  const tDeep = depthT(v.pd);
   /* Squared, not linear: see AMBIENT_DEEP in feel.ts. The fill light has to be
      gone by the time the lamp is the only thing lighting anything, and a linear
-     ramp is still handing out a third of it halfway down. */
-  const fall = Math.pow(1 - tDeep, LIGHT_FALL_POW);
+     ramp is still handing out a third of it halfway down.
+
+     And scaled by DAWN: the way in starts at night, and night is the daylight
+     part of every light gone - the deep floor stays, so a hall the eye sits
+     in is lit by the lamp breathing up and by nothing else. 1 in play. */
+  const fall = Math.pow(1 - tDeep, LIGHT_FALL_POW) * R.dawn;
   amb.intensity = AMBIENT_DEEP + (AMBIENT_SURFACE - AMBIENT_DEEP) * fall;
-  sun.intensity = 1.5 * (1 - tDeep);
+  sun.intensity = 1.5 * (1 - tDeep) * R.dawn;
   rim.intensity = RIM_DEEP + (RIM_SURFACE - RIM_DEEP) * fall;
-  lamp.intensity = LAMP_INTENSITY;
+  lamp.intensity = LAMP_INTENSITY * R.lampLevel;
+  sunSprite.scale.setScalar(SUN_SIZE * R.dawn);
   fog.density = FOG_SURFACE + tDeep * FOG_GAIN;
   /* Below the heat line the whole world turns ember: sky, fog and the drifting
      dust all warm together. Three coordinated signals so the boundary reads at
      a glance instead of having to be noticed in the HUD. */
   const hot = heatT(g.pd, heatDepth(g.planet, worldTrait()),
                     (coreM() - heatDepth(g.planet, worldTrait())) * 0.55);
-  const hi = lerpHex(skyHi(g.world), 0x02030a, tDeep).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
-  const lo = lerpHex(skyLo(g.world), 0x0a0c14, tDeep).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
+  /* The sky at night is the sky at the bottom of the world: the same two
+     colours depth fades it to. So night is simply "as deep as it gets", and
+     dawn is the fade running the other way. */
+  const tSky = Math.max(tDeep, 1 - R.dawn);
+  const hi = lerpHex(skyHi(g.world), 0x02030a, tSky).lerp(new THREE.Color(0x2e0b05), hot * 0.8);
+  const lo = lerpHex(skyLo(g.world), 0x0a0c14, tSky).lerp(new THREE.Color(0x6b1c08), hot * 0.85);
   /* The SKY keeps the gradual ramp; the fog does not. Fog only ever tints what
      is underground, and underground is not the colour of the horizon - at 40 m
      the old shared value was still a bright blue and was washing it over every
      distant surface in the game. */
-  const tFog = clamp(tDeep * FOG_COLOR_RUSH, 0, 1);
+  const tFog = clamp(Math.max(tDeep * FOG_COLOR_RUSH, 1 - R.dawn), 0, 1);
   /* The deep fog target is the WORLD'S, not one shared near-black. It is most
      of what makes Cryon read as ice and Ashvault as ash from the surface down,
      because fog tints every distant surface in the frame at once. */
@@ -931,14 +963,18 @@ export function tick(raw: number, draw = true) {
   /* The tunnel haze and the silhouettes behind it take the same palette. Heat
      still overrides all of it at the bottom - the heat line has to read the
      same on every world or it stops being a threshold the player can learn. */
-  setHazeColor(mixHex(pal.haze, 0xff6a28, hot * 0.8));
+  /* And cold, while the way in has the eye and there is no ship: the glow in
+     the air is the lamp's, and there is no lamp yet. The haze is most of what
+     a lit hall looks like - the point light alone is the walls. */
+  setHazeColor(R.shipShown ? mixHex(pal.haze, 0xff6a28, hot * 0.8) : mixHex(pal.haze, EYE_LAMP_COLOR, 0.85));
+  setHazeGain(R.lampLevel);
   setParallaxTint(pal.para);
   /* ambient warms too, so the rock itself is lit hot rather than just fogged */
   amb.color.setHex(0xffffff).lerp(new THREE.Color(0xff8a52), hot * 0.6);
 /* The mote field. World-anchored and wrapped around the ship rather than
      parented to it - see dust.ts for why that is the whole difference between
      dust and a texture on the camera. */
-  stepDust(px, py, g.pd, raw, hot, pal.dust);
+  stepDust(vx, vy, v.pd, raw, hot, pal.dust);
 
   skyTick += raw;
   if (skyTick > 0.12) {
@@ -983,20 +1019,20 @@ export function tick(raw: number, draw = true) {
      ship rises and falls, and clamped to the top eight metres so nothing about
      the underground framing - which was calibrated over five sessions of
      lighting work - moves at all. */
-  const surfaceT = clamp(1 - g.pd / 8, 0, 1);
+  const surfaceT = clamp(1 - v.pd / 8, 0, 1);
   const zNow = (R.camZ + surfaceT * CAM_SURFACE_BACK) * zoomForScan(g.up.scan) + camZBoost;
   const halfW = Math.tan((camera.fov * Math.PI) / 360) * zNow * camera.aspect;
   const lim = Math.max(0, W / 2 - halfW);
   const flying = g.mode === 'fly';
   const kx = flying ? CAM_FOLLOW_FLY : CAM_FOLLOW_PLAY;
   const ky = flying ? CAM_FOLLOW_FLY_Y : CAM_FOLLOW_PLAY_Y;
-  camera.position.x = approach(camera.position.x, clamp(px, -lim, lim), kx, raw);
-  camera.position.y = approach(camera.position.y, py - CAM_Y_OFFSET + surfaceT * CAM_SURFACE_LIFT, ky, raw);
+  camera.position.x = approach(camera.position.x, clamp(vx, -lim, lim), kx, raw);
+  camera.position.y = approach(camera.position.y, vy - CAM_Y_OFFSET + surfaceT * CAM_SURFACE_LIFT, ky, raw);
   camera.position.z = approach(camera.position.z, zNow, CAM_ZOOM_RATE, raw);
   /* Parallax reads the camera AFTER the follow but BEFORE the shake, or the
      background jitters independently of the foreground and the illusion that
      they are one space goes with it. */
-  fadeParallax(g.pd);
+  fadeParallax(v.pd);
   stepParallax(camera.position.x, camera.position.y);
 
   if (R.shake > 0) {

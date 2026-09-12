@@ -585,6 +585,12 @@ haze.renderOrder = -0.5;
    stays the one place that writes it. */
 const hazeCol = (haze.material as THREE.ShaderMaterial).uniforms.uHaze.value as THREE.Color;
 export function setHazeColor(hex: number) { hazeCol.setHex(hex); }
+/* The haze's brightness, 0..1 of its tuned gain. The way in breathes the
+   light up from nothing, and the haze is most of what "lit" looks like in an
+   open room - the point light alone is the walls. 1 in play. */
+export function setHazeGain(v: number) {
+  (haze.material as THREE.ShaderMaterial).uniforms.uHazeGain.value = LM_HAZE * v;
+}
 
 /* Live handles for tuning by eye, behind ?debug in main.ts.
 

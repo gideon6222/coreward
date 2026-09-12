@@ -80,7 +80,10 @@ scene.add(haze);
    and at ninety, which is what lets its material read as metal at all. */
 export const SHIP_LAYER = 1;
 
-export const lamp = new THREE.PointLight(0xffd9a0, LAMP_INTENSITY, S.light(), LAMP_DECAY);
+/* The headlamp's colour. Named because the way in borrows the lamp for a
+   colder light while there is no ship to carry one, and has to give it back. */
+export const LAMP_COLOR = 0xffd9a0;
+export const lamp = new THREE.PointLight(LAMP_COLOR, LAMP_INTENSITY, S.light(), LAMP_DECAY);
 scene.add(lamp);
 /* Draw the world, then draw the ship with the lamp switched off.
 

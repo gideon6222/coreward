@@ -29,10 +29,20 @@ export const R = {
   /* Wall-clock seconds since landing on this world, for the fastest-core
      record. Reset by arrive(); read once, when a core breaks. */
   worldT: 0,
-  /* seconds into the touchdown; see SETTLE_* in feel.ts */
-  settleT: 0,
-  /* the intro's beat clock while it is running; see intro.ts */
-  intro: null as { i: number; t: number; landing: boolean; done: boolean } | null,
+  /* The way in, while it is running; see intro.ts. The intro's clock, or
+     CONTINUE's. Null the rest of the time, exactly like `flight`. */
+  intro: null as { t: number; started: boolean; done: boolean } | null,
+  arrive: null as { fromD: number; t: number; done: boolean } | null,
+  /* Where the world streams from, the lamp floods from and the camera looks,
+     when that is not the ship. Null in play, which means "the ship". The
+     intro and CONTINUE move this and leave the ship where it is. */
+  eye: null as { px: number; pd: number } | null,
+  /* whether the ship is in the picture at all */
+  shipShown: true,
+  /* the sky and the surface light, 0 night .. 1 the world's own day */
+  dawn: 1,
+  /* the lamp, 0..1 of its play intensity */
+  lampLevel: 1,
   /* the per-world ambience clock; see ambience.ts */
   amb: { t: 0 },
   /* The timed consumables, while they are running.

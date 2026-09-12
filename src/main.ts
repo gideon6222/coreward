@@ -23,13 +23,13 @@ import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug, LM_COLS } from './lightmap';
 import { sfx } from './audio';
-import { beginSettle, grantFind, grantCache } from './actions';
+import { grantFind, grantCache } from './actions';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
 import { landCollapse, closeGround, shoreUp } from './collapse';
 import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake, feed, feedValue, MAX_COLLAPSED, newGround } from './sim/unrest';
 import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells,
          vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './sim/vaults';
-import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
+import { setStartHandler, wireTitle, showTitle, showIntro, startIntro } from './titleui';
 import './input';
 
 /* ============ build stamp ============
@@ -94,16 +94,12 @@ setStartHandler((fresh: boolean) => {
   }
   g.fuel = S.fuelCap();
   g.hull = S.hullCap();
-  /* The flight ends above the pad and the ship comes down the last few metres
-     under its own thrust - but ONLY if the pad is where it belongs.
-
-     A save can be mid-run: quit at ninety metres with a full hold and CONTINUE
-     has to put you back at ninety metres. Settling unconditionally moved that
-     ship to the surface, which loses the player's position and is worse than
-     that - it makes quitting and reloading a free ride home with the cargo,
-     which is the trip the whole game is about making. */
-  if (g.pd <= 0.5) beginSettle();
-  else g.mode = 'play';
+  /* The way in has already landed the ship, or dropped the camera to where
+     the save left it - a save can be mid-run, and quit at ninety metres with
+     a full hold means CONTINUE puts you back at ninety metres. Anything else
+     makes quitting and reloading a free ride home with the cargo, which is
+     the trip the whole game is about making. So this only hands over. */
+  g.mode = 'play';
   updateHUD();
   /* Tow Insurance was deleted this version and its cost refunded during
      `load()`, which runs before there is a HUD to say so on. Said here, once
@@ -151,10 +147,10 @@ if (new URLSearchParams(location.search).has('debug')) {
        dynamic import, because under the dev server an import() resolves to a
        different module instance than the one the loop is running - the same
        trap that lost an afternoon to a handler that was never set. */
-    introTo: (i: number) => {
+    introTo: (t: number) => {
       showIntro();
-      if (R.intro) { R.intro.i = i; R.intro.t = 0; }
-      paintBeat();
+      startIntro();
+      if (R.intro) R.intro.t = t;
     },
     pickBay, selectBay, selectedBay, bays, stationCamera, roomReady,
     /* The aisles, so a smoke test can drive the shop the way a thumb does. */
