@@ -17,7 +17,37 @@
    than a forecast.
 
    Run:  node scripts/longplay.mjs            (needs the preview server up)
-         node scripts/longplay.mjs --anchors 9 --minutes 90                */
+         node scripts/longplay.mjs --anchors 9 --minutes 90
+
+   ---------- WHAT THIS HAS AND HAS NOT PROVED ----------
+
+   Read this before believing a number out of it.
+
+   PROVED, and it is why the script exists: the first half hour of a campaign
+   is healthy. Runs come out at about three minutes of game time, which is what
+   the design says a run should be; the Ballast can be kept full out of banked
+   ore once income arrives; Unrest reaches about 0.05 mean and 0.11 peak in
+   thirty minutes, which is well inside Calm; and the money curve climbs
+   without a wall in it.
+
+   FOUND, which is the real return: a lit Anchor was an unbreakable plug in its
+   own column, so six of the nine were unreachable by digging down to them; and
+   the collapse cascade had no bottom, losing a planet's third region four
+   minutes after its second. Both are fixed and both now have their own tests -
+   `every Anchor lights by digging down its own column` in the smoke suite, and
+   the spiral tests in test/unrest.test.mjs.
+
+   NOT PROVED: that a campaign can be played to the Vault. This probe has never
+   lit more than one Anchor, and every time it stalls the cause has turned out
+   to be its own policy rather than the game - it has had four separate bugs of
+   its own (an eighteen-cell lateral overshoot, no fuel policy at all, a climb
+   that gave up because it was in danger, and then a stop condition that fires
+   before the first slice when the ship is already deep). **The game's own
+   reachability is proved by the smoke test, not by this.**
+
+   The honest state: this is a good instrument for the first half hour and an
+   unfinished one past it. Anybody picking it up should expect to fix its
+   policy again before it gets to nine.                                     */
 
 import { chromium } from '@playwright/test';
 
@@ -91,6 +121,19 @@ async function hold(dir, secs, stop) {
    because a hold that is full is a hold that is not earning. */
 const turnBack = (r) => r.state === 'danger' || r.state === 'stranded' ||
                         r.weight >= r.cap - 0.5;
+
+/* And the policy for the CLIMB, which is not the same policy.
+
+   `turnBack` was used for both, and being in danger is the reason you are
+   climbing - so the trip home ended on its first slice, every run. The probe
+   spent whole runs four game-seconds long: the depth crept down, credits
+   stopped moving because it never reached the pad to sell, and the clock
+   stopped moving because barely any game time passed. It read as a stalled
+   campaign and it was a policy that gave up on the way out.
+
+   Climbing stops for two things only: arriving, and the game taking the ship
+   off you. */
+const gotHome = (r) => r.pd <= 0.4;
 
 const read = () => page.evaluate(() => {
   const w = window.__cw;
@@ -222,10 +265,24 @@ while (true) {
     await hold(dx > 0 ? 'right' : 'left', 90,
       (r) => turnBack(r) || Math.abs(r.px - want) < 0.6);
   }
-  await hold('down', 160, turnBack);
+  /* Down, and STOP WHEN IT ARRIVES.
+
+     The fourth thing this probe got wrong, and the most obvious one in
+     hindsight: it dug until the hold filled or the tank got low, which meant
+     it blew straight past the hall it was flying to and kept going. On a later
+     run it went all the way to the bedrock floor at 451 m while targeting an
+     Anchor at 48.
+
+     A player stops at the room. `target.d + 1` rather than `target.d`, because
+     the Anchor sits one cell BELOW the open mouth of its niche and lighting it
+     is standing at the mouth. */
+  await hold('down', 200, (r) => turnBack(r) || r.pd >= target.d - 1);
+  /* And a beat at the bottom, because lighting is a proximity check on the
+     frame loop and a hold that ends on the frame it arrives has not run one. */
+  await page.evaluate(() => window.__cw.advance(2));
 
   /* Home. The climb is the real one, through the tunnels that are there. */
-  await hold('up', 160);
+  await hold('up', 200, gotHome);
   const home = await page.evaluate(() => window.__cw.g.pd <= 0.5);
   if (!home) {
     /* Stranded or dead. Either way the game puts the ship back on the pad, so

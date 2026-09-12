@@ -1693,8 +1693,28 @@ independent of the objective work.
       ninety call sites. Round eight made this one planet; leaving a second
       objective in it would have been worse than either.
 
-- [ ] **W10 The phone pass**, and a long play of the whole thing rather than of
+- [x] **W10 The phone pass**, and a long play of the whole thing rather than of
       any one milestone.
+
+      *Done, with one thing left open and named.* Every screen shot at
+      1080x2340 and looked at, which found a crash: cutting into an Anchor hall
+      put `worked` stone in the hold and the manifest threw on a material with
+      no DEF entry. Draw calls measured in the worst window round eight can
+      build - a sealed hall at 306 m on a woken planet with a region down -
+      at 86 of 150. Version 0.31.0 with the round's changelog in the player's
+      words. `CLAUDE.md` rewritten to describe the game this actually is.
+
+      The long play found the two that mattered: a lit Anchor was an
+      unbreakable plug in its own column, so six of the nine were unreachable
+      by digging down to them; and the collapse cascade had no bottom. Both are
+      fixed, and both now have tests that fail without the fix.
+
+      **Open:** no automated run has played a campaign through to the Vault.
+      Every piece is proved separately - `every Anchor lights by digging down
+      its own column` covers all nine - but the probe has never lit more than
+      one, and each stall has turned out to be its own policy rather than the
+      game. Its limits are written into its own header. A human play is the
+      next thing this needs, not another probe fix.
 
 ## What I am deliberately not doing
 
