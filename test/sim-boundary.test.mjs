@@ -15,9 +15,13 @@
 
    - `import type` from outside src/sim. Types are erased, and src/types.ts is
      type-only by construction for exactly this reason - see its header.
-   - localStorage. Persistence belongs to the simulation: the Godot games in
-     this studio keep save.gd inside src/sim and write to user:// from there.
-     What the rule excludes is the RENDERER, not the disk.
+   - localStorage. What INDEX.md rule 2 excludes is the RENDERER, not the disk,
+     so persistence may sit inside the wall. There is NO studio convention about
+     which side it sits on - the Godot games differ (gravewell keeps save.gd in
+     src/sim, stillwater keeps its writes in main.gd) and rule 2 permits both.
+     What rule 2 does require is that the disk is never the only way to test a
+     save: serialisation is a pure state/object pair round-tripped by a test
+     that touches no storage, with the storage call a thin wrapper over it.
    - Math.random, but only where it is an injectable default (see below). */
 
 import test from 'node:test';
