@@ -4016,8 +4016,11 @@ There is no second scene and nothing to cut between. `src/sim/intro.ts` is a
 pure timeline that says, for every second, where the EYE is (the point the
 world streams around, the light floods from and the camera looks at) and
 whether there is a ship; the loop's "way in" block reads it and draws it
-exactly as it draws play. Tap on black. The eye inside Rustmoor's hall at
-41 m - the hall the first descent cuts into at 48 s - with a cold light
+exactly as it draws play. Before the tap: the hall in the dark, the
+Anchor's own glow the only light, TAP breathing at the thumb - not black,
+the deep ambient is 0.10 and the still shows the room as a silhouette,
+which is better than black. After the tap: the eye inside Rustmoor's hall
+at 41 m - the hall the first descent cuts into at 48 s - with a cold light
 breathing up over the cut stone and the Anchor, one rumble, one line. The
 rise to the surface through dark rock. The pad at night, the Ballast's vent
 and the pad lights the only light, one line. The ship's lamp coming down

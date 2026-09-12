@@ -2389,7 +2389,9 @@ the shape of the game is not up for revision until R9a has happened.
       So the intro plays IN THE GAME'S OWN SCENE, with the game's own camera,
       lamp, rock and pad, and there is nothing to cut between:
 
-      - **Tap on black.** The first touch is also what lets the audio start.
+      - **Tap.** The hall in the dark, the Anchor's own glow the only light,
+        TAP breathing at the thumb. The first touch is also what lets the
+        audio start.
       - **The hall, 0-7 s.** The eye is inside Rustmoor's Anchor hall at 41 m
         - the one the first descent will cut into at 48 s - and a cold light
         breathes up over the cut stone and the Anchor in its niche. One low
