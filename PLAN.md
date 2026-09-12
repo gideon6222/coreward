@@ -2330,15 +2330,19 @@ the shape of the game is not up for revision until R9a has happened.
       of it goes to `playtests/coreward.md` verbatim, and it outranks every
       other milestone here.
 
-- [ ] **R9b The first hour introduces the game that exists.** Nothing in round
-      eight touched the first-run intro, and it still narrates a game about
-      flying between planets - which was deleted in W9. `src/sim/intro.ts` and
-      `src/titleui.ts` have not been read since W4.
+- [x] **R9b The first hour introduces the game that exists.** Done 2026-09-12,
+      v0.32.0. The five captions are about one world, nine Anchors and the
+      centre; the title line under CONTINUE is the campaign in one line; the
+      tagline, the two reset warnings and the won line no longer name the
+      core, the chart, the Heart or the shards. The first-minute win is pinned
+      by a design test (the pad is over Rustmoor's hall, a stock tank reaches
+      it and climbs home) and filmed: roof at 48 s, THE ANCHOR WAKES at 56 s.
 
-      The first thirty seconds need zero reading and the first minute needs to
-      give a win (`POLISH.md`), and the win is now "you found something
-      somebody built". Rustmoor's Anchor is at 43 m, almost directly under the
-      pad, which is a gift: the first descent can walk into worked stone.
+      Filming the intro found two first-run bugs the suite had been passing
+      over since W9 and since round three respectively: the whole HUD drawn
+      over the space flight (the crossing's CSS went with the crossing), and
+      a SKIP button on every first run (its hidden class never had a rule).
+      Both fixed, both now asserted on what is drawn rather than on a class.
 
 - [ ] **R9c A campaign the probe can finish.** `scripts/longplay.mjs` has never
       lit more than one Anchor, and its header says honestly why: four separate

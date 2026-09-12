@@ -1813,8 +1813,13 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
         replay, and there has not been one yet. */
   await expect(page.locator('#intro'), 'a first run should open on the intro')
     .not.toHaveClass(/hidden/);
+  /* VISIBILITY, not the class. This asserted `toHaveClass(/hidden/)` and
+     passed for every build from the day the button arrived, while the button
+     was on screen on every first run - the stylesheet had no rule giving
+     `.hidden` a meaning on this element. A class is a claim; what the player
+     sees is the fact. */
   await expect(page.locator('#introSkip'),
-    'a first run must not offer a skip - it has never seen this').toHaveClass(/hidden/);
+    'a first run must not offer a skip - it has never seen this').toBeHidden();
 
   await enterGame(page);
 
@@ -1869,7 +1874,7 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
   expect(await page.evaluate(() => (window as any).__cw.g.won),
     'a reset wiped the fact that the game had been beaten').toBe(true);
   await expect(page.locator('#introSkip'), 'a New Game Plus run must offer a skip')
-    .not.toHaveClass(/hidden/);
+    .toBeVisible();
 
   /* 4. Skipping drops the captions and KEEPS the descent. */
   await page.locator('#introSkip').dispatchEvent('click');
@@ -1886,6 +1891,45 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
     'skip threw away the arrival as well as the words - the ship should still fly down')
     .toBe(true);
   expect(afterSkip.mode).not.toBe('play');
+});
+
+test('the HUD stays off the screen while the intro and the title are up', async ({ page }) => {
+  /* W9 deleted the crossing and took its CSS with it - the rule that hid the
+     HUD under `body.crossing` - while the title and the intro still set that
+     class and still relied on it. From 0.31.0 the d-pad, the gauges and five
+     buttons were drawn over the space flight on the one screen every new
+     player sees. The R9b filmstrip of the intro found it; this is the test
+     that should have.
+
+     Asserted on computed style rather than on a class, because the thing
+     that broke was the stylesheet and a class check would have passed. */
+  const HUD = ['hud', 'ctrl', 'cluster', 'actions', 'kit', 'ord', 'heat', 'vignette'];
+  const drawn = () => page.evaluate((ids) => ids.filter((id) => {
+    const e = document.getElementById(id);
+    return e && getComputedStyle(e).display !== 'none';
+  }), HUD);
+
+  await page.evaluate(() => {
+    localStorage.clear();
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'coreward.v2') return;
+      return set.call(this, k, v);
+    };
+  });
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await expect(page.locator('#intro')).not.toHaveClass(/hidden/);
+  expect(await drawn(), 'drawn over the intro').toEqual([]);
+
+  await page.evaluate(() => (window as any).__cw.showTitle());
+  await expect(page.locator('#title')).not.toHaveClass(/hidden/);
+  expect(await drawn(), 'drawn over the title').toEqual([]);
+
+  /* And it comes back when the ship is on the ground, or the fix is a HUD
+     that never appears. */
+  await enterGame(page);
+  expect(await drawn(), 'the HUD never came back in play').toContain('hud');
 });
 
 /* THE HEADING. Measured, not reasoned about.

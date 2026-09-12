@@ -22,17 +22,94 @@ test('the intro still says what you are looking for', () => {
      have been to paste the missing words back in.
 
      What actually has to survive is that a new player leaves the intro knowing
-     there is a fixed number of things to find, that WHERE they are is tied to
-     the kind of world, and that finding them opens something. Mystery is
-     withholding the explanation, not the goal. */
-  const all = H.BEATS.map((b) => b.text).join(' ').toLowerCase();
+     there is a fixed number of things to find, that they are spread across
+     the one world rather than stacked down a shaft, and that finding them
+     opens something. Mystery is withholding the explanation, not the goal.
 
-  assert.ok(/\b(five|5)\b/.test(all),
-    'the intro never says how many pieces there are, so the goal has no shape');
-  assert.ok(/each kind of world|under each|one on each/.test(all),
+     And the number is READ FROM THE GAME, not typed here. The old version
+     asserted "five" by hand, and for three days after W9 deleted the five
+     drive components it went on passing against an intro that described
+     them. A test that knows the count independently of the thing being
+     counted is the test that lets the script and the game drift apart. */
+  const all = H.BEATS.map((b) => b.text).join(' ').toLowerCase();
+  const n = H.ANCHOR_COUNT;
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const count = new RegExp('\\b(' + words[n] + '|' + n + ')\\b');
+
+  assert.ok(count.test(all),
+    'the intro never says there are ' + n + ' Anchors, so the goal has no shape');
+  assert.ok(/anchor/.test(all),
+    'the intro never names the thing you are looking for, so the first hall reads as scenery');
+  assert.ok(/buried|across|spread|under/.test(all),
     'the intro never says where to look, which is the part that changes what a player does');
-  assert.ok(/route|opens|way out|leave/.test(all),
+  assert.ok(/opens|open|way out|centre/.test(all),
     'the intro never says that finding them leads anywhere');
+
+  /* And nothing it says is about the game that was deleted. Each of these
+     was in the script on 2026-09-12, three days after W9 removed the thing
+     it described. */
+  for (const stale of ['twelve', 'chart', 'heart', 'drive', 'pieces', 'jump', 'way out of']) {
+    assert.ok(!all.includes(stale),
+      'the intro still says "' + stale + '", which is the game before round eight');
+  }
+});
+
+test('the first minute gives a win: the pad is over a hall, and a stock tank reaches it and gets home', () => {
+  /* POLISH.md: "the first minute gives a win", and after round eight the win
+     is finding something somebody built. R9b leans on Rustmoor's hall being
+     almost directly under the pad - which is a fact about the current seeds,
+     and seeds move when any offset changes. So it is pinned here, as the
+     player experiences it: dig straight down from where you land, with the
+     ship you start with, and you are through a roof of cut stone inside the
+     minute with enough fuel to climb back out.
+
+     Costed with the same rules the econ probe uses (hardness times DIG_BASE
+     over the drill, fuelPerCell over the cellFuel factor), against the
+     shipping generator. Measured 2026-09-12: the roof is at 39 m, 33 s of
+     digging on this model, 47 of 90 fuel left with a 10-fuel climb home.
+
+     The model is a LOWER bound. The real loop also pays hit-stop and the
+     flight between cells, and the filmstrip of the same descent puts the
+     roof at 48 s and THE ANCHOR WAKES at 56 s - about 1.45x. The 45 s cap
+     here is therefore about 65 s on the phone, which is the edge of the
+     minute; if this ever trips, the fix is where the hall is, not the cap. */
+  H.setWorld(0);
+  Object.assign(H.g.up, { drill: 0, cargo: 0, thrust: 0, tank: 0, cool: 0, scan: 0, scrub: 0,
+    auto: 0, bomb: 0, laser: 0, hull: 0, magnet: 0, survey: 0, drone: 0, reactor: 0 });
+  H.g.relics = [];
+  H.g.ground = H.newGround();
+  H.g.dug = new Set();
+
+  const x = H.START_X;
+  let t = 0, fuel = H.S.fuelCap();
+  let roof = -1;
+  for (let d = 1; d <= 80 && roof < 0; d++) {
+    const b = H.blockAt(x, d);
+    if (b && b.id === 'worked') { roof = d; }
+    if (b && b.hard > 0 && b.hard !== Infinity) {
+      t += (b.hard * H.DIG_BASE) / H.S.drill();
+      fuel -= H.fuelPerCell(b.hard) * H.S.cellFuel() * H.S.fuelUse();
+    } else {
+      const secs = 1 / H.S.speed();
+      t += secs; fuel -= H.FUEL_PER_MOVE * secs * H.S.fuelUse();
+    }
+  }
+  assert.ok(roof > 0, 'there is no cut stone in the first 80 m under the pad - the first descent finds only rock');
+  assert.ok(t <= 45, 'reaching the first cut stone takes ' + t.toFixed(0) + ' s of digging, which is not inside the first minute');
+
+  const climb = roof / H.S.speed() * H.FUEL_PER_MOVE * H.S.fuelUse();
+  assert.ok(fuel - climb >= H.S.fuelCap() * 0.3,
+    'the stock tank has ' + fuel.toFixed(0) + ' left at the roof and the climb costs ' + climb.toFixed(0) +
+    ' - the first win costs the first ship');
+
+  /* And the roof belongs to an Anchor hall, not to some other room: the
+     Anchor is within one hall of the cell the drill came through. */
+  let near = false;
+  for (let r = 0; r < H.ANCHOR_COUNT; r++) {
+    const a = H.anchorAt(r);
+    if (Math.abs(a.x - x) <= Math.floor(H.VAULT_W / 2) && a.d > roof && a.d - roof <= H.VAULT_H) near = true;
+  }
+  assert.ok(near, 'the cut stone at ' + roof + ' m under the pad is not the roof of an Anchor hall');
 });
 
 test('the intro is short, mysterious, and every line readable', () => {

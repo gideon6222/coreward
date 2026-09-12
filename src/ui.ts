@@ -366,7 +366,7 @@ export function buildVault() {
     const w = document.createElement('div');
     w.className = 'upeff';
     w.style.marginTop = '10px';
-    w.textContent = 'The Heart is broken. The Drift is behind you.';
+    w.textContent = 'The centre is open. The planet is quiet, and it is quiet because of you.';
     ui.vault.appendChild(w);
   }
 }

@@ -4,7 +4,10 @@ import { sfx } from './audio';
 import { hardReset } from './actions';
 import { beginShowcase, endShowcase, beginLanding, beginLaunch, isLanding } from './transit';
 import { BEATS, newIntro, skip as skipIntro, advance as stepBeat, LANDING_SECS } from './sim/intro';
-import { planetName, coreDepth, skyLo } from './sim/config';
+import { skyLo } from './sim/config';
+import { regionName, regionAt, WORLD_DEPTH } from './sim/region';
+import { tierOf } from './sim/unrest';
+import { ANCHOR_COUNT } from './sim/vaults';
 import { buildNotes, updateHUD, flash } from './ui';
 
 /* The title screen and the intro, wired up.
@@ -51,9 +54,15 @@ export function showTitle() {
   const has = hasSave();
   cont.disabled = !has;
   cont.classList.toggle('off', !has);
+  /* The campaign in one line, which the round-eight design asks for at every
+     return: where the ship is, how deep the run has been, how far through the
+     Anchors. It read "core at 452 m" until R9b, three days after the core was
+     deleted - the one screen every returning player sees was naming an
+     objective that no longer existed. */
   el('titleFine').textContent = has
-    ? planetName(g.world) + ' · ' + Math.max(0, Math.round(g.best.depth)) + ' m deepest · core at ' +
-      coreDepth(g.planet) + ' m'
+    ? regionName(regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)))) + ' · ' +
+      Math.max(0, Math.round(g.best.depth)) + ' m of ' + WORLD_DEPTH + ' · ' +
+      tierOf(g.ground) + ' of ' + ANCHOR_COUNT + ' Anchors lit'
     : 'No saved run yet';
   el('title').classList.remove('hidden');
   document.body.classList.add('crossing');
@@ -201,7 +210,7 @@ export function wireTitle() {
     /* Confirmed, because it throws away everything. The pause menu's own reset
        has the same guard for the same reason - and this button sits directly
        under CONTINUE, which is the one place a mis-tap costs the most. */
-    if (hasSave() && !confirm('Start over? This wipes credits, upgrades, core shards and every relic you have found. It cannot be undone.')) return;
+    if (hasSave() && !confirm('Start over? This wipes credits, upgrades, every Anchor you have lit and every relic you have found. It cannot be undone.')) return;
     hardReset();
     hideTitle();
     showIntro();

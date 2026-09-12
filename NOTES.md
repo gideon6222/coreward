@@ -3903,3 +3903,95 @@ digging down its own column` in the smoke suite, not by this probe.**
    `WEB.md` has the recipe.
 4. **Then the rest of round nine**, whose milestones are at the bottom of
    `PLAN.md`.
+
+---
+
+# Round nine, R9b, 2026-09-12: the first hour, and what filming it found
+
+R9a (a human play) is Gideon's and has not happened. R9b does not revise the
+game's shape, so it went first: the intro narrated twelve worlds, five drive
+components and a chart, none of which have existed since W9.
+
+## What changed, in the player's terms
+
+Five captions about the game that exists: the Drift, dead worlds, the one
+that is still running, nine Anchors across it, the centre opening at nine.
+37 words, 26 s plus the landing. The title line under CONTINUE is the
+campaign in one line - "Rustmoor · 42 m of 452 · 1 of 9 Anchors lit" - which
+is the round-eight design's own ask for every return. The tagline, both reset
+warnings and the won line stopped naming the core, the shards, the chart and
+the Heart. Version 0.32.0.
+
+## The first minute, measured
+
+The pure cost model (the econ probe's per-cell rule) says a stock ship digging
+straight down from the pad reaches Rustmoor's hall roof at 39 m in 33 s with
+47 of 90 fuel and a 10-fuel climb home. Any column from 28 to 34 hits the
+roof; the pad is 30. **The real loop is about 1.45x slower** - hit-stop and
+the flight between cells - and the filmstrip puts the roof at 48 s, the ship
+inside the hall with the Anchor in view at 52 s, and THE ANCHOR WAKES at
+56 s. That is the win inside the minute, on the shipping loop, with no text
+before it. `the first minute gives a win` in `test/intro.test.mjs` pins the
+pure bound at 45 s and says in its comment what that is on the phone.
+
+The intro test no longer types the count. It reads `ANCHOR_COUNT` from the
+bundle, which is the fix for why the old script survived three days after W9
+deleted what it described: the test knew "five" on its own.
+
+## What the filmstrip found that 291 tests and 41 e2e had not
+
+Two first-run bugs, both in the released 0.31.0, both the same shape.
+
+1. **The whole HUD was drawn over the intro and the title.** W9 deleted the
+   crossing and its CSS with it, including the `body.crossing` rule that hid
+   the HUD - and the title and the intro still set that class. Five buttons,
+   a d-pad and two gauges over a starfield, on the one screen every new
+   player sees. `git log -S` dates it to W9 exactly.
+2. **A SKIP button on every first run.** `titleui.ts` toggles `hidden` on it
+   when the game has not been won, and the stylesheet never had a rule giving
+   that class a meaning on that element. It has been like this since the
+   button arrived, and he asked for the opposite by name.
+
+The e2e suite passed through both because it asserted the CLASS. Both tests
+now assert what is drawn (computed style, `toBeHidden`, `toBeVisible`), and
+both were run against the unfixed build first - both failed - and the fixed
+build second. Filed as a lesson for `TESTING.md`.
+
+## The six questions, from the two sheets and the six shots
+
+Films: `test-results/film-intro.png` (20 frames at 1.6 s),
+`test-results/film-firstminute.png` (18 frames at 4 s). Shots at 460x996 in
+`test-results/shots/`.
+
+1. **Feedback in the same frame as each action.** Yes. Every cut has the
+   spray and the lit face; the first silver at 31 m stops the frame and puts
+   the banner up; the Anchor lights the moment the ship is beside it.
+2. **Acceleration and coasting.** Not judged here - the film holds DOWN for
+   72 s and never changes direction. It was judged in W10's phone pass.
+3. **Anything popping in or drawn over what it belongs behind.** Two things,
+   both fixed above: the HUD over the flight, the skip on a first run. One
+   harness artefact, not a game fault: frames 10-11 of the first-minute
+   sheet are washed grey, which is the 30% white flash of the first-mineral
+   reveal on a 420 ms wall-clock timer that the fast-forward holds across
+   two captures.
+4. **Short states visible in at least one frame.** The roof at 39 m is in
+   frame 12; the hall with the Anchor in frame 13; the card in frame 14; the
+   calmed region's tint in 15-17. Nothing in the first minute is shorter
+   than a frame.
+5. **A win and a visible next goal in the first sixty seconds.** The win at
+   56 s. The next goal is the card's own last line, "Whatever built these
+   left nine of them", and the MAP button, which the region has just drawn
+   itself onto. Not yet judged: whether he opens the map.
+6. **Any frame where the player would not know what to do.** The pad. Frame
+   0 of the first-minute sheet is a ship on a pad with a d-pad and no
+   instruction, which is the design (zero reading for thirty seconds), and
+   he has never reported being lost there across seven versions. The intro's
+   last line stays up over the descent, so "dig" is the only verb offered.
+
+## Not done, on purpose
+
+The showcase still flies past four worlds while the captions say "one".
+The Drift is still a field of dead worlds and the ship is still on its way
+to the one that matters; the captions were written to that picture rather
+than the picture rebuilt for the captions. If R9a says the flight reads as
+"you will visit these", that is the thing to change.

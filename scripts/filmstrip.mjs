@@ -275,6 +275,28 @@ const SCENES = {
       __cw.R.held = 'down';
       __cw.advance(SECS);
     `
+  },
+
+  /* THE FIRST MINUTE, as a new player has it: land, hold DOWN, and see what
+     the ship goes through. A fresh save, the stock ship, no shaft. Twelve
+     frames four seconds apart is the whole of POLISH.md's "the first minute
+     gives a win" on one sheet - the roof of Rustmoor's hall should be in it,
+     and so should the card that follows. */
+  firstminute: {
+    secs: 4,
+    frames: 12,
+    enter: true,
+    setup: `
+      __cw.advance(0.3);
+    `,
+    step: `
+      /* The card stops the clock on 'event'; press its button so the sheet
+         shows what comes after the win as well as the win. */
+      const ev = document.getElementById('event');
+      if (ev && !ev.classList.contains('hidden')) document.getElementById('evBtn').click();
+      __cw.R.held = 'down';
+      __cw.advance(SECS);
+    `
   }
 };
 

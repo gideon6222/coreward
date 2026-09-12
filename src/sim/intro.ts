@@ -9,11 +9,19 @@
    letting you touch it is the least mysterious thing it can do.
 
    What must survive is the OBJECTIVE. Mystery is withholding the explanation,
-   not withholding the goal: until the Jump Drive shipped there was nothing to
-   say, and now a player who is never told finds out an hour in, when their
-   first core breaks. Five pieces, one under each kind of world, and a route
-   that opens when you have them. Everything else - what the Drift is, what
-   built the drive, what the Heart actually is - is deliberately not answered.
+   not withholding the goal: a player who is never told finds out forty
+   seconds in, when the drill goes through a roof somebody cut, and has no
+   idea what they are looking at. Nine Anchors, buried across one world, and
+   the centre opens when they are all lit. Everything else - what the Drift
+   is, who built the Lattice, what is under the centre - is deliberately not
+   answered.
+
+   REWRITTEN FOR ROUND EIGHT (R9b). Until 2026-09-12 these five lines narrated
+   a game about twelve worlds, five drive components and a chart - all of
+   which were deleted in W9, four days after nobody read this file again. The
+   picture behind them is unchanged on purpose: the Drift is still a field of
+   dead worlds flying past, and the ship is still on its way to the one that
+   matters. The captions now say so.
 
    THE TEXT NO LONGER DRIVES THE PICTURE. It used to: each beat carried a shot,
    and the renderer cut to it. That is what made it a slide show. The flight in
@@ -33,10 +41,10 @@ export interface Beat {
 
 export const BEATS: Beat[] = [
   { secs: 4.0, text: 'The Verdax Drift.' },
-  { secs: 5.0, text: 'Twelve dead worlds, and no way out of any of them.' },
-  { secs: 5.5, text: 'Except that something out here was built to leave.' },
-  { secs: 6.0, text: 'Five pieces of it. One buried under each kind of world.' },
-  { secs: 5.5, text: 'Find them all, and the chart opens a route to the Heart.' }
+  { secs: 5.0, text: 'Dead worlds, all the way down.' },
+  { secs: 5.5, text: 'Except one. Something under its crust is still running.' },
+  { secs: 6.0, text: 'Nine Anchors, buried across the whole of it. Whoever built them is gone.' },
+  { secs: 5.5, text: 'Light all nine, and the centre opens.' }
 ];
 
 /* How long the flight runs before it turns and comes down on Verdax. The

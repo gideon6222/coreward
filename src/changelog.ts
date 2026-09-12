@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.31.0';
+export const VERSION = '0.32.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.32.0', date: '2026-09-12', title: 'The opening tells you about this game',
+    notes: [
+      'The intro is about the planet you are landing on: one world, nine Anchors buried across it, and a centre that opens when they are all lit. It used to describe twelve worlds and a jump drive, neither of which exists any more.',
+      'The line under CONTINUE says where you are, how deep you have been of the 452 m, and how many Anchors are lit. It used to promise a core.',
+      'RESTART and NEW GAME say what they actually wipe.'
+    ]
+  },
   {
     version: '0.31.0', date: '2026-09-11', title: 'One planet, and the Lattice',
     notes: [
