@@ -2850,6 +2850,12 @@ test('the Ballast is fed at the pad, and an empty one takes a region', async ({ 
 
   const fell = await page.evaluate((h: { region: number; cell: string }) => {
     const w = (window as any).__cw;
+    /* Its Anchor lit first, because ground holding an Anchor nobody has
+       reached is fenced off from collapsing at all - burying the objective
+       behind a price the player may not be able to pay is a hazard taking the
+       run. A region that falls is a region you have already had your prize out
+       of, so that is the state to put it in. */
+    w.lightAnchor(w.g.ground, h.region);
     w.g.ground.ballast = 0;
     w.g.ground.pending = h.region;
     w.landCollapse();
@@ -3253,4 +3259,183 @@ test('the Vault at the centre opens on the ninth Anchor', async ({ page }) => {
   expect(after.mode, 'the game ended the session rather than the errand').toBe('play');
   expect(after.won, 'winning did not stick').toBe(true);
   expect(after.coreId, 'the Vault looks exactly the same after it opened').toBe('vaultlit');
+});
+
+/* The two fences on the cascade, through the real docking path.
+
+   Both came out of a long play rather than a unit test, and both are about a
+   state a single step cannot reach: a planet that has lost so much ground it
+   has no way back. The unit suite proves the rules; this proves the game
+   applies them at the door, which is where they have to hold - the choice of
+   which region falls may have been made minutes and a reload earlier. */
+test('the planet will not bury an Anchor, and stops at three regions down',
+  async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* Every region furious and nothing lit, which is the state that used to
+     cascade. The ship is parked on the pad so every collapse lands. */
+  const r = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    for (let i = 0; i < w.REGION_COUNT; i++) w.g.ground.unrest[i] = 1;
+    w.g.px = 30; w.g.pd = -1;
+
+    /* Ask the game to take a region, over and over, exactly as an empty
+       Ballast does - and count what it actually takes. */
+    const tried: number[] = [];
+    for (let n = 0; n < 12; n++) {
+      const t = w.collapseTarget(w.g.ground, 99, w.padRegion(),
+        (reg: number) => reg < w.ANCHOR_COUNT && !w.g.ground.lit.includes(reg));
+      if (t < 0) break;
+      tried.push(t);
+      w.g.ground.pending = t;
+      w.g.ground.ballast = 0;
+      w.landCollapse();
+    }
+    return {
+      tried, down: w.g.ground.collapsed.slice(),
+      anchors: w.ANCHOR_COUNT, max: w.MAX_COLLAPSED,
+      pad: w.padRegion(), lit: w.g.ground.lit.length
+    };
+  });
+
+  expect(r.lit, 'the fixture lit something, so the Anchor fence is not being tested').toBe(0);
+  expect(r.down.length,
+    `${r.down.length} regions came down with nothing lit - the cascade has no floor`)
+    .toBeLessThanOrEqual(r.max);
+  /* And the chooser and the DOOR agree. Both re-check the same two fences, and
+     a chooser that offers a region the door then refuses means nothing ever
+     falls at all - which is how an empty Ballast quietly stops costing
+     anything. */
+  expect(r.down.length,
+    `the planet offered ${r.tried.length} regions and took ${r.down.length} of them - ` +
+    'the chooser and the door disagree about what may fall')
+    .toBe(r.tried.length);
+  expect(r.down.length, 'nothing fell at all, so an empty Ballast costs nothing').toBeGreaterThan(0);
+  /* Not one of them holds an Anchor, because none is lit. */
+  for (const reg of r.down) {
+    expect(reg, `region ${reg} holds an unlit Anchor and came down anyway`)
+      .toBeGreaterThanOrEqual(r.anchors);
+  }
+  expect(r.down).not.toContain(r.pad);
+
+  /* And the ground that fell is genuinely shut, which is the assertion that
+     makes the rest of this mean something. */
+  const shut = await page.evaluate((down: number[]) => {
+    const w = (window as any).__cw;
+    for (let d = 1; d < w.WORLD_DEPTH; d += 7) {
+      for (let x = 0; x < w.W; x += 5) {
+        if (!down.includes(w.regionAt(x, d))) continue;
+        const b = w.blockAt(x, d);
+        if (!b || Number.isFinite(b.hard)) return { x, d, id: b ? b.id : '(empty)' };
+      }
+    }
+    return null;
+  }, r.down);
+  expect(shut, shut ? `(${shut.x},${shut.d}) in fallen ground reads as ${shut.id}` : 'fallen ground is not shut').toBeNull();
+
+  /* ---- and the floor, on its own ----
+
+     With nothing lit, the Anchor fence alone holds the count to three - nine
+     of the twelve regions are protected - so the phase above cannot tell
+     whether the floor exists at all. It passed with the floor deleted.
+
+     Lit, every region is a candidate and only the floor is left doing the
+     work. */
+  const floor = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    w.g.ground = w.newGround ? w.newGround() : w.g.ground;
+    w.g.ground.collapsed.length = 0;
+    w.g.ground.pending = -1;
+    for (let i = 0; i < w.REGION_COUNT; i++) w.g.ground.unrest[i] = 1;
+    for (let i = 0; i < w.ANCHOR_COUNT; i++) w.lightAnchor(w.g.ground, i);
+    let refused = 0;
+    for (let n = 0; n < 12; n++) {
+      const t = w.collapseTarget(w.g.ground, 99, w.padRegion(),
+        (reg: number) => reg < w.ANCHOR_COUNT && !w.g.ground.lit.includes(reg));
+      if (t < 0) { refused++; break; }
+      w.g.ground.pending = t;
+      w.g.ground.ballast = 0;
+      w.landCollapse();
+    }
+    return { down: w.g.ground.collapsed.length, refused, max: w.MAX_COLLAPSED };
+  });
+  expect(floor.down,
+    `${floor.down} regions came down with everything lit - the floor is not holding`)
+    .toBe(floor.max);
+  expect(floor.refused, 'the planet never refused a collapse, so it has no floor')
+    .toBeGreaterThan(0);
+});
+
+/* Every Anchor can actually be reached, one at a time, by the ship.
+
+   A long play kept stalling with one Anchor lit after an hour of simulated
+   play, and "the probe is a bad player" and "an Anchor cannot be reached" look
+   identical from the outside. This settles it, and then keeps settling it: for
+   each of the nine, put the ship over its column at the surface, dig down, and
+   assert it lights.
+
+   Nine descents of up to two hundred metres is too much for one budget, so
+   fuel and hull are held up - the DRILL, the rock, the hall walls and the
+   lighting are all the real thing, and those are what this is about. The
+   sealed three get the laser, which is the only way in by design. */
+test('every Anchor lights by digging down its own column', async ({ page }) => {
+  /* Nine descents, the deepest of them three hundred metres of real drilling,
+     so this one is allowed to take minutes where the rest of the suite takes
+     seconds. It is the only test in here that asserts the whole objective is
+     reachable, and that is worth a slow lane. */
+  test.setTimeout(360_000);
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const n = await page.evaluate(() => (window as any).__cw.ANCHOR_COUNT);
+  const failed: string[] = [];
+
+  for (let r = 0; r < n; r++) {
+    const got = await page.evaluate(async (region: number) => {
+      const w = (window as any).__cw;
+      const a = w.anchorAt(region);
+      /* A fresh planet each time, so a shaft cut for one Anchor cannot be the
+         reason the next one is reachable. The laser is aboard because three of
+         the nine are sealed and it is the key by design. */
+      w.g.ground = w.newGround();
+      w.g.dug = new Set();
+      w.g.rubble = new Set();
+      w.g.damage = {};
+      w.g.found = ['laser'];
+      w.g.up.drill = 9; w.g.up.thrust = 6; w.g.up.tank = 9; w.g.up.cool = 9;
+      w.g.px = a.x; w.g.pd = 1;
+      w.resetBlocks();
+      w.advance(0.2);
+
+      /* Hold DOWN on the real input path and run game time. */
+      const key = document.querySelector('#dpad .k[data-dir=down]') as HTMLElement;
+      key.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      let lit = false;
+      for (let i = 0; i < 400 && !lit; i++) {
+        w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+        w.advance(1);
+        lit = w.g.ground.lit.includes(region);
+        /* A card stops the loop; dismiss it and carry on. */
+        if (w.g.mode !== 'play') {
+          const b = document.getElementById('evBtn');
+          if (b) b.click();
+        }
+      }
+      key.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      return { lit, pd: Math.round(w.g.pd), want: a.d, x: a.x };
+    }, r);
+    if (!got.lit) {
+      failed.push(`${r} at (${got.x},${got.want}) - the ship got to ${got.pd} m`);
+    }
+  }
+
+  expect(failed.join('; '),
+    'these Anchors cannot be lit by digging down the column they are in, which ' +
+    'means the objective is unreachable however well anybody plays')
+    .toBe('');
 });

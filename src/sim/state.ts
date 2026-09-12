@@ -7,7 +7,8 @@ import { FOUND_KEYS } from './finds';
 import { R } from './runtime';
 import { newGround, loadGround, cutCell, drainBallast, planetUnrest, collapseTarget,
          isCollapsed, unrestBand, lightAnchor, isLit, type GroundState } from './unrest';
-import { anchorNear, vaultCoreNear, vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './vaults';
+import { anchorNear, vaultCoreNear, vaultOpen, VAULT_CORE_X, VAULT_CORE_D,
+         ANCHOR_COUNT } from './vaults';
 import type { Best, Cargo, Dir, Drops, Kit, Mode, UpgradeKey, SaveV1, SaveV2 } from '../types';
 import { blankLog, loadLog, type Log } from './telemetry';
 
@@ -471,8 +472,15 @@ export function groundTick(dt: number): number {
   const r = drainBallast(g.ground, dt);
   if (!r.emptied || g.ground.pending >= 0) return -1;
   const ship = regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)));
-  g.ground.pending = collapseTarget(g.ground, ship, padRegion());
+  g.ground.pending = collapseTarget(g.ground, ship, padRegion(), unlitAnchorIn);
   return g.ground.pending;
+}
+
+/* Whether a region holds an Anchor nobody has lit. The one piece of content
+   the collapse rules need to know about, handed to them rather than imported -
+   see the note in collapseTarget. */
+export function unlitAnchorIn(region: number): boolean {
+  return region < ANCHOR_COUNT && !isLit(g.ground, region);
 }
 
 /* The region the pad is in, which is the one region that can never fall. */

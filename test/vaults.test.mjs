@@ -113,9 +113,16 @@ test('every Anchor hall is shut, so getting in is always a decision', () => {
   }
 });
 
-test('the Anchor itself can never be mined, lit or not', () => {
-  /* It is lit by standing next to it. A block you can drill out is a pickup,
-     and the whole point of the plinth is that the objective is a place. */
+test('an Anchor cannot be mined until it is lit, and can be moved after', () => {
+  /* Two halves, and the second one is a bug fix.
+
+     UNLIT it is uncuttable, and that is the ritual: you cannot mine your way
+     to the objective, you fly to it. A block you can drill out is a pickup.
+
+     LIT it is merely very hard, because three Anchors share each of the three
+     columns they live in - and an unbreakable monument is a permanent plug in
+     that column. Six of the nine were unreachable by digging down their own
+     column, each one stopping a metre above the Anchor above it. */
   H.setWorld(0);
   H.g.dug = new Set();
   H.g.ground = H.newGround();
@@ -127,8 +134,15 @@ test('the Anchor itself can never be mined, lit or not', () => {
   H.lightAnchor(H.g.ground, 0);
   const after = H.blockAt(a.x, a.d);
   assert.equal(after.id, 'anchorlit', 'a lit Anchor looks exactly like an unlit one');
-  assert.equal(after.hard, Infinity, 'a lit Anchor can be drilled out');
+  assert.ok(Number.isFinite(after.hard),
+    'a lit Anchor is still a permanent plug in its own column');
+  const band = H.baseRock(a.d, 0, a.x).hard;
+  assert.ok(after.hard > band * 2,
+    `a lit Anchor drills at ${after.hard.toFixed(1)} against a band of ${band} - moving a monument should be a decision`);
   assert.ok(after.glow > before.glow, 'lighting an Anchor does not change how it reads');
+  /* And it never enters the hold, whichever state it is in - see the sweep in
+     `cut stone never enters the hold`. */
+  assert.equal(after.spoil, true);
   H.g.ground = H.newGround();
 });
 

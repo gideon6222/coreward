@@ -51,31 +51,51 @@ await page.waitForFunction(() => window.__cw && window.__cw.g.mode === 'play', n
    is skipped over. */
 const SLICE = 2;
 
-async function hold(dir, secs) {
+/* `stop` is an optional policy: it is asked between slices and ends the hold
+   when it returns true. Everything the probe does about FUEL is in there, and
+   without it the probe is not a bad player, it is a suicidal one - it dug down
+   for two minutes flat every run, ran the tank dry, lost the hold, and banked
+   nothing for eight runs while the Ballast drained on schedule.
+
+   `CRAFT.md`: measure a progression by simulating PLAY. A policy that ignores
+   the one warning the game shouts at you is not play. */
+async function hold(dir, secs, stop) {
   const key = page.locator(`#dpad .k[data-dir=${dir}]`);
   await key.dispatchEvent('pointerdown');
-  for (let i = 0; i < secs; i += SLICE) {
-    const busy = await page.evaluate((n) => {
+  let done = false;
+  for (let i = 0; i < secs && !done; i += SLICE) {
+    const r = await page.evaluate((n) => {
       const w = window.__cw;
       for (let k = 0; k < n; k++) w.advance(1);
-      return w.g.mode !== 'play';
+      return { busy: w.g.mode !== 'play', state: w.R.fuelState,
+               px: w.g.px, pd: w.g.pd,
+               weight: w.g.weight, cap: w.S.cargoCap() };
     }, SLICE);
-    if (busy) {
+    if (r.busy) {
       await key.dispatchEvent('pointerup');
       const btn = await page.$('#evBtn');
       if (btn) await btn.dispatchEvent('click');
       await page.waitForTimeout(30);
       await key.dispatchEvent('pointerdown');
     }
+    if (stop && stop(r)) done = true;
   }
   await key.dispatchEvent('pointerup');
   await page.waitForTimeout(20);
+  return done;
 }
+
+/* Turn back when the game says to, which is the whole of the Point of No
+   Return: `fuelState` goes clear -> plan -> danger -> stranded, and 'danger'
+   is the one that toasts TURN BACK. A full hold is the other reason to leave,
+   because a hold that is full is a hold that is not earning. */
+const turnBack = (r) => r.state === 'danger' || r.state === 'stranded' ||
+                        r.weight >= r.cap - 0.5;
 
 const read = () => page.evaluate(() => {
   const w = window.__cw;
   return {
-    t: Math.round(w.g.log.secs || 0),
+    t: Math.round(w.g.log.sec || 0),
     px: Math.round(w.g.px), pd: Math.round(w.g.pd),
     credits: Math.round(w.g.credits),
     lit: w.g.ground.lit.length,
@@ -149,35 +169,60 @@ while (true) {
     lastLit = s.lit;
   }
 
-  /* Where to go: the shallowest Anchor still unlit that is not sealed unless
-     the laser is aboard. */
+  /* Where to go: the shallowest Anchor still unlit, that is not sealed unless
+     the laser is aboard, and that is not inside ground that has come down.
+
+     That last clause is the one that cost an afternoon. Without it the probe
+     spent six runs pressing DOWN against unbreakable fallen ground - deepest,
+     dug, credits and Unrest all frozen - which reads exactly like a hung
+     probe and was in fact a probe playing very badly on purpose and then
+     getting stuck. A player would have opened the map and seen FALLEN written
+     across it. The probe has to be told.
+
+     (The game no longer allows this state - collapseTarget will not take a
+     region holding an unlit Anchor - but the probe keeps the check, because
+     its job is to notice when the game does something it should not.) */
   const target = await page.evaluate(() => {
     const w = window.__cw;
-    let best = null, at = Infinity;
-    for (let r = 0; r < w.ANCHOR_COUNT; r++) {
-      if (w.g.ground.lit.includes(r)) continue;
-      if (w.anchorSealed(r) && !w.g.found.includes('laser')) continue;
-      const a = w.anchorAt(r);
-      if (a.d < at) { at = a.d; best = { r, x: a.x, d: a.d }; }
-    }
-    /* Everything open is lit: go for a sealed one anyway, which is what a
-       player without the laser ends up doing - and finds out. */
-    if (!best) {
+    const pick = (allowSealed) => {
+      let best = null, at = Infinity;
       for (let r = 0; r < w.ANCHOR_COUNT; r++) {
         if (w.g.ground.lit.includes(r)) continue;
+        if (w.g.ground.collapsed.includes(r)) continue;
+        if (!allowSealed && w.anchorSealed(r) && !w.g.found.includes('laser')) continue;
         const a = w.anchorAt(r);
         if (a.d < at) { at = a.d; best = { r, x: a.x, d: a.d }; }
       }
+      return best;
+    };
+    /* Everything open is lit: go for a sealed one anyway, which is what a
+       player without the laser ends up doing - and finds out. */
+    const b = pick(false) || pick(true);
+    if (b) return b;
+    /* Nothing reachable at all. If the centre is open, go and finish it. */
+    if (w.vaultOpen(w.g.ground.lit.length) && !w.g.won) {
+      return { r: -1, x: w.VAULT_CORE_X, d: w.VAULT_CORE_D };
     }
-    return best;
+    return null;
   });
   if (!target) break;
 
   /* Out, down, and into it. Fuel is spent for real; the probe tops up only at
      the pad, like the game does. */
+  /* Flown to the COLUMN, not for a number of seconds.
+
+     The first version held the d-pad for `|dx| * 2 + 4` seconds, which at
+     three cells a second and a one-cell offset is eighteen cells of overshoot.
+     The probe spent thirty-three simulated minutes digging shafts eighteen
+     columns away from the hall it was aiming at, lit nothing, and looked for
+     all the world like a balance problem. */
   const dx = await page.evaluate((tx) => tx - Math.round(window.__cw.g.px), target.x);
-  if (dx !== 0) await hold(dx > 0 ? 'right' : 'left', Math.min(90, Math.abs(dx) * 2 + 4));
-  await hold('down', 120);
+  if (dx !== 0) {
+    const want = target.x;
+    await hold(dx > 0 ? 'right' : 'left', 90,
+      (r) => turnBack(r) || Math.abs(r.px - want) < 0.6);
+  }
+  await hold('down', 160, turnBack);
 
   /* Home. The climb is the real one, through the tunnels that are there. */
   await hold('up', 160);
@@ -192,6 +237,15 @@ while (true) {
   }
   await shopUp();
   await feedBallast();
+  /* Shore up anything that has come down, if the tank can pay for it - which
+     is the other half of what a player does at that panel, and without it the
+     probe never exercises the way back from a collapse at all. */
+  await page.evaluate(() => {
+    const w = window.__cw;
+    while (w.g.ground.collapsed.length && w.g.ground.ballast >= 0.7) {
+      if (w.shoreUp() < 0) break;
+    }
+  });
   runs++;
   const after = await read();
   const row = { run: runs, min: +(after.t / 60).toFixed(1), deepest: after.deepest,

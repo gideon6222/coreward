@@ -564,7 +564,7 @@ export function buildBallast() {
        can act on, and it is the only place the drain is ever stated - the
        machine outside shows it as a vent and a needle and never as a number. */
     const tier = s.lit.length;
-    const secs = s.ballast > 0 ? s.ballast / ballastDrain(u, tier) : 0;
+    const secs = s.ballast > 0 ? s.ballast / ballastDrain(u, tier, s.collapsed.length) : 0;
     sub.textContent = s.ballast <= 0
       ? 'Empty. The ground is going to give somewhere.'
       : 'Holding for about ' + Math.max(1, Math.round(secs / 60)) + ' more minutes of digging'

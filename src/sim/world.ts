@@ -190,10 +190,30 @@ export function blockAt(x: number, d: number): Block | null {
 
          Safe, because the only thing `ore` otherwise does is decide what goes
          into the hold when a block breaks, and this block cannot break. */
+      /* UNCUTTABLE while it is unlit, and cuttable once it is.
+
+         The first half is the ritual: you cannot mine your way to the
+         objective, you fly to it. The second half is a bug fix, and the test
+         that found it is `every Anchor lights by digging down its own column`.
+
+         Three Anchors share each of the three columns they live in, and an
+         Anchor is a single cell in the middle of its own hall. Left
+         unbreakable after lighting, the shallowest one in a column became a
+         permanent plug: the ship dug down, stopped one metre above a monument
+         it had already lit, and could not pass. Six of the nine were
+         unreachable that way, and every one of them reported the depth of the
+         Anchor above it.
+
+         Cuttable afterwards costs the design nothing - the act of lighting is
+         over - and it is a better read anyway: a monument in your way is a
+         monument you are allowed to move. Hard, though. Three times the band,
+         so moving one is a decision. */
       return { id: lit ? 'anchorlit' : 'anchor', name: lit ? 'Anchor · lit' : 'Anchor',
                color: lit ? 0x9effd4 : 0x2f6f5e, host: 0x16241f,
                glow: lit ? 1.0 : 0.30, shards: 10, tone: lit ? 10 : 6,
-               ore: true, hard: Infinity, wt: 0, value: 0 };
+               ore: true, spoil: true,
+               hard: lit ? baseRock(d, g.planet, x).hard * hm * 3 : Infinity,
+               wt: 0, value: 0 };
     }
     if (vch === 'V') {
       /* The end of the game, and it looks like one: the only gold thing in the

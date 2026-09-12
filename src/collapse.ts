@@ -26,8 +26,8 @@
    So a collapsed region reads on the map as ground you know, marked, with
    every tunnel gone - which is exactly what it is. */
 
-import { g, padRegion } from './sim/state';
-import { collapse, shore, isCollapsed, BALLAST_SHORE_COST } from './sim/unrest';
+import { g, padRegion, unlitAnchorIn } from './sim/state';
+import { collapse, shore, isCollapsed, BALLAST_SHORE_COST, MAX_COLLAPSED } from './sim/unrest';
 import { planClose } from './sim/world';
 import { stream } from './sim/util';
 import { regionAt, regionName } from './sim/region';
@@ -64,6 +64,12 @@ export function landCollapse() {
   /* Two last checks, here rather than only at the choice, because the choice
      may have been made several minutes and a save-and-reload ago. */
   if (region === padRegion()) { g.ground.pending = -1; return; }
+  /* Both fences re-checked at the door as well as at the choice, because the
+     choice may have been made several minutes and a save-and-reload ago - and
+     in between, that region's Anchor may have been lit or a third region may
+     already have come down. */
+  if (unlitAnchorIn(region)) { g.ground.pending = -1; return; }
+  if (g.ground.collapsed.length >= MAX_COLLAPSED) { g.ground.pending = -1; return; }
 
   collapse(g.ground, region);
   fillIn(region);

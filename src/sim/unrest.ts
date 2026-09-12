@@ -144,8 +144,20 @@ export function hardScale(u: number): number {
 export const BALLAST_DRAIN = 0.001;      /* a second, at the reference Unrest */
 export const BALLAST_TIER_RELIEF = 0.25; /* each Anchor slows the drain by this share */
 
-export function ballastDrain(planetUnrest: number, tier: number): number {
-  return BALLAST_DRAIN * (0.35 + planetUnrest) / (1 + tier * BALLAST_TIER_RELIEF);
+/* And what each fallen region takes off it.
+
+   Physically the obvious thing - there is less ground standing to hold down -
+   and mechanically it is what stops the cascade at the root rather than
+   fencing it at the end. A loop test measured the old version: a planet nobody
+   fed lost its first region after sixteen minutes of digging and its third
+   after twenty-six, because each collapse restarted the tank a quarter full
+   and the drain never eased. Four minutes of warning for the second loss is
+   not a campaign pressure, it is a pile-up. */
+export const BALLAST_DOWN_RELIEF = 0.5;
+
+export function ballastDrain(planetUnrest: number, tier: number, down = 0): number {
+  return BALLAST_DRAIN * (0.35 + planetUnrest) /
+         ((1 + tier * BALLAST_TIER_RELIEF) * (1 + down * BALLAST_DOWN_RELIEF));
 }
 
 /* How many Anchors are lit. Derived, never stored. */
@@ -254,10 +266,17 @@ export function feedable(id: string): boolean {
 
 /* ---------- collapse ---------- */
 
-/* Where the Ballast is left standing after a region comes down. Not zero: a
-   collapse that leaves you empty collapses a second region on the next run and
-   a third on the one after, which is a death spiral and not a stake. */
-export const BALLAST_AFTER_COLLAPSE = 0.25;
+/* Where the Ballast is left standing after a region comes down.
+
+   Not zero - a collapse that leaves you empty takes a second region on the
+   next run and a third on the one after, which is a death spiral and not a
+   stake. And not a quarter either, which is what it was: at a quarter the
+   second loss arrived four minutes after the first, because the punishment for
+   losing a region was landing you closer to losing another one.
+
+   Half, and the punishment is the region. Losing ground you had mapped and cut
+   is the price; the tank is only the clock. */
+export const BALLAST_AFTER_COLLAPSE = 0.5;
 
 /* What shoring a fallen region costs, and the level you have to reach to do
    it. The cost is most of the tank on purpose - it is the largest single thing
@@ -385,7 +404,7 @@ export function isCollapsed(s: GroundState, region: number): boolean {
    once rather than every frame for as long as the tank sits on the floor. */
 export function drainBallast(s: GroundState, dt: number): { emptied: boolean } {
   if (s.ballast <= 0) return { emptied: false };
-  s.ballast = Math.max(0, s.ballast - ballastDrain(planetUnrest(s), tierOf(s)) * dt);
+  s.ballast = Math.max(0, s.ballast - ballastDrain(planetUnrest(s), tierOf(s), s.collapsed.length) * dt);
   return { emptied: s.ballast <= 0 };
 }
 
@@ -395,10 +414,43 @@ export function drainBallast(s: GroundState, dt: number): { emptied: boolean } {
    to take. Returns -1 when every candidate is excluded, and -1 has to be a
    real answer rather than a fallback to "take one anyway": a planet with one
    region left is a planet that has to be allowed to stop collapsing. */
-export function collapseTarget(s: GroundState, shipRegion: number, padRegion: number): number {
+export const MAX_COLLAPSED = 3;
+
+export function collapseTarget(
+  s: GroundState, shipRegion: number, padRegion: number,
+  /* Which regions hold an Anchor that is not lit yet. Passed in rather than
+     imported, because unrest.ts is the rules and vaults.ts is the content, and
+     the rules have never needed to know where anything is buried. */
+  holdsUnlitAnchor: (region: number) => boolean = () => false
+): number {
+  /* THE FLOOR, and the long play is why it exists.
+
+     A campaign driven through the shipping loop stopped dead on run 22: one
+     Anchor lit, three regions down, the Ballast pinned at zero and eighteen
+     credits. Collapses cascade by their own logic - each one removes ground
+     you earned in, which makes the Ballast harder to fill, which takes the
+     next region.
+
+     The unit test proved a SINGLE collapse leaves a planet you can come back
+     from and said nothing at all about three, which is the shape of hole a
+     long play exists to find. Three at once is as broken as this planet gets;
+     past that an empty Ballast is simply an empty Ballast. */
+  if (s.collapsed.length >= MAX_COLLAPSED) return -1;
+
   let best = -1, worst = -1;
   for (let i = 0; i < REGION_COUNT; i++) {
     if (i === shipRegion || i === padRegion || isCollapsed(s, i)) continue;
+    /* And never the ground holding an Anchor you have not reached.
+
+       Burying the objective behind a price you may not be able to pay is a
+       hazard taking the run, which `CRAFT.md` forbids outright - and it is the
+       exact state the long play got itself into: an unlit Anchor inside fallen
+       ground, and no income to shore it with because the income was in there.
+
+       Once its Anchor is lit the region is fair game. You have had your prize
+       out of it, and ground you worked out falling in behind you is the whole
+       idea. */
+    if (holdsUnlitAnchor(i)) continue;
     if (s.unrest[i] > worst) { worst = s.unrest[i]; best = i; }
   }
   return best;

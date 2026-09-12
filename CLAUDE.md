@@ -1,7 +1,13 @@
 # Coreward
 
-3D planet-mining PWA. Fly a drill ship down toward a planet core, sell ore at the surface pad,
-buy upgrades, break the core and the planet explodes, launch to a harder planet.
+3D planet-mining PWA. **One planet**, 61 columns wide and 452 metres deep, divided into twelve
+regions with their own rock and their own rules. Fly a drill ship down, sell ore at the surface
+pad, buy upgrades, and hunt the nine ANCHORS buried across the world - each one calms its
+region, draws it onto your map and strengthens the Ballast. The ninth opens the Vault at the
+centre, and that is the end.
+
+Round eight replaced the objective. It used to be a chain of planets you broke the core of and
+left; there is no core, no chart and no jump drive any more.
 
 Live: **https://gideon6222.github.io/coreward/**
 Repo: github.com/gideon6222/coreward
@@ -90,19 +96,22 @@ may import freely from `src/sim/`, never the other way.
 | `src/audio.ts` | The whole audio graph, score and effects |
 | `src/ui.ts` | The `ui` element map, HUD, station screen, manifest, patch notes |
 | `src/input.ts` | All d-pad, keyboard and button wiring |
-| `src/actions.ts` | Sell, tow, autopilot, ordnance, supplies, tremor, `stopDigging` |
+| `src/actions.ts` | Sell, autopilot, ordnance, supplies, tremor, `stopDigging`, the Anchor / wake / Vault moments |
 | `src/loop.ts` | `frame()`. The one big function |
 | `src/sim/ambience.ts` | What a world DOES in the air: per-trait emission timing |
 | `src/sim/intro.ts` | The first-run intro: its beats, their shots and their timing |
 | `src/titleui.ts` | The title screen and the intro, wired to the DOM |
-| `src/sim/chart.ts` | The navigation chart: which three worlds are offered at a leg |
-| `src/chartui.ts` | The chart screen, and the hand-off into and out of the crossing |
-| `src/sim/drive.ts` | The Jump Drive, its five components, and the Heart |
-| `src/transit.ts` | The crossing between worlds. Its own scene |
+| `src/sim/region.ts` | The twelve regions, their names and traits, and the map's coarse tile grid |
+| `src/sim/vaults.ts` | The nine Anchors, the authored room templates, and the Vault at the centre |
+| `src/sim/unrest.ts` | Unrest per region, the Ballast, collapse, the wake at the fifth Anchor |
+| `src/collapse.ts` | What a collapse and a shoring do to the world; the ground closing behind you |
+| `src/mapui.ts` | The Survey screen, on a canvas |
+| `src/ballast.ts` | The Ballast on the pad. Sight glass, dial, stack, tier collars |
+| `src/transit.ts` | The title screen's showcase, landing and launch. Its own scene |
 | `src/changelog.ts` | Version and the player-facing what's-new list |
 
 **Import direction is one-way and load-bearing:** types → `src/sim` (config → util → runtime →
-state → feel/fly/world/light/chart/drive/ambience/intro) → shader → lightmap → renderer
+state → region/unrest/vaults/feel/fly/world/light/ambience/intro) → shader → lightmap → renderer
 modules → ui → actions → loop. `actions.ts`
 deliberately does *not* import from `loop.ts`; `FACE_VEC` is duplicated there instead, because a cycle that only works
 because of when each binding happens to be read is a trap for whoever moves a call next.
@@ -132,22 +141,30 @@ two constants stay equal because they drifted apart silently once.
 That is what makes adding a new deepest ore convert only the ore directly above it rather than
 reshuffling every band. There is a test.
 
-**`g.planet` is the LEG; `g.world` is the identity. They are not the same number.**
-`planet` counts how far you have come - it seeds generation, sets core depth, rock hardness
-and base ore value, and goes up by one per core broken. `world` is what the chart chose: the
-name on the HUD and the palette it is drawn in. A save from before the chart has no `world`
-and defaults to the leg, which is exactly the old behaviour. **`g.trait` is stored, not hashed
-from an index** - the chart decides what is out there, and `traitOf()` can never return Stable
-for anything but planet zero, which would make the Guidance Spine unobtainable. `coreM()` and
-`valueM()` in state.ts exist so the leg and the world are reconciled in one place each; six
-call sites doing their own arithmetic means five of them get updated. **Tests must use
-`setWorld(p)`**, never `g.planet = p`, or the trait drifts from the leg and generation quietly
-changes.
+**`g.planet` and `g.world` are both zero and both vestigial.** They were the LEG and the
+IDENTITY of a world on the chart, back when the game was a chain of planets. There is one
+planet now; they survive because they seed the generator and because the frozen baseline is
+recorded against them, and `setWorld(p)` still exists for the tests that walk the old
+snapshots. **Nothing new should read either of them** - `regionAt(x, d)` is the question you
+actually want, and `traitAt` / `paletteAt` / `worldTrait()` all go through it.
 
-**`relicAt()` and `partAt()` take the world's REAL core depth, offset included.** The chart can
-put a core 18 m shallower than the ladder would, and anything placed against the leg's baseline
-then generates below the floor of the world it is on - unreachable, and silently, because
-nothing looks for a relic it cannot see.
+**Unrest is PER REGION, and `tier` is derived from `lit`.** `g.ground.unrest` is twelve
+numbers; a single planet-wide figure would be a second fuel gauge - it rises, you cannot point
+at where, and there is nothing to do about it. And the number of Anchors lit is
+`g.ground.lit.length`, never a stored count: two numbers that must agree is one number with a
+bug in it. `woke` IS stored, because the wake applies a one-off step to every region and the
+flag is the record that the step has been paid.
+
+**Anything that can reach `g.cargo` must have a `DEF` entry.** The manifest, the debrief and
+the sale all look materials up by id. Cut stone does not have one and is flagged `spoil`
+instead, which is why breaking a wall puts nothing in the hold. This shipped as a crash: the
+game ran, the manifest opened, and then it did not, depending on whether you had cut through
+an Anchor hall since you last looked. There is a test that sweeps the world for it.
+
+**A collapse has two fences and both were found by a long play, not a unit test.** It never
+takes a region holding an Anchor nobody has lit, and never more than `MAX_COLLAPSED` at once.
+Without them the cascade has no bottom: each collapse removes ground you earned in, which
+makes the Ballast harder to fill, which takes the next region.
 
 **Per-cell maps carry no planet in their keys.** `dug`, `rubble`, `damage` and `drops` must all
 be cleared together on a planet change, or the new world inherits the old one's holes.
@@ -214,7 +231,11 @@ case per upgrade against `UPGRADES.length` rather than a literal, because the li
 of that test said 10, failed for the wrong reason, and would have been "fixed" by editing the
 number.
 
-**Bedrock and the planet core are unbreakable by ordnance.** The core is a planet's climax and
+**Bedrock is unbreakable by ordnance.** (The planet core it used to share this note with is
+gone - see the top of the file.) The rest still holds, and so do the four blocks that joined
+it: the Anchor and the Vault core cannot be cut at all, and sealed stone and the Vault seal
+cannot until the laser is found and the ninth Anchor is lit respectively. The old note read:
+The core is a planet's climax and
 has to be drilled by hand.
 
 **A tremor must never take the run.** `planCollapse()` applies the collapse, re-runs

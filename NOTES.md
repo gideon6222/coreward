@@ -3684,3 +3684,71 @@ That is the next thing to look at, and it is a balance question rather than a
 bug: either collapses need a floor (a planet stops at N regions down), or the
 Ballast needs a trickle that does not depend on ore, or shoring needs to be
 payable in something a stranded player still has.
+
+## Round eight, W10 continued, 2026-09-12: what the long play was actually hiding
+
+The probe from yesterday stalled with one Anchor lit after thirty-eight runs
+and four simulated hours. I filed that as a balance question. **It was three
+separate bugs, and only one of them was balance.**
+
+### The one that mattered: a lit Anchor plugged its own column
+
+Three Anchors share each of the three columns they live in - x = 10, 31 and 50 -
+and an Anchor is a single cell in the middle of its own hall with `hard:
+Infinity`, because the ritual is that you cannot mine your way to the
+objective.
+
+Left unbreakable AFTER lighting, the shallowest one in a column became a
+permanent plug. **Six of the nine were unreachable by digging down their own
+column**, and each one stopped a metre above the Anchor above it: 94 m for the
+two under (10,95), 42 m for the two under (31,43), 47 m for the two under
+(50,48). The probe was not playing badly; it was walled in.
+
+A lit Anchor is cuttable now - three times the band, so moving a monument is a
+decision - and the ritual is untouched, because an unlit one is still
+uncuttable and lights the moment you are beside it.
+
+The test that found it is the one worth keeping: **`every Anchor lights by
+digging down its own column`** puts the ship over each of the nine in turn,
+digs, and asserts it lights. Nine descents and two minutes of suite time,
+which is why it has its own `setTimeout`. Reverting the fix reproduces all six
+failures with the same six depths.
+
+### The balance one: the cascade had no bottom
+
+A planet nobody feeds lost its first region after sixteen minutes of digging
+and its third after **twenty-six** - because a collapse restarted the tank a
+quarter full and the drain never eased, so the punishment for losing a region
+was landing you closer to losing another.
+
+Two changes at the root rather than a fence at the end: a collapse leaves the
+Ballast HALF full (the punishment is the region, not the clock), and each
+fallen region eases the drain by half again (there is less ground standing to
+hold down). The gaps are 16, 13 and 17 minutes now - even, and each one a real
+window to react in.
+
+Plus the two fences: **never a region holding an Anchor nobody has lit**, and
+**never more than three at once.** Both were found by the long play and neither
+is visible from a single step.
+
+### And the test that should have existed first
+
+`a planet run to the bottom of its own spiral still has a way forward` steps
+the pure system sixty times and asserts the terminal state is actionable. It
+runs in a millisecond and asks the same question the browser probe took four
+simulated hours to answer.
+
+**A test that steps a system once proves the step. It cannot prove the
+sequence.** Anything with feedback in it - a meter that costs you the means to
+refill it - needs a loop.
+
+### The probe's own two bugs, for the record
+
+It held the d-pad for `|dx| * 2 + 4` seconds to move `dx` columns, which at
+three cells a second is eighteen cells of overshoot; and it dug down for a
+fixed two minutes every run, ran the tank dry and banked nothing, while the
+Ballast drained on schedule. Both looked exactly like balance problems.
+
+A bad player is a useful probe. An incoherent one is noise. It flies to a
+CONDITION now, and it turns back when the game says `danger` - which is the
+one warning the game shouts at you.

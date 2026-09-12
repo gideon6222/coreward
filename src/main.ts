@@ -25,8 +25,8 @@ import { lmDebug, LM_COLS } from './lightmap';
 import { sfx } from './audio';
 import { beginSettle, grantFind, grantCache } from './actions';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
-import { landCollapse, closeGround } from './collapse';
-import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake, feed, feedValue } from './sim/unrest';
+import { landCollapse, closeGround, shoreUp } from './collapse';
+import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake, feed, feedValue, MAX_COLLAPSED, newGround } from './sim/unrest';
 import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells,
          vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './sim/vaults';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
@@ -215,7 +215,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     openMap, closeMap, mapView, mapPan, mapSetView, mapDraw, MAP_TILE, WORLD_DEPTH,
     /* The campaign, so a spec can put the planet into a state it would take
        forty runs to reach and then check what the game does about it. */
-    padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT,
+    padRegion, worldUnrest, landCollapse, collapseTarget, REGION_COUNT, shoreUp, MAX_COLLAPSED, newGround,
     /* The Anchors, so a spec can fly to one rather than dig for forty minutes
        looking for it. */
     anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells, lightAnchor, wake, WAKE_AT, isAwake, closeGround,

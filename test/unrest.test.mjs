@@ -249,3 +249,179 @@ test('a corrupt save cannot put the planet into a state the game cannot draw', (
   for (const c of bad.collapsed) assert.ok(c >= 0 && c < H.REGION_COUNT, `region out of range: ${c}`);
   assert.equal(bad.pending, -1, 'a pending region off the end of the world survived the load');
 });
+
+/* ---------- the cascade, and the two fences on it ----------
+
+   These exist because of a LONG PLAY, not a unit test. A campaign driven
+   through the shipping loop stopped dead on run 22 with one Anchor lit, three
+   regions down, the Ballast pinned at zero and eighteen credits - and the test
+   above it proved only that a SINGLE collapse leaves a planet you can come
+   back from. One is not three. */
+
+test('three regions down is as broken as the planet gets', () => {
+  /* Collapses cascade by their own logic: each one removes ground you earned
+     in, which makes the Ballast harder to fill, which takes the next region.
+     Without a floor the spiral has no bottom. */
+  const s = fresh();
+  for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = 0.9;
+  /* Everything lit, so the Anchor fence is not what is doing the work here -
+     a test where two fences overlap proves neither. */
+  for (let i = 0; i < H.ANCHOR_COUNT; i++) H.lightAnchor(s, i);
+
+  const taken = [];
+  for (let n = 0; n < 8; n++) {
+    const t = H.collapseTarget(s, 99, 1, () => false);
+    if (t < 0) break;
+    H.collapse(s, t);
+    taken.push(t);
+  }
+  assert.equal(taken.length, H.MAX_COLLAPSED,
+    `${taken.length} regions came down before the planet stopped - the cascade has no floor`);
+  assert.equal(H.collapseTarget(s, 99, 1, () => false), -1,
+    'a fourth region was still on offer');
+  /* And the floor is not so high that a collapse stops being a stake. */
+  assert.ok(H.MAX_COLLAPSED >= 2 && H.MAX_COLLAPSED < H.REGION_COUNT / 2,
+    `${H.MAX_COLLAPSED} of ${H.REGION_COUNT} regions is the wrong size for a stake`);
+  fresh();
+});
+
+test('the ground holding an Anchor you have not reached never falls', () => {
+  /* The state the long play actually got into: an unlit Anchor inside fallen
+     ground, and no income to shore it with because the income was in there.
+
+     Burying the objective behind a price you may not be able to pay is a
+     hazard taking the run. Once its Anchor is lit the region is fair game -
+     you have had your prize out of it. */
+  const s = fresh();
+  for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = 0.5;
+  /* Region 4 is the angriest, so it is what an unfenced chooser would take. */
+  s.unrest[4] = 1;
+  const unlit = (r) => r < H.ANCHOR_COUNT && !H.isLit(s, r);
+
+  const t = H.collapseTarget(s, 99, 1, unlit);
+  assert.ok(t >= 0, 'nothing at all could fall, so the fence is too wide');
+  assert.notEqual(t, 4, 'it took the region holding the angriest unlit Anchor');
+  assert.ok(t >= H.ANCHOR_COUNT || H.isLit(s, t),
+    `it took region ${t}, which holds an Anchor nobody has lit`);
+
+  /* And lighting it hands the region over.
+
+     Its Unrest has to be put back by hand first, because lighting an Anchor
+     CALMS its region to 0.15 - so a freshly lit region is not the angriest one
+     any more and would not be chosen for a reason that has nothing to do with
+     this fence. The first version of this test asserted it would be, and
+     failed for exactly that reason. */
+  H.lightAnchor(s, 4);
+  s.unrest[4] = 1;
+  assert.equal(H.collapseTarget(s, 99, 1, unlit), 4,
+    'a region whose Anchor is lit is still being protected');
+  fresh();
+});
+
+test('with no Anchors lit at all there is still somewhere for a collapse to go', () => {
+  /* The fence above could easily be too wide: nine of the twelve regions hold
+     an Anchor, and at the start of the game none of them is lit. If the other
+     three were also excluded for any reason, the Ballast emptying would do
+     nothing at all and the stake would quietly not exist. */
+  const s = fresh();
+  for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = 0.4;
+  const unlit = (r) => r < H.ANCHOR_COUNT && !H.isLit(s, r);
+  const t = H.collapseTarget(s, 99, 1, unlit);
+  assert.ok(t >= 0,
+    'a fresh planet has nowhere for a collapse to land, so an empty Ballast costs nothing');
+  assert.ok(t >= H.ANCHOR_COUNT,
+    `region ${t} holds an Anchor and was chosen anyway`);
+  fresh();
+});
+
+test('a planet run to the bottom of its own spiral still has a way forward', () => {
+  /* The cheap version of the long play, and the test that should have existed
+     first: step the system until it stops changing, then ask whether the
+     terminal state is one a player can act on.
+
+     Anything with feedback in it needs this - a meter that costs you the means
+     to refill it cannot be judged one step at a time. The browser probe found
+     it, but only after twenty-two runs and an afternoon; this runs in a
+     millisecond and asks the same question. */
+  const s = fresh();
+  const pad = 1, ship = 7;
+  const unlit = (r) => r < H.ANCHOR_COUNT && !H.isLit(s, r);
+
+  /* The worst case a player can reach: everything furious, nothing lit, and
+     the tank empty every time it is asked. Sixty dockings, which is far more
+     than a campaign. */
+  for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = 1;
+  for (let dock = 0; dock < 60; dock++) {
+    s.ballast = 0;
+    const t = H.collapseTarget(s, ship, pad, unlit);
+    if (t < 0) continue;
+    H.collapse(s, t);
+  }
+
+  /* The floor held. */
+  assert.ok(s.collapsed.length <= H.MAX_COLLAPSED,
+    `${s.collapsed.length} regions are down after sixty dockings at maximum Unrest`);
+
+  /* And the state is ACTIONABLE, which is the actual claim. Three things have
+     to be true at the bottom of the spiral:
+
+     1. no Anchor is buried, so the objective is still reachable
+     2. the pad's region is still open, so there is somewhere to earn
+     3. shoring is possible once the tank is filled - it is not gated behind
+        anything that is itself inside fallen ground */
+  for (const r of s.collapsed) {
+    assert.ok(r >= H.ANCHOR_COUNT || H.isLit(s, r),
+      `${H.regionName(r)} is down with an Anchor nobody has lit in it`);
+  }
+  assert.equal(H.isCollapsed(s, pad), false, "the pad's own region came down");
+
+  s.ballast = 1;
+  const shored = H.shore(s);
+  assert.ok(shored >= 0,
+    'at the bottom of the spiral, a full Ballast cannot buy a region back');
+  assert.ok(s.collapsed.length < H.MAX_COLLAPSED, 'shoring did not reopen anything');
+  fresh();
+});
+
+test('a planet nobody feeds loses ground and then stops', () => {
+  /* The same loop with the REAL drain rather than an empty tank forced every
+     time, so the arithmetic of "how long does neglect take" is on the record.
+     A full Ballast at ordinary Unrest is about twenty-five minutes of digging;
+     this counts how many of those a planet survives before it is as broken as
+     it gets. */
+  const s = fresh();
+  const pad = 1;
+  const unlit = () => false;          /* everything lit, so only the floor acts */
+  for (let i = 0; i < H.REGION_COUNT; i++) s.unrest[i] = 0.7;
+  let mins = 0;
+  const at = [];
+  while (mins < 600 && s.collapsed.length < H.MAX_COLLAPSED) {
+    /* Sixty seconds of digging, then dock, and feed it nothing. */
+    const r = H.drainBallast(s, 60);
+    mins++;
+    if (!r.emptied) continue;
+    const t = H.collapseTarget(s, 99, pad, unlit);
+    if (t < 0) break;
+    H.collapse(s, t);
+    at.push(mins);
+  }
+  assert.equal(at.length, H.MAX_COLLAPSED, `only ${at.length} regions were ever lost`);
+
+  /* The SHAPE, not the total, and that is the whole point of the test.
+
+     The first version asserted the total only and it was the wrong question.
+     The old numbers were 16, 20, 26 - the first loss took a reasonable
+     sixteen minutes and the next two arrived four minutes apart, because a
+     collapse used to restart the tank a quarter full and the drain never
+     eased. A total of twenty-six minutes hides a pile-up; the gaps do not. */
+  const gaps = at.map((m, i) => (i ? m - at[i - 1] : m));
+  assert.ok(gaps[0] > 10,
+    `the first region falls after ${gaps[0]} minutes of digging - a run is three, so this has to be several`);
+  for (let i = 1; i < gaps.length; i++) {
+    assert.ok(gaps[i] > gaps[0] * 0.6,
+      `losses came ${gaps.join(', ')} minutes apart - the ${i + 1}th arrived too fast after the one before it to react to`);
+  }
+  assert.ok(at[at.length - 1] < 200,
+    `it took ${at[at.length - 1]} minutes of digging to break the planet as far as it goes, which nobody will reach`);
+  fresh();
+});
