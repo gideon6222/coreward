@@ -67,8 +67,14 @@ export interface Block {
   seam?: boolean;
   /* The one buried artefact on this planet. */
   relic?: boolean;
-  /* the Jump Drive component buried on this world - see drive.ts */
-  part?: boolean;
+  /* Cut stone: a wall, not a deposit.
+
+     Breaking it puts NOTHING in the hold, and that flag is load-bearing rather
+     than tidy. Every other block in the world either has a DEF entry or is
+     caught by a branch above the cargo one, and an id that reaches `g.cargo`
+     without a DEF entry crashes the manifest on `DEF[id].value` - which is
+     exactly what cutting into an Anchor hall used to do. */
+  spoil?: boolean;
   /* A sealed crate holding a device you do not own yet. A flag and not the
      device's name: every crate is the same block, and `findHere()` in world.ts
      says which one this cell holds. See the note in blockAt. */

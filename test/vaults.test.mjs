@@ -390,3 +390,49 @@ test('an Anchor never raises a region it already calmed', () => {
   H.lightAnchor(s, 2);
   assert.equal(s.unrest[2], 0.02);
 });
+
+test('cut stone never enters the hold', () => {
+  /* A crash found by the phone pass, and the worst kind: the game ran, the
+     manifest opened, and then it did not - because the fixture had cut into an
+     Anchor hall in between and `worked` was sitting in the cargo with no DEF
+     entry behind it. `buildManifest` sorts by `DEF[id].value` and threw on the
+     whole screen.
+
+     Every other block in the world either has a DEF entry or is caught by a
+     branch above the cargo one. The three cut-stone blocks are caught by
+     `spoil`, and the rule they encode is also the right one: you are getting
+     THROUGH a wall, not mining it. */
+  H.setWorld(0);
+  H.g.dug = new Set();
+  H.g.ground = H.newGround();
+  H.g.found = ['laser'];
+  const seen = new Set();
+  for (const [k, ch] of VAULT) {
+    if (!'#=%'.includes(ch)) continue;
+    const i = k.indexOf(',');
+    const b = H.blockAt(+k.slice(0, i), +k.slice(i + 1));
+    if (!b || seen.has(b.id)) continue;
+    seen.add(b.id);
+    assert.equal(b.spoil, true, `${b.id} is cut stone and is not flagged as spoil`);
+    assert.equal(b.wt, 0, `${b.id} has weight, so a full hold behaves differently near a wall`);
+    assert.equal(b.value, 0, `${b.id} is worth something, so it would be worth mining a wall`);
+  }
+  assert.ok(seen.size >= 3, `only ${seen.size} kinds of cut stone found in the whole world`);
+
+  /* And the general rule underneath it: anything that CAN reach the hold has
+     to be lookup-able, because the manifest, the debrief and the sale all go
+     through DEF by id. Swept over the world rather than asserted about the
+     three ids that caused it. */
+  const bad = new Set();
+  for (let d = 0; d < H.WORLD_DEPTH; d += 3) {
+    for (let x = 0; x < H.W; x += 3) {
+      const b = H.blockAt(x, d);
+      if (!b || b.spoil || b.hazard || b.cache || b.find || b.relic) continue;
+      if (!Number.isFinite(b.hard)) continue;
+      if (!H.DEF[b.id]) bad.add(b.id);
+    }
+  }
+  assert.deepEqual([...bad], [],
+    `these can be broken into the hold and have no DEF entry: ${[...bad].join(', ')}`);
+  H.g.found = [];
+});

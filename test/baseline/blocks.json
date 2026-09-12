@@ -150,8 +150,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 2.1,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "stone:8419954:2.88": {
         "id": "stone",
@@ -219,8 +220,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 5.04,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "silver:14213352:5.3999999999999995": {
         "id": "silver",
@@ -296,8 +298,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 6.048,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:6": {
         "id": "geode",
@@ -439,7 +442,8 @@
         "glow": 0.34,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:10.5": {
         "id": "worked",
@@ -448,8 +452,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 10.5,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "rubble:6709088:2.75": {
         "id": "rubble",
@@ -516,8 +521,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 14.700000000000001,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "magmite:16742936:13": {
         "id": "magmite",
@@ -633,8 +639,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 12.348,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "silver:14213352:3.78": {
         "id": "silver",
@@ -834,8 +841,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 17.64,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "umbrite:10320895:19.5": {
         "id": "umbrite",
@@ -947,8 +955,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 15.876,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:22.68": {
         "id": "worked",
@@ -957,8 +966,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 22.68,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "relic:16773375:10.799999999999999": {
         "id": "relic",
@@ -995,7 +1005,8 @@
         "glow": 0.48,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "vaultcore:9071146:Infinity": {
         "id": "vaultcore",
@@ -1210,8 +1221,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 2.1,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:5.04": {
         "id": "worked",
@@ -1220,8 +1232,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 5.04,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "stone:8419954:2.88": {
         "id": "stone",
@@ -1332,8 +1345,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 6.048,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:6": {
         "id": "geode",
@@ -1475,7 +1489,8 @@
         "glow": 0.34,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:10.5": {
         "id": "worked",
@@ -1484,8 +1499,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 10.5,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "rubble:6709088:2.75": {
         "id": "rubble",
@@ -1538,8 +1554,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 14.700000000000001,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "magmite:16742936:13": {
         "id": "magmite",
@@ -1631,8 +1648,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 12.348,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:5.04": {
         "id": "geode",
@@ -1884,8 +1902,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 17.64,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "umbrite:10320895:16.38": {
         "id": "umbrite",
@@ -1996,8 +2015,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 15.876,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:22.68": {
         "id": "worked",
@@ -2006,8 +2026,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 22.68,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "solmarrow:16773296:27.599999999999998": {
         "id": "solmarrow",
@@ -2043,7 +2064,8 @@
         "glow": 0.48,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "vaultcore:9071146:Infinity": {
         "id": "vaultcore",
@@ -2248,8 +2270,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 2.1,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "seam:9406327:2.88": {
         "id": "seam",
@@ -2290,8 +2313,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 5.04,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "cache:16743120:4.08": {
         "id": "cache",
@@ -2381,8 +2405,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 6.048,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:6": {
         "id": "geode",
@@ -2538,7 +2563,8 @@
         "glow": 0.34,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:10.5": {
         "id": "worked",
@@ -2547,8 +2573,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 10.5,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "rubble:6709088:2.75": {
         "id": "rubble",
@@ -2601,8 +2628,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 14.700000000000001,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "magmite:16742936:13": {
         "id": "magmite",
@@ -2718,8 +2746,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 12.348,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "iron:11581117:2.94": {
         "id": "iron",
@@ -2920,8 +2949,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 17.64,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "coreite:6750192:16": {
         "id": "coreite",
@@ -3059,8 +3089,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 15.876,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:22.68": {
         "id": "worked",
@@ -3069,8 +3100,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 22.68,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "vaultwall:11044398:Infinity": {
         "id": "vaultwall",
@@ -3080,7 +3112,8 @@
         "glow": 0.48,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "vaultcore:9071146:Infinity": {
         "id": "vaultcore",
@@ -3294,8 +3327,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 2.1,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "stone:8419954:2.88": {
         "id": "stone",
@@ -3314,8 +3348,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 5.04,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "seam:9406327:2.88": {
         "id": "seam",
@@ -3430,8 +3465,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 6.048,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:7.199999999999999": {
         "id": "geode",
@@ -3573,7 +3609,8 @@
         "glow": 0.34,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:10.5": {
         "id": "worked",
@@ -3582,8 +3619,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 10.5,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "rubble:6709088:2.75": {
         "id": "rubble",
@@ -3650,8 +3688,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 14.700000000000001,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "magmite:16742936:13": {
         "id": "magmite",
@@ -3754,8 +3793,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 12.348,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:5.04": {
         "id": "geode",
@@ -3982,8 +4022,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 17.64,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "umbrite:10320895:19.5": {
         "id": "umbrite",
@@ -4094,8 +4135,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 15.876,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:22.68": {
         "id": "worked",
@@ -4104,8 +4146,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 22.68,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "solmarrow:16773296:19.32": {
         "id": "solmarrow",
@@ -4128,7 +4171,8 @@
         "glow": 0.48,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "relic:16773375:7.56": {
         "id": "relic",
@@ -4333,8 +4377,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 2.1,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:5.04": {
         "id": "worked",
@@ -4343,8 +4388,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 5.04,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "stone:8419954:2.88": {
         "id": "stone",
@@ -4466,8 +4512,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 6.048,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:6": {
         "id": "geode",
@@ -4633,7 +4680,8 @@
         "glow": 0.34,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:10.5": {
         "id": "worked",
@@ -4642,8 +4690,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 10.5,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "rubble:6709088:2.75": {
         "id": "rubble",
@@ -4696,8 +4745,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 14.700000000000001,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "magmite:16742936:13": {
         "id": "magmite",
@@ -4801,8 +4851,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 12.348,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "ruby:16726876:8.4": {
         "id": "ruby",
@@ -5028,8 +5079,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 17.64,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "umbrite:10320895:16.38": {
         "id": "umbrite",
@@ -5127,8 +5179,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 15.876,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:22.68": {
         "id": "worked",
@@ -5137,8 +5190,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 22.68,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "solmarrow:16773296:19.32": {
         "id": "solmarrow",
@@ -5174,7 +5228,8 @@
         "glow": 0.48,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "relic:16773375:10.799999999999999": {
         "id": "relic",
@@ -5376,8 +5431,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 2.1,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "stone:8419954:2.88": {
         "id": "stone",
@@ -5410,8 +5466,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 5.04,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "seam:9406327:2.88": {
         "id": "seam",
@@ -5512,8 +5569,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 6.048,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:6": {
         "id": "geode",
@@ -5655,7 +5713,8 @@
         "glow": 0.34,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:10.5": {
         "id": "worked",
@@ -5664,8 +5723,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 10.5,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "schematic:65345:10": {
         "id": "schematic",
@@ -5732,8 +5792,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 14.700000000000001,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "magmite:16742936:13": {
         "id": "magmite",
@@ -5850,8 +5911,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 12.348,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "geode:8388576:5.04": {
         "id": "geode",
@@ -6050,8 +6112,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 17.64,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "relic:16773375:10.799999999999999": {
         "id": "relic",
@@ -6177,8 +6240,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 15.876,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "worked:9076579:22.68": {
         "id": "worked",
@@ -6187,8 +6251,9 @@
         "host": 2894372,
         "glow": 0.13,
         "hard": 22.68,
-        "wt": 0.4,
-        "value": 1
+        "wt": 0,
+        "value": 0,
+        "spoil": true
       },
       "umbrite:10320895:23.4": {
         "id": "umbrite",
@@ -6224,7 +6289,8 @@
         "glow": 0.48,
         "hard": "__Infinity__",
         "wt": 0,
-        "value": 0
+        "value": 0,
+        "spoil": true
       },
       "vaultcore:9071146:Infinity": {
         "id": "vaultcore",

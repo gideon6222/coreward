@@ -16,9 +16,28 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.30.0';
+export const VERSION = '0.31.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.31.0', date: '2026-09-11', title: 'One planet, and the Lattice',
+    notes: [
+      'There is one planet now. It is 61 columns wide and 452 metres deep, and you are going to be here a while.',
+      'The twelve worlds became twelve REGIONS of it, three across and four down, each with its own rock, its own colour and its own rules. The chip at the top names the one you are standing in.',
+      'A MAP. It fills in as you fly, draws your own tunnels exactly, names the places you have been and puts three question marks over the ones you have not.',
+      'Buried across the planet are nine ANCHORS, in halls of cut stone somebody built before you got here. You cannot mine one - you break into the hall, cross it, and drop into the niche. Lighting one calms its region, draws the whole region onto your map, and makes the Ballast stronger for the rest of the game.',
+      'Three of the nine are behind a seal nothing cuts until you have found the Cutting Laser somewhere else entirely.',
+      'The refinery, the derrick and the store shed are gone. In their place the BALLAST: one riveted pressure station on the pad, with a sight glass for the level and a dial whose needle is how angry the planet is.',
+      'It drains while you are out working. You feed it banked ore - the same ore the Outfitter wants - so the hold is two decisions now.',
+      'If it runs out, a region COMES DOWN. Every tunnel you cut there fills in and you cannot get back in until you have shored it up, which costs 45% of a full Ballast.',
+      'UNREST. Everything you cut makes the ground angrier, and it is per region, so working one place out and going somewhere else is a real move. Restless ground shakes at depths that used to be quiet. Nothing tells you what the numbers mean.',
+      'At the fifth Anchor the planet answers. Every region steps, permanently; tunnels in restless ground start closing while you are docked; and something new starts growing in the shallow rock you finished with hours ago.',
+      'The ninth Anchor opens the centre. That is the end of the game, and the game does not throw you out when you finish it.',
+      'The star chart, the jump drive and the Planet Core are gone with the old ending. There is one planet and one way to finish it.',
+      'Rock got its own character: every block is turned a quarter-turn and scaled a little, the strata boundaries wander instead of ruling straight lines, and cut stone is the only smooth surface in the world.',
+      'A new ship, designed at thirty pixels: a boiler, a raked stack, a spoked flywheel and an open under-frame. Brass where brass can cover a whole panel.'
+    ]
+  },
   {
     version: '0.30.0', date: '2026-09-10', title: 'No tow',
     notes: [

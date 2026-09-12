@@ -14,7 +14,7 @@ import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
 import { openMap, wireMap } from './mapui';
 import { ANCHOR_COUNT } from './sim/vaults';
-import { MAP_TILE, WORLD_DEPTH } from './sim/region';
+import { MAP_TILE, WORLD_DEPTH, regionName, regionAt } from './sim/region';
 import { W } from './sim/config';
 import { feed } from './sim/unrest';
 import { shoreUp } from './collapse';
@@ -221,9 +221,13 @@ mustEl('btnPause').onclick = () => {
   audioLabels();
   buildNotes();
   ui.pauseStats.innerHTML =
-    '<div class="up"><div class="upinfo"><div class="upname">' + planetName(g.world) +
+    /* The REGION, like the HUD chip, and for the same reason: one planet means
+       a planet name is the same word for the whole game. And it is not "Core
+       at 452 m" any more - there is no core to break, only a floor. */
+    '<div class="up"><div class="upinfo"><div class="upname">' +
+    regionName(regionAt(Math.round(g.px), Math.max(0, Math.round(g.pd)))) +
     (worldTrait().id === 'stable' ? '' : ' <span class="mult">' + worldTrait().name + '</span>') + '</div>' +
-    '<div class="upeff">Core at ' + coreM() + ' m · you are at ' + Math.max(0, Math.round(g.pd)) + ' m</div>' +
+    '<div class="upeff">You are at ' + Math.max(0, Math.round(g.pd)) + ' m of ' + coreM() + '</div>' +
     '<div class="upeff">' + worldTrait().blurb + '</div></div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Credits</div>' +
     '<div class="upeff">Haul aboard worth ◈ ' + haulValue().toLocaleString() + '</div></div>' +
@@ -231,10 +235,10 @@ mustEl('btnPause').onclick = () => {
     '<div class="up"><div class="upinfo"><div class="upname">Relics</div>' +
     '<div class="upeff">' + (g.relics.length
       ? g.relics.map((r) => RELIC_OF[r] ? RELIC_OF[r].name : r).join(' · ')
-      : 'One is buried on every planet, below the halfway mark. Nothing marks it.') +
+      : 'One is buried on this planet, below the halfway mark. Nothing marks it.') +
     '</div>' +
     (relicDistance() === null
-      ? '<div class="upeff">Recovered on ' + planetName(g.world) + '.</div>'
+      ? '<div class="upeff">Recovered.</div>'
       : '<div class="upeff">Still in the ground here.</div>') + '</div>' +
     '<div class="val">' + g.relics.length + '</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Records</div>' +

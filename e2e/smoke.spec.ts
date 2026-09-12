@@ -427,7 +427,19 @@ test('the shop, manifest and pause menu all open', async ({ page }) => {
 
   await page.locator('#btnPause').dispatchEvent('click');
   await expect(page.locator('#pause')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#pauseStats')).toContainText('Verdax');
+  /* The pause sheet names the REGION, like the HUD chip - it named the planet
+     until W10, and with one planet that is the same word for the whole game.
+     Derived from the pad's own region, because the boundaries wander and a
+     literal is a fact about a seed rather than about the screen. */
+  await expect(page.locator('#pauseStats')).toContainText(
+    await page.evaluate(() => {
+      const w = (window as any).__cw;
+      return w.regionName(w.padRegion());
+    }));
+  /* And the campaign is on it, which is what a player opens this sheet for
+     now that there is no chart to read. */
+  await expect(page.locator('#pauseStats')).toContainText('The Lattice');
+  await expect(page.locator('#pauseStats')).toContainText('Survey');
   await page.locator('#btnResume').dispatchEvent('click');
 
   await expect(page.locator('#err')).toHaveClass(/hidden/);
@@ -633,27 +645,56 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
      shows up deep and in an opened-out chamber, and each distinct block id is
      its own pool and its own pair of draw calls. Measuring the easy case is
      how a budget silently stops being a budget. */
-  await page.evaluate(() => {
+  const at = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    /* Broken into a SEALED Anchor hall, on a woken planet, with a region down.
+
+       Pools are per block id in the streaming window, so the worst case is the
+       window that holds the most distinct ids - and round eight added six of
+       them. A hall puts worked stone, sealed stone and the Anchor in one
+       frame; waking the planet adds Blooms; a collapse adds fallen ground.
+       Measuring a plain shaft is how a budget silently stops being a budget,
+       which is the same note this fixture already carried when it moved from
+       96 m to 300.
+
+       The hall is found rather than named: the positions are seeded. */
+    let deep = 0, at = { x: 30, d: 300 };
+    for (let r = 0; r < w.ANCHOR_COUNT; r++) {
+      if (!w.anchorSealed(r)) continue;
+      const a = w.anchorAt(r);
+      if (a.d > deep) { deep = a.d; at = a; }
+    }
     const dug: string[] = [];
-    /* 300 m, not 96. The heat line moved from 38 m to 199 m when the twelve
-       planets folded into one 452-metre world, so a fixture that sits at 96 is
-       in cool rock and can only assert that nothing is draining. */
-    for (let d = 0; d <= 300; d++) dug.push('30,' + d);
-    for (let x = 25; x <= 35; x++) for (let d = 292; d <= 303; d++) dug.push(x + ',' + d);
-    const rubble = ['29,294', '31,294', '28,296', '32,296', '30,290', '33,298', '27,299', '26,295'];
+    for (let d = 0; d <= at.d; d++) dug.push(at.x + ',' + d);
+    /* The room itself opened out, which is the frame being measured. */
+    for (let x = at.x - 5; x <= at.x + 5; x++) {
+      for (let d = at.d - 5; d <= at.d + 5; d++) dug.push(x + ',' + d);
+    }
+    const rubble = [
+      (at.x - 1) + ',' + (at.d - 6), (at.x + 1) + ',' + (at.d - 6),
+      (at.x - 2) + ',' + (at.d - 4), (at.x + 2) + ',' + (at.d - 4),
+      at.x + ',' + (at.d - 10), (at.x + 3) + ',' + (at.d - 2)
+    ];
     localStorage.setItem('coreward.v2', JSON.stringify({
-      planet: 3, credits: 0, shards: 0,
-      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 7, scan: 9, scrub: 0, auto: 0 },
+      planet: 0, credits: 0,
+      up: { drill: 9, cargo: 9, thrust: 9, tank: 9, cool: 9, scan: 9, scrub: 0, auto: 0 },
       kit: { coolant: 2, patch: 3, cell: 3 }, stock: {},
-      best: { depth: 40, haul: 0 },
+      best: { depth: at.d, haul: 0 },
       dug: dug.filter((k) => !rubble.includes(k)), rubble,
-      cargo: {}, weight: 0, px: 30, pd: 300
+      /* Five Anchors lit so the planet is awake, one region down, and the
+         laser aboard so the seal renders in its cuttable state next to the
+         Anchor - the most ids one window can hold. */
+      ground: { unrest: new Array(12).fill(0.7), ballast: 0.5, lit: [0, 1, 2, 3, 4],
+                collapsed: [11], pending: -1, collapses: 1, fed: 0, woke: true },
+      found: ['laser', 'magnet', 'bomb'],
+      cargo: {}, weight: 0, px: at.x, pd: at.d - 3
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
       if (k === 'coreward.v2') return;
       return set.call(this, k, v);
     };
+    return at;
   });
   await page.reload();
   await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
@@ -661,7 +702,7 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
      raises no pointerdown, so this cannot start the audio graph and the
      gesture assertions below still mean what they say. */
   await enterGame(page);
-  await expect(page.locator('#depth')).toContainText('DEPTH 300 m');
+  await expect(page.locator('#depth')).toContainText('DEPTH ' + (at.d - 3) + ' m');
 
   const perFrame = await page.evaluate(async () => {
     const w = window as any;
@@ -682,7 +723,8 @@ test('stays inside the draw-call budget while underground', async ({ page }) => 
   /* Reported so the headroom is visible in CI output rather than only the
      pass/fail - a budget you never see the margin on is one you find out
      about on the day it breaks. */
-  console.log('    draw calls per frame at 96 m: ' + perFrame + ' of ' + DRAW_CALL_BUDGET);
+  console.log('    draw calls per frame in a sealed hall at ' + at.d + ' m: ' +
+    perFrame + ' of ' + DRAW_CALL_BUDGET);
   expect(
     perFrame,
     'draw calls regressed past the budget - most likely something gave blocks ' +

@@ -2,7 +2,7 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import * as THREE from 'three';
-import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH } from './sim/config';
+import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH, costOf, matCost } from './sim/config';
 import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
@@ -26,7 +26,7 @@ import { sfx } from './audio';
 import { beginSettle, grantFind, grantCache } from './actions';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
 import { landCollapse, closeGround } from './collapse';
-import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake } from './sim/unrest';
+import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake, feed, feedValue } from './sim/unrest';
 import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells,
          vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './sim/vaults';
 import { setStartHandler, wireTitle, showTitle, showIntro, paintBeat } from './titleui';
@@ -189,6 +189,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,
+    /* The shop and the Ballast as pure calls, so a long-play probe can buy and
+       feed the way the panels do without driving a 3D room with a pointer. */
+    UPGRADES, costOf, matCost, feed, feedValue,
     /* What is actually on the shelf right now, so a test can ask for "the
        sealed case" rather than naming one that may not be stocked. */
     /* Force a full terrain rebuild - for looking at a world's ground without

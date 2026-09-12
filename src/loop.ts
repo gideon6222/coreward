@@ -444,6 +444,15 @@ export function tick(raw: number, draw = true) {
           R.digging = null;
           save();
         }
+        else if (b.spoil) {
+          /* Cut stone. You are getting THROUGH it, not mining it - the reward
+             for breaking a wall is the room behind it. Nothing enters the
+             hold, which also means the id never has to survive a DEF lookup:
+             it did not, and opening the manifest after cutting into a hall
+             threw on `DEF['worked'].value`. */
+          R.digging = null;
+          save();
+        }
         else if (g.weight + b.wt > S.cargoCap()) {
           /* The drill never refuses any more. What will not fit is left at the
              cell it came from - ore waits to be flown through, plain rock is

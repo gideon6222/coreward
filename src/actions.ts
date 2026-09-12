@@ -297,6 +297,9 @@ function breakCells(cells: number[][]) {
       if (f) grantFind(f.key, x, d);
     } else if (b.cache) {
       grantCache(x, d);
+    } else if (b.spoil) {
+      /* Cut stone, blown open rather than drilled. Same rule: nothing in the
+         hold, and no id that the manifest cannot look up. */
     } else if (g.weight + b.wt <= S.cargoCap()) {
       g.cargo[b.id] = (g.cargo[b.id] || 0) + 1;
       g.weight += b.wt;
@@ -581,7 +584,7 @@ export function hardReset() {
   g.mode = 'play';
   ui.pause.classList.add('hidden');
   flash('rgba(255,255,255,.5)', 400);
-  toast('Progress wiped. Fresh start on ' + planetName(0) + '.');
+  toast('Progress wiped. The planet is quiet again.');
 }
 
 /* ---------- an Anchor lights ----------

@@ -220,7 +220,7 @@ export function blockAt(x: number, d: number): Block | null {
                color: open ? 0xffd98a : 0xa8862e, host: 0x241d12,
                glow: open ? 0.75 : 0.48,
                hard: open ? baseRock(d, g.planet, x).hard * hm * VAULT_WALL_HARD : Infinity,
-               wt: 0, value: 0 };
+               wt: 0, value: 0, spoil: true };
     }
     if (vch === '=') {
       /* The locked door you can see. Unbreakable until the laser is FOUND,
@@ -229,7 +229,7 @@ export function blockAt(x: number, d: number): Block | null {
       return { id: 'sealed', name: 'Sealed Stone', color: 0x5ad0e0, host: 0x1d2a33,
                glow: 0.34,
                hard: canCutSealed() ? baseRock(d, g.planet, x).hard * hm * SEALED_HARD : Infinity,
-               wt: 0, value: 0 };
+               wt: 0, value: 0, spoil: true };
     }
     if (vch === '#') {
       /* Off the LOCAL BAND, like the rubble below it and unlike the flat
@@ -243,7 +243,7 @@ export function blockAt(x: number, d: number): Block | null {
          before you are all the way inside it. */
       return { id: 'worked', name: 'Worked Stone', color: 0x8a7f63, host: 0x2c2a24,
                glow: 0.13, hard: baseRock(d, g.planet, x).hard * hm * WORKED_HARD,
-               wt: 0.4, value: 1 };
+               wt: 0, value: 0, spoil: true };
     }
     if (vch === 'r') {
       const band = baseRock(d, g.planet, x);

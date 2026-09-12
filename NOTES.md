@@ -3639,3 +3639,48 @@ wrong card came up.
 
 **A fixture that skips the early steps of a sequence cannot test the guard on
 the first one.** The test that exists now walks the count up from zero.
+
+## Round eight, W10 (in progress), 2026-09-11: the phone pass
+
+Three things done so far, and the first one is why the pass exists.
+
+**A crash, found by looking at a screen.** Cutting into an Anchor hall put
+`worked` stone in the hold, and `buildManifest` sorts by `DEF[id].value` -
+there is no `DEF['worked']`. The game ran, the manifest opened, and then it did
+not, depending on whether you had been through a wall since the last time you
+looked. No test had it: every fixture that cut stone never opened the manifest,
+and every fixture that opened the manifest never cut stone.
+
+The fix is a `spoil` flag on the three cut-stone blocks, and the rule it
+encodes is the right one anyway: you are getting THROUGH a wall, not mining it.
+The test that holds it is wider than the bug - it sweeps the world and asserts
+that anything which can reach the hold has a DEF entry behind it.
+
+**Two stale strings.** The pause sheet still named a PLANET and said "Core at
+452 m"; the relic line still said "one on every planet". It names the region
+now and reads "you are at 99 m of 452", and the old chart-era wording is gone
+from every screen a player can reach.
+
+**The draw-call fixture was measuring the easy case again.** It sat in a plain
+shaft at 300 m, which is three or four block ids; round eight added six. It
+sits in a sealed Anchor hall at 306 m now, on a woken planet with a region
+down and the laser aboard - worked stone, sealed stone, the Anchor, rubble and
+fallen ground in one window. **86 draw calls of 150.**
+
+### And one finding from the long play that is not fixed
+
+`scripts/longplay.mjs` drives a whole campaign through the shipping loop. It
+plays badly on purpose, and from run 22 it stopped making progress entirely:
+one Anchor lit, three regions down, the Ballast pinned at zero, 18 credits, and
+nothing changing for the next six runs.
+
+Most of that is the probe being a bad player. But it is pointing at something
+real: **the unit test proves a SINGLE collapse leaves a planet you can come
+back from, and says nothing about three.** With three regions down and no
+income, there is no path back - shoring costs 45% of a Ballast you cannot fill
+because the ore is in the ground you cannot reach.
+
+That is the next thing to look at, and it is a balance question rather than a
+bug: either collapses need a floor (a planet stops at N regions down), or the
+Ballast needs a trickle that does not depend on ore, or shoring needs to be
+payable in something a stranded player still has.
