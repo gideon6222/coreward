@@ -20,7 +20,7 @@
 
    So the way in plays IN THE GAME'S OWN SCENE, with the game's own camera,
    lamp, rock and pad, and there is nothing to cut between. The research
-   (plans/coreward/REFERENCE.md) says the same thing three ways: God of War
+   (plans/lattice/REFERENCE.md) says the same thing three ways: God of War
    and Half-Life 2 never build a second camera; Limbo's dread is silence
    broken by one sound; Hollow Knight shows the world before the character.
 

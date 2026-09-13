@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.36.0';
+export const VERSION = '0.37.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.37.0', date: '2026-09-13', title: 'The Lattice',
+    notes: [
+      'The game is called THE LATTICE now. It was Coreward, which meant "toward the core" - and there has been no core since the planet became one world with nine Anchors in it. The Lattice is what those Anchors belong to.',
+      'It lives at a new address: gideon6222.github.io/lattice. Your saved game comes with you, because the save is tied to the site and not to the path.',
+      'If you have the old one on your home screen, add the new link and remove the old tile.'
+    ]
+  },
   {
     version: '0.36.0', date: '2026-09-13', title: 'Options that do what they say',
     notes: [

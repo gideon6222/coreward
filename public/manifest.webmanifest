@@ -1,7 +1,7 @@
 {
-  "name": "Coreward",
-  "short_name": "Coreward",
-  "description": "Dig to the core of a planet, upgrade your drill, and watch the whole world come apart.",
+  "name": "The Lattice",
+  "short_name": "Lattice",
+  "description": "Dig down through one planet, light the nine Anchors buried across it, and open the center.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

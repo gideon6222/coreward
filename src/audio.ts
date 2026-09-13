@@ -1,4 +1,4 @@
-/* Coreward audio. Everything is synthesised at runtime, no files are loaded.
+/* The Lattice audio. Everything is synthesised at runtime, no files are loaded.
    Split out of app.js so the score can be retuned on its own. */
 
 /* The audio graph. Chrome blocks an AudioContext created outside a user

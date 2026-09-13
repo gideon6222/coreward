@@ -1,4 +1,4 @@
-# Coreward — the plan
+# The Lattice — the plan
 
 Round four, written 2026-09-10 against v0.24.0. **The plan, not a history.** Rewrite in place
 as things land; the changelog is where the record goes. Rounds one to three are in the
@@ -33,7 +33,7 @@ use. The probes are in the milestone list so they become permanent.
 **Fault 1 — everything at stake is the ship.** Fuel, heat, hull and tremors all threaten one
 object, and the worst outcome is a tow that costs a percentage of one haul. There is nothing
 you can lose that you are not holding. Dome Keeper's designer names this exactly: depth is
-worth something when it is dangerous to a system you are *not* touching. Coreward has no
+worth something when it is dangerous to a system you are *not* touching. The Lattice has no
 second system. This is why *"it feels free"* survived a reprice: the price was never the
 problem, the absence of a second thing to lose was.
 
@@ -1064,7 +1064,7 @@ Two findings underneath it are worth more than the verdict:
 **Motherload does exactly what he asked for.** Run the tank dry and the digger
 explodes - game over, no rescue. And *Super Motherload* sells the rescue back as
 a premium panic button: a cheap teleporter that can malfunction and kill you,
-and an expensive one that always works. Coreward has been shipping the sequel's
+and an expensive one that always works. The Lattice has been shipping the sequel's
 panic button as the default outcome.
 
 **Which means the Fuel Cell is promoted, not replaced.** The consumable that
@@ -1075,7 +1075,7 @@ find first. No new mechanic needed; an existing one stops being decoration.
 **The Point of No Return is the name for what he described.** It is the aviation
 term for the moment you no longer carry the fuel to return, and the design
 commentary is explicit that *it only works as tension if the player can compute
-it*. That is the piece Coreward is missing - not a bigger fuel cost, a visible
+it*. That is the piece The Lattice is missing - not a bigger fuel cost, a visible
 reserve.
 
 **The warning has sourced numbers.** One continuously escalating cue per
@@ -1313,7 +1313,7 @@ reached about his own game.** This round is not a guess.
 ceiling is about ten hours - "at the ten-hour mark many players will have seen
 the breadth of its unlocks" - and Eurogamer's read is that its two phases feel
 *divided*, competing for attention rather than fusing. So: do not alternate
-mining and something-else. **Fuse them.** Coreward already has the material for
+mining and something-else. **Fuse them.** The Lattice already has the material for
 that, and it is not combat.
 
 Five devices make one map last, and four of them survive procedural generation:
@@ -1379,7 +1379,7 @@ yet, and the map is how you hunt.
 ### The pressure: Unrest, and it is the planet
 
 Dome Keeper alternates digging with fighting, and its own reviews call that
-division its weakness. Coreward already has the material for a version that
+division its weakness. The Lattice already has the material for a version that
 **fuses**: cutting the world raises strain and the ground answers with tremors.
 
 So strain grows up into **Unrest**, and it belongs to the planet rather than to
@@ -2327,7 +2327,7 @@ the shape of the game is not up for revision until R9a has happened.
       stake or as a chore, and does the fifth Anchor land as an event.
 
       Everything after this is provisional until it is done. Whatever comes out
-      of it goes to `playtests/coreward.md` verbatim, and it outranks every
+      of it goes to `playtests/lattice.md` verbatim, and it outranks every
       other milestone here.
 
 - [x] **R9b The first hour introduces the game that exists.** Done 2026-09-12,
@@ -2385,7 +2385,7 @@ the shape of the game is not up for revision until R9a has happened.
       The first is a restatement from scratch after R9b rewrote the words over
       the same picture, so the picture is wrong: a separate space scene with
       billiard-ball worlds and a sun, in a game whose every praised frame is
-      dark rock under a lamp. The research (`C:\dev\plans\coreward\REFERENCE.md`)
+      dark rock under a lamp. The research (`C:\dev\plans\lattice\REFERENCE.md`)
       converges on one rule for the second ask - God of War, Half-Life 2,
       Journey: **do not build two cameras and hide the seam, build one camera
       and change what it does** - and on restraint for the first: silence

@@ -25,7 +25,7 @@ function buildSha() {
 }
 
 export default defineConfig({
-  /* GitHub Pages serves this from /coreward/, not from the domain root, so
+  /* GitHub Pages serves this from /lattice/, not from the domain root, so
      every emitted URL must be relative. The manifest and icon already use
      './' for the same reason. */
   base: './',

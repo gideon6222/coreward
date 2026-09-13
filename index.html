@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#05070d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Coreward</title>
+<title>The Lattice</title>
 <!-- The error overlay must be the FIRST script in the document. On a phone
      with no devtools it is the only way to see a stack trace, and Vite
      hoists the bundled entry script into <head> during build, so a handler
@@ -665,13 +665,28 @@
   }
   #title.hidden, #intro.hidden{display:none;}
   #title .tspacer{flex:0 0 6vh;}
+  /* STACKED, and deliberately rather than by accident.
+
+     "COREWARD" was one word sized so it FITS - eight characters at 58px with
+     .13em of tracking wanted about 378px against a frame of 331, and the D was
+     off the right edge on the phone this is built for. "THE LATTICE" is
+     eleven characters including a space, and measured at the two widths the
+     phone presents it fits on one line at 460 CSS px and WRAPS at 360, which
+     is the S26 Ultra at its device pixel ratio: a ragged two-line break that
+     reads as a bug rather than as a mark.
+
+     So the article gets its own small line above the word, which is what a
+     designed two-part wordmark looks like and is robust at any width -
+     LATTICE alone is seven characters, one shorter than the name this
+     replaced, so it can never be the thing that overflows. */
   #title h1{
-    /* Sized so COREWARD actually FITS. Nine characters at 58px with .13em of
-       tracking wants about 378px and the frame offers 331 - the D was off the
-       right edge on the phone this is built for, which a filmstrip showed in
-       one frame and no amount of looking at the code would have. */
-    margin:0; font-size:min(12.5vw,48px); letter-spacing:.10em; font-weight:800;
-    color:#f2f6ff; text-shadow:0 0 26px rgba(120,190,255,.42), 0 3px 0 rgba(0,0,0,.5);
+    margin:0; font-weight:800; color:#f2f6ff;
+    text-shadow:0 0 26px rgba(120,190,255,.42), 0 3px 0 rgba(0,0,0,.5);
+    font-size:min(12.5vw,48px); letter-spacing:.10em; line-height:1.0;
+  }
+  #title h1 .the{
+    display:block; font-size:.36em; letter-spacing:.42em; font-weight:700;
+    color:rgba(190,214,255,.72); text-shadow:none; margin-bottom:.10em;
   }
   #title .ttag{margin-top:8px; font-size:12.5px; letter-spacing:.09em; color:var(--dim);}
   /* The menu sits at the BOTTOM. On a phone the top third of the screen is the
@@ -1251,7 +1266,7 @@
 <div id="title" class="hidden">
   <div class="tspacer"></div>
   <div class="tmark">
-    <h1>COREWARD</h1>
+    <h1><span class="the">THE</span>LATTICE</h1>
     <div class="ttag">Dig down. Light the Anchors. Open the center.</div>
   </div>
   <div class="tmenu">
@@ -1280,7 +1295,7 @@
 </div>
 
 <div id="flash"></div>
-<div id="boot">COREWARD<br><span style="font-size:10px">LOADING</span></div>
+<div id="boot">THE LATTICE<br><span style="font-size:10px">LOADING</span></div>
 <div id="err" class="hidden"></div>
 
 <script type="module" src="/src/main.ts"></script>

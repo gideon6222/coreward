@@ -260,7 +260,7 @@ const OFFSETS = [2, 4, 6, 8, 10];
 const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 
 H.setWorld(0);
-console.log(`Coreward economy probe - planet 0, core at ${H.coreM()} m, heat at ${H.heatDepth(0)} m, tremors at ${H.tremorDepth(0)} m`);
+console.log(`The Lattice economy probe - planet 0, core at ${H.coreM()} m, heat at ${H.heatDepth(0)} m, tremors at ${H.tremorDepth(0)} m`);
 console.log(`${runs} runs per style, ${OFFSETS.length} corridor offsets, medians reported.`);
 console.log('');
 console.log('Model: a straight reused shaft, a corridor at the bottom, every broken block in the');

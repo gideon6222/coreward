@@ -1,4 +1,4 @@
-# Coreward
+# The Lattice
 
 3D planet-mining PWA. **One planet**, 61 columns wide and 452 metres deep, divided into twelve
 regions with their own rock and their own rules. Fly a drill ship down, sell ore at the surface
@@ -9,8 +9,8 @@ centre, and that is the end.
 Round eight replaced the objective. It used to be a chain of planets you broke the core of and
 left; there is no core, no chart and no jump drive any more.
 
-Live: **https://gideon6222.github.io/coreward/**
-Repo: github.com/gideon6222/coreward
+Live: **https://gideon6222.github.io/lattice/**
+Repo: github.com/gideon6222/lattice
 Target: Samsung S26 Ultra, Chrome, portrait, installed to the home screen.
 Current version: see `src/changelog.ts` — that file is the player-facing history.
 
@@ -19,15 +19,17 @@ Current version: see `src/changelog.ts` — that file is the player-facing histo
 The shared knowledge base is `C:\dev\gamedev-notes` (`INDEX.md` above). For this web game
 read `WEB.md` there for the stack, shipping and the measured limits, `CRAFT.md` for design,
 `ASSETS.md` before importing anything, and `techniques/three-js-traps.md` and
-`techniques/coreward-*.md` for the deep write-ups that came out of this game. **This file is
-only for what is true of Coreward specifically.** Record general lessons with
+`techniques/coreward-*.md` for the deep write-ups that came out of this game - they keep the
+old name because that is what the files are called, and a pointer that does not resolve is
+worse than one that is out of date. **This file is
+only for what is true of The Lattice specifically.** Record general lessons with
 `/record-lesson`, never by editing the notes' topic files from here.
 
 ---
 
 ## Stack
 
-The standard web stack from `WEB.md` in the notes. Coreward-specific pins and choices:
+The standard web stack from `WEB.md` in the notes. This game's own pins and choices:
 
 - **three.js pinned to exactly `0.166.0`**, with `@types/three` at the same version. Not a
   caret range: the lighting values below are calibrated to it, and three ships no
@@ -371,9 +373,18 @@ deliberate: which way to dig is a real choice rather than a formality.
 
 ## Save data
 
-`localStorage`, keys `coreward.v2` (game, with a migration from `coreward.v1`) and
-`coreward.audio` (toggles). "RESTART PROGRESS" clears both. Typical save 339 bytes, worst case
-measured 12.5 KB against a ~5 MB quota — size is not a consideration.
+`localStorage`, keys `coreward.v2` (game, with a migration from `coreward.v1`),
+`coreward.audio` (toggles and volumes), `coreward.haptics` and `coreward.hint.aisle`.
+"RESTART PROGRESS" clears the first two. Typical save 339 bytes, worst case measured 12.5 KB
+against a ~5 MB quota — size is not a consideration.
+
+**The keys keep the old name on purpose, and it is not an oversight.** localStorage is scoped
+to the ORIGIN, and the origin did not change when the game was renamed on 2026-09-13 - only
+the path did - so leaving them alone is exactly what carries a campaign from
+`/coreward/` to `/lattice/` untouched. Renaming them would orphan every existing save unless
+migrated, and the migration path in `load()` applies the **v1 schema** conversion (credits
+× 4, and so on), which run over a v2 save is not a migration, it is corruption. A private
+identifier nobody reads is not a stand-in that owes anyone a rename.
 
 Old saves are handled forward, not broken: `grandfatherStock()` grants exactly the materials a
 pre-materials save already paid for, and every new field defaults.

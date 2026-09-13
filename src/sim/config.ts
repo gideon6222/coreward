@@ -416,7 +416,7 @@ export const BLOOM_MAX = Math.round(WORLD_DEPTH * 0.5);
    gone with the planet.
 
    That is deliberate, and it is the answer to "what is the larger point".
-   Every other reward in Coreward is a rung - credits buy the next upgrade,
+   Every other reward in The Lattice is a rung - credits buy the next upgrade,
    which makes the last one irrelevant. A relic is kept, and kept forever, so
    the collection is the one number that only ever goes up. */
 export const RELIC_COLOR = 0xfff0ff;

@@ -1,6 +1,6 @@
 /* A contact sheet of the game in motion.
 
-   The tool this repo was missing. Every other way of looking at Coreward
+   The tool this repo was missing. Every other way of looking at The Lattice
    produces a STILL - a screenshot, a pixel read, a uniform dumped to the
    console - and half of what the game is judged on is movement. "Make the
    intro less like a slide show" is a note about motion, and there was no way

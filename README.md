@@ -1,10 +1,12 @@
-# Coreward
+# The Lattice
 
-Dig toward a planet's core, sell ore at the surface pad, buy upgrades, break the
-core and the planet tears itself apart, then launch to a harder one. Fuel and
-heat are the two pressures pushing you back up.
+One planet, 61 columns wide and 452 meters deep. Fly a drill ship down, sell ore
+at the surface pad, buy upgrades, and hunt the nine ANCHORS buried across the
+world in halls somebody cut before you got here. Lighting one calms its region
+and strengthens the Ballast, the pressure station that is the only thing holding
+the ground quiet. The ninth opens the Vault at the center, and that is the end.
 
-**Play: https://gideon6222.github.io/coreward/**
+**Play: https://gideon6222.github.io/lattice/**
 
 A 3D installable web game — three.js, no server, works offline. Built for a
 phone in portrait.

@@ -1,4 +1,4 @@
-# Coreward — game notes
+# The Lattice — game notes
 
 Decisions specific to this game, and what to do next in it. Technical setup,
 constraints and the feel rules live in [CLAUDE.md](CLAUDE.md) — read that first.
@@ -12,10 +12,10 @@ will waste your time.**
 
 The skill describes the stack every *new* game should start on: five files at
 the repo root, no build step, an importmap, and a hand-written `sw.js` whose
-`CACHE` constant you bump on every deploy. That was Coreward until
+`CACHE` constant you bump on every deploy. That was The Lattice until
 2026-09-06, and it is still the right way to start a new game.
 
-Coreward outgrew it. What is true here now:
+The Lattice outgrew it. What is true here now:
 
 | The skill says | This repo |
 |---|---|
@@ -629,7 +629,7 @@ along should lag less.
 ## Minerals: the depth ladder and the upgrade ladder now need each other (2026-09-07)
 
 The single biggest structural weakness, and the one the research pass named:
-**Coreward had one resource.** Nine ores, five rocks, geodes - and every one of
+**The Lattice had one resource.** Nine ores, five rocks, geodes - and every one of
 them converted to the same number. Where you dug never mattered, only how long.
 Compare SteamWorld Dig, whose whole spine is "find a wall you cannot break,
 upgrade, get past it", or Dome Keeper, where the author's verdict is that three
@@ -1248,7 +1248,7 @@ every gated upgrade's mineral lives within 30 m of its unlock depth. Ruby, at
 Playtest: *"can you also think about a larger point to the game, or secondary
 objective?"* and *"other abilities and secrets that can be found"*.
 
-Those are the same question. Coreward's only reward was credits, and credits
+Those are the same question. The Lattice's only reward was credits, and credits
 are a rung: every one you earn makes the last one irrelevant, so the answer to
 "what have I got" is always a number that will look small next week. The core
 shards were closer, but they only ever did one thing.
@@ -1644,11 +1644,11 @@ Half the smoke suite started failing with `ERR_CONNECTION_REFUSED`, a different
 half each run, while every test passed in isolation. It was not flake and it was
 not this repo: **Captain Run's suite was running at the same moment on the same
 machine, and both games used Vite's default port 4173.** With Playwright's
-`reuseExistingServer` on locally, Coreward's tests adopted Captain Run's server -
+`reuseExistingServer` on locally, The Lattice's tests adopted Captain Run's server -
 pointing this game's assertions at another game's build - and then lost it when
 that run finished and tore it down.
 
-Coreward is on **4319** for tests and **4318** for the interactive preview now.
+The Lattice is on **4319** for tests and **4318** for the interactive preview now.
 Two different ports on purpose: opening the game to look at it can no longer
 disturb a test run, which is how the whole thing started.
 
@@ -1813,7 +1813,7 @@ not poll the live site" is right, and it does not mean "do not look at whether
 the gate passed". Those got conflated. Checking is one unauthenticated call:
 
 ```bash
-curl -s "https://api.github.com/repos/gideon6222/coreward/actions/runs?per_page=3"
+curl -s "https://api.github.com/repos/gideon6222/lattice/actions/runs?per_page=3"
 ```
 
 And when it has failed, the logs need auth but the **annotations do not** -

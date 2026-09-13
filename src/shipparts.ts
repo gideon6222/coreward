@@ -83,7 +83,7 @@ export function loadShipParts(): Promise<void> {
     }
     const loader = new GLTFLoader();
     /* base: './' in vite.config, so a relative path is already correct for a
-       Pages deploy under /coreward/. Read off the document rather than through
+       Pages deploy under /lattice/. Read off the document rather than through
        import.meta.env, which this project's tsconfig does not declare. */
     const base = './';
     await Promise.all((Object.keys(PARTS) as PartName[]).map((k) =>

@@ -102,7 +102,7 @@ test('src/sim never touches a renderer, a document or an input event', () => {
 
    This currently passes with one such default, planCollapse() in world.ts, and
    the SHIPPING game takes that default - the tremor collapse is the one thing
-   in Coreward a replay cannot reproduce. That is recorded in PLAN.md as work,
+   in The Lattice a replay cannot reproduce. That is recorded in PLAN.md as work,
    not blessed here. */
 test('src/sim rolls no dice except through an injectable default', () => {
   for (const f of FILES) {
