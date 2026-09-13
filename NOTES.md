@@ -4288,3 +4288,21 @@ rerun it with:
 **Not yet proved:** the crate hunt for the laser (the probe has not needed
 it yet - the six open Anchors come first), the sealed three, and the Vault.
 That is the rest of R9c. Then R9d, `/ship`.
+
+## Left for you: five review screenshots in a folder with a mangled name
+
+A studio sweep on 2026-09-12 found `SERSGIDEOAPPDATAocaltemp/review2/` sitting in this
+repo: five PNGs written at 18:29 that evening, named `1-title-the-hall.png` through
+`5-continue-landed.png`, so they are the CONTINUE review from R9f to R9h. 1.4 MB,
+untracked, and the doctor's git hygiene line will keep naming this repo until it is gone.
+
+That folder name is `C:\Users\gideo\AppData\Local\Temp` with the backslashes eaten. A
+Windows path went through the Bash tool, which reads `\U`, `\A`, `\L` and `\T` as escapes,
+so the whole path collapsed into one relative directory name and was created here instead
+of in the temp directory. Nothing in `scripts/` builds that path, so it came from a command
+line rather than from a tool this repo owns. Pass Windows paths to Bash with forward
+slashes (`C:/Users/...`), which every Windows tool accepts.
+
+**The screenshots were left alone**, because they are your review evidence and not a
+sweeping session's to throw away. Delete the folder once you have finished with them, or
+move them somewhere outside the repo. Nothing else here was touched.
