@@ -50,6 +50,9 @@
    policy again before it gets to nine.                                     */
 
 import { chromium } from '@playwright/test';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { extname, join, resolve } from 'node:path';
 
 const arg = (k, d) => {
   const i = process.argv.indexOf('--' + k);
@@ -58,19 +61,56 @@ const arg = (k, d) => {
 const WANT = arg('anchors', 9);
 const BUDGET = arg('minutes', 120) * 60;
 
+/* Serves dist/ itself, the way filmstrip.mjs does, on its own port. It used
+   to need `npm run preview` up on 4319 first, and a campaign runs longer than
+   any shell that started a server for it - the server went away under a run
+   and the probe died on boot with a timeout that looked like the game. */
+const DIST = join(resolve(process.cwd()), 'dist');
+const PORT = 4329;
+const MIME = {
+  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+  '.json': 'application/json', '.webp': 'image/webp', '.woff2': 'font/woff2',
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json'
+};
+const server = createServer(async (req, res) => {
+  const url = (req.url || '/').split('?')[0];
+  const file = url === '/' ? '/index.html' : url;
+  try {
+    const body = await readFile(join(DIST, file));
+    res.writeHead(200, { 'content-type': MIME[extname(file)] || 'application/octet-stream' });
+    res.end(body);
+  } catch { res.writeHead(404).end('not found'); }
+});
+await new Promise((ok) => server.listen(PORT, ok));
+
 const browser = await chromium.launch({
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
 });
 const page = await browser.newPage({
   viewport: { width: 360, height: 780 }, deviceScaleFactor: 3, hasTouch: true
 });
-await page.goto('http://127.0.0.1:4319/?debug');
-await page.waitForTimeout(2500);
-for (const id of ['#introSkip', '#btnNew', '#btnPlay']) {
-  const el = await page.$(id);
-  if (el) { await el.dispatchEvent('click'); await page.waitForTimeout(400); }
-}
-await page.waitForFunction(() => window.__cw && window.__cw.g.mode === 'play', null, { timeout: 30000 });
+await page.goto('http://127.0.0.1:' + PORT + '/?debug');
+/* The way in, on the seam. It runs in real time otherwise, and under
+   SwiftShader the loop clamps its delta and the seven-second descent takes
+   longer than any sane wait - the probe died here with a timeout that looked
+   like the game. Same reason the smoke helper does it this way. */
+await page.waitForFunction(() => !!window.__cw && document.getElementById('boot').classList.contains('hidden'),
+  null, { timeout: 30000 });
+await page.evaluate(async () => {
+  const w = window.__cw;
+  const skip = document.getElementById('introSkip');
+  if (skip && !document.getElementById('intro').classList.contains('hidden')) skip.click();
+  const cont = document.getElementById('btnContinue');
+  if (cont && !document.getElementById('title').classList.contains('hidden')) {
+    (cont.disabled ? document.getElementById('btnNewGame') : cont).click();
+  }
+  for (let i = 0; i < 40 && w.g.mode !== 'play'; i++) {
+    w.advance(1);
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  w.startClock();
+});
+await page.waitForFunction(() => window.__cw.g.mode === 'play', null, { timeout: 30000 });
 
 /* Hold a direction for `secs` of GAME time, dismissing any card that comes up
    - a modal stops the loop, and a probe that does not press the button sits
@@ -89,51 +129,119 @@ const SLICE = 2;
 
    `CRAFT.md`: measure a progression by simulating PLAY. A policy that ignores
    the one warning the game shouts at you is not play. */
+/* The FIFTH policy bug, and the one that had it digging at the edge of the
+   world: `stop` was a closure on this side of the bridge, asked once per
+   two-second slice. At three cells a second that is six cells between looks,
+   so the probe flew straight through the column it was aiming at, on to
+   column 60, and dug there - lit nothing, run after run, and looked exactly
+   like a balance problem. A trace of one descent found it in a minute.
+
+   So `stop` is now a SPEC the page evaluates itself, every fifth of a second
+   of game time, in one round trip per slice:
+
+     danger   turn back when the game shouts TURN BACK
+     full     the hold is full
+     column   within `near` cells of a column - and the ship coasts about
+              three quarters of a cell after the key is released, so the
+              caller stops early and then corrects (see `goToColumn`)
+     depth    at or below a depth
+     home     back on the pad
+     lit      an Anchor lit since the count given
+     found    a device found since the count given
+     won      the Vault reached */
 async function hold(dir, secs, stop) {
   const key = page.locator(`#dpad .k[data-dir=${dir}]`);
   await key.dispatchEvent('pointerdown');
-  let done = false;
+  let done = false, last = null;
   for (let i = 0; i < secs && !done; i += SLICE) {
-    const r = await page.evaluate((n) => {
+    const r = await page.evaluate(({ n, stop }) => {
       const w = window.__cw;
-      for (let k = 0; k < n; k++) w.advance(1);
-      return { busy: w.g.mode !== 'play', state: w.R.fuelState,
-               px: w.g.px, pd: w.g.pd,
-               weight: w.g.weight, cap: w.S.cargoCap() };
-    }, SLICE);
-    if (r.busy) {
-      await key.dispatchEvent('pointerup');
-      const btn = await page.$('#evBtn');
-      if (btn) await btn.dispatchEvent('click');
-      await page.waitForTimeout(30);
-      await key.dispatchEvent('pointerdown');
-    }
-    if (stop && stop(r)) done = true;
+      const STEP = (stop && stop.step) || 0.2;
+      const state = () => ({
+        busy: w.g.mode !== 'play', state: w.R.fuelState, px: w.g.px, pd: w.g.pd,
+        weight: w.g.weight, cap: w.S.cargoCap(), lit: w.g.ground.lit.length,
+        found: w.g.found.length, won: w.g.won
+      });
+      const hit = (r) => {
+        if (!stop) return false;
+        if (stop.danger && (r.state === 'danger' || r.state === 'stranded')) return true;
+        if (stop.full && r.weight >= r.cap - 0.5) return true;
+        if (stop.column !== undefined && Math.abs(r.px - stop.column) < (stop.near || 0.9)) return true;
+        if (stop.depth !== undefined && r.pd >= stop.depth) return true;
+        /* The SIXTH policy bug. Home was `pd <= 0.4`, which is just under
+           the surface line and not on it: the sale, the refuel and the hull
+           repair fire when the ship rises past -0.6 (atSurface in state.ts),
+           so the probe hovered a hand's breadth below the pad, sold nothing,
+           refuelled nothing, started the next run on the dregs and was lost
+           by the seventh. Every row said credits 0 and it read as an economy
+           bug. `--trace` said where the ship was. */
+        if (stop.home && r.pd <= -0.7) return true;
+        if (stop.lit !== undefined && r.lit > stop.lit) return true;
+        if (stop.found !== undefined && r.found > stop.found) return true;
+        if (stop.won && r.won) return true;
+        return false;
+      };
+      let r = state(), stopped = false;
+      for (let t = 0; t < n && !stopped; t += STEP) {
+        w.advance(STEP);
+        r = state();
+        /* A card stops the loop; a probe that does not press the button sits
+           there for the rest of the budget looking like a hang. */
+        if (r.busy) { const b = document.getElementById('evBtn'); if (b) b.click(); r = state(); }
+        if (hit(r)) stopped = true;
+      }
+      return { ...r, stopped };
+    }, { n: SLICE, stop });
+    last = r;
+    if (r.stopped) done = true;
   }
   await key.dispatchEvent('pointerup');
   await page.waitForTimeout(20);
   return done;
 }
 
+/* `--trace`: one line per step of a run, for when the rows say nothing is
+   happening and the question is where the ship actually is. */
+const TRACE = process.argv.includes('--trace');
+async function trace(label) {
+  if (!TRACE) return;
+  const s = await page.evaluate(() => {
+    const w = window.__cw;
+    return { mode: w.g.mode, fuel: +w.g.fuel.toFixed(1), state: w.R.fuelState,
+             px: +w.g.px.toFixed(2), pd: +w.g.pd.toFixed(2), hull: +w.g.hull.toFixed(0),
+             sec: Math.round(w.R.run.sec), card: (document.getElementById('evTitle') || {}).textContent };
+  });
+  console.log('  ' + label.padEnd(10) + JSON.stringify(s));
+}
+
+/* Fly to a column and end up IN it. Stop early, let the coast finish, then
+   correct in short holds until the ship is within half a cell - which is
+   what the drill needs to cut a straight shaft rather than a stepped one. */
+async function goToColumn(x) {
+  const at = () => page.evaluate(() => window.__cw.g.px);
+  let px = await at();
+  if (Math.abs(px - x) >= 0.9) {
+    await hold(px < x ? 'right' : 'left', 120, { column: x, near: 0.9, danger: true });
+    await page.evaluate(() => window.__cw.advance(0.6));
+  }
+  for (let i = 0; i < 6; i++) {
+    px = await at();
+    if (Math.abs(px - x) < 0.45) break;
+    await hold(px < x ? 'right' : 'left', 2, { column: x, near: 0.3, step: 0.05 });
+    await page.evaluate(() => window.__cw.advance(0.5));
+  }
+  return Math.abs((await at()) - x) < 0.45;
+}
+
 /* Turn back when the game says to, which is the whole of the Point of No
    Return: `fuelState` goes clear -> plan -> danger -> stranded, and 'danger'
    is the one that toasts TURN BACK. A full hold is the other reason to leave,
    because a hold that is full is a hold that is not earning. */
-const turnBack = (r) => r.state === 'danger' || r.state === 'stranded' ||
-                        r.weight >= r.cap - 0.5;
-
-/* And the policy for the CLIMB, which is not the same policy.
-
-   `turnBack` was used for both, and being in danger is the reason you are
-   climbing - so the trip home ended on its first slice, every run. The probe
-   spent whole runs four game-seconds long: the depth crept down, credits
-   stopped moving because it never reached the pad to sell, and the clock
-   stopped moving because barely any game time passed. It read as a stalled
-   campaign and it was a policy that gave up on the way out.
-
-   Climbing stops for two things only: arriving, and the game taking the ship
-   off you. */
-const gotHome = (r) => r.pd <= 0.4;
+/* And the policy for the CLIMB, which is not the same policy: being in danger
+   is the reason you are climbing, so a climb that turned back for danger
+   ended on its first slice, every run. Climbing stops for two things only:
+   arriving, and the game taking the ship off you. That is `{ home: true }`
+   below, and nothing else. */
 
 const read = () => page.evaluate(() => {
   const w = window.__cw;
@@ -142,6 +250,7 @@ const read = () => page.evaluate(() => {
     px: Math.round(w.g.px), pd: Math.round(w.g.pd),
     credits: Math.round(w.g.credits),
     lit: w.g.ground.lit.length,
+    found: w.g.found.length,
     ballast: +w.g.ground.ballast.toFixed(2),
     unrest: +w.worldUnrest().toFixed(3),
     peak: +Math.max(...w.g.ground.unrest).toFixed(2),
@@ -227,62 +336,69 @@ while (true) {
      its job is to notice when the game does something it should not.) */
   const target = await page.evaluate(() => {
     const w = window.__cw;
+    const laser = w.g.found.includes('laser');
     const pick = (allowSealed) => {
       let best = null, at = Infinity;
       for (let r = 0; r < w.ANCHOR_COUNT; r++) {
         if (w.g.ground.lit.includes(r)) continue;
         if (w.g.ground.collapsed.includes(r)) continue;
-        if (!allowSealed && w.anchorSealed(r) && !w.g.found.includes('laser')) continue;
+        if (!allowSealed && w.anchorSealed(r) && !laser) continue;
         const a = w.anchorAt(r);
-        if (a.d < at) { at = a.d; best = { r, x: a.x, d: a.d }; }
+        if (a.d < at) { at = a.d; best = { kind: 'anchor', r, x: a.x, d: a.d }; }
       }
       return best;
     };
-    /* Everything open is lit: go for a sealed one anyway, which is what a
-       player without the laser ends up doing - and finds out. */
-    const b = pick(false) || pick(true);
-    if (b) return b;
-    /* Nothing reachable at all. If the centre is open, go and finish it. */
+    const open = pick(false);
+    if (open) return open;
+    /* Everything open is lit and what is left is sealed. Without the laser
+       there is exactly one thing to do, and it is what a player who has read
+       the wall does: go and dig up crates until the key turns up. The cap
+       buries four at a time, shallowest first, so this is a sequence of
+       crates rather than a hunt for one. THIS is the branch that found the
+       campaign could not be finished: the laser was never buried at all. */
+    if (pick(true) && !laser) {
+      let crate = null;
+      for (const [k, f] of w.findCells()) {
+        const i = k.indexOf(',');
+        const c = { kind: 'crate', key: f.key, x: +k.slice(0, i), d: +k.slice(i + 1) };
+        if (!crate || c.d < crate.d) crate = c;
+      }
+      if (crate) return crate;
+      return { kind: 'stuck', why: 'sealed Anchors left, no laser, and no crate on the world' };
+    }
+    const sealed = pick(true);
+    if (sealed) return sealed;
+    /* Nothing left to light. If the centre is open, go and finish it. */
     if (w.vaultOpen(w.g.ground.lit.length) && !w.g.won) {
-      return { r: -1, x: w.VAULT_CORE_X, d: w.VAULT_CORE_D };
+      return { kind: 'vault', x: w.VAULT_CORE_X, d: w.VAULT_CORE_D };
     }
     return null;
   });
   if (!target) break;
+  if (target.kind === 'stuck') { console.log('STUCK: ' + target.why); break; }
 
   /* Out, down, and into it. Fuel is spent for real; the probe tops up only at
      the pad, like the game does. */
-  /* Flown to the COLUMN, not for a number of seconds.
-
-     The first version held the d-pad for `|dx| * 2 + 4` seconds, which at
-     three cells a second and a one-cell offset is eighteen cells of overshoot.
-     The probe spent thirty-three simulated minutes digging shafts eighteen
-     columns away from the hall it was aiming at, lit nothing, and looked for
-     all the world like a balance problem. */
-  const dx = await page.evaluate((tx) => tx - Math.round(window.__cw.g.px), target.x);
-  if (dx !== 0) {
-    const want = target.x;
-    await hold(dx > 0 ? 'right' : 'left', 90,
-      (r) => turnBack(r) || Math.abs(r.px - want) < 0.6);
-  }
-  /* Down, and STOP WHEN IT ARRIVES.
-
-     The fourth thing this probe got wrong, and the most obvious one in
-     hindsight: it dug until the hold filled or the tank got low, which meant
-     it blew straight past the hall it was flying to and kept going. On a later
-     run it went all the way to the bedrock floor at 451 m while targeting an
-     Anchor at 48.
-
-     A player stops at the room. `target.d + 1` rather than `target.d`, because
-     the Anchor sits one cell BELOW the open mouth of its niche and lighting it
-     is standing at the mouth. */
-  await hold('down', 200, (r) => turnBack(r) || r.pd >= target.d - 1);
+  const before = await read();
+  await goToColumn(target.x);
+  /* Down, and STOP WHEN THE THING HAPPENS - the Anchor lights, the crate
+     breaks, the Vault opens - rather than at a depth that has to be right to
+     the cell. The depth is only the backstop, one cell past the target, for
+     a column the thing is not actually in. */
+  const stop = { danger: true, full: true, depth: target.d + 0.6 };
+  if (target.kind === 'anchor') stop.lit = before.lit;
+  if (target.kind === 'crate') stop.found = before.found;
+  if (target.kind === 'vault') { stop.won = true; stop.depth = target.d - 1; }
+  await trace('at column');
+  await hold('down', 400, stop);
   /* And a beat at the bottom, because lighting is a proximity check on the
      frame loop and a hold that ends on the frame it arrives has not run one. */
   await page.evaluate(() => window.__cw.advance(2));
+  await trace('bottom');
 
   /* Home. The climb is the real one, through the tunnels that are there. */
-  await hold('up', 200, gotHome);
+  await hold('up', 400, { home: true });
+  await trace('home');
   const home = await page.evaluate(() => window.__cw.g.pd <= 0.5);
   if (!home) {
     /* Stranded or dead. Either way the game puts the ship back on the pad, so
@@ -306,7 +422,8 @@ while (true) {
   runs++;
   const after = await read();
   const row = { run: runs, min: +(after.t / 60).toFixed(1), deepest: after.deepest,
-                lit: after.lit, ballast: after.ballast, unrest: after.unrest,
+                lit: after.lit, found: after.found, at: target.kind + '@' + target.x + ',' + target.d,
+                ballast: after.ballast, unrest: after.unrest,
                 peak: after.peak, down: after.collapsed, dug: after.dug,
                 seen: after.seen, credits: after.credits, woke: after.woke ? 'woke' : '' };
   log.push(row);
@@ -326,3 +443,4 @@ console.log('\n=== where it ended ===');
 console.log({ runs, minutes: +(end.t / 60).toFixed(1), ...end });
 
 await browser.close();
+server.close();

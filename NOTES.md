@@ -4227,3 +4227,64 @@ the Anchor lit. The smoke test lights the first Anchor from beside it with
 the tank at 37, reads the checkpoint off the disk, CONTINUEs, and asserts
 the ship is back at the Anchor with the tank under 45 and the eye never
 within two metres of the pad.
+
+---
+
+# Round nine, R9c, 2026-09-12: the campaign could not be finished
+
+Started after R9h on *"From there, you are good to continue with the
+game."* Paused mid-way at his request; this is the handover.
+
+## The finding, which is a game bug and not a probe bug
+
+**Only the magnet and the bomb were ever buried on the planet.** Every
+device carried a `from` leg of the old planet chain, `findsOn` filtered on
+`leg >= from`, and the leg stayed at zero for ever after W9 made one world.
+So the survey, the reactor, the drone, the autopilot and **the Cutting
+Laser - the key to three of the nine Anchors - did not exist anywhere**,
+and the campaign could not be completed. The test that checks the key is
+never behind its own door passed the whole time, over an empty set.
+
+Fixed: `from` is deleted and depth does the spreading (each device below
+its own `below`, four crates at a time, shallowest first, the laser last,
+below 260 m). `the key exists` in `test/vaults.test.mjs` asks the question
+that comes first. With crates that exist, the deadlock test immediately
+found one hashed into Serrik's sealed hall; crates are now evicted
+downward out of any sealed hall's footprint in `findCells` (world.ts),
+counted apart from the collision nudge.
+
+**A trap on the way:** putting that eviction in finds.ts imported the
+vault geometry there, config already imports finds, and the ES-module
+cycle evaluated the Vault's position with `W` undefined - the Vault
+silently vanished from the world. The re-recorded golden's diff said "-
+vaultwall 6, - vaultcore 6", which is the only reason it was caught. Filed
+as a lesson. The golden was restored and re-recorded properly: "+1
+schematic" and nothing else.
+
+## The probe, and its fifth and sixth bugs
+
+`scripts/longplay.mjs` now serves `dist/` itself on 4329 (no preview
+server needed), boots the way in on the seam, checks its stop conditions
+INSIDE the page every fifth of a second (it was every two seconds, six
+cells at flying speed, so it flew through the column it aimed at and dug
+at column 60), arrives in a column with a coast-aware stop and short
+corrections, stops on the EVENT (the Anchor lights, the crate breaks, the
+Vault opens) rather than on a depth, targets the shallowest crate when
+what is left is sealed and the laser is not in hand, and goes home to
+`pd <= -0.7` - it was 0.4, a hand's breadth under the surface line, so it
+never sold, never refuelled and was lost by the seventh run. `--trace`
+prints the ship's state at each step of a run; it found both in minutes.
+
+## Where it stands
+
+Traced run: 3 Anchors in 7 runs and 5.8 game-minutes. A full campaign
+(`--anchors 9 --minutes 300`) was running detached when this paused, at
+**4 Anchors lit, 187 m, 19 game-minutes, run 18**, hunting Tessivar
+(50,192). Its rows stream to the session scratchpad's `campaign.log`;
+rerun it with:
+
+    node scripts/longplay.mjs --anchors 9 --minutes 300
+
+**Not yet proved:** the crate hunt for the laser (the probe has not needed
+it yet - the six open Anchors come first), the sealed three, and the Vault.
+That is the rest of R9c. Then R9d, `/ship`.

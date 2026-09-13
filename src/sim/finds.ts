@@ -61,30 +61,29 @@ export interface Find {
      consistent that the fiction does the explaining and the shop row needs no
      further words. */
   blurb: string;
-  /* The earliest leg this can be buried on. Spreads the seven across the first
-     three worlds instead of dumping them all in the opening shaft. */
-  from: number;
   /* The shallowest metre it can be buried at - the same depth the row already
      used as its shop gate, so the device is found in the neighbourhood of the
-     problem it answers rather than five minutes before. */
+     problem it answers rather than five minutes before. On the one world this
+     is the whole of the spread: the laser, which opens three of the nine
+     Anchors, is below 260 m and is the last thing met. */
   below: number;
 }
 
 /* Ordered shallowest first, which is also the order they are met. */
 export const FINDS: Find[] = [
-  { key: 'magnet',  from: 0, below: 20,
+  { key: 'magnet',  below: 20,
     blurb: 'Pulls loose ore toward the ship instead of making you fetch it.' },
-  { key: 'bomb',    from: 0, below: 40,
+  { key: 'bomb',    below: 40,
     blurb: 'Breaks a pocket of cells at once. Runs on the power meter.' },
-  { key: 'survey',  from: 1, below: 62,
+  { key: 'survey',  below: 62,
     blurb: 'Reads ore through solid rock, so you can dig at something.' },
-  { key: 'reactor', from: 1, below: 70,
+  { key: 'reactor', below: 70,
     blurb: 'More power, and it comes back faster. Both weapons run off it.' },
-  { key: 'drone',   from: 1, below: 78,
+  { key: 'drone',   below: 78,
     blurb: 'Mends the hull slowly while you are underground.' },
-  { key: 'auto',    from: 2, below: 190,
+  { key: 'auto',    below: 190,
     blurb: 'Flies you back to the surface on its own, and cheaply.' },
-  { key: 'laser',   from: 3, below: 260,
+  { key: 'laser',   below: 260,
     blurb: 'Cuts a straight shaft ahead of you. Expensive in power.' }
 ];
 
@@ -106,9 +105,18 @@ export const FOUND_KEYS = new Set<UpgradeKey>(FINDS.map((f) => f.key));
    tests can ask what a hypothetical save would see. */
 export const FINDS_PER_WORLD = 4;
 
-export function findsOn(leg: number, coreDepthHere: number, found: string[]): Find[] {
+/* ONE WORLD, SO EVERY DEVICE IS ON IT. `from` gated each device to a leg of
+   the old planet chain, and the chain went in W9 while this filter did not:
+   the leg stayed at zero for ever, so only the magnet and the bomb were ever
+   buried, and the Cutting Laser - the key to three of the nine Anchors -
+   did not exist anywhere. The campaign could not be finished, and the probe
+   in R9c is what found it. Depth does the spreading now: each device is
+   buried below its own `below`, which already put it in the neighbourhood
+   of the problem it answers, and the cap keeps it to four crates at a time,
+   shallowest first, the next appearing as one is found. */
+export function findsOn(_leg: number, coreDepthHere: number, found: string[]): Find[] {
   return FINDS
-    .filter((f) => leg >= f.from && !found.includes(f.key) && f.below <= coreDepthHere - 3)
+    .filter((f) => !found.includes(f.key) && f.below <= coreDepthHere - 3)
     .slice(0, FINDS_PER_WORLD);
 }
 
@@ -175,6 +183,11 @@ export function findMap(leg: number, coreDepthHere: number, found: string[]): Ma
     while (m.has(p.x + ',' + d) && d < coreDepthHere - 1) { d++; nudged++; }
     m.set(p.x + ',' + d, f);
   }
+  /* A crate must also never sit inside a SEALED hall, and that eviction
+     lives in world.ts's findCells rather than here: this module is imported
+     by config, and the vault geometry importing config back is a cycle that
+     evaluated the Vault's position while W was still undefined - and quietly
+     deleted the Vault from the world. The blocks golden's diff said so. */
   return m;
 }
 

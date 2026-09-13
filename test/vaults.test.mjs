@@ -263,6 +263,27 @@ test('a locked door never locks the planet', () => {
   }
 });
 
+test('the key exists: a player who has found the rest can dig up the laser', () => {
+  /* The test below checks that the laser's crate is never inside sealed
+     stone - and passed for three days while the crate did not exist at all,
+     because a check over an empty set is a check of nothing. So this one
+     asks the question that comes first. */
+  H.setWorld(0);
+  H.g.ground = H.newGround();
+  const others = H.FINDS.map((f) => f.key).filter((k) => k !== 'laser');
+  H.g.found = others;
+  const crates = [...H.findCells().values()].map((f) => f.key);
+  assert.deepEqual(crates, ['laser'], 'with everything else found the world buries ' + crates.join(', '));
+  /* And it is cuttable rock, not bedrock, sealed stone or an Anchor. */
+  for (const [k, f] of H.findCells()) {
+    const i = k.indexOf(',');
+    const b = H.blockAt(+k.slice(0, i), +k.slice(i + 1));
+    assert.ok(b && b.find, f.key + ' at ' + k + ' is not drawn as a crate');
+    assert.ok(Number.isFinite(b.hard), f.key + ' at ' + k + ' is inside something uncuttable');
+  }
+  H.g.found = [];
+});
+
 test('the key is never behind the door it opens', () => {
   /* The deadlock. The Cutting Laser's crate opens every sealed hall, so a
      crate stamped inside one is a save that cannot be finished - and the

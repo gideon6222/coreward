@@ -5,7 +5,7 @@ import { W, START_X, ORES, DEF, baseRock, coreDepth, hardMult, valueMult,
 import { key, mixHex, rnd } from './util';
 import { regionAt, REGION_COUNT } from './region';
 import { vaultCells, anchorHere, WORKED_HARD, SEALED_HARD,
-         vaultOpen, VAULT_WALL_HARD } from './vaults';
+         vaultOpen, VAULT_WALL_HARD, ANCHOR_COUNT, anchorAt, anchorSealed, VAULT_W, VAULT_H } from './vaults';
 import { isCollapsed, hardScale, isAwake, UNREST_BANDS } from './unrest';
 import { g , coreM, valueM, worldTrait} from './state';
 import { findMap, cacheSupply, FIND_COLOR, FIND_HOST, FIND_HARD, type Find } from './finds';
@@ -23,8 +23,40 @@ let fcMap: Map<string, Find> = new Map();
 export function findCells(): Map<string, Find> {
   const cd = coreM();
   const k = g.planet + '|' + cd + '|' + g.found.length;
-  if (k !== fcKey) { fcKey = k; fcMap = findMap(g.planet, cd, g.found); }
+  if (k !== fcKey) { fcKey = k; fcMap = evictFromSealed(findMap(g.planet, cd, g.found), cd); }
   return fcMap;
+}
+
+/* A crate never sits inside a SEALED hall - not its stone and not its air.
+   The laser is the key to those halls, and a crate stamped inside one is a
+   save that cannot be finished; with all seven devices on the one world the
+   hash put one there on the first run of the test that checks (`the key is
+   never behind the door it opens`). Walked down out of the footprint, here
+   rather than in finds.ts, because this module already imports both sides
+   and finds.ts importing the vault geometry was a cycle that deleted the
+   Vault. Counted, so a test can say it is rare. */
+let evicted = 0;
+export function findEvictions() { return evicted; }
+
+function inSealedHall(x: number, d: number): boolean {
+  for (let r = 0; r < ANCHOR_COUNT; r++) {
+    if (!anchorSealed(r)) continue;
+    const a = anchorAt(r);
+    if (Math.abs(x - a.x) <= (VAULT_W - 1) / 2 && Math.abs(d - a.d) <= (VAULT_H - 1) / 2) return true;
+  }
+  return false;
+}
+
+function evictFromSealed(m: Map<string, Find>, coreDepthHere: number): Map<string, Find> {
+  const out = new Map<string, Find>();
+  for (const [k, f] of m) {
+    const i = k.indexOf(',');
+    const x = +k.slice(0, i);
+    let d = +k.slice(i + 1);
+    while ((inSealedHall(x, d) || out.has(x + ',' + d)) && d < coreDepthHere - 1) { d++; evicted++; }
+    out.set(x + ',' + d, f);
+  }
+  return out;
 }
 
 /* Which device the crate at this cell holds, or null if there is no crate

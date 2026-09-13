@@ -40,20 +40,33 @@ test('every device reads Not installed at level zero, and nothing else does', ()
   }
 });
 
-test('the first world holds exactly two devices, and they are the shallow ones', () => {
-  /* Two, not three. Round seven pushed the ore ladder out over eight worlds
-     and the devices followed the minerals they are built from - Deep Survey
-     went from 35 m to 62 m with gold, which is past the 58 m core of the
-     tutorial planet. Two discoveries in one descent is still two moments; the
-     third has simply moved to the world after. */
+test('the one world buries four crates at a time, shallowest first, and every device is on it', () => {
+  /* ONE WORLD. Until R9c each device was gated to a leg of the old planet
+     chain, the chain went in W9, and the leg stayed at zero for ever - so
+     only the magnet and the bomb were ever buried and the Cutting Laser, the
+     key to three of the nine Anchors, did not exist. The probe found it by
+     never getting past six.
+
+     Now the cap does the spreading: four crates at a time, the shallowest
+     unfound ones, and the next appears as one is found. */
   const core = H.coreDepth(0);
   const on = H.findsOn(0, core, []);
-  assert.equal(on.length, 2, 'leg 0 holds ' + on.length + ' devices, not 2');
-  assert.deepEqual(on.map((f) => f.key), ['magnet', 'bomb']);
+  assert.equal(on.length, 4, 'an empty hand sees ' + on.length + ' crates, not 4');
+  assert.deepEqual(on.map((f) => f.key), ['magnet', 'bomb', 'survey', 'reactor']);
   for (const f of on) {
     assert.ok(f.below < core,
       f.key + ' is buried at ' + f.below + ' m on a world whose core is at ' + core);
   }
+  /* And every one of the seven is reachable on this world by finding the
+     ones above it. */
+  const held = [];
+  while (true) {
+    const next = H.findsOn(0, core, held);
+    if (!next.length) break;
+    held.push(next[0].key);
+  }
+  assert.deepEqual(held, H.FINDS.map((f) => f.key),
+    'digging up whatever is offered, shallowest first, yields ' + held.join(', '));
 });
 
 /* Six hundred legs, not twelve. These two are property tests over a hash, and
@@ -113,14 +126,16 @@ test('the collision nudge almost never has to fire', () => {
     'which means the position hash has stopped separating them');
 });
 
-/* Missable, but never lost - the rule that separates a device from a relic. */
-test('a device left in the ground comes back on the next world', () => {
-  /* Skip leg 0 entirely: nothing found, and every one of its three is still
-     a candidate on leg 1. */
-  const later = H.findsOn(1, H.coreDepth(1), []);
-  for (const k of ['magnet', 'survey', 'bomb']) {
-    assert.ok(later.some((f) => f.key === k),
-      k + ' was left on the first world and is not on the second - a device must never be lost');
+/* Missable, but never lost - the rule that separates a device from a relic.
+   With one world "never lost" means: whatever is unfound is still a
+   candidate, however the rest were found. */
+test('a device left in the ground is still there whatever else was found', () => {
+  const core = H.coreDepth(0);
+  for (const skip of H.FINDS) {
+    const held = H.FINDS.filter((f) => f !== skip).map((f) => f.key);
+    const on = H.findsOn(0, core, held);
+    assert.deepEqual(on.map((f) => f.key), [skip.key],
+      skip.key + ' was skipped and is not the one crate left - a device must never be lost');
   }
 });
 
@@ -134,46 +149,29 @@ test('a device already in hand is never buried again', () => {
     held[0] + ' is in hand and is still buried on the same world');
 });
 
-test('every device becomes available by the leg it is gated to, and no sooner', () => {
-  for (const f of H.FINDS) {
-    if (f.from > 0) {
-      const before = H.findsOn(f.from - 1, H.coreDepth(f.from - 1), []);
-      assert.ok(!before.some((x) => x.key === f.key),
-        f.key + ' is buried on leg ' + (f.from - 1) + ', one before its own gate of ' + f.from);
-    }
-  }
-});
-
-/* The claim the last assertion was reaching for, made honestly.
-
-   `findsOn` caps at four per world, so asking "is the laser a candidate on leg
-   2 for a player who has found NOTHING" is the wrong question - it is not, and
-   should not be, because four shallower devices are still in the ground ahead
-   of it. The cap is doing real work there: it enforces the order the devices
-   are met in no matter how the player plays, and it self-corrects, because
-   clearing the backlog is what opens the next rung.
-
-   So the claim is about a player who digs: take everything each world offers,
-   and the set completes quickly and in ascending depth order. */
-test('a player who digs up what is offered has every device by leg three', () => {
+/* The cap enforces the order the devices are met in no matter how the player
+   plays, and it self-corrects, because clearing the backlog is what opens
+   the next rung. So the claim is about a player who digs: take everything
+   offered, and the set completes in ascending depth order, the laser last. */
+test('a player who digs up what is offered meets every device shallowest first, the laser last', () => {
   const held = [];
-  const order = [];
-  for (let leg = 0; leg < 4; leg++) {
-    for (const f of H.findsOn(leg, H.coreDepth(leg), held)) {
-      held.push(f.key);
-      order.push(f.key);
-    }
+  const core = H.coreDepth(0);
+  for (let round = 0; round < 8; round++) {
+    for (const f of H.findsOn(0, core, held)) held.push(f.key);
   }
   assert.equal(held.length, H.FINDS.length,
-    'after four worlds a digging player holds ' + held.length + ' of ' + H.FINDS.length +
-    ': ' + held.join(', '));
-  /* And met shallowest-first, which is what makes each one answer a problem
-     the player has already had. */
-  const depths = order.map((k) => H.FIND_OF[k].below);
+    'a digging player holds ' + held.length + ' of ' + H.FINDS.length + ': ' + held.join(', '));
+  const depths = held.map((k) => H.FIND_OF[k].below);
   for (let i = 1; i < depths.length; i++) {
-    assert.ok(depths[i] >= depths[i - 1],
-      'devices are met out of depth order: ' + order.join(' -> '));
+    assert.ok(depths[i] >= depths[i - 1], 'devices are met out of depth order: ' + held.join(' -> '));
   }
+  assert.equal(held[held.length - 1], 'laser', 'the key to the sealed halls is not the last thing met');
+  /* The laser is not on the world until enough of the others are in hand -
+     that is the cap, not a gate - and it IS on the world once they are. */
+  const before = H.findsOn(0, core, []);
+  assert.ok(!before.some((f) => f.key === 'laser'), 'the laser is buried for a player who has found nothing');
+  const after = H.findsOn(0, core, held.slice(0, 3));
+  assert.ok(after.some((f) => f.key === 'laser'), 'three devices in hand and the laser is still not buried');
 });
 
 /* The cap, against a LITERAL rather than against the constant.
@@ -187,12 +185,12 @@ test('no world ever buries more than four devices', () => {
     assert.ok(H.findsOn(leg, H.coreDepth(leg), []).length <= 4,
       'leg ' + leg + ' buries more than four devices');
   }
-  /* And the cap actually BINDS somewhere, or it is a limit on nothing. Leg 1
-     with an empty hand has five candidates and must yield four. */
-  const core = H.coreDepth(1);
-  const pool = H.FINDS.filter((f) => 1 >= f.from && f.below <= core - 3);
-  assert.ok(pool.length > 4, 'leg 1 has only ' + pool.length + ' candidates, so the cap never bites');
-  assert.equal(H.findsOn(1, core, []).length, 4);
+  /* And the cap actually BINDS, or it is a limit on nothing. An empty hand
+     has seven candidates and must yield four. */
+  const core = H.coreDepth(0);
+  const pool = H.FINDS.filter((f) => f.below <= core - 3);
+  assert.ok(pool.length > 4, 'only ' + pool.length + ' candidates, so the cap never bites');
+  assert.equal(H.findsOn(0, core, []).length, 4);
 });
 
 /* ---------- the shop gate, which is the point of the whole thing ---------- */

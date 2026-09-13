@@ -2296,9 +2296,12 @@ test('a sealed crate in the rock fits the device and stocks the shop', async ({ 
     const b = w.blockAt(x, d);
     return { count: cells.length, key: first.key, x, d, id: b ? b.id : null, hard: b ? b.hard : 0 };
   });
-  /* Two, not three: round seven pushed Deep Survey down to 62 m with the gold
-     it is built from, which is past the 58 m core of the tutorial world. */
-  expect(where.count, 'the first world buries nothing at all').toBe(2);
+  /* Four: the cap. One world buries the four shallowest unfound devices at
+     a time, and the next appears as one is found. It was two until R9c,
+     when every device was still gated to a leg of a planet chain that no
+     longer existed - and the laser, the key to three Anchors, was never
+     buried at all. */
+  expect(where.count, 'the first world buries nothing at all').toBe(4);
   expect(where.id, 'the crate cell is not a crate').toBe('schematic');
   expect(where.hard, 'a crate with no hardness is not a dig').toBeGreaterThan(0);
 
