@@ -4289,6 +4289,36 @@ rerun it with:
 it yet - the six open Anchors come first), the sealed three, and the Vault.
 That is the rest of R9c. Then R9d, `/ship`.
 
+## 2026-09-13: the stall after the wake was the probe, and the game was right
+
+The overnight campaign lit five Anchors in 23 game-minutes, the planet
+answered, and every run after that did nothing while the Ballast drained
+to zero and three regions came down. It read as the collapse spiral.
+
+A traced replay said otherwise. After the wake the probe targeted Palewell
+(31,255) straight down the Rustmoor column, and at 130 m that column runs
+into **Kryllon's sealed hall** - deliberately across the main shaft, per
+the W7 design, uncuttable without the laser. The ship sat against sealed
+stone burning 146 fuel to the danger line, went home with nothing (so
+nothing sold, so the run log's clock never moved), and did it a hundred
+times. The seventh probe bug, and the first the game was right about: a
+player goes round, and `a locked door never locks the planet` already
+proves there is a way round.
+
+The probe now picks the nearest column with nothing uncuttable in it above
+the target and comes in sideways at the target's own depth. `--seed-lit 5
+--seed-credits 30000` starts a run from just past the wake in seconds
+instead of replaying twenty-three game-minutes. Seeded and traced: Palewell
+lit on run 4 down column 36, then the crate hunt began on its own (the bomb
+at (8,157) on run 6, credits 16,768), which is the first time the probe has
+ever found a device.
+
+Two honest notes from that run. The ship was lost once on the way home from
+255 m (a run's worth, as designed). And the Ballast still drains ~0.02 per
+run at this stage while the probe feeds it only what is banked; it held at
+0.93-0.98 through six runs, so the spiral is not in sight while the runs
+sell.
+
 ## Left for you: five review screenshots in a folder with a mangled name
 
 A studio sweep on 2026-09-12 found `SERSGIDEOAPPDATAocaltemp/review2/` sitting in this

@@ -66,7 +66,9 @@ const BUDGET = arg('minutes', 120) * 60;
    any shell that started a server for it - the server went away under a run
    and the probe died on boot with a timeout that looked like the game. */
 const DIST = join(resolve(process.cwd()), 'dist');
-const PORT = 4329;
+/* Any free port, asked for at listen time: two probes at once (a campaign
+   left running and a traced replay) collided on a fixed one. */
+let PORT = 0;
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.webp': 'image/webp', '.woff2': 'font/woff2',
@@ -81,7 +83,8 @@ const server = createServer(async (req, res) => {
     res.end(body);
   } catch { res.writeHead(404).end('not found'); }
 });
-await new Promise((ok) => server.listen(PORT, ok));
+await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
+PORT = server.address().port;
 
 const browser = await chromium.launch({
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
@@ -111,6 +114,27 @@ await page.evaluate(async () => {
   w.startClock();
 });
 await page.waitForFunction(() => window.__cw.g.mode === 'play', null, { timeout: 30000 });
+
+/* `--seed-lit N --seed-credits C`: start from a campaign already N Anchors in,
+   with credits in the bank, so a stall found twenty game-minutes deep can be
+   reproduced in seconds rather than replayed. Lit through the same call the
+   game uses; the planet wakes if N crosses the line. */
+const SEED_LIT = arg('seed-lit', 0);
+const SEED_CREDITS = arg('seed-credits', 0);
+if (SEED_LIT || SEED_CREDITS) {
+  await page.evaluate(({ n, c }) => {
+    const w = window.__cw;
+    let lit = 0;
+    for (let r = 0; r < w.ANCHOR_COUNT && lit < n; r++) {
+      if (w.anchorSealed(r)) continue;
+      w.lightAnchor(w.g.ground, r); lit++;
+    }
+    w.wake(w.g.ground);
+    w.g.credits += c;
+    w.resetBlocks();
+  }, { n: SEED_LIT, c: SEED_CREDITS });
+  await shopUp();
+}
 
 /* Hold a direction for `secs` of GAME time, dismissing any card that comes up
    - a modal stops the loop, and a probe that does not press the button sits
@@ -380,17 +404,47 @@ while (true) {
   /* Out, down, and into it. Fuel is spent for real; the probe tops up only at
      the pad, like the game does. */
   const before = await read();
-  await goToColumn(target.x);
+  /* THE SEVENTH policy bug, and the first one the GAME was right about. After
+     the wake the probe went for Palewell straight down the Rustmoor column,
+     and at 130 m that column runs into Kryllon's sealed hall - deliberately
+     across the main shaft, uncuttable without the laser. The ship sat against
+     sealed stone burning fuel to the danger line, went home with nothing, and
+     did it again for a hundred runs. A player goes round. So: dig down the
+     nearest column with nothing uncuttable in it above the target, and come
+     in sideways at the target's own depth. */
+  const column = await page.evaluate((t) => {
+    const w = window.__cw;
+    const clear = (x) => {
+      if (x < 1 || x > w.W - 2) return false;
+      for (let d = 0; d <= t.d + 1; d++) {
+        const b = w.blockAt(x, d);
+        if (b && b.hard === Infinity && !(x === t.x && d === t.d)) return false;
+      }
+      return true;
+    };
+    for (let off = 0; off < 12; off++) {
+      for (const x of [t.x + off, t.x - off]) if (clear(x)) return x;
+    }
+    return t.x;
+  }, target);
+  await goToColumn(column);
   /* Down, and STOP WHEN THE THING HAPPENS - the Anchor lights, the crate
      breaks, the Vault opens - rather than at a depth that has to be right to
-     the cell. The depth is only the backstop, one cell past the target, for
-     a column the thing is not actually in. */
+     the cell. The depth is the backstop, one cell past the target, and where
+     the lateral approach begins for a column the thing is not actually in. */
   const stop = { danger: true, full: true, depth: target.d + 0.6 };
   if (target.kind === 'anchor') stop.lit = before.lit;
   if (target.kind === 'crate') stop.found = before.found;
   if (target.kind === 'vault') { stop.won = true; stop.depth = target.d - 1; }
   await trace('at column');
-  await hold('down', 400, stop);
+  const arrived = await hold('down', 400, stop);
+  if (arrived && column !== target.x) {
+    /* Level with it: cut sideways into the room. */
+    const side = target.x > column ? 'right' : 'left';
+    const lateral = { ...stop, column: target.x, near: 0.6 };
+    delete lateral.depth;
+    await hold(side, 120, lateral);
+  }
   /* And a beat at the bottom, because lighting is a proximity check on the
      frame loop and a hold that ends on the frame it arrives has not run one. */
   await page.evaluate(() => window.__cw.advance(2));
