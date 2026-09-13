@@ -39,211 +39,205 @@ player.add(rig);
    light put the entire face inside one specular highlight and the hull
    rendered white. Roughness spreads that energy out instead of concentrating
    it, which is what lets a dark colour actually read as dark. */
+/* ---------- the palette ----------
+
+   Six materials, and between them they are the whole "advanced but ancient"
+   read. The old set was built around brass, because a near-black hull needed
+   a mid-value appendage to be visible at thirty pixels. This one solves that
+   in the hull itself: the body is PALE, so it separates from dark rock on
+   value alone, and the accent can then be a single alien light rather than a
+   second metal.
+
+   Matte and barely metallic on purpose. Polished metal reads as new whatever
+   color it is, and the one thing this ship must not read as is new. */
 const hullMat = asMetal(new THREE.MeshStandardMaterial({
-  color: 0x232932, metalness: 0.42, roughness: 0.78, flatShading: true
-}), 0.30);
-/* The one warm accent. Every working machine has a painted part that has taken
-   a beating, and one accent colour is what stops a grey ship reading as a grey
-   smudge at thirty pixels. */
-const trimMat = asMetal(new THREE.MeshStandardMaterial({
-  color: 0x5e3814, metalness: 0.22, roughness: 0.86, flatShading: true
+  color: 0x9a9788, metalness: 0.14, roughness: 0.92, flatShading: true
+}), 0.16);
+
+/* The plates: the same stone a shade down, so the hull reads as layered
+   panels rather than as one moulded shell. */
+const plateMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x6e6c62, metalness: 0.18, roughness: 0.9, flatShading: true
 }), 0.18);
+
+/* The seam light. EMISSIVE, and the only saturated color on the ship.
+
+   Teal because that is what an Anchor does when it lights: the ship and the
+   Lattice are the same civilization's work, and one shared color says so
+   without a line of text. Emissive rather than lit, so it holds its value in
+   a dark tunnel - a stripe that dims with the lamp is paint, and a line that
+   does not is a thing still running after a very long time. */
+export const SEAM_COLOR = 0x37e2c4;
+const seamMat = new THREE.MeshStandardMaterial({
+  color: 0x06201c, emissive: SEAM_COLOR, emissiveIntensity: 1.5,
+  metalness: 0, roughness: 0.5, flatShading: true
+});
+
+/* A seam that has gone out. The same material with the light dead, which is
+   the wear language the research names: not rust, not dirt, but capability
+   that has stopped. */
+const deadMat = new THREE.MeshStandardMaterial({
+  color: 0x14201e, emissive: SEAM_COLOR, emissiveIntensity: 0.05,
+  metalness: 0.1, roughness: 0.85, flatShading: true
+});
+
+/* Pitting: the hull's own stone, darker, for erosion bitten into the
+   surface. */
+const pitMat = asMetal(new THREE.MeshStandardMaterial({
+  color: 0x565349, metalness: 0.12, roughness: 1.0, flatShading: true
+}), 0.1);
+
+/* Kept names, because the imported-hardware table and the station both build
+   against them. `trimMat` is no longer a warm painted accent - there is no
+   paint on this ship - but the same weathered plate. */
+const trimMat = plateMat;
 export const darkMat = asMetal(new THREE.MeshStandardMaterial({
-  color: 0x12161c, metalness: 0.5, roughness: 0.6, flatShading: true
-}), 0.3);
-/* Brass, and it exists for a measured reason rather than for flavour.
-
-   The first pass of this hull failed its own squint test: blurred at play
-   scale the ship was one dark lump with a bright dot on it, and neither the
-   stack nor the flywheel read at all. They were there - they were just dark
-   metal on a dark hull, so the outline breaks were invisible even though the
-   geometry was correct.
-
-   The fix is not more geometry, it is VALUE. The protruding parts are brass:
-   mid-value and warm, so they separate from both the near-black hull and the
-   dark tunnel, and the blurred silhouette gains two distinct appendages
-   instead of being a rounded rectangle. This is the research's "value carries
-   the read, hue count does not", applied to the one object that has to be
-   recognisable at thirty pixels. */
-const brassMat = asMetal(new THREE.MeshStandardMaterial({
-  color: 0xa8762e, metalness: 0.9, roughness: 0.42, flatShading: true
-}), 0.4);
-
+  color: 0x1a1e21, metalness: 0.45, roughness: 0.7, flatShading: true
+}), 0.28);
 const steelMat = asMetal(new THREE.MeshStandardMaterial({
-  /* The pale steel was most of what still read as white at play scale:
-     bright bare metal on a small object against dark rock is a highlight, not
-     a colour. Kept metallic, taken well down in value. */
-  color: 0x2b3038, metalness: 0.62, roughness: 0.66, flatShading: true
-}), 0.26);
+  color: 0x4a4f52, metalness: 0.5, roughness: 0.7, flatShading: true
+}), 0.24);
+/* What used to be brass. Nothing on the hull uses it now; the cockpit ring
+   still does, and it is the pale stone there rather than a yellow metal. */
+const brassMat = plateMat;
 
-/* ---------- the body ----------
+/* ---------- the hull ----------
 
-   Playtest: *"redesign the ship to look more steam punk and unique."*
+   Playtest, 2026-09-13: *"I dont really like the look of the ship. Can you see
+   if you can make it look more like advanced technology that has been sitting
+   for thousands of years, so it is advanced but also old looking."*
 
-   Designed at THIRTY PIXELS, which is the whole method and is what every
-   previous pass on this ship got wrong. The sourced finding is blunt: at play
-   scale only things that break the OUTLINE survive. Rivets, gauges, valve
-   dials, portholes and brass-versus-iron all vanish - a 2-3 px brass band is
-   not a colour, it is noise. Brass reads in play only if it covers a whole
-   panel.
+   That replaces the W1 direction, which was *"redesign the ship to look more
+   steam punk and unique"* - a boiler, a raked stack, a spoked flywheel, brass
+   over everything. Standing rule 9: when he restates from scratch instead of
+   refining, the model is wrong rather than the tuning, so none of that is
+   kept. It also closes a hole in the fiction. The Anchors, the sealed halls
+   and the Vault are all the work of somebody advanced who is long gone; a
+   brass boiler belonged to no one in this world. A driller flying recovered
+   Lattice gear does.
 
-   What survives the squint test, and what this hull is therefore made of:
+   The research (plans/lattice/REFERENCE.md - Sheikah tech, Subnautica's
+   Precursor work, the Vex) converges on six signifiers, and each one below is
+   one of them:
 
-   1. A STACK. A cylinder breaking the roofline is the single most efficient
-      steampunk signal there is, because it changes the outline rather than the
-      surface. Off-centre and raked back, so it is also the asymmetry.
-   2. A BOILER. A barrel-shaped drum instead of a flat box hull - a bulge
-      distinct from the body is the second outline break.
-   3. A FLYWHEEL. Big enough to matter: a spoked disc on one flank at about a
-      third of ship height. Under about 15% of height a wheel disappears.
-   4. NEGATIVE SPACE. An open frame between the boiler and the drill collar.
-      Gaps read as strongly as filled shape at distance and cost nothing.
+     ONE SEALED SILHOUETTE. No stack, no wheel, no exposed rod. Ancient
+     advanced tech has no moving parts on the outside; the moment something
+     protrudes and turns, the read is Victorian machine.
+     LARGE FLAT FACETS, NO RIVETS. Few, big planes. The rivets are gone - a
+     rivet is a fastening you can see, which is exactly the thing this
+     civilization would not show you.
+     ONE ALIEN EMISSIVE, ALONG SEAMS. Not amber, and not on gauges: gauges
+     are instruments for a pilot, and a seam that glows is the object itself
+     being powered. Teal, because that is what an Anchor does when it lights,
+     and the ship and the Lattice should read as one hand.
+     MATTE, STONE-LIKE. Low metalness and high roughness. Polished metal
+     reads as new whatever color it is.
+     ONE DELIBERATE ASYMMETRY. A single break in an otherwise regular object
+     reads as damage; a generally messy object reads as clutter.
+     WEAR AS DEAD LIGHT, NOT RUST. One seam has gone out. Rust is the
+     steampunk word for age; a panel that used to be lit and is not is the
+     ancient-advanced one.
 
-   And the rule that decides everything else: ONE dominant feature, not several.
-   The stack is the hero. The rest of the hull is deliberately plain and low
-   contrast so the eye lands on it - which is why there is no detail on the
-   boiler's face at all.
+   And the constraint that governed the old hull governs this one: it is about
+   thirty pixels at play scale, so this is a silhouette and a value, and every
+   part below is either one or the other. */
 
-   The greeble that a steampunk machine wants but cannot show at 30 px - rivet
-   rows, the brass band, a pressure gauge, a valve wheel - is in `dressShip()`
-   at the bottom, added only when the Outfitter shows the ship at full screen.
+/* The core. A six-sided prism lying across the ship with a flat facet up, so
+   the body is a sealed lozenge that catches the lamp in broad planes rather
+   than in a highlight. Pale against dark rock, which is the whole of the
+   value read at thirty pixels - the old hull was near-black and needed brass
+   appendages to be visible at all. */
+const core = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.44, 6), hullMat);
+core.rotation.z = Math.PI / 2;
+core.rotation.y = Math.PI / 12;
+core.position.y = 0.01;
+rig.add(core);
 
-   ASYMMETRIC FRONT TO BACK, on purpose. A symmetric hull reads as "generic
-   vehicle"; steampunk craft almost never are. The stack leans one way, the
-   flywheel sits on one flank, and the ship is immediately not a sci-fi pod. */
+/* The prow shroud: a tapered collar the drill comes out of, sealed to the
+   body. It is what makes the front a FRONT without anything sticking out of
+   it. */
+const shroud = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.13, 0.2, 6), plateMat);
+shroud.rotation.x = Math.PI / 2;
+shroud.position.set(0, -0.18, 0.02);
+rig.add(shroud);
 
-/* The boiler: a drum lying across the ship, so the silhouette is round where a
-   hull would be flat. Eight sides rather than smooth - facets take the lamp
-   unevenly, which is what makes a shape read as machined rather than moulded. */
-const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.42, 8), hullMat);
-boiler.rotation.z = Math.PI / 2;
-boiler.position.y = 0.02;
-rig.add(boiler);
-
-/* The end caps, a little proud, so the drum has a rim rather than a cut edge. */
+/* Two flank plates, proud of the core, with a gap between them and it. The
+   gap is the seam, and the seam is where the light is. */
 for (const sx of [-1, 1]) {
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 8), steelMat);
-  cap.rotation.z = Math.PI / 2;
-  cap.position.set(sx * 0.22, 0.02, 0);
-  rig.add(cap);
-}
-
-/* The firebox under the boiler, squared off - the one hard-edged mass on the
-   ship, and what the drill collar hangs from. */
-const firebox = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.3), darkMat);
-firebox.position.y = -0.2;
-rig.add(firebox);
-
-/* ---------- the stack ----------
-
-   The hero feature, and the only thing on the ship allowed to be loud. Raked
-   back off the top of the boiler and offset to one side: two asymmetries for
-   the price of one, and it is what makes this silhouette nobody else's.
-
-   Remember the ship flies drill-first, so +y is the REAR - the stack trails
-   behind the machine the way a funnel should. */
-const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.085, 0.46, 6), brassMat);
-stack.position.set(-0.19, 0.4, -0.04);
-stack.rotation.z = -0.3;
-rig.add(stack);
-/* The crown - a flared lip, which is what stops a cylinder reading as a peg. */
-const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.07, 0.07, 6), brassMat);
-crown.position.set(-0.26, 0.62, -0.04);
-crown.rotation.z = -0.3;
-rig.add(crown);
-
-/* ---------- the flywheel ----------
-
-   On one flank only, facing the camera, because a disc seen edge-on is a line.
-   0.18 radius against a hull about 0.6 tall is roughly a third - comfortably
-   over the threshold where a wheel stops being visible.
-
-   Six spokes as one thin box each. Spokes are the reason it reads as a WHEEL
-   and not a disc, and they are also the negative space: the gaps between them
-   are as much of the read as the metal is. */
-export const flywheel = new THREE.Group();
-const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.036, 5, 12), brassMat);
-flywheel.add(rim);
-for (let i = 0; i < 6; i++) {
-  const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.4, 0.032), brassMat);
-  spoke.rotation.z = (i / 6) * Math.PI;
-  flywheel.add(spoke);
-}
-const boss = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 6), darkMat);
-boss.rotation.x = Math.PI / 2;
-flywheel.add(boss);
-flywheel.position.set(0.3, -0.04, 0.18);
-rig.add(flywheel);
-
-/* And the rod that drives it, running down to the collar - the one piece of
-   visible mechanism, and it sits on the silhouette's edge where it can be
-   seen rather than on a face where it cannot. */
-const rod = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.26, 0.035), steelMat);
-rod.position.set(0.32, -0.26, 0.14);
-rod.rotation.z = 0.18;
-rig.add(rod);
-
-/* ---------- the open frame ----------
-
-   Two legs from the firebox down to the drill collar with daylight between
-   them. This is the negative space, and it is why the bottom half of the ship
-   does not read as one solid lump. */
-for (const sx of [-1, 1]) {
-  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.05), steelMat);
-  leg.position.set(sx * 0.14, -0.36, 0.02);
-  leg.rotation.z = sx * 0.14;
-  rig.add(leg);
-}
-
-/* The collar the drill hangs off - heavy and stepped, because this is the part
-   of a mining machine that takes the load. */
-const collar = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.26), steelMat);
-collar.position.y = -0.47;
-rig.add(collar);
-const collarLip = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.3), trimMat);
-collarLip.position.y = -0.53;
-rig.add(collarLip);
-
-/* ---------- the greeble ----------
-
-   Everything here is invisible at play scale and that is the point. The
-   research is explicit that rivets, gauges and valve wheels do not survive
-   thirty pixels - they exist because the Outfitter shows this ship at full
-   screen, and a steampunk machine with no rivets on it at arm's length is a
-   shape rather than a thing.
-
-   Kept to THREE draw calls between them. The rivets are one instanced mesh
-   rather than forty, which is the same lesson the ship's bolt-on hardware
-   learned when thirteen separate meshes took the worst case to three draws off
-   failing CI. */
-const rivetGeo = new THREE.SphereGeometry(0.012, 5, 3);
-{
-  const N = 24;
-  const rivets = new THREE.InstancedMesh(rivetGeo, brassMat, N);
-  const t = new THREE.Object3D();
-  for (let i = 0; i < N; i++) {
-    /* Two bands around the boiler, at the seams a real drum would be riveted
-       at rather than scattered over the face. */
-    const band = i < N / 2 ? -0.13 : 0.13;
-    const a2 = ((i % (N / 2)) / (N / 2)) * Math.PI * 2;
-    t.position.set(band, 0.02 + Math.cos(a2) * 0.25, Math.sin(a2) * 0.25);
-    t.updateMatrix();
-    rivets.setMatrixAt(i, t.matrix);
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.34), plateMat);
+  plate.position.set(sx * 0.2, 0.02, 0);
+  /* THE ONE ASYMMETRY. The left plate is short and canted: a single panel
+     that has been struck and never re-seated. Everything else on the hull is
+     regular, which is what lets one break read as damage rather than as
+     style. */
+  if (sx < 0) {
+    plate.scale.set(1, 0.62, 0.86);
+    plate.rotation.z = 0.16;
+    plate.position.y = -0.03;
   }
-  rivets.frustumCulled = false;
-  rig.add(rivets);
+  rig.add(plate);
 }
 
-/* A pressure gauge on the firebox, because the one thing a boiler always has
-   is something telling you whether it is about to go. */
-const gaugeFace = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.018, 8),
-  new THREE.MeshStandardMaterial({ color: 0xe8dcc0, metalness: 0.1, roughness: 0.7, flatShading: true }));
-gaugeFace.rotation.x = Math.PI / 2;
-gaugeFace.position.set(-0.17, -0.19, 0.17);
-rig.add(gaugeFace);
-const gaugeBezel = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.014, 4, 8), brassMat);
-gaugeBezel.position.set(-0.17, -0.19, 0.18);
-rig.add(gaugeBezel);
+/* The dorsal ridge, low and sealed - the read that this is a machine with a
+   spine rather than a pod. */
+const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.07, 0.2), plateMat);
+ridge.position.set(0, 0.25, 0);
+rig.add(ridge);
+
+/* ---------- the light in the seams ----------
+
+   One color, and it is the Anchors' own. Emissive rather than lit: this is
+   the object being powered, so it must not go dark when the lamp does - a
+   seam that dims with the tunnel is a painted stripe, and a seam that holds
+   its value in the dark is a thing that is still running after a very long
+   time. It is also what carries the ship's read at thirty pixels now that
+   there is no brass: two bright lines on a pale hull. */
+const seams: THREE.Mesh[] = [];
+for (const sx of [-1, 1]) {
+  /* Longer and a touch thicker than the first pass: at size the seams were
+     one thin line and the hull read as a dark mass with a bright eye. The
+     seam IS the read now, so it runs most of the flank. */
+  const seam = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.28, 0.4), seamMat);
+  seam.position.set(sx * 0.15, 0.02, 0);
+  /* The left seam follows its own broken plate down and stops short. */
+  if (sx < 0) { seam.scale.set(1, 0.55, 0.8); seam.position.y = -0.04; }
+  rig.add(seam);
+  seams.push(seam);
+}
+/* One along the spine, and one across the prow, so the lit line reads from
+   above and from the front as well as from the side. */
+const spineSeam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.026, 0.026), seamMat);
+spineSeam.position.set(0, 0.285, 0.06);
+rig.add(spineSeam);
+/* And a short bar across the prow shroud, so the front reads as powered from
+   head-on - which is the angle the ship is seen at while digging down. */
+const prowSeam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.026, 0.026), seamMat);
+prowSeam.position.set(0, -0.2, 0.14);
+rig.add(prowSeam);
+
+/* ---------- the wear ----------
+
+   Two panels that used to be lit and are not. This is the whole age of the
+   thing: not dirt, not rust, but capability that has gone out. Dark, slightly
+   green-black, so they read as the same material as the live seams rather
+   than as holes. */
+for (const [px, py, pz, s] of [[0.2, 0.14, 0.12, 1], [-0.13, 0.2, -0.13, 0.8]] as number[][]) {
+  const dead = new THREE.Mesh(new THREE.BoxGeometry(0.07 * s, 0.02, 0.07 * s), deadMat);
+  dead.position.set(px, py, pz);
+  rig.add(dead);
+}
+
+/* Erosion, not rust: three shallow bites out of the hull's own material,
+   sitting slightly inside the surface so they read as pitting rather than as
+   attachments. Flat-shaded, so each one is a facet that catches the lamp at
+   the wrong angle - which is exactly what worn stone does. */
+for (const [px, py, pz, s] of [[0.17, -0.1, 0.16, 0.055], [-0.19, 0.12, 0.1, 0.045],
+                               [0.06, 0.22, -0.16, 0.05]] as number[][]) {
+  const pit = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), pitMat);
+  pit.position.set(px, py, pz);
+  pit.rotation.set(px * 4, py * 4, pz * 4);
+  rig.add(pit);
+}
 
 /* ---------- drill ---------- */
 
@@ -342,11 +336,18 @@ rig.add(bit);
    Dark glass with a little emissive rather than a glowing yellow ball: the
    light should look like it is coming from INSIDE a canopy, not like the
    canopy is the light. */
+/* SMALLER, and teal. Two faults the first ancient-advanced pass showed at
+   size: at 0.105 across it was the biggest feature on the ship and read as a
+   single huge eye, and being amber it was a SECOND alien color competing with
+   the seams. The research is explicit that the look rests on one emissive,
+   run along structure rather than pooled in a lens. So the window is a port
+   rather than a face, and it is the same teal the seams and the Anchors
+   are. */
 const cab = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.085, 0.105, 0.08, 6),
+  new THREE.CylinderGeometry(0.055, 0.068, 0.07, 6),
   new THREE.MeshStandardMaterial({
-    color: 0x2a3138, emissive: 0x9a6a12, emissiveIntensity: 0.55,
-    metalness: 0.4, roughness: 0.25, flatShading: true
+    color: 0x0a1f1d, emissive: SEAM_COLOR, emissiveIntensity: 0.9,
+    metalness: 0.3, roughness: 0.3, flatShading: true
   })
 );
 cab.position.set(0.02, 0.02, 0.24);
@@ -357,12 +358,12 @@ rig.add(cab);
    it always was: it separates the lit window from the lit hull, which
    otherwise merge into one bright smudge. Brass, and thick enough to survive
    being small - a thin ring is the 2 px band the research says vanishes. */
-const ring = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.024, 5, 8), brassMat);
+const ring = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.018, 5, 8), plateMat);
 ring.position.set(0.02, 0.02, 0.26);
 rig.add(ring);
 
 /* Much smaller than a lantern. The cockpit is a lit window. */
-const cabGlow = makeGlow(0xffca7a, 0.3, 0.3);
+const cabGlow = makeGlow(SEAM_COLOR, 0.2, 0.28);
 cabGlow.position.set(0.02, 0.02, 0.34);
 rig.add(cabGlow);
 

@@ -2505,7 +2505,7 @@ opinions:
   scratch rather than a refinement, which by standing rule 9 means the model is
   wrong, not the tuning.
 
-- [ ] **T1 The pad is the dock.** Split the one function that is doing two
+- [x] **T1 The pad is the dock.** Done 2026-09-13, v0.38.0. Split the one function that is doing two
       jobs: `atSurface()` stays "above the ground" (heat, charge, the camera
       lift, the fuel reserve) and a new `docked()` is "at the pad" - at the
       surface AND within the pad's footprint. Selling, refueling, hull repair,
@@ -2517,7 +2517,7 @@ opinions:
       route home is already dug ground and already costed, the reserve on the
       dial already points at the pad, and the autopilot already flies there.
 
-- [ ] **T2 Growth that is a thing on the rock, not a sticker over it.** His
+- [x] **T2 Growth that is a thing on the rock, not a sticker over it.** Done 2026-09-13, v0.38.0. His
       words: *"turn these into textures or physically different models instead
       of an overlay."* Real instanced geometry with volume, seated so it
       straddles the displaced surface instead of racing it - a tuft that starts
@@ -2526,7 +2526,7 @@ opinions:
       one quad with six alpha masks. And the region swap stops changing every
       patch on screen at once.
 
-- [ ] **T3 A ship that is advanced and ancient.** Not steampunk: no boiler, no
+- [x] **T3 A ship that is advanced and ancient.** Done 2026-09-13, v0.39.0. Not steampunk: no boiler, no
       raked stack, no spoked flywheel, no brass. Advanced technology that has
       been sitting for thousands of years, which is the same civilization that
       cut the Anchor halls - so the ship and the Lattice finally read as one

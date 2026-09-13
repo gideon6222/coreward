@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.38.0';
+export const VERSION = '0.39.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.39.0', date: '2026-09-13', title: 'A hull older than the halls',
+    notes: [
+      'A new ship. Not steampunk any more: no boiler, no chimney, no spoked wheel, no brass. It is a sealed, faceted hull of pale worn stone with a single teal light running along its seams - the same teal an Anchor gives off when you light it, because it is the same hands that made both.',
+      'It is advanced and it is very old. One flank plate is struck out of line and has never been re-seated, two panels that used to be lit are dark, and the surface is pitted rather than rusted.'
+    ]
+  },
   {
     version: '0.38.0', date: '2026-09-13', title: 'The pad is the dock',
     notes: [
