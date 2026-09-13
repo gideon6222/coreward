@@ -713,7 +713,7 @@ export function vaultReached() {
   resetBlockCache();
   syncBlocks(true);
   showEvent('THE VAULT',
-    'Nine Anchors, and the centre is open. Whatever the Lattice was holding ' +
+    'Nine Anchors, and the center is open. Whatever the Lattice was holding ' +
     'down has been here the whole time, and it is not finished with this ' +
     'planet - but it is quiet now, and it is quiet because of you.\n\n' +
     'The ground is yours. There is more of it than you have seen.',
@@ -738,7 +738,7 @@ export function centreOpens() {
   for (const k of Array.from(meshes.keys())) dropBlock(k);
   resetBlockCache();
   syncBlocks(true);
-  showEvent('THE CENTRE IS OPEN',
+  showEvent('THE CENTER IS OPEN',
     'All nine. Something at the middle of the planet has stopped holding its ' +
     'door shut, and your map knows where it is now. It is a long way down.',
     'GO',

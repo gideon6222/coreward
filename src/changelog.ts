@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.35.0';
+export const VERSION = '0.35.1';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.35.1', date: '2026-09-13', title: 'US English',
+    notes: [
+      'Every word on screen is US English now: the center, the meters, the colors. Same game, one spelling.',
+      'All seven devices are actually buried on the planet. Until now only the magnet and the bomb were, and the Cutting Laser - the key to three sealed Anchors - did not exist, so the game could not be finished. It can now.'
+    ]
+  },
   {
     version: '0.35.0', date: '2026-09-12', title: 'Checkpoints',
     notes: [
@@ -38,7 +45,7 @@ export const CHANGELOG: Release[] = [
   {
     version: '0.33.0', date: '2026-09-12', title: 'The way in',
     notes: [
-      'A new opening, and it happens in the planet. Tap, and a cold light comes up inside a hall somebody cut, forty metres under the pad you are about to land on. Then the surface at night, and your ship coming down out of the dark as the sky wakes. Three lines. No space, no cut.',
+      'A new opening, and it happens in the planet. Tap, and a cold light comes up inside a hall somebody cut, forty meters under the pad you are about to land on. Then the surface at night, and your ship coming down out of the dark as the sky wakes. Three lines. No space, no cut.',
       'CONTINUE takes two seconds. The ship drops onto the pad, or the camera drops down your shaft to where you left it.',
       'The title screen is the pad at night.'
     ]
@@ -46,7 +53,7 @@ export const CHANGELOG: Release[] = [
   {
     version: '0.32.0', date: '2026-09-12', title: 'The opening tells you about this game',
     notes: [
-      'The intro is about the planet you are landing on: one world, nine Anchors buried across it, and a centre that opens when they are all lit. It used to describe twelve worlds and a jump drive, neither of which exists any more.',
+      'The intro is about the planet you are landing on: one world, nine Anchors buried across it, and a center that opens when they are all lit. It used to describe twelve worlds and a jump drive, neither of which exists any more.',
       'The line under CONTINUE says where you are, how deep you have been of the 452 m, and how many Anchors are lit. It used to promise a core.',
       'RESTART and NEW GAME say what they actually wipe.'
     ]
@@ -54,8 +61,8 @@ export const CHANGELOG: Release[] = [
   {
     version: '0.31.0', date: '2026-09-11', title: 'One planet, and the Lattice',
     notes: [
-      'There is one planet now. It is 61 columns wide and 452 metres deep, and you are going to be here a while.',
-      'The twelve worlds became twelve REGIONS of it, three across and four down, each with its own rock, its own colour and its own rules. The chip at the top names the one you are standing in.',
+      'There is one planet now. It is 61 columns wide and 452 meters deep, and you are going to be here a while.',
+      'The twelve worlds became twelve REGIONS of it, three across and four down, each with its own rock, its own color and its own rules. The chip at the top names the one you are standing in.',
       'A MAP. It fills in as you fly, draws your own tunnels exactly, names the places you have been and puts three question marks over the ones you have not.',
       'Buried across the planet are nine ANCHORS, in halls of cut stone somebody built before you got here. You cannot mine one - you break into the hall, cross it, and drop into the niche. Lighting one calms its region, draws the whole region onto your map, and makes the Ballast stronger for the rest of the game.',
       'Three of the nine are behind a seal nothing cuts until you have found the Cutting Laser somewhere else entirely.',
@@ -64,7 +71,7 @@ export const CHANGELOG: Release[] = [
       'If it runs out, a region COMES DOWN. Every tunnel you cut there fills in and you cannot get back in until you have shored it up, which costs 45% of a full Ballast.',
       'UNREST. Everything you cut makes the ground angrier, and it is per region, so working one place out and going somewhere else is a real move. Restless ground shakes at depths that used to be quiet. Nothing tells you what the numbers mean.',
       'At the fifth Anchor the planet answers. Every region steps, permanently; tunnels in restless ground start closing while you are docked; and something new starts growing in the shallow rock you finished with hours ago.',
-      'The ninth Anchor opens the centre. That is the end of the game, and the game does not throw you out when you finish it.',
+      'The ninth Anchor opens the center. That is the end of the game, and the game does not throw you out when you finish it.',
       'The star chart, the jump drive and the Planet Core are gone with the old ending. There is one planet and one way to finish it.',
       'Rock got its own character: every block is turned a quarter-turn and scaled a little, the strata boundaries wander instead of ruling straight lines, and cut stone is the only smooth surface in the world.',
       'A new ship, designed at thirty pixels: a boiler, a raked stack, a spoked flywheel and an open under-frame. Brass where brass can cover a whole panel.'
@@ -106,7 +113,7 @@ export const CHANGELOG: Release[] = [
     version: '0.28.0', date: '2026-09-10', title: 'Dug up, not bought',
     notes: [
       'Seven upgrades are no longer for sale at any price. The Salvage Magnet, Deep Survey, Seismic Charge, Reactor Core, Repair Drone, Autopilot and Cutting Laser are sealed in crates buried in the rock, and the Outfitter can only improve one once you have found it.',
-      'The first world holds three of them, at 20, 35 and 40 metres. The rest arrive with new worlds.',
+      'The first world holds three of them, at 20, 35 and 40 meters. The rest arrive with new worlds.',
       'Breaking a crate fits the device on the spot and tells you in one line what it does. It does not pause the game - you keep drilling.',
       'Leave one in the ground and it turns up on the next world. A device is never lost, only delayed.',
       'The Outfitter is four departments now - RIG, LIFE, SURVEY and ORDNANCE - and you walk between them. Swipe, or tap the arrows either side.',
@@ -122,7 +129,7 @@ export const CHANGELOG: Release[] = [
     notes: [
       'The Outfitter is a shop counter now. The expensive upgrades sit on the glass in front of you; the ordinary ones are racked on the wall behind.',
       'Nothing has to be tapped to see what is for sale. Where a thing stands is what tells you which kind it is.',
-      'Every neon light is a real fitting - a tube in a metal housing with a lamp in it - so the colour lands on the counter and the floor instead of floating in front of the room.',
+      'Every neon light is a real fitting - a tube in a metal housing with a lamp in it - so the color lands on the counter and the floor instead of floating in front of the room.',
       'The four group plinths are gone. They named a filter that had been cut, so they did nothing.'
     ]
   },
@@ -142,7 +149,7 @@ export const CHANGELOG: Release[] = [
     notes: [
       'Each building on the surface now has a lit sign, a window showing what is inside it, and something that moves when it is working.',
       'The refinery lights up with the hold you are carrying, the derrick pumps while your tank is filling, and the shed sits dark when it is empty.',
-      'The Outfitter is sorted into four departments - rig, survival, instruments, ordnance - each under its own lit header and colour.',
+      'The Outfitter is sorted into four departments - rig, survival, instruments, ordnance - each under its own lit header and color.',
       'The ship carries real hardware now: a drill collar at the nose from drill 3, generator blocks at the stern from thrust 2 and 6.',
       'Loose soil and gravel are their own surfaces instead of sharing one stone for the whole world.',
       'The ship flies with its drill forward in the intro instead of pitched nose-up while the worlds stream past.',
@@ -204,7 +211,7 @@ export const CHANGELOG: Release[] = [
       'CONTINUE is greyed out until you have a game to continue.',
       'The Outfitter only stocks what you can buy plus the next thing you cannot, so it starts at six cases instead of fifteen.',
       'Nothing on a display plate is cut off any more, and the supply chips have room for their names.',
-      'Planets have real surface relief instead of being coloured spheres.'
+      'Planets have real surface relief instead of being colored spheres.'
     ]
   },
   {
@@ -251,8 +258,8 @@ export const CHANGELOG: Release[] = [
     version: '0.17.0', date: '2026-09-09', title: 'Twelve worlds, twelve palettes',
     notes: [
       'Every planet now has its own rock, fog, haze, dust and skyline instead of the same cave with the horizon repainted.',
-      'Rustmoor is rust, Cryon is blue ice, Ashvault is violet ash - you can tell where you are before you dig a metre.',
-      'Ore keeps its own colour everywhere, so what a vein is worth still reads at a glance.'
+      'Rustmoor is rust, Cryon is blue ice, Ashvault is violet ash - you can tell where you are before you dig a meter.',
+      'Ore keeps its own color everywhere, so what a vein is worth still reads at a glance.'
     ]
   },
   {
@@ -276,7 +283,7 @@ export const CHANGELOG: Release[] = [
     version: '0.15.6', date: '2026-09-08', title: 'The tunnels stop being cards',
     notes: [
       'The flat orange shapes that appeared as you came up on a side tunnel are gone.',
-      'A branch the beam has already passed is dim lit air again, not a panel of colour.',
+      'A branch the beam has already passed is dim lit air again, not a panel of color.',
       'The glow in the air now sits where the drill is pointing instead of filling every tunnel evenly.'
     ]
   },
@@ -486,7 +493,7 @@ export const CHANGELOG: Release[] = [
   {
     version: '0.6.0', date: '2026-09-07', title: 'Heat, read properly',
     notes: [
-      'Heat has its own colour, its own gauge and its own number.',
+      'Heat has its own color, its own gauge and its own number.',
       'The hull bar shows what is draining it and how fast.'
     ]
   },

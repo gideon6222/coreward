@@ -251,7 +251,7 @@ mustEl('btnPause').onclick = () => {
        planet does not have worlds broken or routes to plot. */
     '<div class="up"><div class="upinfo"><div class="upname">The Lattice</div>' +
     '<div class="upeff">' + (g.ground.lit.length >= ANCHOR_COUNT
-      ? (g.won ? 'All nine, and the centre is behind you' : 'All nine. The centre is open')
+      ? (g.won ? 'All nine, and the center is behind you' : 'All nine. The center is open')
       : 'Anchors lit, of nine') + '</div></div>' +
     '<div class="val">' + g.ground.lit.length + ' / ' + ANCHOR_COUNT + '</div></div>' +
     '<div class="up"><div class="upinfo"><div class="upname">Survey</div>' +

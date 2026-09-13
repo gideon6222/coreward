@@ -443,12 +443,12 @@
     ],
     "effects": [
       "Not installed",
-      "0.55 fuel per metre",
-      "0.48 fuel per metre",
-      "0.40 fuel per metre",
-      "0.33 fuel per metre",
-      "0.25 fuel per metre",
-      "0.18 fuel per metre"
+      "0.55 fuel per meter",
+      "0.48 fuel per meter",
+      "0.40 fuel per meter",
+      "0.33 fuel per meter",
+      "0.25 fuel per meter",
+      "0.18 fuel per meter"
     ],
     "mat": "ruby",
     "mats": [

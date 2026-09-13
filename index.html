@@ -94,7 +94,7 @@
        clean sci-fi overlay and the wrong one for this game. Everything below
        shares one plate: a rolled-steel gradient, a hard 3 px corner, a bright
        top edge and a dark bottom one, and the generated grain from grain.ts
-       over the top. The accent colours are untouched, because they carry
+       over the top. The accent colors are untouched, because they carry
        meaning - cyan is haul, amber is credits, green is fuel, red is hull -
        and re-teaching those to save a palette would be a bad trade. */
     --ink:#e6e3dc; --dim:#8d8880; --panel:#15161a; --line:#3a3d45;
@@ -438,7 +438,7 @@
   .sup.ord.cold{opacity:.34;}
   /* Worded, not pictured. The three glyphs that read best for these - a
      snowflake, a cross and a fuel pump - do not share a presentation: the pump
-     is emoji by default and rendered in colour next to two monochrome symbols,
+     is emoji by default and rendered in color next to two monochrome symbols,
      which looked like a bug. Four letters at 60 px are unambiguous, need no
      learning, and match the shop rows. */
   .sup{
@@ -596,7 +596,7 @@
   /* ---------- the aisle bar ----------
 
      The visible half of the aisle navigation. The diegetic half is the neon
-     sign over each bay, in the same colour; these dots mirror it so the two
+     sign over each bay, in the same color; these dots mirror it so the two
      are obviously the same control seen twice.
 
      A dot per station, lit for the one you are standing in, dimmed to almost
@@ -614,7 +614,7 @@
     width:7px; height:7px; border-radius:50%; background:var(--c,#7f8ea8);
     opacity:.34; transition:opacity .25s, transform .25s, box-shadow .25s;
   }
-  /* The lit dot gets a halo of its own colour, which is the flat-UI version of
+  /* The lit dot gets a halo of its own color, which is the flat-UI version of
      what the fitting in the room is doing. */
   #aisles .dot.on{opacity:1; transform:scale(1.5); box-shadow:0 0 9px 2px var(--c,#7f8ea8);}
   #aisles .dot.off{opacity:.1;}
@@ -689,7 +689,7 @@
   .tbtn.hidden{display:none;}
   /* Greyed, not gone. A CONTINUE that vanishes on a first run tells a new
      player nothing; one that is visibly inert says "this is where your game
-     will be". Note that .off has to beat .primary, which sets its own colours,
+     will be". Note that .off has to beat .primary, which sets its own colors,
      so it comes after it in the sheet. */
   .tbtn.off, .tbtn:disabled{
     color:#4a5261; border-color:#232a35; background:rgba(10,13,19,.6);
@@ -776,7 +776,7 @@
   /* ---------- the map ----------
 
      A .sheet and not a screen was the wrong shape for this: a sheet is
-     max-width 460 and centred, and the thing being drawn is 61 wide by 452
+     max-width 460 and centered, and the thing being drawn is 61 wide by 452
      deep on a phone that is twice as tall as it is wide. The map takes the
      height, because the world's interesting axis is the one a sheet wastes. */
   .mapsheet{
@@ -830,7 +830,7 @@
   .mapkey{display:flex; flex-wrap:wrap; align-items:center; gap:6px 11px; font-size:10px; color:var(--dim); letter-spacing:.07em;}
   .mapkey span{display:flex; align-items:center; gap:5px;}
   .mapkey i{width:9px; height:9px; border-radius:2px; display:block;}
-  /* The legend has to carry the SHAPE as well as the colour, because that is
+  /* The legend has to carry the SHAPE as well as the color, because that is
      what the map does: at five pixels on a phone a hue is a guess. */
   .mapkey i.sq{border-radius:1px;}
   .mapkey i.dia{border-radius:1px; transform:rotate(45deg); width:8px; height:8px;}
@@ -1154,7 +1154,7 @@
       <span class="maphint" id="mapPct">SURVEYED 0%</span>
     </div>
     <div class="maprow">
-      <button id="mapHere">CENTRE ON SHIP</button>
+      <button id="mapHere">CENTER ON SHIP</button>
       <button id="mapClose">CLOSE</button>
     </div>
   </div>
@@ -1205,7 +1205,7 @@
   <div class="tspacer"></div>
   <div class="tmark">
     <h1>COREWARD</h1>
-    <div class="ttag">Dig down. Light the Anchors. Open the centre.</div>
+    <div class="ttag">Dig down. Light the Anchors. Open the center.</div>
   </div>
   <div class="tmenu">
     <button id="btnContinue" class="tbtn primary">CONTINUE</button>

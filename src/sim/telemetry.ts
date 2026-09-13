@@ -10,7 +10,7 @@
    **Very little impact.** Everything recorded here is a `+=` on a number in a
    flat object. No arrays, no strings, no objects allocated per frame, nothing
    that can grow without bound, and no work at all until a panel is opened -
-   `summarise()` runs on the click, never in the loop. The measured cost is in
+   `summarize()` runs on the click, never in the loop. The measured cost is in
    NOTES.md.
 
    **Actually helpful.** A pile of raw counters is not; the question is never
@@ -39,7 +39,7 @@ export interface Log {
   /* hull lost, by what took it */
   hullHeat: number; hullGas: number;
   /* credits banked at the pad, and what was dug to earn them */
-  /* `metres` is distance travelled, not depth: summed over many runs a depth
+  /* `meters` is distance travelled, not depth: summed over many runs a depth
      would mean nothing, and effort is the thing earnings should be divided by */
   earned: number; blocks: number; oreBlocks: number; metres: number;
   /* ordnance: fired, what it cleared, what it cost */
@@ -129,7 +129,7 @@ export function summarise(log: Log, fuelCap: number, hullMax: number): Row[] {
     label: 'Earnings',
     value: '◈ ' + one(per(log.earned, log.sec / 60)) + '/min',
     note: log.metres > 0
-      ? '◈ ' + one(per(log.earned, log.metres)) + ' per metre flown · '
+      ? '◈ ' + one(per(log.earned, log.metres)) + ' per meter flown · '
         + one(per(log.oreBlocks, log.blocks) * 100) + '% of blocks worth keeping'
       : 'nothing sold yet'
   });

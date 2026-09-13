@@ -355,7 +355,7 @@ export function tick(raw: number, draw = true) {
       R.digging.spark -= dt;
       if (R.digging.spark <= 0) {
         R.digging.spark = 0.1;
-        /* The drill's colour, not the rock's - break sprays keep the block
+        /* The drill's color, not the rock's - break sprays keep the block
            colour because that is ore identity, but the continuous spark
            belongs to the tool.
 
@@ -912,7 +912,7 @@ export function tick(raw: number, draw = true) {
      the beam trailing the ship round every corner.
 
      Given the ship's exact position rather than its cell: the flood is on the
-     grid, but the pool's centre and the shadow fan's origin are continuous,
+     grid, but the pool's center and the shadow fan's origin are continuous,
      and that split is what keeps the light gliding rather than stepping a
      metre at a time. See lightmap.ts.
 

@@ -162,7 +162,7 @@ function prop(name: PropName, mat: THREE.Material, scale = 1): THREE.Object3D | 
    no other saturated hue allowed in the same read. It is not one neon among
    several. Put it next to the magenta and the cyan on equal terms and both
    identities cancel: the green stops reading as "a screen from that film" and
-   becomes "a third coloured light", and the cyberpunk pair stops reading as a
+   becomes "a third colored light", and the cyberpunk pair stops reading as a
    pair. So it gets a terminal, the terminal is green and black and nothing
    else, and no fitting in this room is ever that colour.
 

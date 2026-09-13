@@ -102,7 +102,7 @@ export interface Caption {
 export const CAPTIONS: Caption[] = [
   { at: 3.6, secs: 3.2, text: 'Whoever cut these halls is gone.' },
   { at: 16.0, secs: 4.4, text: 'Nine Anchors, buried across one world.' },
-  { at: 22.6, secs: 4.8, text: 'Light all nine, and the centre opens.' }
+  { at: 22.6, secs: 4.8, text: 'Light all nine, and the center opens.' }
 ];
 
 /* The one sound, and when. sfx.rumble has a 1.6 s attack - "you hear it

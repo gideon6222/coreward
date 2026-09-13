@@ -383,7 +383,7 @@ const DECL = `
 
      Brightness comes from the R channel and the shape from the hard mask in G.
      The smoothstep is doing something specific: bilinear filtering leaves 0.5
-     at a cell boundary and 1.0 at a cell centre, so re-normalising that range
+     at a cell boundary and 1.0 at a cell center, so re-normalizing that range
      lands the glow exactly inside the open cell. Without it a one-cell tunnel
      paints a three-cell blob - see LM_AIR_EDGE0 in feel.ts. */
   float coreReachAir(vec2 p) {
@@ -424,7 +424,7 @@ const DECL = `
   }
 
   /* Daylight, read from the CELL's own depth rather than the ship's, so the
-     top of a shaft still glows when you are ninety metres under it. */
+     top of a shaft still glows when you are ninety meters under it. */
   float coreFloor(vec2 p) {
     return mix(1.0, uLmDark.x, clamp((-p.y - uLmDark.y) * uLmDark.z, 0.0, 1.0));
   }
@@ -556,13 +556,13 @@ export const haze = new THREE.Mesh(
         float dep = clamp((-vLmPos.y - uLmDark.y) * uLmDark.z, 0.0, 1.0);
 
         /* Grain, drifting UP through the beam. Two octaves at different speeds
-           so it churns instead of sliding as one sheet, and centred on 1.0 so
+           so it churns instead of sliding as one sheet, and centered on 1.0 so
            it only ever redistributes the light rather than adding any: the
            beam's brightness is still decided entirely by the light model.
 
            This is what stops the shaft being a smooth cone. A cone with no
            grain in it does not read as light through dusty air at any
-           brightness - it reads as a coloured shape. */
+           brightness - it reads as a colored shape. */
         vec2 q = vLmPos * ${(1 / LM_DUST_SCALE).toFixed(3)};
         float drift = uDustT * ${LM_DUST_DRIFT.toFixed(3)};
         float n = vnoise(q + vec2(0.0, drift)) * 0.65

@@ -856,7 +856,7 @@ export const UPGRADES: Upgrade[] = [
   { key: 'scrub',  name: 'Scrubber',      base: 1500, mul: 1.5, max: 8, mat: 'iron', group: 'survival', unlock: 25,
     effect: (l: number) => Math.round(scrubSave(l) * 100) + '% less fuel per cell cut' },
   { key: 'auto',   name: 'Autopilot',     base: 4900, mul: 1.55, max: 6, mat: 'ruby', group: 'instruments', unlock: 190,
-    effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per metre') },
+    effect: (l: number) => (l === 0 ? 'Not installed' : (0.55 - (l - 1) * 0.075).toFixed(2) + ' fuel per meter') },
 
   /* ---------- ordnance ----------
 

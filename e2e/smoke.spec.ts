@@ -3374,7 +3374,7 @@ test('the Vault at the centre opens on the ninth Anchor', async ({ page }) => {
   });
   await expect(page.locator('#evTitle')).toHaveText(/ANCHOR/i);
   await page.locator('#evBtn').dispatchEvent('click');
-  await expect(page.locator('#evTitle')).toHaveText(/CENTRE IS OPEN/i);
+  await expect(page.locator('#evTitle')).toHaveText(/CENTER IS OPEN/i);
   await page.locator('#evBtn').dispatchEvent('click');
 
   const open = await page.evaluate((seal: string) => {
