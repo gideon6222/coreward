@@ -483,6 +483,12 @@ export function paintAisleBar() {
     const b = document.getElementById(id);
     if (b) b.classList.toggle('gone', !canStepAisle(dir));
   }
+  /* And the two that walk the cases. Same greying, so all four arrows say the
+     same thing about whether there is anything that way. */
+  for (const [id, dir] of [['bayU', -1], ['bayD', 1]] as [string, number][]) {
+    const b = document.getElementById(id);
+    if (b) b.classList.toggle('gone', !canStepBay(dir));
+  }
 }
 
 /* ---------- framing, measured ----------
@@ -923,6 +929,61 @@ export function undockShip() {
 let selected: string | null = null;
 export function selectedBay() { return selected; }
 export function selectBay(k: string | null) { selected = k; }
+
+/* ---------- choosing a case without a thumb ----------
+
+   Playtest, three times in two days and in two other games: *"since the text
+   is small I want arrow keys and confirm button to navigate the menues"*,
+   *"make it so clicking the up or down arrow changes what is selected,
+   highlights it, and provides a description"*, *"I want to have up down and
+   left right control buttons while looking at menus like it. up down selects
+   the different equipment and left right changes the version of equipment if
+   we have it."*
+
+   So: left and right walk the departments (`stepAisle`, which the arrows and
+   the swipe already share), and up and down walk the cases standing in the
+   one you are in. Both ways of choosing read the SAME list, in the order the
+   cases actually stand in the room, so the arrows and the taps can never
+   disagree about what is selectable or about what "next" means. */
+export function selectableKeys(): string[] {
+  const out: { key: string; x: number }[] = [];
+  /* The drawer, when it is open, IS the selection: its crates are in front of
+     the counter and a tap resolves to them first (see pickBay). */
+  if (room && room.drawer.group.visible && room.drawer.isOpen()) {
+    for (const c of kitCases) if (c.group.visible) out.push({ key: c.key, x: c.group.position.x });
+  } else {
+    for (const b of bays) if (b.group.visible) out.push({ key: b.key, x: b.group.position.x });
+  }
+  /* Left to right as the player sees them, so "down" is always the same
+     direction along the shelf however the stock was sorted by price. */
+  out.sort((a, b) => a.x - b.x);
+  return out.map((o) => o.key);
+}
+
+/* Move the selection one case along. Returns false when there is nothing that
+   way, which is what greys the arrow - the same contract `stepAisle` has, so
+   the bar can grey all four the same way. */
+export function stepBay(dir: number): boolean {
+  const keys = selectableKeys();
+  if (!keys.length) return false;
+  const at = selected === null ? -1 : keys.indexOf(selected);
+  /* Nothing picked yet: the first press picks an end rather than doing
+     nothing, because a control whose first press is a no-op reads as broken. */
+  if (at < 0) { selected = dir > 0 ? keys[0] : keys[keys.length - 1]; return true; }
+  const next = at + dir;
+  if (next < 0 || next >= keys.length) return false;
+  selected = keys[next];
+  return true;
+}
+
+export function canStepBay(dir: number): boolean {
+  const keys = selectableKeys();
+  if (!keys.length) return false;
+  if (selected === null) return true;
+  const at = keys.indexOf(selected);
+  if (at < 0) return true;
+  return at + dir >= 0 && at + dir < keys.length;
+}
 
 /* Slow turntable on the ship, a turn on each part, and the picked case lit.
    Driven from the frame loop so it runs on the same delta as everything else -

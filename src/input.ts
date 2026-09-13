@@ -18,12 +18,12 @@ import { MAP_TILE, WORLD_DEPTH, regionName, regionAt } from './sim/region';
 import { W } from './sim/config';
 import { feed } from './sim/unrest';
 import { shoreUp } from './collapse';
-import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, retireHint, buildBallast, updateHUD } from './ui';
+import { mustEl, ui, atSurface, buildShop, buildCard, buildManifest, audioLabels, buildNotes, buildRunLog, buildCredits, retireHint, buildBallast, updateHUD } from './ui';
 import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation,
-         stepAisle, paintAisleBar, markSeen } from './station';
+         stepAisle, stepBay, paintAisleBar, markSeen } from './station';
 import type { Dir } from './types';
 import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
-import { sfx, audioInit, setAudio, audioState } from './audio';
+import { sfx, audioInit, setAudio, setVolume, audioFocus, audioState } from './audio';
 
 function firstTouch() { audioInit(); }
 window.addEventListener('pointerdown', firstTouch, { once: true });
@@ -39,7 +39,12 @@ document.querySelectorAll<HTMLElement>('#dpad .k').forEach((b) => {
 });
 
 const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
-window.addEventListener('keydown', (e) => { if (KEYS[e.key]) { R.held = KEYS[e.key]; e.preventDefault(); } });
+/* Only while the ship is the thing the arrows move. The shop binds the same
+   four keys to walking the room, and without this gate a player who steered
+   with the keyboard into the Outfitter left `R.held` set behind them and the
+   ship flew off the moment they undocked. */
+const flying = () => g.mode === 'play' || g.mode === 'fly';
+window.addEventListener('keydown', (e) => { if (KEYS[e.key] && flying()) { R.held = KEYS[e.key]; e.preventDefault(); } });
 window.addEventListener('keyup', (e) => { if (KEYS[e.key] && R.held === KEYS[e.key]) R.held = null; });
 
 /* Supplies. pointerdown rather than click so a spend feels as immediate as a
@@ -115,6 +120,56 @@ let swipeX = 0, swipeY = 0, swiping = false;
 
 mustEl('aisleL').onclick = () => { if (stepAisle(-1)) { sfx.ui(); retireHint(); } };
 mustEl('aisleR').onclick = () => { if (stepAisle(1)) { sfx.ui(); retireHint(); } };
+
+/* Up and down walk the cases in this aisle. The card follows the selection,
+   so the description he asked for comes for free - it is the same card a tap
+   builds. */
+function walkBay(dir: number) {
+  if (!stepBay(dir)) return;
+  sfx.ui();
+  retireHint();
+  buildCard();
+  paintAisleBar();
+}
+mustEl('bayU').onclick = () => walkBay(-1);
+mustEl('bayD').onclick = () => walkBay(1);
+
+/* The confirm. The card's own primary button IS the confirm - it carries the
+   price and greys itself when the thing cannot be bought - so this presses
+   that rather than adding a second control that does the same job, which is
+   the "two ways to do one thing" fault the plinths already taught this room.
+   Returns whether anything happened, so a key press that confirms nothing
+   does not make a sound. */
+function confirmSelected(): boolean {
+  /* Two classes, because an upgrade row and a supply row build different
+     buttons - and a confirm that knew only one of them silently did nothing
+     on every upgrade in the game, which is what the verification pass found. */
+  const btn = ui.shopCard.querySelector('button.buy, button.cbuy') as HTMLButtonElement | null;
+  if (!btn || btn.disabled) return false;
+  btn.click();
+  return true;
+}
+
+/* ---------- the room, from the keyboard ----------
+
+   The same four directions and the same confirm, for a desk session and for
+   anybody who cannot hit a 40 px arrow. Gated on the mode so the arrows that
+   fly the ship and the arrows that walk the shop are never both live. */
+const SHOP_KEYS: Record<string, () => void> = {
+  ArrowLeft: () => { if (stepAisle(-1)) { sfx.ui(); retireHint(); } },
+  ArrowRight: () => { if (stepAisle(1)) { sfx.ui(); retireHint(); } },
+  ArrowUp: () => walkBay(-1),
+  ArrowDown: () => walkBay(1),
+  Enter: () => { if (confirmSelected()) sfx.ui(); },
+  ' ': () => { if (confirmSelected()) sfx.ui(); }
+};
+window.addEventListener('keydown', (e) => {
+  if (g.mode !== 'shop') return;
+  const fn = SHOP_KEYS[e.key];
+  if (!fn) return;
+  e.preventDefault();
+  fn();
+});
 
 document.addEventListener('pointerdown', (e) => {
   if (g.mode !== 'shop') return;
@@ -260,27 +315,51 @@ mustEl('btnPause').onclick = () => {
       (Math.ceil(W / MAP_TILE) * Math.ceil(WORLD_DEPTH / MAP_TILE))) * 100) + '%</div></div>';
   ui.pause.classList.remove('hidden');
 };
-ui.btnNotes.onclick = () => {
-  sfx.ui();
-  ui.runlog.classList.add('hidden');
-  ui.btnLog.textContent = 'RUN LOG';
-  const open = ui.notes.classList.toggle('hidden');
-  ui.btnNotes.textContent = open ? "WHAT'S NEW" : 'HIDE';
-};
+/* Built on the click, never while the game is running. ONE panel open at a
+   time: the pause sheet is already the tallest thing in the game, and two open
+   lists inside one scroll region is how the shop's shelves got clipped at the
+   fold. Written as a table rather than as three buttons closing each other by
+   hand, because that was two pairwise closes at two panels and would have been
+   six at four. */
+const PANELS: { btn: HTMLElement; panel: HTMLElement; label: string; build: () => void }[] = [
+  { btn: ui.btnNotes, panel: ui.notes, label: "WHAT'S NEW", build: buildNotes },
+  { btn: ui.btnLog, panel: ui.runlog, label: 'RUN LOG', build: buildRunLog },
+  { btn: ui.btnCredits, panel: ui.creditsPanel, label: 'CREDITS', build: buildCredits }
+];
+for (const p of PANELS) {
+  p.btn.onclick = () => {
+    sfx.ui();
+    const opening = p.panel.classList.contains('hidden');
+    for (const q of PANELS) {
+      q.panel.classList.add('hidden');
+      q.btn.textContent = q.label;
+    }
+    if (opening) {
+      p.build();
+      p.panel.classList.remove('hidden');
+      p.btn.textContent = 'HIDE';
+    }
+  };
+}
 
-/* Built on the click, never while the game is running. The two panels close
-   each other because the pause sheet is already the tallest thing in the game
-   and two open lists inside one scroll region is how the shop's shelves got
-   clipped at the fold. */
-ui.btnLog.onclick = () => {
-  sfx.ui();
-  ui.notes.classList.add('hidden');
-  ui.btnNotes.textContent = "WHAT'S NEW";
-  const closed = ui.runlog.classList.contains('hidden');
-  if (closed) buildRunLog();
-  ui.runlog.classList.toggle('hidden', !closed);
-  ui.btnLog.textContent = closed ? 'HIDE' : 'RUN LOG';
-};
+/* The volume sliders. `input`, not `change`: on a phone `change` does not fire
+   until the thumb is released, so the whole point of a volume control - hear
+   it move - would be missing. */
+for (const [el, kind] of [[ui.volMusic, 'music'], [ui.volSfx, 'sfx']] as const) {
+  el.addEventListener('input', () => {
+    audioInit();
+    setVolume(kind, Number(el.value) / 100);
+  });
+}
+
+/* Focus. `POLISH.md`: audio ducks and pauses on focus loss and resumes on
+   return. `visibilitychange` covers the phone (home, app switcher, screen
+   off); `blur`/`focus` covers a desktop tab that is visible but not in front,
+   where a game left running under something else is still making noise. */
+const focusChanged = () => audioFocus(!document.hidden && document.hasFocus());
+document.addEventListener('visibilitychange', focusChanged);
+window.addEventListener('blur', focusChanged);
+window.addEventListener('focus', focusChanged);
 
 mustEl('btnResume').onclick = () => {
   sfx.ui();

@@ -872,6 +872,29 @@
   }
   .buy:disabled{border-color:var(--line); background:transparent; color:#4a5570;}
   .toggles{display:flex; gap:8px; margin-top:14px;}
+  .sliders{display:flex; flex-direction:column; gap:10px; margin-top:12px;}
+  .slider{display:flex; align-items:center; gap:12px; font-size:11px; font-weight:700;
+          letter-spacing:.10em; color:var(--dim);}
+  .slider span{flex:0 0 58px;}
+  /* Tall enough to be a thumb target on a phone: the track is thin, the hit
+     area is not. */
+  .slider input{
+    flex:1; -webkit-appearance:none; appearance:none; height:26px; background:transparent;
+  }
+  .slider input::-webkit-slider-runnable-track{
+    height:4px; border-radius:2px; background:var(--line);
+  }
+  .slider input::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:22px; height:22px; margin-top:-9px;
+    border-radius:50%; background:var(--cyan); border:1px solid #2a5570;
+  }
+  .slider input::-moz-range-track{height:4px; border-radius:2px; background:var(--line);}
+  .slider input::-moz-range-thumb{
+    width:22px; height:22px; border-radius:50%; background:var(--cyan); border:1px solid #2a5570;
+  }
+  .slider.off{opacity:.4;}
+  .slider.off input::-webkit-slider-thumb{background:#4a5570;}
+  .slider.off input::-moz-range-thumb{background:#4a5570;}
   .tog{
     flex:1; border:1px solid #2a5570; background:rgba(63,224,255,.1); color:var(--cyan);
     border-radius:11px; padding:13px; font-size:11.5px; font-weight:700; letter-spacing:.08em;
@@ -1097,6 +1120,11 @@
       <div id="aisles"></div>
     </div>
     <button id="aisleR" class="arw" aria-label="next aisle">&#8250;</button>
+    <!-- Up and down walk the cases in the aisle you are standing in, which is
+         the half of his ask the left/right arrows never answered. Greyed the
+         same way they are: a control that can do nothing has to look like it. -->
+    <button id="bayU" class="arw" aria-label="previous case">&#9650;</button>
+    <button id="bayD" class="arw" aria-label="next case">&#9660;</button>
   </div>
 
   <!-- pointer-events:none, so a tap lands on the bay behind it -->
@@ -1182,6 +1210,19 @@
       <button id="btnHaptics" class="tog">HAPTICS ON</button>
       <button id="btnSfx" class="tog">SOUND ON</button>
     </div>
+    <!-- The two sliders the toggles are not. A mute is a promise that the
+         sound stops; a volume is a promise that it can sit under something
+         else, and one control cannot make both. Greyed out while its own
+         channel is off, because a slider that does nothing is exactly the
+         control POLISH.md refuses. -->
+    <div class="sliders">
+      <label class="slider" for="volMusic"><span>MUSIC</span>
+        <input id="volMusic" type="range" min="0" max="100" step="5" value="100"
+               aria-label="Music volume"></label>
+      <label class="slider" for="volSfx"><span>SOUND</span>
+        <input id="volSfx" type="range" min="0" max="100" step="5" value="100"
+               aria-label="Sound volume"></label>
+    </div>
     <button id="btnResume" class="wide">RESUME</button>
     <button id="btnReset" class="danger">RESTART PROGRESS</button>
     <div class="fine">Restarting wipes credits, upgrades, every Anchor you have lit and every tunnel you have dug. It cannot be undone.</div>
@@ -1189,9 +1230,15 @@
       <span id="verNum">v0.0.0</span>
       <button id="btnLog" class="notesbtn">RUN LOG</button>
       <button id="btnNotes" class="notesbtn">WHAT&apos;S NEW</button>
+      <button id="btnCredits" class="notesbtn">CREDITS</button>
     </div>
     <div id="runlog" class="notes hidden"></div>
     <div id="notes" class="notes hidden"></div>
+    <!-- `creditsPanel`, not `credits`: the HUD's credit counter already owns
+         that id, and two elements sharing one id is a getElementById that
+         silently returns the wrong element - the panel looked like it never
+         opened while it was the HUD chip being read. -->
+    <div id="creditsPanel" class="notes hidden"></div>
     <div class="fine build" id="build"></div>
   </div>
 </div>

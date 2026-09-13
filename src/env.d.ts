@@ -19,3 +19,11 @@ declare module '*.webp' {
   const src: string;
   export default src;
 }
+
+/* `?raw` inlines the file's text. The credits screen reads assets/CREDITS.md
+   this way so the file `POLISH.md` requires is the same one the game shows,
+   rather than a copy of it that goes stale the first time a texture lands. */
+declare module '*.md?raw' {
+  const text: string;
+  export default text;
+}

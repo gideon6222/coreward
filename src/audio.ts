@@ -37,6 +37,10 @@ type Drill = { src: AudioBufferSourceNode; osc: OscillatorNode; gain: GainNode }
 
 let graph: Graph | null = null;
 
+/* Declared up here rather than beside `semi` below, because the volume and
+   duck setters use it and a `const` cannot be used above its own line. */
+const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
+
 /* Genuinely mutable state, separate from the graph because it changes while
    the game runs rather than being built once. */
 const A = {
@@ -48,10 +52,44 @@ const A = {
   /* The way in holds the score down and lets it up. 1 in play. Limbo's rule:
      silence is the tension device, and the first sound has to be alone. */
   duck: 1,
-  on: { music: true, sfx: true }
+  on: { music: true, sfx: true },
+  /* What the sliders set, 0..1 of each bus's tuned level. Separate from `on`
+     because a mute and a volume are different promises: turning the music off
+     and back on must not lose where the slider was. */
+  vol: { music: 1, sfx: 1 }
 };
 
-export function setDuck(v: number) { A.duck = clamp(v, 0, 1); }
+/* The tuned level of each bus at full volume. Named, because three places
+   used to write 0.24 and 0.5 by hand and a fourth would have made it four. */
+export const MUSIC_LEVEL = 0.24;
+export const SFX_LEVEL = 0.5;
+
+export function setDuck(v: number) { A.duck = clamp(v, 0, 1); applyBuses(0.3); }
+
+/* What a bus should be right now, given the toggle, the slider and the duck.
+   ONE function, so those three can never disagree about a bus - which is how
+   the way-in duck and the mute came to fight over musicBus in the first
+   place. */
+export function busGain(kind: 'music' | 'sfx'): number {
+  if (!A.on[kind]) return 0;
+  return kind === 'music'
+    ? MUSIC_LEVEL * A.vol.music * A.duck
+    : SFX_LEVEL * A.vol.sfx;
+}
+
+function applyBuses(secs = 0.15) {
+  const G = graph;
+  if (!G) return;
+  const t = G.ctx.currentTime;
+  G.musicBus.gain.setTargetAtTime(busGain('music'), t, secs);
+  G.sfxBus.gain.setTargetAtTime(busGain('sfx'), t, secs);
+}
+
+export function setVolume(kind: 'music' | 'sfx', v: number) {
+  A.vol[kind] = clamp(v, 0, 1);
+  save();
+  applyBuses();
+}
 
 /* The graph, but only when sound is actually wanted. Returning it rather than a
    boolean is what lets every caller below narrow. */
@@ -59,12 +97,21 @@ const live = (): Graph | null => (graph && A.on.sfx ? graph : null);
 
 const AUD_KEY = 'coreward.audio';
 try {
-  const saved: { music?: boolean; sfx?: boolean } | null =
+  const saved: { music?: boolean; sfx?: boolean; vol?: { music?: number; sfx?: number } } | null =
     JSON.parse(localStorage.getItem(AUD_KEY) || 'null');
-  if (saved) { A.on.music = saved.music !== false; A.on.sfx = saved.sfx !== false; }
+  if (saved) {
+    A.on.music = saved.music !== false; A.on.sfx = saved.sfx !== false;
+    /* A save from before the sliders existed has no `vol`, and full is the
+       level it was actually playing at. */
+    if (saved.vol) {
+      if (typeof saved.vol.music === 'number') A.vol.music = clamp(saved.vol.music, 0, 1);
+      if (typeof saved.vol.sfx === 'number') A.vol.sfx = clamp(saved.vol.sfx, 0, 1);
+    }
+  }
 } catch (e) { /* defaults */ }
 
 export const audioState = A.on;
+export const audioVolume = A.vol;
 export function setDepth(d: number) { A.depth = d; }
 
 /* Called once a frame. Assignments only - the actual ramps happen in tick(),
@@ -76,11 +123,12 @@ export function setMood(heat: number, unstable: number, danger: number) {
   A.danger = danger;
 }
 
-const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 const semi = (base: number, s: number) => base * Math.pow(2, s / 12);
 
 function save() {
-  try { localStorage.setItem(AUD_KEY, JSON.stringify(A.on)); } catch (e) { /* ignore */ }
+  try {
+    localStorage.setItem(AUD_KEY, JSON.stringify({ music: A.on.music, sfx: A.on.sfx, vol: A.vol }));
+  } catch (e) { /* ignore */ }
 }
 
 function env(node: GainNode, t: number, peak: number, attack: number, decay: number) {
@@ -105,11 +153,11 @@ export function audioInit() {
   master.connect(comp);
 
   const sfxBus = ctx.createGain();
-  sfxBus.gain.value = A.on.sfx ? 0.5 : 0;
+  sfxBus.gain.value = busGain('sfx');
   sfxBus.connect(master);
 
   const musicBus = ctx.createGain();
-  musicBus.gain.value = A.on.music ? 0.24 : 0;
+  musicBus.gain.value = busGain('music');
   musicBus.connect(master);
 
   /* one lowpass over the whole score, opened and closed by depth */
@@ -364,7 +412,7 @@ function tick() {
   G.windGain.gain.setTargetAtTime(0.02 + deep * 0.1, now, 0.8);
   G.droneGain.gain.setTargetAtTime(0.05 + deep * 0.14, now, 0.8);
   G.leadGain.gain.setTargetAtTime(0.95 - deep * 0.45, now, 0.8);
-  G.musicBus.gain.setTargetAtTime((A.on.music ? 0.24 : 0) * A.duck, now, 0.6);
+  G.musicBus.gain.setTargetAtTime(busGain('music'), now, 0.6);
 
   /* ---------- the layers ----------
      Time constants are deliberately uneven. Heat and the unstable band fade in
@@ -400,11 +448,24 @@ function tick() {
 export function setAudio(kind: 'music' | 'sfx', on: boolean) {
   A.on[kind] = on;
   save();
+  applyBuses(kind === 'music' ? 0.3 : 0.1);
+}
+
+/* ---------- focus ----------
+
+   `POLISH.md`: audio ducks and pauses on focus loss and resumes on return.
+   Suspending the context rather than winding the buses down is what makes it
+   a PAUSE: an oscillator that is still running is still costing a phone
+   battery in a backgrounded tab, and `ctx.currentTime` stops with it, so the
+   scheduler does not wake up owing thirty seconds of notes it has to play at
+   once. The drill loop is stopped separately because it is a held sound and
+   would otherwise resume mid-cut with no drill. */
+export function audioFocus(active: boolean) {
   const G = graph;
   if (!G) return;
-  const t = G.ctx.currentTime;
-  if (kind === 'music') G.musicBus.gain.linearRampToValueAtTime((on ? 0.24 : 0) * A.duck, t + 0.5);
-  else G.sfxBus.gain.linearRampToValueAtTime(on ? 0.5 : 0, t + 0.15);
+  if (active) { if (G.ctx.state === 'suspended') G.ctx.resume(); return; }
+  sfx.digStop();
+  if (G.ctx.state === 'running') G.ctx.suspend();
 }
 
 /* ============ effects ============ */
@@ -732,3 +793,8 @@ export const sfx = {
     try { d.src.stop(t + 0.12); d.osc.stop(t + 0.12); } catch (e) { /* already stopped */ }
   }
 };
+
+/* What the audio context is doing, for a spec that has to tell a PAUSE from a
+   duck. 'closed' when there is no graph at all, which is what a headless run
+   with no gesture looks like. */
+export function audioCtxState(): string { return graph ? graph.ctx.state : 'closed'; }

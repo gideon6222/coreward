@@ -8,7 +8,8 @@ import { VERSION, CHANGELOG } from './changelog';
 import { haulValue } from './sim/world';
 import { lamp } from './scene';
 import { setDrillTier, setUpgradeHardware } from './ship';
-import { sfx, audioState } from './audio';
+import { sfx, audioState, audioVolume } from './audio';
+import CREDITS_MD from '../assets/CREDITS.md?raw';
 import { summarise, mergeLog, loadLog, type Row } from './sim/telemetry';
 import { R } from './sim/runtime';
 import { feedValue, ballastDrain, unrestBand, UNREST_BANDS,
@@ -49,6 +50,8 @@ export const ui = {
   shopPlanet: mustEl('shopPlanet'),
   verNum: mustEl('verNum'), notes: mustEl('notes'), btnNotes: mustEl('btnNotes'),
   runlog: mustEl('runlog'), btnLog: mustEl('btnLog'),
+  creditsPanel: mustEl('creditsPanel'), btnCredits: mustEl('btnCredits'),
+  volMusic: mustEl('volMusic') as HTMLInputElement, volSfx: mustEl('volSfx') as HTMLInputElement,
   /* el(), not mustEl(): the banner is new, and a save loaded into an older
      cached shell must not take the whole HUD down with it - the same clause
      the haptics toggle needed and for the same reason. */
@@ -534,6 +537,36 @@ export function audioLabels() {
   ui.btnSfx.textContent = 'SOUND  ' + (audioState.sfx ? 'ON' : 'OFF');
   ui.btnMusic.classList.toggle('off', !audioState.music);
   ui.btnSfx.classList.toggle('off', !audioState.sfx);
+  /* The sliders follow the saved level, and go visibly dead when their own
+     channel is muted - a control that can do nothing has to look like it
+     (`POLISH.md`, and he has asked for it by name in two other games). */
+  ui.volMusic.value = String(Math.round(audioVolume.music * 100));
+  ui.volSfx.value = String(Math.round(audioVolume.sfx * 100));
+  ui.volMusic.disabled = !audioState.music;
+  ui.volSfx.disabled = !audioState.sfx;
+  ui.volMusic.parentElement?.classList.toggle('off', !audioState.music);
+  ui.volSfx.parentElement?.classList.toggle('off', !audioState.sfx);
+}
+
+/* The credits, from the file `POLISH.md` requires and `scripts/assets.py`
+   appends to - imported raw so the one source of truth is the markdown rather
+   than a copy of it in here. Rendered as its own rows, not as HTML: it is a
+   table in a file nobody proofreads for markup. */
+let creditsBuilt = false;
+export function buildCredits() {
+  if (creditsBuilt) return;
+  creditsBuilt = true;
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const rows = CREDITS_MD.split('\n')
+    .filter((l) => l.trim().startsWith('|') && !/^\s*\|[\s|:-]*\|\s*$/.test(l))
+    .map((l) => l.split('|').slice(1, -1).map((c) => c.trim()));
+  if (rows.length < 2) { ui.creditsPanel.innerHTML = '<div class="upeff">No credits recorded.</div>'; return; }
+  ui.creditsPanel.innerHTML = rows.slice(1).map((c) =>
+    '<div class="rel"><div class="relhead">' + esc(c[2] || '') +
+    '  <span class="d">' + esc(c[3] || '') + '</span></div>' +
+    '<div class="upeff">' + esc(c[1] || '') + (c[0] ? '  ·  ' + esc(c[0]) : '') + '</div></div>'
+  ).join('') +
+    '<div class="upeff" style="margin-top:10px">Audio is synthesized at runtime; no sound files are used.</div>';
 }
 
 

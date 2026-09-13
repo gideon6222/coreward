@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.35.1';
+export const VERSION = '0.36.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.36.0', date: '2026-09-13', title: 'Options that do what they say',
+    notes: [
+      'Music and sound have volume sliders now, not just on and off. Where you set them is remembered, and a slider greys out when its own channel is muted.',
+      'The Outfitter can be driven without a thumb: up and down walk the cases in the aisle you are standing in, left and right change department, and the card you are looking at is the confirm. Arrow keys and Enter do the same thing.',
+      'CREDITS in the pause menu, listing every texture and font in the game and who made them.',
+      'Put the game in the background and the sound stops, instead of playing on to nobody. It comes back when you do.'
+    ]
+  },
   {
     version: '0.35.1', date: '2026-09-13', title: 'US English',
     notes: [

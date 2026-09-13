@@ -14,6 +14,7 @@ import { syncDrops } from './drops';
 import { setDrillTier, setUpgradeHardware, rig, bit, player } from './ship';
 import { GROUP_ORDER } from './stationsigns';
 import { stationX } from './stationroom';
+import { selectableKeys } from './station';
 import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen, roomDrawer,
          stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
@@ -22,7 +23,7 @@ import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { buildGauges } from './gauges';
 import { lmDebug, LM_COLS } from './lightmap';
-import { sfx } from './audio';
+import { sfx, busGain, audioCtxState, audioFocus } from './audio';
 import { grantFind, grantCache } from './actions';
 import { openMap, closeMap, mapView, mapPan, mapSetView, draw as mapDraw } from './mapui';
 import { landCollapse, closeGround, shoreUp } from './collapse';
@@ -159,6 +160,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* Where the way in starts, so a spec can ask rather than type a cell. */
     hallEye,
     pickBay, selectBay, selectedBay, bays, stationCamera, roomReady,
+    /* The options, so a spec can assert that a slider moved a bus and that
+       focus loss actually paused the context rather than just ducking it. */
+    busGain, audioCtxState, audioFocus, selectableKeys,
     /* The aisles, so a smoke test can drive the shop the way a thumb does. */
     goAisle, stepAisle, currentAisle, currentGroup, aisleStocked, AISLE_COUNT,
     /* The scene itself, so the framing harness can project a world position

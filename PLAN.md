@@ -2363,7 +2363,9 @@ the shape of the game is not up for revision until R9a has happened.
       The deploy is GitHub Pages; `WEB.md` has the recipe. Version, changelog
       and a screenshot at the phone's aspect go out together.
 
-- [ ] **R9e The second month, sketched.** `POLISH.md` asks for the next month's
+- [x] **R9e The second month, sketched.** Done 2026-09-13; the sketch is the
+      section "The second month" immediately below this list. Original brief:
+      `POLISH.md` asks for the next month's
       content to be in this file even if it is not built, and round eight ended
       the game without sketching what follows it. The design doc's own answer
       is "other planets are what comes after, later" - which is a direction and
@@ -2474,6 +2476,77 @@ the shape of the game is not up for revision until R9a has happened.
       seconds to the Vault), and the ship's lamp comes on. A save tells the
       two kinds apart with an `at` field, which is also how an old mid-run
       save is still landed on the pad.
+
+# The second month
+
+**A sketch, not a plan, and it is deliberately not started.** `POLISH.md` asks
+for the next month's content to be in this file even when it is not built, and
+the reason to write it now is that round eight ended the game without saying
+what follows it. Nothing here is committed to until R9a - a human play - says
+what this game actually is.
+
+## What the campaign leaves behind, measured
+
+Round nine's probe finishes the game in about seventy game-minutes: five
+Anchors in the first twenty-one, the remaining four in forty-two more, the
+Vault in eight. That is the floor rather than the forecast - it plays badly on
+purpose - but it tells us the shape of the problem. At the end:
+
+- **The deepest quarter of the world is empty of objective.** Anchors live in
+  the top three region rows by construction (`ANCHOR_ROWS = REGION_ROWS - 1`),
+  so 339-452 m holds one hand-placed room, the Vault, and nothing else.
+- **5.8% of the planet is authored** - 23 rooms, 1,764 cells. The other 94% is
+  seeded rock, and it is the part a second month would have to make worth
+  re-entering.
+- **The ending hands the planet back** and means it: *"The ground is yours.
+  There is more of it than you have seen."* Right now that sentence is a
+  promise the game does not keep - nothing new exists after the Vault.
+- **`g.won` already survives a reset**, and New Game Plus already offers the
+  skip. The hook for a second pass is built and unused.
+
+## The three candidates, in the order they are worth doing
+
+**1. The deep, and a reason to be in it.** The cheapest real content and the
+one the world is already shaped for: the fourth region row has palettes,
+traits and ore and no objective at all. A second Lattice that only appears
+once the first is lit - the Anchors were holding something DOWN, and the
+Vault says so - puts nine more rooms in ground the player has learned to
+survive but never had to stay in. Reuses the room stamper, the Anchor state
+machine and the Unrest model whole; the new work is the hazard that makes
+339 m different from 250 m, and heat is already there to build on.
+
+**2. The relics as the collection that outlives the campaign.** There are
+eight relics and one is buried per planet, which on a one-planet world means
+a player sees one per playthrough. That is a collection nobody completes and
+therefore a meta-goal that does not work. Either the relic moves to a
+per-REGION drop (twelve, one per region, a shelf in the station that fills)
+or it becomes the New Game Plus carry: what you keep, and what makes the
+second pass differ from the first. The station room already has the geometry
+for a shelf; `g.relics` already persists through a reset.
+
+**3. New Game Plus as a changed world, not a faster one.** The flag is there
+and the only thing it buys today is a skip button. The cheapest version that
+is worth anything: the Anchors move (they are seeded, so a different offset
+is a different hunt), the sealed three become five, and the planet starts
+awake. No new systems at all - it is the wake threshold, the seal set and a
+seed offset, all of which are constants.
+
+## What this deliberately still refuses
+
+**No combat**, for the reason round eight refused it: Dome Keeper's own
+reviews say its two phases feel divided, and the fusion here is that the
+pressure applies to digging itself. **No second planet.** The chain was
+deleted in W9 and the whole of round eight is the argument against it; a
+second world is the answer only if R9a says one world is exhausted, and the
+measurement above says 94% of this one has never been authored at all.
+
+## What to do next
+
+**R9a, and nothing else.** Every item above is guesswork until a human has
+played the campaign end to end. The probe can prove the game is completable;
+it cannot say whether hunting Anchors feels like a hunt, whether the map is
+worth opening, or whether the fifth Anchor lands. Those three answers decide
+which of the three candidates is even the right question.
 
 ## What round eight deliberately did not do, and still has not
 

@@ -3606,3 +3606,166 @@ test('every Anchor lights by digging down its own column', async ({ page }) => {
     'means the objective is unreachable however well anybody plays')
     .toBe('');
 });
+
+/* ---------- the options, and the room without a thumb ----------
+
+   Four POLISH.md lines that had no test, and three that had no implementation,
+   all found by walking the checklist before a ship rather than after one. */
+
+test('the volume sliders move the buses, persist, and grey out when muted', async ({ page }) => {
+  /* `POLISH.md`: music and SFX volume sliders that do what they say, and a
+     mute that persists. The game had mutes and called it done - a toggle is a
+     promise that the sound stops, a volume is a promise that it can sit under
+     something else, and one control cannot make both. */
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  /* A real click, because Chrome refuses to build an AudioContext without a
+     gesture and a slider over a graph that does not exist asserts nothing. */
+  await page.locator('#dpad .k[data-dir=left]').click();
+  await page.locator('#btnPause').dispatchEvent('click');
+  await expect(page.locator('#volMusic')).toBeVisible();
+
+  const full = await page.evaluate(() => (window as any).__cw.busGain('music'));
+  expect(full, 'the music bus is silent at full volume').toBeGreaterThan(0);
+
+  const quiet = await page.evaluate(() => {
+    const el = document.getElementById('volMusic') as HTMLInputElement;
+    el.value = '25';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return (window as any).__cw.busGain('music');
+  });
+  expect(quiet, 'the slider did not move the music bus').toBeLessThan(full * 0.5);
+  expect(quiet, 'a quarter-volume music bus is silent').toBeGreaterThan(0);
+
+  /* The SFX bus is its own promise and must not have moved with it. */
+  expect(await page.evaluate(() => (window as any).__cw.busGain('sfx')),
+    'the music slider moved the sound bus too').toBeGreaterThan(0);
+
+  /* Persisted: the level survives a reload, which is the whole difference
+     between a setting and a session control. */
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('coreward.audio') || '{}'));
+  expect(saved.vol?.music, 'the level was not saved').toBeCloseTo(0.25, 2);
+
+  /* Muted, the slider goes visibly dead. He has asked for exactly this in two
+     other games: "if I dont have other versions yet, make the arrows grey". */
+  await page.locator('#btnMusic').dispatchEvent('click');
+  await expect(page.locator('#volMusic')).toBeDisabled();
+  expect(await page.evaluate(() => (window as any).__cw.busGain('music')),
+    'a muted bus is not silent').toBe(0);
+  await page.locator('#btnMusic').dispatchEvent('click');
+  await expect(page.locator('#volMusic')).toBeEnabled();
+});
+
+test('the credits screen renders the credits file, and is reachable from the pause sheet', async ({ page }) => {
+  /* `POLISH.md`: assets/CREDITS.md complete, and the credits screen renders
+     it. The file existed and nothing in the game ever showed it. */
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.locator('#btnPause').dispatchEvent('click');
+  await page.locator('#btnCredits').dispatchEvent('click');
+  const panel = page.locator('#creditsPanel');
+  await expect(panel).toBeVisible();
+  /* Rows, not a blob: a credits screen that renders the raw markdown table is
+     a file dumped on screen, which is the thing this replaces. */
+  expect(await panel.locator('.rel').count(),
+    'the credits screen shows no rows').toBeGreaterThan(2);
+  await expect(panel).toContainText('CC0');
+  await expect(panel).toContainText('ambientCG');
+
+  /* One panel at a time - the pause sheet is the tallest thing in the game. */
+  await page.locator('#btnNotes').dispatchEvent('click');
+  await expect(panel).toBeHidden();
+  await expect(page.locator('#notes')).toBeVisible();
+});
+
+test('the Outfitter is drivable with arrows and a confirm, not only with a thumb', async ({ page }) => {
+  /* Playtest, three times in two days and across two other games: *"since the
+     text is small I want arrow keys and confirm button to navigate the
+     menues"*, *"make it so clicking the up or down arrow changes what is
+     selected, highlights it, and provides a description"*, *"up down selects
+     the different equipment and left right changes the version"*.
+
+     Left and right already walked the departments. Up and down are new, and
+     the confirm is the card's own buy button, which carries the price. */
+  await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.g.px = 30; cw.g.pd = -1; cw.g.credits = 500000; cw.g.best.depth = 400;
+  });
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.locator('#btnShop').dispatchEvent('click');
+  await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
+
+  /* Nothing picked yet. The first press picks an end rather than doing
+     nothing - a control whose first press is a no-op reads as broken. */
+  expect(await page.evaluate(() => (window as any).__cw.selectedBay())).toBeNull();
+  await page.locator('#bayD').dispatchEvent('click');
+  const first = await page.evaluate(() => (window as any).__cw.selectedBay());
+  expect(first, 'DOWN selected nothing at all').not.toBeNull();
+
+  /* And the card follows the selection, with the description he asked for. */
+  await expect(page.locator('#shopCard')).toContainText('Lv');
+
+  await page.locator('#bayD').dispatchEvent('click');
+  const second = await page.evaluate(() => (window as any).__cw.selectedBay());
+  expect(second, 'DOWN did not move to another case').not.toBe(first);
+  await page.locator('#bayU').dispatchEvent('click');
+  expect(await page.evaluate(() => (window as any).__cw.selectedBay()),
+    'UP did not come back to where DOWN started').toBe(first);
+
+  /* The arrows walk the SAME list a tap picks from, in room order, so the two
+     ways of choosing cannot disagree about what "next" means. */
+  const keys: string[] = await page.evaluate(() => (window as any).__cw.selectableKeys());
+  expect(keys.length, 'nothing is selectable in a stocked aisle').toBeGreaterThan(1);
+  expect(keys.indexOf(second) - keys.indexOf(first),
+    'DOWN did not move exactly one case along the shelf').toBe(1);
+
+  /* At the end of the shelf the arrow greys rather than wrapping: wrapping a
+     linear shelf is how a player loses track of where they are standing. */
+  for (let i = 0; i < keys.length + 2; i++) await page.locator('#bayD').dispatchEvent('click');
+  expect(await page.evaluate(() => (window as any).__cw.selectedBay())).toBe(keys[keys.length - 1]);
+  await expect(page.locator('#bayD')).toHaveClass(/gone/);
+
+  /* The confirm buys the selected thing, and it is the card's own button - so
+     it carries the price and refuses when the price cannot be paid. */
+  await page.locator('#bayU').dispatchEvent('click');
+  const buying = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    const key = cw.selectedBay();
+    return { key, before: cw.g.up[key] || 0 };
+  });
+  await page.locator('#shopCard button.buy, #shopCard button.cbuy').first().dispatchEvent('click');
+  const after = await page.evaluate((k) => (window as any).__cw.g.up[k as string] || 0, buying.key);
+  expect(after, 'the confirm did not buy the selected upgrade').toBe(buying.before + 1);
+
+  /* And the keyboard drives the same room: Enter is the same confirm. */
+  const byKey = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    const key = cw.selectedBay();
+    const before = cw.g.up[key] || 0;
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    return { before, after: cw.g.up[key] || 0 };
+  });
+  expect(byKey.after, 'Enter is not the confirm').toBe(byKey.before + 1);
+});
+
+test('focus loss pauses the audio context and coming back resumes it', async ({ page }) => {
+  /* `POLISH.md`: audio ducks and pauses on focus loss and resumes on return.
+     Suspending the context rather than winding the buses down is what makes it
+     a pause - an oscillator still running in a backgrounded tab is still
+     costing a phone its battery, and `ctx.currentTime` stops with it so the
+     scheduler does not wake up owing thirty seconds of notes at once. */
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.locator('#dpad .k[data-dir=left]').click();
+  expect(await page.evaluate(() => (window as any).__cw.audioCtxState()),
+    'no audio graph after a real gesture').toBe('running');
+
+  const states = await page.evaluate(async () => {
+    const cw = (window as any).__cw;
+    cw.audioFocus(false);
+    await new Promise((r) => setTimeout(r, 150));
+    const off = cw.audioCtxState();
+    cw.audioFocus(true);
+    await new Promise((r) => setTimeout(r, 150));
+    return { off, back: cw.audioCtxState() };
+  });
+  expect(states.off, 'the audio kept running with the app in the background').toBe('suspended');
+  expect(states.back, 'the audio never came back').toBe('running');
+});

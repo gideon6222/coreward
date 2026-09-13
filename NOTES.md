@@ -4338,6 +4338,85 @@ game working, and the probe now goes round it the way a player does.
 feel like a hunt, is the map worth opening, does the fifth Anchor land -
 is R9a, and R9a is his.
 
+---
+
+# Round nine, R9d part one, 2026-09-13: the polish walk, everything off the phone
+
+`/ship` walks `POLISH.md` and refuses on a no. This is that walk, minus the
+two lines that need the handset. Four lines were owed and are now done; the
+walk is what found them, which is the argument for walking it before a ship
+rather than after.
+
+## What was owed, and what it cost
+
+| Line | What was actually there | Now |
+|---|---|---|
+| Volume sliders that do what they say | Mutes only. A toggle promises the sound stops; a volume promises it can sit under something else, and one control cannot make both | Two sliders, persisted, greyed while their own channel is muted. One `busGain(kind)` computes a bus from the toggle, the slider and the way-in duck, so those three can no longer disagree |
+| Audio ducks and pauses on focus loss | The drill sound stopped; the score played on to nobody | `audioFocus()` suspends the context, which is a pause rather than a duck: `ctx.currentTime` stops with it, so the scheduler does not wake owing thirty seconds of notes |
+| Every menu drivable with up/down/left/right and a confirm | Left/right walked the departments. Up/down did not exist. **His ask, three times in two days, across two other games** | `stepBay`/`canStepBay` walk the cases in the aisle; the arrows and a tap read one `selectableKeys()` in room order, so they cannot disagree about "next". The card is the description, its buy button is the confirm, Enter and Space press it |
+| `assets/CREDITS.md` complete, and a screen renders it | The file existed; nothing ever showed it, and it still listed a texture deleted in v0.33.0 | CREDITS in the pause sheet, rendered from the file via `?raw` so there is one source of truth. Four missing textures added, the dead row removed |
+
+Plus a version test, which `POLISH.md` asks for and this repo had no
+equivalent of: `VERSION` against the newest changelog entry, versions
+strictly descending, every entry dated and written in US English.
+
+## Three bugs the walk found, none of which a test would have caught
+
+1. **Two elements with the id `credits`.** The HUD's credit counter already
+   owned it and the new panel took it too, so `getElementById` returned the
+   chip - the panel looked like it never opened. Found by verifying in a
+   browser rather than by reading the diff.
+2. **A confirm that knew one of two button classes.** An upgrade row builds
+   `button.buy` and a supply row builds `button.cbuy`; the confirm looked
+   only for the second, so it silently did nothing on every upgrade in the
+   game. The verification pass bought a Drill Bit and read the level back,
+   which is what said so.
+3. **The arrow keys stayed bound to the ship inside the shop.** Steering into
+   the Outfitter with the keyboard left `R.held` set, and the ship flew off
+   on undock. Gated on the mode.
+
+## The architecture rule that held
+
+The version test wanted the changelog through the golden harness, and
+`sim-boundary.test.mjs` failed it: *"pure-entry.ts pulls ../src/changelog
+from outside src/sim"*. The rule is right - `pure-entry` IS the sim - so the
+fix was `loadModule(rel)` in the harness, a one-module bundle for anything
+pure that is not simulation, rather than a hole in the boundary.
+
+## The walk, line by line
+
+Everything under **The first sixty seconds**, **Feel**, **Presentation**,
+**Audio**, **Content** and **Repo hygiene** now answers yes for this stack,
+with three standing notes:
+
+- The Godot-specific lines map to the web equivalents this repo already has:
+  `test_controls.gd` is the e2e that drives real pointer events and asserts
+  in NDC; the audio buses are the Web Audio graph; the back button is the
+  explicit close on every screen (all six have one, and nothing closes by
+  tapping outside).
+- **Content ladder:** the probe finishes the campaign in ~70 game-minutes and
+  the deepest region row holds no objective, so the ladder does have unreached
+  rows after an hour. The second month is sketched in `PLAN.md` (R9e).
+- **The deploy is CI**, not a release artifact: GitHub Actions to Pages.
+
+## What is owed, and it is only the phone
+
+The two **Performance and stability** lines that need the handset, which is
+the one carve-out `POLISH.md` allows and only when `adb devices` is empty:
+
+- `perf` percentiles at the start of a session and after ten minutes, and
+  `dumpsys thermalservice` at the ten-minute mark.
+- The full launch, play, die, retry, buy, home, resume, back, quit pass on
+  the device.
+
+**Not run, no device.** The desk evidence standing in for them: the full gate
+green (308 unit tests, 45 e2e, typecheck, build, size guard), 86 draw calls
+of 150 measured in the worst window the game can build, and the filmed
+contact sheets of the way in and the first minute. Both lines run on the next
+ship with the phone attached. And for this stack specifically, the service
+worker cannot be exercised anywhere but real Chrome or the phone (`WEB.md`),
+so the PWA install and offline check is owed with them.
+
 ## Left for you: five review screenshots in a folder with a mangled name
 
 A studio sweep on 2026-09-12 found `SERSGIDEOAPPDATAocaltemp/review2/` sitting in this

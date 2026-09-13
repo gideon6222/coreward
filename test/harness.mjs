@@ -23,6 +23,28 @@ let cached = null;
 
 /* Async because bundling is. Test files use top-level await, which node's ESM
    test runner supports. */
+/* Bundle and import ONE module that is not part of the sim.
+
+   `pure-entry.ts` is the golden harness's bundle and `sim-boundary.test.mjs`
+   asserts that everything in it comes from `src/sim` - which is the whole
+   architecture, so a test that needs a pure module from anywhere else gets its
+   own bundle rather than a hole in that rule. Today that is `src/changelog.ts`:
+   player-facing data, no imports at all, and the version has to be asserted
+   somewhere. */
+export async function loadModule(rel) {
+  const outdir = mkdtempSync(join(tmpdir(), 'coreward-mod-'));
+  const outfile = join(outdir, 'mod.mjs');
+  await build({
+    entryPoints: [join(REPO, rel)],
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    outfile,
+    logLevel: 'silent'
+  });
+  return import(pathToFileURL(outfile).href);
+}
+
 export async function loadPure() {
   if (cached) return cached;
   const outdir = mkdtempSync(join(tmpdir(), 'coreward-pure-'));
