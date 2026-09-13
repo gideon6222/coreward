@@ -243,7 +243,44 @@ export function hasSave(): boolean {
    and by the save below, so the two can never disagree about where the pad
    is. */
 export const PAD_REACH = -0.6;
-export const onPad = () => g.pd <= PAD_REACH;
+
+/* How far either side of the pad still counts as standing on it, in columns.
+
+   The deck in pad.ts is 3.3 world units wide, so its own footprint is 1.65
+   either side of `START_X`; 1.8 is that plus a forgiving fifth of a cell, so
+   a ship parked against either lip is docked rather than nearly docked.
+
+   Playtest, 2026-09-13: *"you can go up to the surface from any location, but
+   probably should only be able to surface near the landing pad."* He is right,
+   and the game's own arithmetic already agreed with him: `findRoute()` paths
+   to `key(START_X, -1)` and `climbCells()` costs THAT route, so the reserve
+   printed on the fuel dial has always been the fuel needed to reach the PAD.
+   `atSurface()` meanwhile answered "is the ship above the ground line", and
+   every dock service was hung off it - so flying up any of the 61 columns sold
+   the hold, refilled the tank, repaired the hull and landed a pending
+   collapse, sixty cells from the only structure in the world.
+
+   Standing rule 10: two facts that must not drift share no function. "Above
+   the ground" and "at the pad" are two facts. */
+export const PAD_HALF = 1.8;
+
+/* Above the ground line. Physical: no heat, nothing to dig, nothing to survey. */
+export const atSurface = () => g.pd <= PAD_REACH;
+
+/* At the pad, which is where the game does things FOR you: the sale, the
+   tank, the hull, the Outfitter, the Ballast, the save.
+
+   Nobody can be stranded by this, and that is not a hope - the valve is built.
+   The route home is dug ground, `findRoute` finds it, `climbCells` costs it,
+   the reserve band on the dial is drawn from that cost, and the Auto-Return
+   device flies it for you. The research on every comparable game says the same
+   thing: restrict re-entry to the hub, then pay for it with a valve
+   (SteamWorld Dig 2's Portal of Pardon, Motherload's refuel stations). This
+   game already had the valve and was not charging for the restriction. */
+export const docked = () => atSurface() && Math.abs(g.px - START_X) <= PAD_HALF;
+
+/* The save is taken at the pad, so it is the dock and not the ground line. */
+export const onPad = docked;
 
 /* ---------- the pad save ----------
 

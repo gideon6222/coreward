@@ -7,7 +7,7 @@ import { regionName } from './sim/region';
 import { anchorAt } from './sim/vaults';
 import { wake } from './sim/unrest';
 import { vaultOpen } from './sim/vaults';
-import { g, S, save, checkpoint, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen, revealVault } from './sim/state';
+import { g, S, save, checkpoint, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen, revealVault, docked } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
@@ -132,7 +132,7 @@ export function goSurface() {
    tank and the hull for free and clears soak. The buttons hide up there for
    the same reason. */
 export function useSupply(k: SupplyKey) {
-  if (g.mode !== 'play' || atSurface()) return;
+  if (g.mode !== 'play' || docked()) return;
   if (g.kit[k] <= 0) return;
   const sup = SUPPLY_OF[k];
 
@@ -406,7 +406,7 @@ export function fireLaser() {
 }
 
 export function autopilot() {
-  if (g.up.auto === 0 || atSurface() || g.mode !== 'play') return;
+  if (g.up.auto === 0 || docked() || g.mode !== 'play') return;
   const cost = Math.ceil(g.pd * S.autoRate());
   if (g.fuel < cost) { toast('Autopilot needs ' + cost + ' fuel'); return; }
   const route = findRoute();

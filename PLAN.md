@@ -2477,6 +2477,66 @@ the shape of the game is not up for revision until R9a has happened.
       two kinds apart with an `at` field, which is also how an old mid-run
       save is still landed on the pad.
 
+# Round ten: the polish round
+
+His words on v0.37.0, 2026-09-13, in `playtests/lattice.md`. Four asks, and the
+first is the frame the other three are evidence for: *"polish everything up ...
+things that official games have that make them feel complete ... things that
+arent specifically game issues but feel awkward."*
+
+Measured before anything was designed, so these are faults rather than
+opinions:
+
+- **The dock is the whole top row, not the pad.** `atSurface()` is
+  `g.pd <= -0.6` and nothing else, so flying up ANY of the 61 columns sells the
+  hold, refills the tank, repairs the hull and lands a pending collapse. The
+  game's own fuel model already disagrees with this: `findRoute()` paths to
+  `key(START_X, -1)` - the pad - so the reserve on the dial has always been
+  costed against returning to the pad specifically. One depth comparison is
+  contradicting the arithmetic printed next to it.
+- **The growth quads are buried in the rock.** The rock's displacement shader
+  pushes its face outward by `ROCK_BUMP` - 0.16 on dirt up to 0.40 on rubble -
+  from a face at z = 0.5. The growth quad is placed at a FIXED z = 0.52. So on
+  ordinary stone the surface reaches z = 0.70 and the decal at 0.52 sits inside
+  it, showing only where the noise happens to dip below it, and changing as the
+  camera moves. That is the "pops in randomly", and it is also why it reads as
+  low quality: what is on screen is a clipped fragment of a flat sticker.
+- **The ship is steampunk and he no longer wants it to be.** A restatement from
+  scratch rather than a refinement, which by standing rule 9 means the model is
+  wrong, not the tuning.
+
+- [ ] **T1 The pad is the dock.** Split the one function that is doing two
+      jobs: `atSurface()` stays "above the ground" (heat, charge, the camera
+      lift, the fuel reserve) and a new `docked()` is "at the pad" - at the
+      surface AND within the pad's footprint. Selling, refueling, hull repair,
+      the Outfitter, the Ballast, the supply refusal and the save all move to
+      `docked()`. Standing rule 10: two facts that shared one function get one
+      source of truth each, and a test asserts the derived quantity - that
+      `findRoute()`'s goal cell and `docked()` agree about where the pad is.
+      Forgiveness, because restricting re-entry must not strand anybody: the
+      route home is already dug ground and already costed, the reserve on the
+      dial already points at the pad, and the autopilot already flies there.
+
+- [ ] **T2 Growth that is a thing on the rock, not a sticker over it.** His
+      words: *"turn these into textures or physically different models instead
+      of an overlay."* Real instanced geometry with volume, seated so it
+      straddles the displaced surface instead of racing it - a tuft that starts
+      inside the rock and protrudes cannot be buried by a bump, which is what
+      makes the pop impossible rather than unlikely. Per-kind silhouettes, not
+      one quad with six alpha masks. And the region swap stops changing every
+      patch on screen at once.
+
+- [ ] **T3 A ship that is advanced and ancient.** Not steampunk: no boiler, no
+      raked stack, no spoked flywheel, no brass. Advanced technology that has
+      been sitting for thousands of years, which is the same civilization that
+      cut the Anchor halls - so the ship and the Lattice finally read as one
+      world. Designed at thirty pixels first, as the hull it replaces was.
+
+- [ ] **T4 The completeness pass.** Whatever the research names that this game
+      does not have and that is cheap: the things a shipped game has and a
+      competent hobby build does not. Scoped once the brief lands, and every
+      item measured against `mechanics/FOUNDATIONS.md` rather than a checklist.
+
 # The second month
 
 **A sketch, not a plan, and it is deliberately not started.** `POLISH.md` asks

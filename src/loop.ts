@@ -5,7 +5,7 @@ import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, rel
          coreDepth, valueMult, skyHi, skyLo, ORES,
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
-import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen,
+import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen, docked,
          groundTick, hereUnrest, lightHere, vaultHere, checkpoint } from './sim/state';
 import { unrestBand, tremorScale } from './sim/unrest';
 import { landCollapse, closeGround } from './collapse';
@@ -620,7 +620,7 @@ export function tick(raw: number, draw = true) {
          cell arrivals any more, so it is an edge trigger on being at the
          surface at all - which also means it fires once however slowly the
          ship drifts up onto the pad. */
-      const now = atSurface();
+      const now = docked();
       if (now && !R.wasAtSurface) {
         sell(); g.fuel = padFuel(); g.hull = S.hullCap();
         /* And this is the door. A region chosen while you were underground
@@ -650,7 +650,7 @@ export function tick(raw: number, draw = true) {
 
     /* Power cells trickle back underground and fill at the pad; see
        chargeAfter in feel.ts for why it is both. */
-    g.charge = chargeAfter(g.charge, dt, atSurface(), S.powerCap() + S.powerExtra(),
+    g.charge = chargeAfter(g.charge, dt, docked(), S.powerCap() + S.powerExtra(),
                            S.rechargeMult());
 
     /* soak builds while deep and bleeds off above, so staying is the gamble */
@@ -671,7 +671,8 @@ export function tick(raw: number, draw = true) {
         toast('Overheating - the hull is draining');
         flash('rgba(255,120,30,.20)', 420);
       }
-    } else if (atSurface()) {
+    } else if (docked()) {
+      /* The pad's own services, and they are the PAD's - not the sky's. */
       g.hull = Math.min(S.hullCap(), g.hull + HULL_REGEN * dt);
       g.fuel = S.fuelCap();
     } else if (S.repair() > 0 && g.hull < S.hullCap()) {
@@ -743,7 +744,7 @@ export function tick(raw: number, draw = true) {
        ship at nought fuel simply sits in the dark for ever, because fuel only
        ever drained while flying or drilling and a tow used to be what ended
        that. Found by driving the tank to empty and watching nothing happen. */
-    if (!atSurface()) {
+    if (!docked()) {
       const idle = FUEL_IDLE * S.fuelUse() * dt;
       g.fuel -= idle;
       R.run.fuelIdle = (R.run.fuelIdle || 0) + idle;
@@ -752,7 +753,7 @@ export function tick(raw: number, draw = true) {
     R.climbT -= raw;
     if (R.climbT <= 0) {
       R.climbT = 0.35;
-      R.climb = atSurface() ? 0 : fuelToClimb(climbCells(), S.speed());
+      R.climb = docked() ? 0 : fuelToClimb(climbCells(), S.speed());
       R.fuelState = fuelState(g.fuel, R.climb);
       /* What the lamp has shown you, folded into the map.
 

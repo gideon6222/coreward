@@ -1,7 +1,7 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, SUPPLY_OF, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
 import { setGauges, setFuelReserve } from './gauges';
 import { clamp } from './sim/util';
-import { g, S, save, coreM, valueM, worldTrait, padFuel, worldUnrest, onPad } from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, padFuel, worldUnrest, docked, atSurface as aboveGround } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
 import type { Upgrade, Supply } from './types';
 import { VERSION, CHANGELOG } from './changelog';
@@ -176,7 +176,10 @@ export function flash(color: string, ms?: number) {
   ui.flash.style.opacity = '1';
   setTimeout(() => { ui.flash.style.opacity = '0'; }, ms || 220);
 }
-export const atSurface = onPad;
+/* Re-exported so the modules that already import it from here keep working.
+   It is the GROUND LINE, not the dock: `docked()` in sim/state.ts is the pad. */
+export const atSurface = aboveGround;
+export { docked };
 
 export function updateHUD() {
   /* The chip names WHERE YOU ARE, and it is the only always-visible place that
@@ -213,15 +216,15 @@ export function updateHUD() {
   const weightFrac = clamp(g.weight / S.cargoCap(), 0, 1);
   ui.fuelTxt.textContent = Math.ceil(fuelFrac * 100) + '%';
   ui.cargoTxt.textContent = g.weight.toFixed(1) + ' / ' + S.cargoCap() + ' KG';
-  const docked = atSurface() && g.mode === 'play';
-  ui.btnShop.style.display = docked ? '' : 'none';
+  const isDocked = docked() && g.mode === 'play';
+  ui.btnShop.style.display = isDocked ? '' : 'none';
   /* The Ballast button carries its own alarm. It is the only place the
      campaign's state reaches the HUD, and it only does so when there is
      something to do about it - a button that is always shouting is a button
      nobody reads. */
   const bal = el('btnBallast');
   if (bal) {
-    bal.style.display = docked ? '' : 'none';
+    bal.style.display = isDocked ? '' : 'none';
     const low = g.ground.ballast < BALLAST_LOW || g.ground.collapsed.length > 0;
     bal.textContent = 'BALLAST  ' + Math.round(g.ground.ballast * 100) + '%';
     bal.classList.toggle('armed', low);

@@ -63,16 +63,22 @@ async function holdUntil(page: Page, dir: string, settled: () => Promise<void>) 
    Advanced in one-second slices with a check between them, so a hold cannot
    overshoot by more than a second - which matters for the directions where
    holding too long drives into something. */
+/* `step` is how much game time passes between polls, and it is not cosmetic:
+   a hold can only observe a window it does not step over. The ship crosses the
+   world at up to 7.2 cells a second with thrust, and the pad's dock is 3.6
+   cells wide, so a one-second poll flies straight past it and reports that
+   the condition never held. Anything watching for a PLACE rather than a
+   threshold passes a smaller step. */
 async function holdSeam(
-  page: Page, dir: string, check: () => Promise<boolean>, maxSecs = 90
+  page: Page, dir: string, check: () => Promise<boolean>, maxSecs = 90, step = 1
 ) {
   const key = page.locator(`#dpad .k[data-dir=${dir}]`);
   await key.dispatchEvent('pointerdown');
   let ok = false;
   try {
-    for (let t = 0; t < maxSecs && !ok; t++) {
+    for (let t = 0; t < maxSecs / step && !ok; t++) {
       ok = await check();
-      if (!ok) await page.evaluate(() => (window as any).__cw.advance(1));
+      if (!ok) await page.evaluate((s) => (window as any).__cw.advance(s), step);
     }
     ok = ok || await check();
   } finally {
@@ -1105,7 +1111,7 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
       up: { drill: 8, cargo: 3, thrust: 5, tank: 6, cool: 4, scan: 6, scrub: 0, auto: 0 },
       kit: { coolant: 0, patch: 0, cell: 0 }, stock: {},
       best: { depth: 14, haul: 0 },
-      dug: [], rubble: [], cargo: {}, weight: 0, px: 6, pd: -1
+      dug: [], rubble: [], cargo: {}, weight: 0, px: 30, pd: -1
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -1160,6 +1166,18 @@ test('crossing your deepest reach is announced exactly once', async ({ page }) =
        test about survival rather than about the record announcement. */
     for (let i = 0; i < 30; i++) {
       w.advance(0.5);
+      /* Dismiss anything the descent opens. This fixture used to dig at
+         column 6, which was START_X when the world was 13 wide; parked on the
+         real pad it digs down the pad's OWN column and reaches Rustmoor's
+         Anchor at 42 m, whose card stops the loop and leaves the mode in
+         'event' - so the pause sheet below never built and the failure read
+         as the record being forgotten. The first-minute win is under the pad
+         on purpose (test/intro.test.mjs pins it), so a descent from the pad
+         has to expect it. */
+      if (w.g.mode === 'event') {
+        const b = document.getElementById('evBtn');
+        if (b) b.click();
+      }
       await new Promise((r) => setTimeout(r, 0));
     }
     w.R.held = null;
@@ -1199,7 +1217,7 @@ test('an upgrade past the free tier needs minerals, not just credits', async ({ 
          130 m and the row followed it, which is the whole point of the two
          gates pointing at the same place. */
       best: { depth: 460, haul: 0 },
-      dug: [], cargo: {}, weight: 0, px: 6, pd: -1
+      dug: [], cargo: {}, weight: 0, px: 30, pd: -1
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -1533,7 +1551,7 @@ test('advance is deterministic and far faster than real time', async ({ page }) 
     const w = (window as any).__cw;
     w.stopClock();
     const run = () => {
-      w.g.px = 6; w.g.pd = 0; w.g.dug.clear(); w.g.cargo = {}; w.g.weight = 0;
+      w.g.px = w.START_X; w.g.pd = 0; w.g.dug.clear(); w.g.cargo = {}; w.g.weight = 0;
       w.R.held = 'down'; w.R.vx = 0; w.R.vy = 0; w.R.digging = null;
       w.advance(12);
       return w.g.pd.toFixed(6) + '/' + w.g.weight.toFixed(4);
@@ -1627,7 +1645,7 @@ test('hardware bought in the Outfitter is on the ship you undock with', async ({
       kit: { coolant: 0, patch: 0, cell: 0 },
       stock: { iron: 99, copper: 99, silver: 99, gold: 99, amethyst: 99, emerald: 99 },
       best: { depth: 300, haul: 0 }, dug: [], rubble: [], cargo: {}, weight: 0,
-      px: 6, pd: -1
+      px: 30, pd: -1
     }));
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (k, v) {
@@ -2169,7 +2187,7 @@ test('the Outfitter will not sell a device that has not been dug up', async ({ p
       w.g.stock[k] = 99;
     }
     w.g.found.length = 0;
-    w.g.px = 6; w.g.pd = -1;
+    w.g.px = w.START_X; w.g.pd = -1;
     w.advance(0.5);
   });
   await page.locator('#btnShop').dispatchEvent('click');
@@ -2213,7 +2231,7 @@ test('every case is fully inside the frame, plate and all', async ({ page }) => 
     for (const k of ['magnet', 'survey', 'bomb', 'laser', 'auto', 'drone', 'reactor']) {
       if (!w.g.found.includes(k)) w.g.found.push(k);
     }
-    w.g.px = 6; w.g.pd = -1;
+    w.g.px = w.START_X; w.g.pd = -1;
     w.advance(0.5);
   });
   await page.locator('#btnShop').dispatchEvent('click');
@@ -2353,7 +2371,7 @@ test('a sealed crate in the rock fits the device and stocks the shop', async ({ 
   /* Finally: the Outfitter stocks it now, and did not before. */
   await page.evaluate(() => {
     const w = (window as any).__cw;
-    w.g.credits = 9e6; w.g.px = 6; w.g.pd = -1; w.advance(0.5);
+    w.g.credits = 9e6; w.g.px = w.START_X; w.g.pd = -1; w.advance(0.5);
     document.getElementById('btnShop')!.click();
   });
   await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
@@ -2373,7 +2391,7 @@ test('the drawer opens, holds only what you have found, and sells it', async ({ 
     w.g.credits = 9e6;
     w.g.foundKit.length = 0;
     w.g.foundKit.push('cell', 'patch');
-    w.g.px = 6; w.g.pd = -1; w.advance(0.5);
+    w.g.px = w.START_X; w.g.pd = -1; w.advance(0.5);
     document.getElementById('btnShop')!.click();
   });
   await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
@@ -2541,7 +2559,7 @@ test('a supply cache hands over something new, and the Outfitter stocks it', asy
   /* And now it is in the drawer. */
   await page.evaluate(() => {
     const w = (window as any).__cw;
-    w.g.credits = 9e6; w.g.px = 6; w.g.pd = -1; w.advance(0.5);
+    w.g.credits = 9e6; w.g.px = w.START_X; w.g.pd = -1; w.advance(0.5);
     document.getElementById('btnShop')!.click();
   });
   await page.waitForFunction(() => (window as any).__cw.roomReady(), null, { timeout: 15_000 });
@@ -2941,6 +2959,16 @@ test('the Ballast is fed at the pad, and an empty one takes a region', async ({ 
   const topUp = () => page.evaluate(() => {
     const w = (window as any).__cw;
     w.g.fuel = w.S.fuelCap(); w.g.hull = w.S.hullCap();
+    /* And dismiss anything the run opens. A card puts the mode in 'event',
+       and a held d-pad direction moves nothing at all while it is up - so the
+       hold burns its whole budget and reports "the condition never held",
+       which reads as a broken mechanic rather than an undismissed modal. This
+       run now ends with a flight home along the surface, which is long enough
+       to meet one. */
+    if (w.g.mode !== 'play') {
+      const b = document.getElementById('evBtn');
+      if (b) b.click();
+    }
   });
   const until = (fn: () => Promise<boolean>) => async () => { await topUp(); return fn(); };
   const depth = () => page.evaluate(() => (window as any).__cw.g.pd);
@@ -2952,9 +2980,30 @@ test('the Ballast is fed at the pad, and an empty one takes a region', async ({ 
   await holdSeam(page, 'down', until(async () => (await depth()) > 18));
   await holdSeam(page, 'right', until(offPad));
   await holdSeam(page, 'down', until(async () => (await depth()) > 30));
+  /* Up to the surface, and then ALONG it to the pad.
+
+     Holding 'up' until credits arrive was enough until 2026-09-13, because
+     reaching the ground line anywhere sold the hold. The pad is the dock now
+     (`docked()` in sim/state.ts), so the last leg of a run is the trip home -
+     which is the whole point of the change and has to be in the test that
+     spends a run. */
+  /* Clear of the crust, not merely at the ground line. `atSurface()` is
+     `pd <= -0.6`, and the hull's radius is 0.34, so a ship stopped exactly
+     there still has its underside inside row 0 - and flying across the world
+     from there DIGS the crust laterally instead of gliding over it. Row -1 is
+     the open corridor (`blockAt` is null for d < 0), so the climb ends
+     there. */
   await holdSeam(page, 'up', until(async () =>
-    (await page.evaluate(() => (window as any).__cw.g.credits)) > 0));
+    (await page.evaluate(() => (window as any).__cw.g.pd)) <= -1));
+  const toPad = await page.evaluate(() =>
+    (window as any).__cw.g.px > (window as any).__cw.START_X ? 'left' : 'right');
+  await holdSeam(page, toPad as 'left' | 'right', until(async () =>
+    (await page.evaluate(() => (window as any).__cw.docked()))), 90, 0.2);
   await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  expect(await page.evaluate(() => (window as any).__cw.docked()),
+    'the run ended somewhere that is not the pad').toBe(true);
+  expect(await page.evaluate(() => (window as any).__cw.g.credits),
+    'docking did not sell the hold').toBeGreaterThan(0);
 
   /* ---- feeding ---- */
   await page.locator('#btnBallast').dispatchEvent('click');

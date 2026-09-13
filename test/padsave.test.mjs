@@ -157,3 +157,69 @@ test('a checkpoint loads where it was written; an unflagged mid-run save is stil
   assert.equal(pad.pd, -1);
   assert.deepEqual(pad.cargo, { iron: 1 });
 });
+
+test('the dock is the pad, not the whole top row', () => {
+  /* Playtest, 2026-09-13: *"you can go up to the surface from any location,
+     but probably should only be able to surface near the landing pad."*
+
+     `atSurface()` answers "is the ship above the ground line" and `docked()`
+     answers "is the ship at the pad". Every service the game performs FOR the
+     player - the sale, the tank, the hull, the Outfitter, the Ballast, the
+     save - hangs off the second. Before this they all hung off the first, so
+     any of the 61 columns was a dock. */
+  fresh();
+  H.g.px = H.START_X; H.g.pd = -1;
+  assert.ok(H.atSurface(), 'the pad is not above the ground line');
+  assert.ok(H.docked(), 'a ship parked on the pad is not docked');
+
+  /* Either lip of the deck still counts: the deck is 3.3 wide, so its own
+     footprint is 1.65 either side, and the reach is a forgiving 1.8.
+
+     Straddling the threshold rather than sitting exactly on it. `START_X -
+     1.8` is 28.2, which in binary floating point is a hair under, so
+     `30 - 28.2` comes back as 1.8000000000000007 and an assertion AT the
+     boundary is testing the float rather than the design. The constant's own
+     value is asserted separately, below. */
+  for (const dx of [-1.79, -1.6, 0, 1.6, 1.79]) {
+    H.g.px = H.START_X + dx;
+    assert.ok(H.docked(), 'a ship ' + dx + ' from the middle of the deck is not docked');
+  }
+  /* The reach covers the deck it is meant to cover: pad.ts builds a 3.3-wide
+     deck, so anything at or inside 1.65 must dock. */
+  assert.ok(H.PAD_HALF >= 1.65, 'the dock is narrower than the deck it stands on');
+
+  /* And beyond it is sky, not a shop. */
+  for (const dx of [-30, -6, -2.1, 2.1, 6, 30]) {
+    H.g.px = H.START_X + dx;
+    assert.ok(H.atSurface(), 'the ship at ' + dx + ' is not above the ground');
+    assert.ok(!H.docked(), 'the ship is docked ' + dx + ' columns from the pad');
+  }
+
+  /* Depth still matters: standing in the right column underground is not
+     standing on the pad. */
+  H.g.px = H.START_X; H.g.pd = 8;
+  assert.ok(!H.atSurface());
+  assert.ok(!H.docked(), 'a ship eight meters down the pad\'s own shaft is docked');
+});
+
+test('the pad the dock means and the pad the fuel reserve means are the same pad', () => {
+  /* Standing rule 10: a constant that must agree with another gets a test on
+     the DERIVED quantity. `findRoute()` paths home to `key(START_X, -1)` and
+     `climbCells()` costs that route, which is where the reserve band on the
+     fuel dial comes from. If `docked()` ever meant somewhere else, the dial
+     would be promising fuel to reach a place that is not the dock - which is
+     exactly the bug this pair replaced, in the other direction. */
+  fresh();
+  /* The goal cell findRoute uses, read back as a position, is docked. */
+  H.g.px = H.START_X; H.g.pd = -1;
+  assert.ok(H.docked(), 'the cell findRoute calls home is not the dock');
+
+  /* And the reserve is zero exactly where the dock is, not merely at the
+     surface: from the sky away from the pad there is still a trip to pay
+     for. Asserted through climbCells, which is what the dial reads. */
+  H.g.dug = new Set();
+  for (let d = 0; d <= 6; d++) H.g.dug.add(H.key(H.START_X, d));
+  H.g.px = H.START_X; H.g.pd = 6;
+  const fromShaft = H.climbCells();
+  assert.ok(fromShaft > 0, 'a ship six meters down owes no climb at all');
+});

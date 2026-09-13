@@ -9,7 +9,7 @@ function fmtTime(secs: number) {
   const m = Math.floor(secs / 60), r = secs % 60;
   return m + ':' + String(r).padStart(2, '0');
 }
-import { g , coreM, worldTrait, save } from './sim/state';
+import { g , coreM, worldTrait, save, docked } from './sim/state';
 import { haulValue } from './sim/world';
 import { R } from './sim/runtime';
 import { openMap, wireMap } from './mapui';
@@ -62,7 +62,7 @@ mustEl('ordLaser').addEventListener('pointerdown', (e) => { e.preventDefault(); 
 
 ui.btnAuto.onclick = autopilot;
 ui.btnShop.onclick = () => {
-  if (!atSurface() || g.mode !== 'play') return;
+  if (!docked() || g.mode !== 'play') return;
   sfx.ui();
   g.mode = 'shop';
   /* Move the real ship into the station scene. Nothing is copied, so the
@@ -214,7 +214,7 @@ wireMap();
    to a tap, so a rebuild per tap is both simpler and correct. */
 const ballastSheet = mustEl('ballast');
 function openBallast() {
-  if (g.mode !== 'play' || !atSurface()) return;
+  if (g.mode !== 'play' || !docked()) return;
   sfx.ui();
   g.mode = 'ballast';
   buildBallast();

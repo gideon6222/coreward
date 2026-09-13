@@ -2,8 +2,8 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import * as THREE from 'three';
-import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH, costOf, matCost } from './sim/config';
-import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen, onPad } from './sim/state';
+import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, START_X, CAVE_MIN_DEPTH, costOf, matCost } from './sim/config';
+import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen, onPad, docked, atSurface } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
@@ -192,6 +192,11 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* The danger lines, so a fixture can dig to one instead of to a literal
        depth that meant something in a world this no longer is. */
     tremorDepth, heatDepth, regionAt, traitAt, regionName, W, CAVE_MIN_DEPTH,
+    /* Where the pad is, so a fixture parks ON it rather than at a column that
+       was the middle of the world three rounds ago. Six of them still said 6,
+       which was START_X when W was 13, and only kept working because docking
+       used to ignore the column entirely. */
+    START_X, docked, atSurface,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,
