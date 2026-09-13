@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.37.0';
+export const VERSION = '0.38.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.38.0', date: '2026-09-13', title: 'The pad is the dock',
+    notes: [
+      'You sell, refuel and repair at the landing pad now, not anywhere along the top of the world. Flying up a far shaft puts you on the surface, not in port - the trip home is the trip.',
+      'Nothing can strand you: the fuel reserve on your dial has always been the fuel to reach the pad, and Auto-Return still flies you there.',
+      'Moss, frost, plants, salt, ash and oil are real things on the rock now instead of flat stickers painted over it. They catch the lamp, they have shadows, and they no longer flicker in and out as you move.',
+      'Two regions that grow different things show both where they meet, instead of the whole wall changing over at once as you cross.'
+    ]
+  },
   {
     version: '0.37.0', date: '2026-09-13', title: 'The Lattice',
     notes: [

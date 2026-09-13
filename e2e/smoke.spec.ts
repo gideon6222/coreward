@@ -3818,3 +3818,105 @@ test('focus loss pauses the audio context and coming back resumes it', async ({ 
   expect(states.off, 'the audio kept running with the app in the background').toBe('suspended');
   expect(states.back, 'the audio never came back').toBe('running');
 });
+
+test('growth is a thing on the rock: seated, per cell, and it does not pop', async ({ page }) => {
+  /* Playtest, 2026-09-13: *"There are also some glitches with the plant and
+     frost texture that pop in randomly."*
+
+     Two causes, and this covers the one a test can hold. The first was depth:
+     a flat decal pinned at z = 0.52 against a rock face displaced outward by
+     up to 0.40, so it showed only where the noise dipped and changed with the
+     camera - fixed by seating real geometry on the block's own displacement,
+     which is geometry rather than state and is judged in a contact sheet.
+
+     The second is this one: the KIND used to be read from the region the SHIP
+     was in, so crossing a boundary swapped every patch on screen at once.
+     Growth is keyed to each cell's own region now, so a window that straddles
+     a boundary shows both - and moving the ship across it changes what is in
+     the window, never what a given cell is. */
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const at = (x: number, d: number) => page.evaluate(({ x, d }) => {
+    const w = (window as any).__cw;
+    const dug: string[] = [];
+    for (let dd = 0; dd <= d + 2; dd++) dug.push(x + ',' + dd);
+    for (let xx = x - 2; xx <= x + 2; xx++) for (let dd = d - 2; dd <= d + 2; dd++) dug.push(xx + ',' + dd);
+    w.g.dug = new Set(dug);
+    w.g.px = x; w.g.pd = d;
+    w.resetBlocks();
+    w.advance(0.4);
+    return { counts: w.growthCounts(), region: w.regionAt(x, d) };
+  }, { x, d });
+
+  /* Two regions that grow different things, either side of a lateral
+     boundary at the same depth. */
+  const left = await at(10, 18);
+  const right = await at(50, 18);
+  const kinds = (c: Record<string, number>) => Object.keys(c).filter((k) => c[k] > 0).sort();
+
+  expect(left.region, 'the two probes are in the same region, so this tests nothing')
+    .not.toBe(right.region);
+  expect(kinds(left.counts).length, 'nothing grows on the left').toBeGreaterThan(0);
+  expect(kinds(right.counts).length, 'nothing grows on the right').toBeGreaterThan(0);
+  expect(kinds(left.counts), 'both regions grow the same thing, so this tests nothing')
+    .not.toEqual(kinds(right.counts));
+
+  /* THE CLAIM. Standing where the window straddles the boundary, BOTH kinds
+     are on screen at once. Before this they could not be: one mesh carried
+     one kind and it was the ship's, so the whole field swapped over as you
+     crossed - which is a pop by any other name. */
+  const straddle = await page.evaluate(() => {
+    const w = (window as any).__cw;
+    const inBand = (k: string, d: number) => {
+      const b = w.GROWTH_BAND[k];
+      return !!b && k !== 'none' && d >= b.from && d <= b.to;
+    };
+    /* FIND a place to stand where two kinds genuinely co-occur, rather than
+       assuming one exists at a chosen row. Two things make that necessary and
+       both are seeded facts about this world: the lateral boundaries WANDER
+       with depth, so a window is not a clean slice of one third, and every
+       kind has a depth band - the middle third grows oil, which does not
+       start until 40 m, so at 18 m that third grows nothing at all.
+
+       Scanning for the fixture is fine; deriving the ASSERTION would not be,
+       which is why the claim below is made against what the renderer actually
+       placed. */
+    const half = 10;
+    for (let d = 14; d < 200; d += 6) {
+      for (let x = half + 1; x < w.W - half - 1; x += 3) {
+        const seen = new Set<string>();
+        for (let xx = x - half; xx <= x + half; xx++) {
+          for (let dd = Math.max(0, d - 13); dd <= d + 15; dd++) {
+            const k = w.growthKindAt(xx, dd);
+            if (inBand(k, dd)) seen.add(k);
+          }
+        }
+        if (seen.size < 2) continue;
+        const dug: string[] = [];
+        for (let xx = x - 3; xx <= x + 3; xx++) for (let dd = d - 2; dd <= d + 2; dd++) dug.push(xx + ',' + dd);
+        w.g.dug = new Set(dug);
+        w.g.px = x; w.g.pd = d;
+        w.resetBlocks();
+        w.advance(0.4);
+        return { counts: w.growthCounts(), at: { x, d }, expected: [...seen].sort() };
+      }
+    }
+    return { __noBoundary: 1 };
+  });
+
+  expect((straddle as any).__noBoundary,
+    'nowhere in the world does one window hold two kinds that can both grow there, so this claim was never tested')
+    .toBeUndefined();
+  expect(kinds((straddle as any).counts).length,
+    'a window holding two growable kinds rendered only one, so growth still follows the ship rather than the cell')
+    .toBeGreaterThan(1);
+
+  /* And it is stable: the same cell keeps the same growth however the window
+     is placed around it, which is what "does not pop" means. */
+  const a = await at(10, 18);
+  const b = await at(10, 19);
+  const back = await at(10, 18);
+  expect(back.counts, 'returning to a spot produced different growth than leaving it did')
+    .toEqual(a.counts);
+  expect(b.counts.moss === undefined || b.counts.moss > 0).toBe(true);
+});

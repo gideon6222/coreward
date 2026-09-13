@@ -2,7 +2,7 @@
    body, which is what the single-file version got for free by being written
    top to bottom. */
 import * as THREE from 'three';
-import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, START_X, CAVE_MIN_DEPTH, costOf, matCost } from './sim/config';
+import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, START_X, CAVE_MIN_DEPTH, costOf, matCost, GROWTH_BAND } from './sim/config';
 import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen, onPad, docked, atSurface } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
@@ -21,6 +21,7 @@ import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen
 import { el, updateHUD, audioLabels, buildShop, toast, foundBanner, buildBallast } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
+import { growthCounts, growthKindAt } from './growth';
 import { buildGauges } from './gauges';
 import { lmDebug, LM_COLS } from './lightmap';
 import { sfx, busGain, audioCtxState, audioFocus } from './audio';
@@ -196,7 +197,7 @@ if (new URLSearchParams(location.search).has('debug')) {
        was the middle of the world three rounds ago. Six of them still said 6,
        which was START_X when W was 13, and only kept working because docking
        used to ignore the column entirely. */
-    START_X, docked, atSurface,
+    START_X, docked, atSurface, growthCounts, growthKindAt, GROWTH_BAND,
     /* So a test can assert one case per upgrade against the real number
        rather than against a literal that goes stale. */
     upgradeCount: UPGRADES.length, supplyCount: SUPPLIES.length,

@@ -420,7 +420,10 @@ function rebuild() {
       if (!b.ore) {
         /* What grows on this world, if anything does at this depth. Decoration
            on the cell, never a kind of cell - see growth.ts. */
-        addGrowth(x, d, px, py, ao);
+        /* The block's own displacement goes with it: growth is seated on the
+           DISPLACED surface, and blocks.ts is the only place that already has
+           the block in hand. See the note at the top of growth.ts. */
+        addGrowth(x, d, px, py, ao, ROCK_BUMP[b.id] || 0);
         scratch.position.set(px, py, 0);
         placeCell(px, py, x, d);
         scratch.updateMatrix();
