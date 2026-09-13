@@ -2344,7 +2344,11 @@ the shape of the game is not up for revision until R9a has happened.
       a SKIP button on every first run (its hidden class never had a rule).
       Both fixed, both now asserted on what is drawn rather than on a class.
 
-- [ ] **R9c A campaign the probe can finish.** `scripts/longplay.mjs` has never
+- [x] **R9c A campaign the probe can finish.** Done 2026-09-13: the probe
+      plays to the Vault (seeded from the wake, 27 runs to nine Anchors and
+      5 more to the centre). It found that the laser was never buried, which
+      is fixed, and taught itself to go round the sealed hall. `NOTES.md`.
+      Original brief: `scripts/longplay.mjs` has never
       lit more than one Anchor, and its header says honestly why: four separate
       policy bugs of its own. Either give it a policy that can play the game -
       lateral travel to a column, a fuel rule, a climb that does not give up,

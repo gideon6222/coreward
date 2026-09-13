@@ -125,11 +125,17 @@ if (SEED_LIT || SEED_CREDITS) {
   await page.evaluate(({ n, c }) => {
     const w = window.__cw;
     let lit = 0;
-    for (let r = 0; r < w.ANCHOR_COUNT && lit < n; r++) {
-      if (w.anchorSealed(r)) continue;
-      w.lightAnchor(w.g.ground, r); lit++;
+    /* Open ones first, then the sealed - which a player could only have lit
+       with the laser, so it comes along. */
+    for (const sealed of [false, true]) {
+      for (let r = 0; r < w.ANCHOR_COUNT && lit < n; r++) {
+        if (w.anchorSealed(r) !== sealed) continue;
+        w.lightAnchor(w.g.ground, r); lit++;
+        if (sealed && !w.g.found.includes('laser')) { w.g.found.push('laser'); w.g.up.laser = 1; }
+      }
     }
     w.wake(w.g.ground);
+    if (w.vaultOpen(w.g.ground.lit.length)) w.revealVault && w.revealVault();
     w.g.credits += c;
     w.resetBlocks();
   }, { n: SEED_LIT, c: SEED_CREDITS });

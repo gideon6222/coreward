@@ -4319,6 +4319,25 @@ run at this stage while the probe feeds it only what is banked; it held at
 0.93-0.98 through six runs, so the spiral is not in sight while the runs
 sell.
 
+## R9c closed: the campaign is completable end to end
+
+Two seeded runs, on the shipping loop, played badly on purpose:
+
+| from | to | runs | game-minutes | what happened |
+|---|---|---|---|---|
+| 5 Anchors lit, the wake, 30,000 credits | 9 Anchors lit | 27 | 41.9 | Palewell on run 4 down column 36; then the crate hunt on its own: the bomb, the magnet, a third, and the LASER on run 16 at (40,275); Kryllon (sealed) on run 17, Obrinth on 23, Serrik on 27. The ship lost once. The Ballast never below 0.93. Peak Unrest 0.8, no region down |
+| 9 lit, laser in hand, 80,000 credits | the Vault | 5 | 8.1 | straight down column 30, fifty metres a run, THE VAULT at 404 m on run 5. The ship lost on the climb out, hull 69, which is the heat |
+
+With the intro's first Anchor at 56 s, the probe's own first five in 21
+minutes, and the two runs above, a bad player finishes this game in about
+seventy game-minutes. Nothing in it stalled that was the game's fault. The
+one thing that stalled - the sealed hall across the main shaft - is the
+game working, and the probe now goes round it the way a player does.
+
+**Still not a human play.** Every question that matters - does the hunt
+feel like a hunt, is the map worth opening, does the fifth Anchor land -
+is R9a, and R9a is his.
+
 ## Left for you: five review screenshots in a folder with a mangled name
 
 A studio sweep on 2026-09-12 found `SERSGIDEOAPPDATAocaltemp/review2/` sitting in this
