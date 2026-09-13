@@ -4306,3 +4306,26 @@ slashes (`C:/Users/...`), which every Windows tool accepts.
 **The screenshots were left alone**, because they are your review evidence and not a
 sweeping session's to throw away. Delete the folder once you have finished with them, or
 move them somewhere outside the repo. Nothing else here was touched.
+
+## Also for you: twenty shipped models that `assets/CREDITS.md` does not know about
+
+The same sweep checked which game owned a stray asset pack and found this instead.
+`git ls-files` lists **20 tracked `.glb` files** under `public/models/`, five in `ship/` and
+fifteen in `station/` plus a `Textures/` folder, all of them shipped and loaded at runtime by
+`src/shipparts.ts` and `src/stationroom.ts`. `assets/CREDITS.md` has no row for any of them.
+It currently ends by saying **"Everything else in the game is made here: the ship, the pad,
+the Claim's structures"** and arguing that imported station kits do not join flat-shaded
+terrain cleanly, which is no longer what the repo does.
+
+What is actually recorded: `src/shipparts.ts:39` names the five ship parts as *Kenney Space
+Kit, CC0, run through gltf-transform*, in a code comment rather than in the credits file.
+The fifteen station props (`table-display`, `container`, `computer`, `pipe-bend`, `rail`,
+`floor-panel`, `wall-window`, `structure-panel` and the rest) have **no licence statement
+anywhere in the repo**. The names read like a Kenney kit, but that is a guess and a guess is
+exactly what `CREDITS.md` says not to write down, so nothing was added on your behalf.
+
+CC0 asks for no attribution, so this is not a shipping blocker, but `POLISH.md` requires the
+file and the studio rule is a row per imported asset. Two things to do when you next touch
+that folder: confirm which kit the station props came from and add the rows, and rewrite the
+closing paragraph, because right now the file tells the next reader that the game imports no
+kits while twenty kit models sit in `public/models/`.
