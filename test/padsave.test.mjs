@@ -114,3 +114,46 @@ test('quitting mid-run costs exactly what dying does', () => {
   assert.ok(!onPad.dug.includes('30,40'), 'a tunnel from the abandoned run survived');
   assert.ok(onPad.dug.includes('30,2'), 'a tunnel from an earlier run was lost');
 });
+
+test('a large event writes a checkpoint where the ship stands, tank and hold as they are', () => {
+  /* *"lets do a second save point at the anchor. If there are any large
+     events like this, create save points for them too."* */
+  fresh();
+  H.g.pd = 42; H.g.px = 31;
+  H.g.fuel = 37; H.g.hull = 61; H.g.soak = 0.2;
+  H.g.cargo = { silver: 2 }; H.g.weight = 8;
+  assert.equal(H.snapshot(), null, 'the pad save fired underground');
+  const c = H.checkpointSnapshot();
+  assert.ok(c, 'no checkpoint underground');
+  assert.equal(c.at, 'checkpoint');
+  assert.equal(c.pd, 42);
+  assert.equal(c.px, 31);
+  assert.equal(c.fuel, 37, 'a checkpoint without the tank is a free refuel on load');
+  assert.equal(c.hull, 61);
+  assert.equal(c.soak, 0.2);
+  assert.deepEqual(c.cargo, { silver: 2 });
+  /* The pad save carries the same fields and says which it is. */
+  H.g.pd = -1;
+  assert.equal(H.snapshot().at, 'pad');
+  assert.equal(H.snapshot().fuel, 37);
+  /* And neither kind is written during the way in. */
+  H.g.mode = 'arrive';
+  assert.equal(H.checkpointSnapshot(), null, 'a checkpoint was written during the way in');
+  H.g.mode = 'play';
+});
+
+test('a checkpoint loads where it was written; an unflagged mid-run save is still landed', () => {
+  const cp = H.landSave({ at: 'checkpoint', px: 31, pd: 42, cargo: { silver: 2 }, weight: 8 });
+  assert.equal(cp.pd, 42, 'a checkpoint was landed on the pad');
+  assert.equal(cp.px, 31);
+  assert.deepEqual(cp.cargo, { silver: 2 }, 'a checkpoint lost its hold');
+  assert.equal(cp.weight, 8);
+  /* The same position without the flag is a 0.33.0 mid-run save. */
+  const old = H.landSave({ px: 31, pd: 42, cargo: { silver: 2 }, weight: 8 });
+  assert.equal(old.pd, -1);
+  assert.deepEqual(old.cargo, {});
+  /* And a pad save with the flag is on the pad, hold kept. */
+  const pad = H.landSave({ at: 'pad', px: H.START_X, pd: -1, cargo: { iron: 1 }, weight: 2 });
+  assert.equal(pad.pd, -1);
+  assert.deepEqual(pad.cargo, { iron: 1 });
+});

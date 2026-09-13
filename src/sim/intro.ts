@@ -245,20 +245,65 @@ export const eyeAt = (t: number): Eye => eyeOn(INTRO, t);
 /* ---------- CONTINUE ---------- */
 
 /* *"It should only take a few seconds to start playing again."* The intro's
-   own way, compressed and silent. There is no mid-run case: the save is
-   only ever taken on the pad (see the pad save in state.ts), so every
-   CONTINUE lands the ship on the pad. */
+   own way, compressed and silent, when the save is on the pad.
+
+   And when it is a CHECKPOINT - an Anchor lit, the Vault, a relic, a device
+   - *"update the continue screen to go directly to their saved location
+     instead of up to the launch pad first, then to them."* The light comes
+   up in the hall as before, then the eye travels straight to where the ship
+   is, through whatever is between, and the ship's lamp comes on. */
 export interface Arrive {
   t: number;
   done: boolean;
+  /* where the ship is, or null for the pad */
+  to: { px: number; pd: number } | null;
 }
 
-export const newArrive = (): Arrive => ({ t: 0, done: false });
+/* The eye's speed on a direct travel, in metres a second, and the bounds on
+   how long the travel takes. Two rebuilds of the streaming window a frame
+   at 60 fps; the farthest checkpoint, the Vault at the centre, is about
+   three seconds. */
+export const TRAVEL_SPEED = 120;
+export const TRAVEL_MIN = 0.8;
+export const TRAVEL_MAX = 3.2;
+/* the ship's lamp coming on at the end of a direct travel */
+export const LAMP_UP = 0.5;
+
+export const newArrive = (to: { px: number; pd: number } | null = null): Arrive => ({ t: 0, done: false, to });
+
+/* How long this arrive runs. */
+export function arriveSecs(st: Arrive): number {
+  if (!st.to) return ARRIVE_SECS;
+  const hall = hallEye();
+  const dist = Math.hypot(st.to.px - hall.px, st.to.pd - hall.pd);
+  const travel = Math.min(TRAVEL_MAX, Math.max(TRAVEL_MIN, dist / TRAVEL_SPEED));
+  return ARRIVE.hall + travel + LAMP_UP;
+}
 
 export function arriveTick(st: Arrive, dt: number) {
   if (st.done) return;
+  const end = arriveSecs(st);
   st.t += dt;
-  if (st.t >= ARRIVE_SECS) { st.t = ARRIVE_SECS; st.done = true; }
+  if (st.t >= end) { st.t = end; st.done = true; }
 }
 
-export const arriveEye = (st: Arrive): Eye => eyeOn(ARRIVE, st.t);
+export function arriveEye(st: Arrive): Eye {
+  if (!st.to) return eyeOn(ARRIVE, st.t);
+  const hall = hallEye();
+  const t = st.t;
+  if (t < ARRIVE.hall) {
+    return { px: hall.px, pd: hall.pd, light: 0.55 * smooth(t / ARRIVE.breathe), dawn: 0, shipD: null, thrust: 0 };
+  }
+  const travel = arriveSecs(st) - ARRIVE.hall - LAMP_UP;
+  if (t < ARRIVE.hall + travel) {
+    const u = smooth((t - ARRIVE.hall) / travel);
+    return {
+      px: hall.px + (st.to.px - hall.px) * u,
+      pd: hall.pd + (st.to.pd - hall.pd) * u,
+      light: 0.55 - 0.20 * u, dawn: 1, shipD: null, thrust: 0
+    };
+  }
+  /* Arrived. The ship is where it was; its lamp comes on. */
+  const u = Math.min(1, (t - ARRIVE.hall - travel) / LAMP_UP);
+  return { px: st.to.px, pd: st.to.pd, light: 0.35 + 0.65 * smooth(u), dawn: 1, shipD: st.to.pd, thrust: 0 };
+}

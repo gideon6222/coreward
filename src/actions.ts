@@ -7,7 +7,7 @@ import { regionName } from './sim/region';
 import { anchorAt } from './sim/vaults';
 import { wake } from './sim/unrest';
 import { vaultOpen } from './sim/vaults';
-import { g, S, save, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen, revealVault } from './sim/state';
+import { g, S, save, checkpoint, coreM, worldTrait, resetGround, cutGround, padFuel, salePayout, addMark, resetSeen, revealVault } from './sim/state';
 import { blockAt, haulValue, findRoute, planCollapse, cachePrize, findHere } from './sim/world';
 import { R } from './sim/runtime';
 import { lamp } from './scene';
@@ -636,7 +636,9 @@ export function anchorLit(region: number) {
       if (answered) planetAnswers();
       else if (opened) centreOpens();
     });
-  save();
+  /* A large event: written where the ship stands, tank and hold as they are.
+     Quit now and CONTINUE returns here. */
+  checkpoint();
 }
 
 
@@ -678,7 +680,7 @@ export function planetAnswers() {
       resetBlockCache();
       syncBlocks(true);
     });
-  save();
+  checkpoint();
 }
 
 /* ---------- the Vault ----------
@@ -717,7 +719,7 @@ export function vaultReached() {
     'The ground is yours. There is more of it than you have seen.',
     'STAY',
     () => { updateHUD(); });
-  save();
+  checkpoint();
 }
 
 
@@ -741,5 +743,5 @@ export function centreOpens() {
     'door shut, and your map knows where it is now. It is a long way down.',
     'GO',
     () => { updateHUD(); });
-  save();
+  checkpoint();
 }

@@ -1953,6 +1953,53 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
   expect(home.crossing, 'the HUD did not come back').toBe(false);
   expect(home.eye).toBeNull();
 
+  /* 3b. A CHECKPOINT. *"lets do a second save point at the anchor ... and
+         update the continue screen to go directly to their saved location
+         instead of up to the launch pad first, then to them."* Light the
+         first Anchor from beside it, with a part-used tank; the save on
+         disk is that moment; CONTINUE goes straight there and the tank is
+         not refilled. */
+  const lit = await page.evaluate(async () => {
+    const cw = (window as any).__cw;
+    const hall = cw.hallEye();
+    /* Directly above the Anchor, in the hall's air, which is how one is
+       lit - by standing next to it. */
+    cw.g.px = hall.px; cw.g.pd = hall.pd + 1;
+    cw.g.fuel = 37;
+    cw.resetBlocks();
+    for (let i = 0; i < 20 && cw.g.mode !== 'event'; i++) { cw.advance(0.1); await new Promise((r) => requestAnimationFrame(r)); }
+    const card = (document.getElementById('evTitle') as HTMLElement).textContent;
+    const s = JSON.parse(localStorage.getItem('coreward.v2') || 'null');
+    return { card, at: s && s.at, pd: s && s.pd, fuel: s && s.fuel, litCount: cw.g.ground.lit.length };
+  });
+  expect(lit.card, 'the Anchor did not light').toMatch(/ANCHOR/i);
+  expect(lit.at, 'lighting an Anchor did not write a checkpoint').toBe('checkpoint');
+  expect(lit.pd, 'the checkpoint is not where the ship was').toBeGreaterThan(30);
+  expect(lit.fuel, 'the checkpoint did not carry the tank').toBeCloseTo(37, 0);
+  await page.locator('#evBtn').dispatchEvent('click');
+  const cpPos = await page.evaluate(() => ({ px: (window as any).__cw.g.px, pd: (window as any).__cw.g.pd }));
+  await page.evaluate(() => (window as any).__cw.showTitle());
+  await page.locator('#btnContinue').dispatchEvent('click');
+  const direct = await page.evaluate(async () => {
+    const cw = (window as any).__cw;
+    let nearPad = false;
+    for (let i = 0; i < 60 && cw.g.mode !== 'play'; i++) {
+      cw.advance(0.1);
+      if (cw.R.eye && cw.R.eye.pd < 2) nearPad = true;
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+    return { mode: cw.g.mode, px: cw.g.px, pd: cw.g.pd, fuel: cw.g.fuel, nearPad, eye: cw.R.eye, ship: cw.R.shipShown };
+  });
+  expect(direct.mode, 'CONTINUE on a checkpoint took more than six seconds').toBe('play');
+  expect(direct.nearPad, 'CONTINUE went up to the pad first').toBe(false);
+  expect(direct.pd, 'the ship is not at the checkpoint').toBeCloseTo(cpPos.pd, 1);
+  expect(direct.px).toBeCloseTo(cpPos.px, 1);
+  expect(direct.fuel, 'the tank was refilled at a checkpoint').toBeLessThan(45);
+  expect(direct.eye).toBeNull();
+  expect(direct.ship).toBe(true);
+  /* Back on the pad for the rest of this spec. */
+  await page.evaluate(() => { const cw = (window as any).__cw; cw.g.px = 30; cw.g.pd = -1; cw.g.fuel = 90; cw.resetBlocks(); cw.save(); });
+
   /* 4. NEW GAME PLUS: having beaten it, the intro comes back WITH a skip. The
         flag has to survive the wipe, or the one screen that should know the
         player has finished the game treats them as a first-timer. */

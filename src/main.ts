@@ -3,7 +3,7 @@
    top to bottom. */
 import * as THREE from 'three';
 import { HULL_MAX, UPGRADES, SUPPLIES, ORES, shelfStock, tremorDepth, heatDepth, traitAt, W, CAVE_MIN_DEPTH, costOf, matCost } from './sim/config';
-import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen } from './sim/state';
+import { g, S, save, load, hasSave, coreM, padRegion, worldUnrest, markSeen, onPad } from './sim/state';
 import { R } from './sim/runtime';
 import { camera, lamp, resize, scene, amb, sun, rim, fog, renderer } from './scene';
 import { syncBlocks, resetBlockCache } from './blocks';
@@ -93,13 +93,16 @@ setStartHandler((fresh: boolean) => {
     setMark(g.best.depth);
     syncBlocks(true);
   }
-  g.fuel = S.fuelCap();
-  g.hull = S.hullCap();
-  /* The way in has already landed the ship, or dropped the camera to where
-     the save left it - a save can be mid-run, and quit at ninety metres with
-     a full hold means CONTINUE puts you back at ninety metres. Anything else
-     makes quitting and reloading a free ride home with the cargo, which is
-     the trip the whole game is about making. So this only hands over. */
+  /* Full only on the pad - where it always is - or on a fresh start. A
+     CHECKPOINT restores a run in progress, and the run's tank and hull came
+     with it from the save; refilling here would be a free tank at four
+     hundred metres, every time the app was closed at an Anchor. */
+  if (fresh || onPad()) {
+    g.fuel = S.fuelCap();
+    g.hull = S.hullCap();
+  }
+  /* The way in has already landed the ship, or taken the camera to where
+     the checkpoint was written. So this only hands over. */
   g.mode = 'play';
   updateHUD();
   /* Tow Insurance was deleted this version and its cost refunded during

@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.34.0';
+export const VERSION = '0.35.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.35.0', date: '2026-09-12', title: 'Checkpoints',
+    notes: [
+      'Lighting an Anchor, reaching the Vault, recovering a relic or digging up a device saves the game right there, with the tank, the hull and the hold as they are. Close the game after one and CONTINUE puts you back at that moment.',
+      'CONTINUE on a checkpoint goes straight there: the light comes up in the hall, the camera travels to your ship, and its lamp comes on.'
+    ]
+  },
   {
     version: '0.34.0', date: '2026-09-12', title: 'The pad save',
     notes: [

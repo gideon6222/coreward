@@ -2451,6 +2451,26 @@ the shape of the game is not up for revision until R9a has happened.
          glow in the dark under the wordmark - so both NEW GAME and CONTINUE
          start from the picture that is already on screen, with no cut.
 
+- [x] **R9h Checkpoints at every large event.** Done 2026-09-12, v0.35.0,
+      as below. His words on v0.34.0,
+      2026-09-12: *"lets do a second save point at the anchor. If there are
+      any large events like this, create save points for them too, and
+      update the continue screen to go directly to their saved location
+      instead of up to the launch pad first, then to them."*
+
+      A checkpoint is written where the ship stands - tank, hull, hold and
+      all - at each of: an Anchor lighting (which covers the planet
+      answering and the centre opening), the Vault, a relic recovered, a
+      device dug up. Quitting after one restores that moment, which is what
+      dying would do to a run that had passed it, so there is still nothing
+      to abuse; what a checkpoint can rewind is bounded by one run, as the
+      pad save's is. The start handler no longer refills the tank unless the
+      ship is on the pad. CONTINUE on a checkpoint: the hall's light comes
+      up, the eye travels straight to the ship at 120 m/s (about three
+      seconds to the Vault), and the ship's lamp comes on. A save tells the
+      two kinds apart with an `at` field, which is also how an old mid-run
+      save is still landed on the pad.
+
 ## What round eight deliberately did not do, and still has not
 
 Carried forward from the round-eight design so it is not rediscovered:

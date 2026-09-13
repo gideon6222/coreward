@@ -229,6 +229,48 @@ test('CONTINUE is the intro at a run: same start, same end, under four seconds, 
   assert.equal(typeof H.arriveEye(s).text, 'undefined');
 });
 
+test('CONTINUE on a checkpoint goes straight there, and the ship is where it was', () => {
+  /* *"update the continue screen to go directly to their saved location
+     instead of up to the launch pad first, then to them."* The eye leaves
+     the hall for the ship, never touches the pad, and the ship's lamp comes
+     on where the ship is. Measured against the farthest checkpoint there
+     is, the Vault at the centre, and the nearest, the first Anchor's own
+     hall. */
+  const hall = H.hallEye();
+  for (const to of [{ px: H.VAULT_CORE_X, pd: H.VAULT_CORE_D - 1 }, { px: hall.px, pd: hall.pd + 1 }, { px: 50, pd: 306 }]) {
+    const s = H.newArrive(to);
+    const secs = H.arriveSecs(s);
+    assert.ok(secs <= 4.5, 'CONTINUE to ' + to.pd + ' m takes ' + secs.toFixed(1) + ' s');
+    assert.ok(secs >= H.ARRIVE.hall + H.TRAVEL_MIN + H.LAMP_UP - 1e-9);
+    /* Starts in the hall, in the dark, no ship. */
+    const first = H.arriveEye(s);
+    assert.equal(first.px, hall.px); assert.equal(first.pd, hall.pd);
+    assert.equal(first.shipD, null);
+    let last = first, fastest = 0, touchedPad = false, shipSeenBeforeEnd = false;
+    for (let i = 0; !s.done; i++) {
+      H.arriveTick(s, 1 / 60);
+      const e = H.arriveEye(s);
+      fastest = Math.max(fastest, Math.hypot(e.px - last.px, e.pd - last.pd) * 60);
+      if (Math.abs(e.pd - H.PAD_D) < 0.5 && Math.abs(to.pd - H.PAD_D) > 2) touchedPad = true;
+      if (e.shipD !== null && !s.done && s.t < secs - H.LAMP_UP - 1e-6) shipSeenBeforeEnd = true;
+      last = e;
+    }
+    assert.ok(!touchedPad, 'CONTINUE to ' + to.pd + ' m went via the pad');
+    assert.ok(!shipSeenBeforeEnd, 'the ship appeared before the eye arrived');
+    const end = H.arriveEye(s);
+    assert.equal(end.px, to.px, 'the eye ended in column ' + end.px + ' for a ship in ' + to.px);
+    assert.equal(end.pd, to.pd, 'the eye ended at ' + end.pd + ' m for a ship at ' + to.pd);
+    assert.equal(end.shipD, to.pd, 'the ship is not where the checkpoint put it');
+    assert.equal(end.light, 1, 'the lamp did not come on');
+    /* Two window rebuilds a frame is the ceiling this was designed to. */
+    assert.ok(fastest <= H.TRAVEL_SPEED * 1.6 + 1, 'the travel peaks at ' + fastest.toFixed(0) + ' m/s');
+  }
+  /* And a pad save still lands the ship on the pad. */
+  const pad = H.newArrive(null);
+  for (let i = 0; !pad.done; i++) H.arriveTick(pad, 1 / 60);
+  assert.equal(H.arriveEye(pad).shipD, H.PAD_D);
+});
+
 test('the first minute gives a win: the pad is over a hall, and a stock tank reaches it and gets home', () => {
   /* POLISH.md: "the first minute gives a win", and after round eight the win
      is finding something somebody built. The intro shows Rustmoor's hall in

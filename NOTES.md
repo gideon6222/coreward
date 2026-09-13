@@ -4176,3 +4176,54 @@ per frame at 60 fps; the test holds that ceiling.
 5. A win in sixty seconds: unchanged from R9b.
 6. A frame where the player would not know what to do: none; the buttons
    are there throughout the title and nothing is asked during the arrive.
+
+---
+
+# Round nine, R9h, 2026-09-12: checkpoints at every large event
+
+The one case R9g flagged, answered within the hour: *"lets do a second save
+point at the anchor. If there are any large events like this, create save
+points for them too, and update the continue screen to go directly to their
+saved location instead of up to the launch pad first, then to them."*
+
+## What a checkpoint is
+
+A save written where the ship stands, with the tank, the hull, the soak and
+the hold as they are at that moment, at each of: an Anchor lighting (which
+is also where the planet answers and the centre opens), the Vault, a relic
+recovered, a device dug up. `checkpoint()` in `state.ts`; the pad save and
+the checkpoint share one `stateNow`, and the save's `at` field says which
+kind it is. That field is also how a 0.33.0 mid-run save is still landed
+on the pad: no flag and off the pad means "a version that saved
+everywhere", and it is landed with the hold dropped as before.
+
+**Two things that had to move with it.** The start handler refilled the
+tank and the hull on every start; at a checkpoint that is a free tank at
+four hundred metres, so it refills only on a fresh start or on the pad,
+where the tank is always full anyway. And `R.wasAtSurface` is false after
+a checkpoint arrival, or the sale would not fire on the next return.
+
+**Abuse check.** Quitting after a checkpoint restores that moment - the
+tank as it was, the hold as it was - which is exactly what dying would do
+to a run that had passed it. What a checkpoint can rewind (the Ballast,
+the tunnels dug since) is bounded by one run, the same bound the pad save
+has. The pure tests hold all of this: the checkpoint carries the tank, the
+pad save never fires underground, neither kind is written during the way
+in, and a flagged checkpoint loads where it was while an unflagged one is
+landed.
+
+## CONTINUE, direct
+
+The hall's light comes up (0.7 s), the eye travels straight to the ship at
+120 m/s - two window rebuilds a frame at 60 fps, bounded to 0.8-3.2 s - and
+the ship's lamp comes on over half a second where it stands. About 1.9 s to
+the first Anchor's hall, 3.9 s to the Vault. The test walks the three
+farthest and nearest checkpoints and asserts the eye never touches the pad
+and the ship is not drawn until the eye has arrived.
+
+`film-continuecp.png` (14 frames at 0.25 s): the hall lit, the short travel
+down to the Anchor two rows below, the lamp, play with the tank at 40 and
+the Anchor lit. The smoke test lights the first Anchor from beside it with
+the tank at 37, reads the checkpoint off the disk, CONTINUEs, and asserts
+the ship is back at the Anchor with the tank under 45 and the eye never
+within two metres of the pad.

@@ -113,6 +113,25 @@ const SCENES = {
     step: `__cw.advance(SECS);`
   },
 
+  /* CONTINUE on a checkpoint: light the first Anchor from beside it, then
+     the title, then straight to the ship - the hall, the travel, the lamp. */
+  continuecp: {
+    secs: 0.25,
+    frames: 14,
+    enter: true,
+    setup: `
+      const hall = __cw.hallEye();
+      __cw.g.px = hall.px; __cw.g.pd = hall.pd + 1; __cw.g.fuel = 40;
+      __cw.resetBlocks();
+      for (let i = 0; i < 20 && __cw.g.mode !== 'event'; i++) __cw.advance(0.1);
+      document.getElementById('evBtn').click();
+      __cw.showTitle();
+      __cw.advance(0.5);
+      document.getElementById('btnContinue').click();
+    `,
+    step: `__cw.advance(SECS);`
+  },
+
   /* New Game Plus with the skip taken on the second frame: straight to the
      descent, which still plays. */
   ngskip: {

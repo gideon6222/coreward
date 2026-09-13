@@ -32,7 +32,7 @@ export const R = {
   /* The way in, while it is running; see intro.ts. The intro's clock, or
      CONTINUE's. Null the rest of the time, exactly like `flight`. */
   intro: null as { t: number; started: boolean; done: boolean } | null,
-  arrive: null as { t: number; done: boolean } | null,
+  arrive: null as { t: number; done: boolean; to: { px: number; pd: number } | null } | null,
   /* Where the world streams from, the lamp floods from and the camera looks,
      when that is not the ship. Null in play, which means "the ship". The
      intro and CONTINUE move this and leave the ship where it is. */

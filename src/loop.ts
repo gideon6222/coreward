@@ -6,7 +6,7 @@ import { W, HULL_MAX, DIG_BASE, DEF, SUPPLY_OF, DROP_MIN_VALUE, RELIC_COLOR, rel
          GAS_HULL_DAMAGE, GAS_SOAK, traitOf, heatDepth, tremorDepth, paletteOf } from './sim/config';
 import { clamp, key, mixHex } from './sim/util';
 import { g, S, save, coreM, valueM, worldTrait, cutGround, padFuel, markSeen,
-         groundTick, hereUnrest, lightHere, vaultHere } from './sim/state';
+         groundTick, hereUnrest, lightHere, vaultHere, checkpoint } from './sim/state';
 import { unrestBand, tremorScale } from './sim/unrest';
 import { landCollapse, closeGround } from './collapse';
 import { blockAt, findHere, climbCells } from './sim/world';
@@ -434,7 +434,8 @@ export function tick(raw: number, draw = true) {
           showEvent('RELIC RECOVERED', rel.name + '. ' + rel.blurb +
             '  Relics found: ' + g.relics.length + '.', 'STOW IT', () => {});
           R.digging = null;
-          save();
+          /* A large event: a checkpoint, where the ship stands. */
+          checkpoint();
         }
         else if (b.find) {
           /* A device. Unlike a relic or a component this does NOT open a
@@ -449,7 +450,8 @@ export function tick(raw: number, draw = true) {
           flash('rgba(80,255,140,.34)', 520);
           R.shake = Math.max(R.shake, 0.55);
           R.digging = null;
-          save();
+          /* A large event: a checkpoint, where the ship stands. */
+          checkpoint();
         }
         else if (b.cache) {
           /* A cache pays in something other than ore, so it never enters the
@@ -840,7 +842,13 @@ export function tick(raw: number, draw = true) {
     const st = R.arrive;
     arriveTick(st, raw);
     applyEye(arriveEye(st));
-    if (st.done) { touchdown(); endArrive(); }
+    if (st.done) {
+      /* A landing has the dust and the thud; arriving at a checkpoint is the
+         lamp coming on where the ship already is, and the pad is somewhere
+         above it - which the sale on the way up needs to know. */
+      if (st.to === null) touchdown(); else R.wasAtSurface = false;
+      endArrive();
+    }
   } else if (g.mode === 'title') {
     applyEye(titleEye());
   }

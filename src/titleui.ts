@@ -1,4 +1,4 @@
-import { g, save, hasSave } from './sim/state';
+import { g, save, hasSave, onPad } from './sim/state';
 import { R } from './sim/runtime';
 import { sfx, setDuck } from './audio';
 import { hardReset } from './actions';
@@ -153,7 +153,8 @@ export function endIntro() {
 function startGame() {
   hideTitle();
   g.mode = 'arrive';
-  R.arrive = newArrive();
+  /* To the pad, or straight to the checkpoint the save was written at. */
+  R.arrive = newArrive(onPad() ? null : { px: g.px, pd: g.pd });
 }
 
 export function endArrive() {

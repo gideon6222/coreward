@@ -259,16 +259,32 @@ export const onPad = () => g.pd <= PAD_REACH;
    once: there is no free ride home with a full hold, and there is no
    quitting out of a death. At most one run, about three minutes, is lost.
 
+   AND AT EVERY LARGE EVENT. *"lets do a second save point at the anchor. If
+   there are any large events like this, create save points for them too."*
+   Lighting an Anchor, reaching the Vault, recovering a relic, digging up a
+   device: each writes a checkpoint where the ship stands, with the tank,
+   the hull and the hold as they are at that moment. Quitting after one
+   restores that moment, which is exactly what dying would do to a run that
+   had passed it - so still nothing to abuse. What a checkpoint rewinds is
+   bounded by one run, the same bound the pad save has.
+
    `snapshot` is the pure half - what would be written, or null when nothing
-   should be - so the rule can be tested without a disk. */
-export function snapshot(): Record<string, unknown> | null {
-  if (!onPad()) return null;
-  if (g.mode === 'title' || g.mode === 'intro' || g.mode === 'arrive') return null;
+   should be - so the rule can be tested without a disk. `at` says which
+   kind of save this is, which is how a loaded checkpoint is told apart from
+   a mid-run save written by a version that saved everywhere. */
+export type SaveAt = 'pad' | 'checkpoint';
+
+function stateNow(at: SaveAt): Record<string, unknown> {
   return {
+    at,
     planet: g.planet, credits: g.credits, up: g.up,
     world: g.world, trait: g.trait, coreOff: g.coreOff, rich: g.rich,
     won: g.won,
     dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
+    /* The ship's own condition. On the pad it is always full; at a checkpoint
+       it is whatever the run had left, and restoring anything else would be
+       a free tank at four hundred metres. */
+    fuel: g.fuel, hull: g.hull, soak: g.soak,
     kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
     drops: g.drops, damage: g.damage, charge: g.charge,
     relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
@@ -278,24 +294,42 @@ export function snapshot(): Record<string, unknown> | null {
   };
 }
 
-export function save() {
-  const s = snapshot();
+const inWorld = () => g.mode !== 'title' && g.mode !== 'intro' && g.mode !== 'arrive';
+
+export function snapshot(): Record<string, unknown> | null {
+  if (!onPad() || !inWorld()) return null;
+  return stateNow('pad');
+}
+
+/* A large event has just happened: write it, wherever the ship is. Null only
+   while the way in is running, when there is no run to write. */
+export function checkpointSnapshot(): Record<string, unknown> | null {
+  if (!inWorld()) return null;
+  return stateNow('checkpoint');
+}
+
+function write(s: Record<string, unknown> | null) {
   if (!s) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(s));
   } catch (e) { /* ignore */ }
 }
 
-/* Where a loaded save puts the ship. A save written by this version is
-   always on the pad; one written mid-run by 0.33.0 or earlier is landed
-   here, once, with the hold DROPPED - not sold, not kept. Kept would be the
-   free ride home the pad save exists to refuse; sold would be paying for
-   ore that never reached the surface. The tunnels, the credits and the
-   record stay: those were earned. */
-export function landSave(s: { px?: unknown; pd?: unknown; cargo?: unknown; weight?: unknown }):
+export function save() { write(snapshot()); }
+export function checkpoint() { write(checkpointSnapshot()); }
+
+/* Where a loaded save puts the ship.
+
+   A checkpoint is loaded where it was taken, hold and all: it was written at
+   a moment the game chose. A save written mid-run by 0.33.0 or earlier - no
+   `at` field, and off the pad - is landed here, once, with the hold DROPPED:
+   not sold, not kept. Kept would be the free ride home the pad save exists
+   to refuse; sold would be paying for ore that never reached the surface.
+   The tunnels, the credits and the record stay: those were earned. */
+export function landSave(s: { at?: unknown; px?: unknown; pd?: unknown; cargo?: unknown; weight?: unknown }):
   { px: number; pd: number; cargo: Record<string, number>; weight: number } {
   const pd = typeof s.pd === 'number' ? s.pd : -1;
-  if (pd > PAD_REACH) return { px: START_X, pd: -1, cargo: {}, weight: 0 };
+  if (pd > PAD_REACH && s.at !== 'checkpoint') return { px: START_X, pd: -1, cargo: {}, weight: 0 };
   return {
     px: typeof s.px === 'number' ? s.px : START_X,
     pd,
@@ -407,8 +441,14 @@ export function load() {
       g.stock = s.stock || grandfatherStock();
       /* On the pad, always - see landSave. The M5 floor check above may
          already have moved a ship parked inside bedrock; this lands it. */
-      const at = landSave({ px: s.px, pd: g.pd > floor ? 0 : s.pd, cargo: s.cargo, weight: s.weight });
+      const at = landSave({ at: s.at, px: s.px, pd: g.pd > floor ? 0 : s.pd, cargo: s.cargo, weight: s.weight });
       g.px = at.px; g.pd = at.pd; g.cargo = at.cargo; g.weight = at.weight;
+      /* The ship's condition, when the save carries it. A checkpoint restores
+         the run's tank and hull; the start handler leaves them alone unless
+         the ship is on the pad, where they are always full anyway. */
+      if (typeof s.fuel === 'number') g.fuel = s.fuel;
+      if (typeof s.hull === 'number') g.hull = s.hull;
+      if (typeof s.soak === 'number') g.soak = s.soak;
       resetSeen();
       return;
     }
