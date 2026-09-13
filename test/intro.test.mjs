@@ -1,4 +1,4 @@
-/* The way in: the first-run intro and the two-second CONTINUE.
+/* The way in: the first-run intro, the title, and CONTINUE.
 
    Pure so it can be walked here, which matters for the usual reason - the
    preview browser stops requestAnimationFrame when its pane is hidden - and
@@ -12,6 +12,7 @@ import { loadPure } from './harness.mjs';
 const H = await loadPure();
 
 const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+const E = H.wayEnds(H.INTRO);
 
 test('the intro still says what you are looking for', () => {
   /* The property, not the words: a new player leaves knowing there is a fixed
@@ -96,7 +97,7 @@ test('it runs to the pad on its own, then ends and stays ended', () => {
   assert.equal(eye.dawn, 1, 'the intro ended before the sky woke');
 });
 
-test('the eye starts inside the first Anchor hall and ends at the surface', () => {
+test('the eye starts inside the first Anchor hall, and the title is that hall in the dark', () => {
   /* The hall the first descent will cut into at 48 s. Derived from the same
      table the world is stamped from, never typed - the test in this file that
      pins the first minute is what says that hall is under the pad. */
@@ -114,36 +115,69 @@ test('the eye starts inside the first Anchor hall and ends at the surface', () =
   const b = H.blockAt(start.px, start.pd);
   assert.equal(b, null, 'the eye starts inside ' + (b && b.id) + ' rather than in the hall\'s air');
 
-  const top = H.eyeAt(H.RISE_END);
+  /* *"have the same starting point as new game"*: the title IS the hall, so
+     neither button begins with a cut. */
+  const title = H.titleEye();
+  assert.equal(title.px, start.px);
+  assert.equal(title.pd, start.pd);
+  assert.equal(title.light, 0, 'the title has the lamp up; the Anchor\'s own glow should be the only light');
+  assert.equal(title.shipD, null);
+  assert.deepEqual({ px: H.arriveEye(H.newArrive()).px, pd: H.arriveEye(H.newArrive()).pd }, { px: start.px, pd: start.pd },
+    'CONTINUE does not start where NEW GAME starts');
+});
+
+test('the rise ends at the pad, glides across to it, and the eye is never in rock at the surface', () => {
+  /* *"it looks like it jumps over to the left to line up with the launch
+     pad"*: the hall is centred on the Anchor, one column over from the pad,
+     and the eye used to snap across at the top. It eases across during the
+     rise now, monotonically, and never faster than the rise itself. */
+  const top = H.eyeAt(E.rise);
   assert.equal(top.pd, H.PAD_D, 'the rise ends at ' + top.pd + ' m, not at the pad');
+  assert.equal(top.px, H.START_X, 'the rise ends in column ' + top.px + ', the pad is ' + H.START_X);
   assert.equal(top.shipD, null, 'the ship is in the picture before the descent');
-  /* And the eye is never inside rock while it is the light source at the
-     surface: row 0 is rock, the pad's row is air, and a flood from inside a
-     solid cell lights nothing - the filmstrip's dark pad. */
-  for (const t of [H.RISE_END, H.SURFACE_END, H.INTRO_SECS]) {
+
+  let last = H.eyeAt(E.hall);
+  const dir = Math.sign(H.START_X - last.px);
+  for (let t = E.hall; t <= E.rise + 1e-9; t += 1 / 60) {
+    const e = H.eyeAt(Math.min(t, E.rise));
+    assert.ok((e.px - last.px) * dir >= -1e-9, 'the eye moved back across at ' + t.toFixed(2) + ' s');
+    assert.ok(Math.abs(e.px - last.px) < 0.1, 'the eye jumped ' + Math.abs(e.px - last.px).toFixed(2) + ' columns in one frame at ' + t.toFixed(2) + ' s');
+    last = e;
+  }
+  /* A frame after the rise the column must not move at all: that was the
+     snap. */
+  assert.equal(H.eyeAt(E.rise + 1 / 60).px, H.START_X);
+
+  /* Row 0 is rock, the pad's row is air, and a flood from inside a solid
+     cell lights nothing - the filmstrip's dark pad. */
+  H.setWorld(0);
+  H.g.ground = H.newGround();
+  for (const t of [E.rise, E.surface, H.INTRO_SECS]) {
     const e = H.eyeAt(t);
     assert.equal(H.blockAt(e.px, Math.round(e.pd)), null, 'the eye at ' + t + ' s sits inside rock at ' + e.pd + ' m');
   }
-  const title = H.titleEye();
-  assert.equal(H.blockAt(title.px, Math.round(title.pd)), null, 'the title\'s eye sits inside rock');
 });
 
 test('the descent is continuous: the ship enters from above and never jumps', () => {
   /* *"an actual transition, not just a cut."* The ship's depth over the
      descent is monotone and every step is small; the sky wakes with it. */
-  let last = null, lastDawn = 0;
-  for (let t = H.SURFACE_END; t <= H.INTRO_SECS + 1e-9; t += 1 / 60) {
-    const e = H.eyeAt(Math.min(t, H.INTRO_SECS));
-    assert.ok(e.shipD !== null, 'no ship at ' + t.toFixed(2) + ' s of the descent');
-    if (last !== null) {
-      assert.ok(e.shipD >= last - 1e-9, 'the ship went back up at ' + t.toFixed(2) + ' s');
-      assert.ok(e.shipD - last < 0.5, 'the ship jumped ' + (e.shipD - last).toFixed(2) + ' m in one frame at ' + t.toFixed(2) + ' s');
+  for (const way of [H.INTRO, H.ARRIVE]) {
+    const e = H.wayEnds(way);
+    let last = null, lastDawn = 0;
+    for (let t = e.surface; t <= e.end + 1e-9; t += 1 / 60) {
+      const eye = H.eyeOn(way, Math.min(t, e.end));
+      assert.ok(eye.shipD !== null, 'no ship at ' + t.toFixed(2) + ' s of the descent');
+      if (last !== null) {
+        assert.ok(eye.shipD >= last - 1e-9, 'the ship went back up at ' + t.toFixed(2) + ' s');
+        assert.ok(eye.shipD - last < 0.5, 'the ship jumped ' + (eye.shipD - last).toFixed(2) + ' m in one frame at ' + t.toFixed(2) + ' s');
+      }
+      assert.ok(eye.dawn >= lastDawn - 1e-9, 'the sky went back to night at ' + t.toFixed(2) + ' s');
+      last = eye.shipD; lastDawn = eye.dawn;
     }
-    assert.ok(e.dawn >= lastDawn - 1e-9, 'the sky went back to night at ' + t.toFixed(2) + ' s');
-    last = e.shipD; lastDawn = e.dawn;
+    const first = H.eyeOn(way, e.surface);
+    assert.ok(first.shipD <= -way.from * 0.9, 'the ship starts its descent at ' + first.shipD + ' m, already in frame');
+    assert.equal(H.eyeOn(way, e.end).shipD, H.PAD_D);
   }
-  const first = H.eyeAt(H.SURFACE_END);
-  assert.ok(first.shipD <= -H.DESCENT_FROM * 0.9, 'the ship starts its descent at ' + first.shipD + ' m, already in frame');
 });
 
 test('skip goes to the descent, and only a second skip ends it', () => {
@@ -152,7 +186,7 @@ test('skip goes to the descent, and only a second skip ends it', () => {
     H.begin(st);
     st.t = at;
     H.skip(st);
-    assert.equal(st.t, H.SURFACE_END, 'skip from ' + at + ' s landed at ' + st.t);
+    assert.equal(st.t, E.surface, 'skip from ' + at + ' s landed at ' + st.t);
     assert.equal(st.done, false, 'skip from ' + at + ' s skipped the arrival too');
     assert.ok(H.inDescent(st));
   }
@@ -164,53 +198,35 @@ test('skip goes to the descent, and only a second skip ends it', () => {
   assert.equal(H.eyeAt(st.t).shipD, H.PAD_D);
 });
 
-test('CONTINUE is over in a few seconds, and the ship is where the save left it', () => {
-  /* *"It should only take a few seconds to start playing again."* */
-  assert.ok(H.ARRIVE_SECS <= 3, 'CONTINUE takes ' + H.ARRIVE_SECS + ' s');
-
-  /* A surface save: the ship comes down onto the pad, and never dips. */
-  const s = H.newArrive(-1);
-  let steps = 0;
+test('CONTINUE is the intro at a run: same start, same end, under four seconds, no words', () => {
+  /* *"It should only take a few seconds to start playing again"*, and
+     *"the same starting point as new game but move the camera to the launch
+     pad faster and don't display the text."* */
+  assert.ok(H.ARRIVE_SECS <= 4, 'CONTINUE takes ' + H.ARRIVE_SECS + ' s');
+  const s = H.newArrive();
+  let steps = 0, fastest = 0, last = H.arriveEye(s).pd;
   for (; !s.done && steps < 600; steps++) {
-    assert.equal(H.arriveDip(s), 0, 'a surface continue dipped to black');
     H.arriveTick(s, 1 / 60);
+    const pd = H.arriveEye(s).pd;
+    fastest = Math.max(fastest, (last - pd) * 60);
+    last = pd;
   }
   assert.ok(s.done);
-  assert.ok(steps / 60 <= 3.01, 'a surface continue took ' + (steps / 60).toFixed(1) + ' s');
+  assert.ok(steps / 60 <= 4.01, 'CONTINUE took ' + (steps / 60).toFixed(1) + ' s');
   const e = H.arriveEye(s);
   assert.equal(e.shipD, H.PAD_D, 'the ship ended at ' + e.shipD + ', not on the pad');
+  assert.equal(e.pd, H.PAD_D);
   assert.equal(e.dawn, 1);
-
-  /* A deep save: the eye dips, reappears a window above the ship and drops
-     to it; the ship does not move. */
-  const d = H.newArrive(90);
-  H.arriveTick(d, 0.1);
-  assert.ok(H.arriveDip(d) > 0, 'a deep continue did not dip to black');
-  const early = H.arriveEye(d);
-  assert.ok(early.pd < 90 && early.pd >= 90 - H.ARRIVE_FROM - 1e-9, 'the eye reappeared at ' + early.pd + ' m for a ship at 90');
-  for (let i = 0; !d.done && i < 600; i++) H.arriveTick(d, 1 / 60);
-  const late = H.arriveEye(d);
-  assert.ok(Math.abs(late.pd - 90) < 1e-6, 'the eye ended at ' + late.pd + ' m, not at the ship');
-  assert.equal(late.shipD, null, 'a mid-run continue drew a second ship');
-  assert.equal(H.arriveDip(d), 0, 'still dark when play began');
-
-  /* A shallow save: no dip, the camera flies the whole shaft from the pad,
-     and it never moves faster than the deep drop does. */
-  const s2 = H.newArrive(H.ARRIVE_FLY);
-  assert.equal(H.arriveDip(s2), 0, 'a shallow continue dipped to black');
-  assert.equal(H.arriveEye(s2).pd, H.PAD_D, 'a shallow continue did not start from the pad');
-  let prev = H.arriveEye(s2).pd, fastest = 0;
-  for (let i = 0; !s2.done; i++) {
-    H.arriveTick(s2, 1 / 60);
-    const pd = H.arriveEye(s2).pd;
-    fastest = Math.max(fastest, (pd - prev) * 60);
-    prev = pd;
+  /* One row rebuild per frame at 60 fps is the ceiling the rise was designed
+     to; the window is 29 rows. */
+  assert.ok(fastest <= 60, 'the rise peaks at ' + fastest.toFixed(0) + ' m/s');
+  /* And it is the same shape: every phase of the intro, each one shorter. */
+  for (const k of ['hall', 'rise', 'descent']) {
+    assert.ok(H.ARRIVE[k] > 0 && H.ARRIVE[k] < H.INTRO[k], 'CONTINUE\'s ' + k + ' is ' + H.ARRIVE[k] + ' s against the intro\'s ' + H.INTRO[k]);
   }
-  assert.ok(Math.abs(prev - H.ARRIVE_FLY) < 1e-6, 'the shallow drop ended at ' + prev);
-  /* One row rebuild per frame at 60 fps is the ceiling this was designed to. */
-  assert.ok(fastest <= 60, 'the shallow drop peaks at ' + fastest.toFixed(0) + ' m/s');
-  /* And a shallow save that is on the pad in all but name still lands. */
-  assert.equal(H.arriveEye(H.newArrive(0.2)).shipD !== null, true);
+  /* No words: captions belong to the intro's clock, and the arrive has no
+     clock the captions can read. */
+  assert.equal(typeof H.arriveEye(s).text, 'undefined');
 });
 
 test('the first minute gives a win: the pad is over a hall, and a stock tank reaches it and gets home', () => {

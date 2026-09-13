@@ -197,6 +197,22 @@ test.beforeEach(async ({ page }) => {
    a spec that seeds a save first gets the title. Both are handled because
    which one appears is not this helper's business. */
 async function enterGame(page: Page) {
+  /* A SEEDED MID-RUN POSITION, honoured by the harness rather than by the
+     game. Eight specs seed a save with the ship at depth - at 303 m for the
+     draw-call budget, at 260 m under the heat line - because digging there
+     under SwiftShader would dominate the suite. The game no longer loads a
+     save anywhere but on the pad (the pad save, state.ts), and that is the
+     rule, not a bug: so the seed is read here, before the way in can write
+     over it, and the ship is put where the fixture asked once play has
+     begun. A seed on the pad, or no seed, changes nothing. */
+  const seed = await page.evaluate(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem('coreward.v2') || 'null');
+      return s && typeof s.pd === 'number' && s.pd > -0.6
+        ? { px: typeof s.px === 'number' ? s.px : 30, pd: s.pd, cargo: s.cargo || {}, weight: s.weight || 0 }
+        : null;
+    } catch { return null; }
+  });
   const intro = page.locator('#intro');
   const title = page.locator('#title');
   if (!(await intro.getAttribute('class'))?.includes('hidden')) {
@@ -286,6 +302,21 @@ async function enterGame(page: Page) {
      read yet - a race against the frame loop rather than a real state. */
   await expect(intro, 'the intro never closed').toHaveClass(/hidden/);
   await expect(title, 'the title never closed').toHaveClass(/hidden/);
+
+  if (seed) {
+    await page.evaluate((at) => {
+      const cw = (window as any).__cw;
+      if (!cw) return;
+      cw.g.px = at.px; cw.g.pd = at.pd; cw.g.cargo = at.cargo; cw.g.weight = at.weight;
+      /* The camera is snapped rather than left to glide from the pad, so a
+         spec that counts draw calls on its first frame counts the right
+         window. */
+      cw.camera.position.set(cw.camera.position.x, -at.pd - 0.8, cw.camera.position.z);
+      cw.resetBlocks();
+      cw.advance(0.4);
+      cw.startClock();
+    }, seed);
+  }
 }
 
 test('boots without hitting the error overlay', async ({ page }) => {
@@ -1852,66 +1883,77 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
   expect(landed.pd, 'the intro did not end with the ship on the pad').toBe(-1);
   expect(landed.eye, 'the intro left the eye somewhere other than the ship').toBeNull();
 
-  /* 2. CONTINUE on a surface save: the ship comes down onto the pad, and it
-        is over inside three seconds of game time. No flight. */
+  /* 2. THE PAD SAVE. *"a quick save to be done at the launch pad so that if
+        someone exits out of the game, they start back at the launch pad,
+        don't lose too much progress, but can't abuse the system."* A run in
+        progress is never written: the last thing on disk is the pad. */
+  const saved = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    /* The intro landed and saved on the pad; that is what is on disk. */
+    const before = JSON.parse(localStorage.getItem('coreward.v2') || 'null');
+    /* Now a run: forty metres down with gold in the hold, and every way the
+       game has of saving. */
+    cw.g.pd = 40; cw.g.cargo = { gold: 4 }; cw.g.weight = 20;
+    cw.save();
+    /* Bubbling, or it never reaches the listener on window. */
+    document.dispatchEvent(new Event('visibilitychange', { bubbles: true }));
+    const after = JSON.parse(localStorage.getItem('coreward.v2') || 'null');
+    return { before: before && { pd: before.pd, cargo: before.cargo }, after: after && { pd: after.pd, cargo: after.cargo } };
+  });
+  expect(saved.before, 'the intro did not save on the pad').not.toBeNull();
+  expect(saved.before!.pd, 'the pad save is not on the pad').toBeLessThanOrEqual(-0.6);
+  expect(saved.after, 'the mid-run save changed what is on disk').toEqual(saved.before);
+
+  /* 3. CONTINUE is the intro at a run: it starts where NEW GAME starts, in
+        the hall, says nothing, and is over inside four seconds of game time
+        with the ship on the pad. */
   await page.evaluate(() => {
     const cw = (window as any).__cw;
-    cw.g.pd = -1; cw.g.best.depth = 90;
+    cw.g.pd = -1; cw.g.cargo = {}; cw.g.weight = 0; cw.g.best.depth = 90;
     cw.showTitle();
   });
   await expect(page.locator('#btnContinue'), 'a save exists, so CONTINUE is live')
     .toBeEnabled();
+  const hall = await page.evaluate(() => (window as any).__cw.hallEye());
+  const atTitle = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.advance(0.3);
+    return { eye: cw.R.eye, ship: cw.R.shipShown };
+  });
+  expect(atTitle.eye, 'the title is not the hall').toEqual(hall);
+  expect(atTitle.ship).toBe(false);
   await page.locator('#btnContinue').dispatchEvent('click');
   const arriving = await page.evaluate(() => {
     const cw = (window as any).__cw;
-    cw.advance(0.5);
-    return { mode: cw.g.mode, pd: cw.g.pd, ship: cw.R.shipShown, crossing: document.body.classList.contains('crossing') };
+    cw.advance(0.3);
+    return { mode: cw.g.mode, eye: cw.R.eye, ship: cw.R.shipShown, crossing: document.body.classList.contains('crossing'),
+      text: (document.getElementById('introText') as HTMLElement).textContent, introShown: !document.getElementById('intro')!.classList.contains('hidden') };
   });
   expect(arriving.mode, 'CONTINUE cut straight into play').toBe('arrive');
-  expect(arriving.ship, 'no ship coming down').toBe(true);
-  expect(arriving.pd, 'the ship is not above the pad half a second in').toBeLessThan(-3);
+  expect(arriving.eye, 'CONTINUE did not start in the hall').toEqual(hall);
+  expect(arriving.ship, 'a ship in the hall').toBe(false);
+  expect(arriving.introShown, 'CONTINUE put the captions up').toBe(false);
   expect(arriving.crossing).toBe(true);
+  const descending = await page.evaluate(() => {
+    const cw = (window as any).__cw;
+    cw.advance(2.0);
+    return { mode: cw.g.mode, pd: cw.g.pd, ship: cw.R.shipShown, eye: cw.R.eye };
+  });
+  expect(descending.mode).toBe('arrive');
+  expect(descending.ship, 'no ship coming down 2.3 s in').toBe(true);
+  expect(descending.eye!.pd, 'the eye is not at the pad for the descent').toBe(-1);
+  expect(descending.pd, 'the ship is not above the pad').toBeLessThan(-1.5);
   const home = await page.evaluate(() => {
     const cw = (window as any).__cw;
-    cw.advance(2.2);
-    return { mode: cw.g.mode, pd: cw.g.pd, crossing: document.body.classList.contains('crossing') };
+    cw.advance(1.8);
+    return { mode: cw.g.mode, pd: cw.g.pd, crossing: document.body.classList.contains('crossing'), eye: cw.R.eye };
   });
-  expect(home.mode, 'CONTINUE took more than 2.7 s of game time').toBe('play');
+  expect(home.mode, 'CONTINUE took more than 4.1 s of game time').toBe('play');
   expect(home.pd, 'CONTINUE did not land on the pad').toBe(-1);
   expect(home.crossing, 'the HUD did not come back').toBe(false);
+  expect(home.eye).toBeNull();
 
-  /* And on a MID-RUN save the ship stays where it was: ninety metres down
-     with the hold full is ninety metres down, or quitting is a free ride
-     home. The camera goes to the ship, not the other way round. */
-  await page.evaluate(() => {
-    const cw = (window as any).__cw;
-    const dug: string[] = [];
-    for (let d = 0; d <= 90; d++) dug.push(cw.g.px + ',' + d);
-    cw.g.dug = new Set(dug);
-    cw.g.pd = 90;
-    cw.showTitle();
-  });
-  await page.locator('#btnContinue').dispatchEvent('click');
-  const dip = await page.evaluate(() => {
-    const cw = (window as any).__cw;
-    cw.advance(0.2);
-    return { dark: Number(document.getElementById('flash')!.style.opacity), ship: cw.R.shipShown, pd: cw.g.pd };
-  });
-  expect(dip.dark, 'a mid-run continue did not dip to black').toBeGreaterThan(0);
-  expect(dip.ship, 'a second ship was drawn during the drop').toBe(false);
-  expect(dip.pd, 'the ship moved').toBe(90);
-  const deep = await page.evaluate(() => {
-    const cw = (window as any).__cw;
-    cw.advance(2.4);
-    return { mode: cw.g.mode, pd: cw.g.pd, eye: cw.R.eye, dark: Number(document.getElementById('flash')!.style.opacity), ship: cw.R.shipShown };
-  });
-  expect(deep.mode, 'a mid-run continue took more than 2.6 s of game time').toBe('play');
-  expect(deep.pd, 'CONTINUE moved a mid-run ship').toBe(90);
-  expect(deep.eye, 'play began with the eye still detached from the ship').toBeNull();
-  expect(deep.ship).toBe(true);
-  expect(deep.dark, 'still dark when play began').toBe(0);
-
-  /* 3. NEW GAME PLUS: having beaten it, the intro comes back WITH a skip. The
+  /* 4. NEW GAME PLUS: having beaten it, the intro comes back WITH a skip. The
         flag has to survive the wipe, or the one screen that should know the
         player has finished the game treats them as a first-timer. */
   await page.evaluate(() => {
@@ -1930,7 +1972,7 @@ test('the three ways in behave differently, and New Game Plus can skip', async (
   await expect(page.locator('#introSkip'), 'a New Game Plus run must offer a skip')
     .toBeVisible();
 
-  /* 4. Skipping goes to the DESCENT and keeps it: the ship still comes down
+  /* 5. Skipping goes to the DESCENT and keeps it: the ship still comes down
         onto the pad, out of the dark, and play begins when it lands. */
   await page.locator('#introSkip').dispatchEvent('click');
   const afterSkip = await page.evaluate(() => {

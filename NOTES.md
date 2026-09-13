@@ -4106,3 +4106,73 @@ seen and not complained about.
 Sound. The rumble, the ducked score coming up under the rise and the
 tritone are in the code and cannot be filmed. First thing to listen for on
 the phone.
+
+---
+
+# Round nine, R9g, 2026-09-12: the pad save, and CONTINUE as the intro compressed
+
+*"I like the intro a lot more now"* - the second whole-screen approval in
+this game - and three asks in the same message.
+
+## 1. The slide at the top of the rise
+
+The eye rose in the Anchor's column (31) and the pad is column 30. At the
+surface it snapped across and the camera's follow smoothing turned the snap
+into a slide he could see. **One column, on a 61-column world, and he saw
+it.** The eye now eases across during the rise, on the same smoothstep as
+the climb, and a test walks the rise asserting the column moves one way,
+never by more than a tenth of a cell a frame, and not at all afterwards.
+
+## 2. The pad save
+
+He named the mechanism and both its constraints in one sentence: taken at
+the pad, must not cost much, must not be abusable. **A checkpoint at the
+pad**: `save()` writes only while the ship is on the pad in play (`snapshot`
+is the pure half and returns null otherwise), so a run in progress when the
+app closes is simply not in the save. CONTINUE therefore always lands on the
+pad with the state as you left it.
+
+Why that closes the abuse: quitting mid-run now costs exactly what dying
+does - the hold and the run - and nothing else. No free ride home with a
+full hold, no quitting out of a death. At most one run, about three
+minutes, is lost. `quitting mid-run costs exactly what dying does` in
+`test/padsave.test.mjs` says this in code.
+
+The one thing to watch: an Anchor lit on the abandoned run is lost with it.
+That is one run's work and it is the same as dying in the hall, but it is
+the case where "don't lose too much progress" and "can't abuse the system"
+pull against each other, and the mechanism came down on the second. If it
+turns out to sting, the fix is a second checkpoint at the moment an Anchor
+lights - the ship is in a hall, there is nothing to abuse there - not a
+return to saving everywhere.
+
+A save from 0.33.0 or earlier taken mid-run loads on the pad with the hold
+DROPPED, once (`landSave`): not kept, which would be the ride home, and not
+sold, which would be paying for ore that never surfaced. Tunnels, credits
+and the record stay.
+
+## 3. CONTINUE is the intro at a run
+
+The same `Way` (hall, rise, surface, descent) with shorter phases: 0.7 /
+1.3 / 0 / 1.7 s, the ship from 14 m, no captions - 3.7 s. And **the title
+screen is now the hall in the dark**, the Anchor's own glow the only light,
+so NEW GAME and CONTINUE both start from the picture already on screen and
+neither begins with a cut. The deep-continue path (the dip to black, the
+drop to a mid-run ship) is deleted: there are no mid-run saves for it to
+serve.
+
+The rise in the compressed way peaks under 60 m/s, which is one window row
+per frame at 60 fps; the test holds that ceiling.
+
+## The six questions, `film-continue.png` (16 frames at 0.25 s) and `film-title.png`
+
+1. Feedback: the light breathes up on the button press, the ship lands with
+   the dust and the thud.
+2. Acceleration: smoothstep everywhere, asserted.
+3. Popping in: nothing; the title's gradient darkens the bottom of the hall
+   where the buttons sit, which is the same overlay the pad had.
+4. Short states: the hall (frames 0-3), the rise (4-7), the surface (8-10),
+   the descent (11-14), play (15) - every phase has frames.
+5. A win in sixty seconds: unchanged from R9b.
+6. A frame where the player would not know what to do: none; the buttons
+   are there throughout the title and nothing is asked during the arrive.

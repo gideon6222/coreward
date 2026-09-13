@@ -16,9 +16,18 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.33.0';
+export const VERSION = '0.34.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.34.0', date: '2026-09-12', title: 'The pad save',
+    notes: [
+      'The game saves at the launch pad, and only there. Close it mid-run and you are back on the pad next time with everything you had banked - the run you were on is gone, hold and all, the same as if the ship had been lost. So there is no quitting your way home with a full hold.',
+      'CONTINUE is the opening at a run: the hall, the climb to the surface, the ship coming down - no words, under four seconds.',
+      'The title screen is the hall in the dark, so nothing cuts when you press either button.',
+      'The climb in the opening no longer sidesteps at the top to line up with the pad.'
+    ]
+  },
   {
     version: '0.33.0', date: '2026-09-12', title: 'The way in',
     notes: [

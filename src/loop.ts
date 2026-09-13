@@ -50,10 +50,10 @@ import { stepGauges } from './gauges';
 import { sell, goSurface, die, tremor, collectHere, grantCache, grantFind, showEvent, stopDigging, absorb, anchorLit, vaultReached } from './actions';
 import { sfx, setDepth, setMood, setDuck } from './audio';
 import { isDocked, stepStation, renderStation } from './station';
-import { introTick, eyeAt, titleEye, arriveTick, arriveEye, arriveDip,
-         RUMBLE_AT, HALL_END, RISE_SECS, ARRIVE_SURFACE, PAD_D } from './sim/intro';
+import { introTick, eyeAt, titleEye, arriveTick, arriveEye, INTRO,
+         RUMBLE_AT, PAD_D } from './sim/intro';
 import type { Eye } from './sim/intro';
-import { endIntro, endArrive, paintCaption, dipTo } from './titleui';
+import { endIntro, endArrive, paintCaption } from './titleui';
 
 export const FACE_VEC: Record<Dir, number[]> =
   { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -831,7 +831,7 @@ export function tick(raw: number, draw = true) {
     /* The one sound. Once, when it is due, for this run of the intro. */
     if (st.started && st.t >= RUMBLE_AT && rumbledFor !== st) { rumbledFor = st; sfx.rumble(); }
     /* Silence until the rise; the score is up by the surface. */
-    setDuck(st.started ? clamp((st.t - HALL_END) / RISE_SECS, 0, 1) : 0);
+    setDuck(st.started ? clamp((st.t - INTRO.hall) / INTRO.rise, 0, 1) : 0);
     applyEye(eyeAt(st.t));
     /* Ordered AFTER the eye so the last frame of the descent is drawn where
        it lands. endIntro clears R.intro; `st` is held. */
@@ -839,9 +839,8 @@ export function tick(raw: number, draw = true) {
   } else if (g.mode === 'arrive' && R.arrive) {
     const st = R.arrive;
     arriveTick(st, raw);
-    dipTo(arriveDip(st));
     applyEye(arriveEye(st));
-    if (st.done) { if (st.fromD <= ARRIVE_SURFACE) touchdown(); endArrive(); }
+    if (st.done) { touchdown(); endArrive(); }
   } else if (g.mode === 'title') {
     applyEye(titleEye());
   }

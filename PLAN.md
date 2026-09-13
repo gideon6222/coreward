@@ -2422,6 +2422,35 @@ the shape of the game is not up for revision until R9a has happened.
       ends on the pad, the first caption waits for the picture, and the whole
       thing is shorter than forty seconds.
 
+- [x] **R9g The pad save, and CONTINUE as the intro compressed.** Done
+      2026-09-12, v0.34.0, as below; `NOTES.md` has the one case to watch
+      (an Anchor lit on an abandoned run). His words on v0.33.0, after
+      *"I like the intro a lot more now"*:
+
+      1. *"it starts below the ground, pans up, then it looks like it jumps
+         over to the left to line up with the launch pad."* The eye rises in
+         the Anchor's column, one right of the pad, and snaps across at the
+         top. It eases across during the rise instead.
+      2. *"a quick save to be done at the launch pad so that if someone
+         exits out of the game, they start back at the launch pad, don't
+         lose too much progress, but can't abuse the system."* A CHECKPOINT
+         AT THE PAD: the save is only ever written while the ship is on the
+         pad, so the run in progress when the app closes is not saved and
+         CONTINUE always lands you on the pad with the state as you left
+         it. Quitting mid-run then costs exactly what dying does - the hold
+         and the run - and nothing else, which is what closes the abuse:
+         there is no free ride home with the cargo, and no quitting out of
+         a death. At most one run (about three minutes) is lost. A save from
+         0.33.0 or earlier that was taken mid-run loads on the pad with the
+         hold dropped, once.
+      3. *"When you hit continue at the start screen, have the same starting
+         point as new game but move the camera to the launch pad faster and
+         don't display the text."* CONTINUE is the intro's own timeline
+         compressed: the hall, the rise, the descent, no captions, under
+         four seconds. And the title screen IS the hall - the Anchor's own
+         glow in the dark under the wordmark - so both NEW GAME and CONTINUE
+         start from the picture that is already on screen, with no cut.
+
 ## What round eight deliberately did not do, and still has not
 
 Carried forward from the round-eight design so it is not rediscovered:

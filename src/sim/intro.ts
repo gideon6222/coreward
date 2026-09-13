@@ -1,4 +1,4 @@
-/* The way in: the first-run intro, and the two-second CONTINUE.
+/* The way in: the first-run intro, the title, and CONTINUE.
 
    Playtest, 2026-09-12, on v0.32.0: *"redo the intro completely. I want it to
    have more of an eerie and high quality feel to it that matches the rest of
@@ -7,33 +7,37 @@
    hitting the continue button as well. It should only take a few seconds to
    start playing again."*
 
-   That was a restatement from scratch, a day after the captions had been
-   rewritten over the same picture - so the picture was wrong, not the words.
-   The picture was a second scene: a starfield, billiard-ball worlds under a
-   sun, and a white flash to hide the cut into the game. Everything he has ever
-   praised in this game is dark rock under a lamp.
+   And on v0.33.0, an hour later: *"I like the intro a lot more now ... When
+   you hit continue at the start screen, have the same starting point as new
+   game but move the camera to the launch pad faster and don't display the
+   text."*
 
-   So the intro now plays IN THE GAME'S OWN SCENE, with the game's own camera,
+   The first was a restatement from scratch, a day after the captions had
+   been rewritten over the same picture - so the picture was wrong, not the
+   words. The picture was a second scene: a starfield, billiard-ball worlds
+   under a sun, and a white flash to hide the cut into the game. Everything he
+   has ever praised in this game is dark rock under a lamp.
+
+   So the way in plays IN THE GAME'S OWN SCENE, with the game's own camera,
    lamp, rock and pad, and there is nothing to cut between. The research
    (plans/coreward/REFERENCE.md) says the same thing three ways: God of War
    and Half-Life 2 never build a second camera; Limbo's dread is silence
    broken by one sound; Hollow Knight shows the world before the character.
 
-   The shape, on the timeline this module owns:
+   ONE SHAPE, TWO SPEEDS. The title screen is the first Anchor's hall in the
+   dark, the Anchor's own glow the only light. From there:
 
-     tap        black. The first touch is also what lets the audio start.
-     hall       the eye is inside the first Anchor's hall - the one the first
-                descent will cut into - and a cold light breathes up over the
-                cut stone. One low sound. One line.
-     rise       the eye climbs to the surface through dark rock.
-     surface    the pad and the Ballast at night, the only lights their own.
-     descent    the ship's lamp comes down out of the dark; the sky wakes
-                from night to day as it comes; touchdown, and the controls.
+     NEW GAME   tap. A cold light breathes up over the cut stone - the hall
+                the first descent will cut into. One low sound. One line.
+                The eye climbs to the surface through dark rock. The pad at
+                night, one line. The ship's lamp comes down out of the dark;
+                the ground wakes under it; touchdown, one line, controls.
+     CONTINUE   the same, in under four seconds, with no words.
 
    THE EYE AND THE SHIP ARE TWO THINGS. The eye is where the world streams
    and the lamp floods from and the camera looks; the ship is where the ship
-   is. For most of the intro there is no ship. The renderer reads both from
-   `eyeAt(t)` every frame and knows nothing about phases.
+   is. For most of the way in there is no ship. The renderer reads both from
+   `eyeOn(way, t)` every frame and knows nothing about phases.
 
    Pure, so a test can walk it: where the eye starts is derived from the
    Anchor table rather than typed, and every number below is a second or a
@@ -42,27 +46,45 @@
 import { START_X } from './config';
 import { anchorAt } from './vaults';
 
-/* ---------- timing ---------- */
+/* ---------- a way in ---------- */
 
-/* Phase lengths, in seconds. Each phase starts where the last one ends. */
-export const HALL_SECS = 7.0;
-export const RISE_SECS = 8.0;
-export const SURFACE_SECS = 6.0;
-export const DESCENT_SECS = 7.0;
+/* Phase lengths in seconds, and how high the ship starts its descent. */
+export interface Way {
+  hall: number;
+  rise: number;
+  surface: number;
+  descent: number;
+  /* metres above the pad the ship enters from */
+  from: number;
+  /* seconds the hall's light takes to breathe up */
+  breathe: number;
+}
 
-export const HALL_END = HALL_SECS;
-export const RISE_END = HALL_END + RISE_SECS;
-export const SURFACE_END = RISE_END + SURFACE_SECS;
-export const INTRO_SECS = SURFACE_END + DESCENT_SECS;
+export const wayEnds = (w: Way) => ({
+  hall: w.hall,
+  rise: w.hall + w.rise,
+  surface: w.hall + w.rise + w.surface,
+  end: w.hall + w.rise + w.surface + w.descent
+});
 
-/* How far above the pad the ship starts its descent, in metres. Far enough to
-   enter the frame as a light before it is a shape - the camera at the surface
-   frames about eighteen rows. */
-export const DESCENT_FROM = 24;
-/* Where a landed ship sits. The pad is at row -1 everywhere else in the game. */
+/* The intro. The hall needs three seconds to breathe up and three to be
+   read; the descent is the old settle's two seconds plus the approach. */
+export const INTRO: Way = { hall: 7.0, rise: 8.0, surface: 6.0, descent: 7.0, from: 24, breathe: 3.0 };
+
+/* CONTINUE. *"the same starting point as new game but move the camera to the
+   launch pad faster."* The same phases at a run: a glimpse of the hall, the
+   rise at about forty metres a second, the ship from half the height. */
+export const ARRIVE: Way = { hall: 0.7, rise: 1.3, surface: 0, descent: 1.7, from: 14, breathe: 0.35 };
+
+export const INTRO_SECS = wayEnds(INTRO).end;
+export const ARRIVE_SECS = wayEnds(ARRIVE).end;
+
+/* Where a landed ship sits. The pad is at row -1 everywhere else in the game;
+   row 0 is the first row of rock, and a light source inside rock floods
+   nothing, so every surface moment below is at this row and not at zero. */
 export const PAD_D = -1;
 
-/* ---------- the words ---------- */
+/* ---------- the words, intro only ---------- */
 
 export interface Caption {
   /* seconds into the intro this line appears */
@@ -87,7 +109,7 @@ export const CAPTIONS: Caption[] = [
    arriving" - so it is placed early enough to have arrived by the line. */
 export const RUMBLE_AT = 1.4;
 
-/* ---------- state ---------- */
+/* ---------- the intro's state ---------- */
 
 export interface IntroState {
   /* seconds since the tap; does not advance before it */
@@ -120,12 +142,13 @@ export function introTick(st: IntroState, dt: number): boolean {
    who has seen it twice must be able to get out. */
 export function skip(st: IntroState) {
   st.started = true;
-  if (st.t < SURFACE_END) { st.t = SURFACE_END; return; }
+  const e = wayEnds(INTRO);
+  if (st.t < e.surface) { st.t = e.surface; return; }
   st.t = INTRO_SECS;
   st.done = true;
 }
 
-export const inDescent = (st: IntroState) => st.started && st.t >= SURFACE_END && !st.done;
+export const inDescent = (st: IntroState) => st.started && st.t >= wayEnds(INTRO).surface && !st.done;
 
 /* Which caption is up at `t`, or -1. */
 export function captionAt(t: number): number {
@@ -164,76 +187,73 @@ const smooth = (u: number) => { u = u < 0 ? 0 : u > 1 ? 1 : u; return u * u * (3
 
 /* The first Anchor's hall. The eye sits in the upper chamber, two rows above
    the Anchor, which the template puts in open air: the room reads as a room
-   because the light can flood it. Derived from the table so the intro follows
-   the Anchor if the seeds ever move it. */
+   because the light can flood it. Derived from the table so the way in
+   follows the Anchor if the seeds ever move it. */
 export function hallEye(): { px: number; pd: number } {
   const a = anchorAt(1);
   return { px: a.x, pd: a.d - 2 };
 }
 
-/* The eye at time t. Pure geometry; the renderer reads it every frame. */
-export function eyeAt(t: number): Eye {
+/* The title screen's picture: the hall in the dark, the Anchor's own glow
+   the only light. Both NEW GAME and CONTINUE start from exactly this, so
+   neither begins with a cut. */
+export function titleEye(): Eye {
   const hall = hallEye();
-  if (t < HALL_END) {
-    /* The light breathes up over three seconds from nothing. Cold and dim:
-       this is not the ship's lamp, there is no ship yet. */
-    return { px: hall.px, pd: hall.pd, light: 0.55 * smooth(t / 3.0), dawn: 0, shipD: null, thrust: 0 };
+  return { px: hall.px, pd: hall.pd, light: 0, dawn: 0, shipD: null, thrust: 0 };
+}
+
+/* The eye at time t along a way. Pure geometry; the renderer reads it every
+   frame. */
+export function eyeOn(w: Way, t: number): Eye {
+  const hall = hallEye();
+  const e = wayEnds(w);
+  if (t < e.hall) {
+    /* The light breathes up from nothing. Cold and dim: this is not the
+       ship's lamp, there is no ship yet. */
+    return { px: hall.px, pd: hall.pd, light: 0.55 * smooth(t / w.breathe), dawn: 0, shipD: null, thrust: 0 };
   }
-  if (t < RISE_END) {
-    const u = smooth((t - HALL_END) / RISE_SECS);
-    /* To the PAD's row, not to zero: row 0 is the first row of rock, and a
-       light source inside rock floods nothing. The pad, and a landed ship,
-       are at PAD_D, in open air. The filmstrip found this as a surface that
-       stayed dark until play began. */
-    return { px: hall.px, pd: hall.pd + (PAD_D - hall.pd) * u, light: 0.55 - 0.30 * u, dawn: 0, shipD: null, thrust: 0 };
+  if (t < e.rise) {
+    const u = smooth((t - e.hall) / w.rise);
+    /* Up to the PAD's row, and ACROSS to the pad's column on the way: the
+       hall is centred on the Anchor, one column over from the pad, and a
+       snap at the top read as *"it jumps over to the left to line up with
+       the launch pad"*. One column, and he saw it. */
+    return {
+      px: hall.px + (START_X - hall.px) * u,
+      pd: hall.pd + (PAD_D - hall.pd) * u,
+      light: 0.55 - 0.30 * u, dawn: 0, shipD: null, thrust: 0
+    };
   }
-  if (t < SURFACE_END) {
-    const u = (t - RISE_END) / SURFACE_SECS;
+  if (t < e.surface) {
+    const u = (t - e.rise) / w.surface;
     /* The faintest pre-dawn over the last stretch, so the pad is a silhouette
        and not a hole. */
     return { px: START_X, pd: PAD_D, light: 0.25, dawn: 0.06 * smooth((u - 0.5) * 2), shipD: null, thrust: 0 };
   }
-  const u = Math.min(1, (t - SURFACE_END) / DESCENT_SECS);
+  const u = Math.min(1, (t - e.surface) / w.descent);
   /* Decelerating onto the pad, and the sky waking with it: the world starts
      when the ship arrives. Light snaps to full at the start of the descent -
      that is the ship's own lamp switching on, and it is the first bright thing
      in the sequence on purpose. */
-  const e = smooth(u);
-  const shipD = PAD_D - DESCENT_FROM * (1 - e);
+  const s = smooth(u);
+  const shipD = PAD_D - w.from * (1 - s);
   return { px: START_X, pd: PAD_D, light: 1, dawn: 0.06 + 0.94 * smooth((u - 0.15) / 0.85), shipD, thrust: u < 0.97 ? 1 : 0 };
 }
 
-/* The title screen's picture: the pad at night with no ship on it, in the
-   faintest light. What CONTINUE and the intro both end by waking. */
-export function titleEye(): Eye {
-  return { px: START_X, pd: PAD_D, light: 0.2, dawn: 0.15, shipD: null, thrust: 0 };
-}
+export const eyeAt = (t: number): Eye => eyeOn(INTRO, t);
 
 /* ---------- CONTINUE ---------- */
 
-/* Two seconds. *"It should only take a few seconds to start playing again."*
-
-   The title shows the surface at night with no ship on it. On a surface save,
-   the ship comes down onto the pad as the sky wakes - the last quarter of the
-   intro, alone. On a mid-run save there is no pad to land on: the eye dips to
-   black, reappears one window above the ship and drops down the shaft to it,
-   and its lamp comes on. Both end in play. */
-export const ARRIVE_SECS = 2.0;
-/* the dip to black on a mid-run continue, at the start */
-export const ARRIVE_DIP = 0.35;
-/* how far above a mid-run ship the eye starts its drop, in metres */
-export const ARRIVE_FROM = 22;
-/* a save this shallow lands on the pad rather than dropping to the ship */
-export const ARRIVE_SURFACE = 0.5;
-
+/* *"It should only take a few seconds to start playing again."* The intro's
+   own way, compressed and silent. There is no mid-run case: the save is
+   only ever taken on the pad (see the pad save in state.ts), so every
+   CONTINUE lands the ship on the pad. */
 export interface Arrive {
-  /* where the ship is in the save; below ARRIVE_SURFACE means the pad */
-  fromD: number;
   t: number;
   done: boolean;
 }
 
-export const newArrive = (fromD: number): Arrive => ({ fromD, t: 0, done: false });
+export const newArrive = (): Arrive => ({ t: 0, done: false });
 
 export function arriveTick(st: Arrive, dt: number) {
   if (st.done) return;
@@ -241,41 +261,4 @@ export function arriveTick(st: Arrive, dt: number) {
   if (st.t >= ARRIVE_SECS) { st.t = ARRIVE_SECS; st.done = true; }
 }
 
-/* A ship shallower than this is reached by dropping the camera all the way
-   from the pad, with no dip: the whole shaft goes by, which the filmstrip
-   showed is the best two seconds in the game. Deeper than this the drop
-   would be hundreds of metres a second - a window rebuild per frame or worse
-   on the phone - so the eye dips to black and reappears a window above the
-   ship instead. */
-export const ARRIVE_FLY = ARRIVE_FROM * 2;
-
-/* Where a mid-run drop starts from: the pad, or a window above the ship. */
-export function arriveStart(fromD: number): number {
-  return fromD <= ARRIVE_FLY ? PAD_D : fromD - ARRIVE_FROM;
-}
-
-/* 0..1, how dark the dip is at t - only on a deep continue, only at the
-   start. A surface or shallow continue never dips: the picture it starts
-   from is the picture it ends in. */
-export function arriveDip(st: Arrive): number {
-  if (st.fromD <= ARRIVE_SURFACE || arriveStart(st.fromD) === PAD_D) return 0;
-  const u = st.t / ARRIVE_DIP;
-  if (u >= 1) return Math.max(0, 1 - (st.t - ARRIVE_DIP) / 0.4);
-  return Math.min(1, u * 2);
-}
-
-export function arriveEye(st: Arrive): Eye {
-  const u = Math.min(1, st.t / ARRIVE_SECS);
-  if (st.fromD <= ARRIVE_SURFACE) {
-    /* The tail of the intro's descent, from a little lower: there is nothing
-       to introduce, the ship is just coming home. */
-    const e = smooth(u);
-    return { px: START_X, pd: PAD_D, light: 1, dawn: 0.15 + 0.85 * smooth(u / 0.9), shipD: PAD_D - 14 * (1 - e), thrust: u < 0.97 ? 1 : 0 };
-  }
-  /* From the pad, or from behind the dip a window above the ship; then it
-     drops. The ship's own lamp is what it arrives at. */
-  const start = arriveStart(st.fromD);
-  const dip = start === PAD_D ? 0 : ARRIVE_DIP;
-  const w = smooth((st.t - dip) / (ARRIVE_SECS - dip));
-  return { px: START_X, pd: start + (st.fromD - start) * w, light: 0.35 + 0.65 * w, dawn: 1, shipD: null, thrust: 0 };
-}
+export const arriveEye = (st: Arrive): Eye => eyeOn(ARRIVE, st.t);

@@ -68,7 +68,7 @@ const SCENES = {
     step: `__cw.advance(SECS);`
   },
 
-  /* The title screen: the pad at night, no ship. */
+  /* The title screen: the hall in the dark, the Anchor's own glow. */
   title: {
     secs: 0.5,
     frames: 4,
@@ -80,35 +80,16 @@ const SCENES = {
     step: `__cw.advance(SECS);`
   },
 
-  /* CONTINUE on a surface save: two seconds, the ship down onto the pad as
-     the sky wakes. */
+  /* CONTINUE: the intro at a run, silent. Sixteen frames a quarter second
+     apart is the whole four seconds. */
   continue: {
     secs: 0.25,
-    frames: 10,
+    frames: 16,
     setup: `
       /* A save has to exist or CONTINUE is correctly greyed and inert - which
          is what this scenario caught the first time it ran. */
       localStorage.setItem('coreward.v2', JSON.stringify({ credits: 5000, best: { depth: 140, haul: 900 }, dug: [], up: {} }));
       __cw.g.pd = -1; __cw.g.best.depth = 140;
-      __cw.showTitle();
-      __cw.advance(0.5);
-      document.getElementById('btnContinue').click();
-    `,
-    step: `__cw.advance(SECS);`
-  },
-
-  /* CONTINUE on a mid-run save: the dip, then the camera down the shaft to
-     the ship, which has not moved. */
-  continuedeep: {
-    secs: 0.25,
-    frames: 10,
-    setup: `
-      localStorage.setItem('coreward.v2', JSON.stringify({ credits: 5000, best: { depth: 140, haul: 900 }, dug: [], up: {} }));
-      const dug = [];
-      for (let d = 0; d <= 60; d++) dug.push(__cw.g.px + ',' + d);
-      __cw.g.dug = new Set(dug);
-      __cw.g.pd = 60; __cw.g.best.depth = 140;
-      __cw.resetBlocks();
       __cw.showTitle();
       __cw.advance(0.5);
       document.getElementById('btnContinue').click();

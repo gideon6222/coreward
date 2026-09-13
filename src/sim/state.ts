@@ -238,21 +238,70 @@ export function hasSave(): boolean {
 }
 
 /* ============ save ============ */
+/* Where the surface starts, for the ship: at or above this the ship is on
+   (or hovering over) the pad. One constant, used by the HUD's "docked" test
+   and by the save below, so the two can never disagree about where the pad
+   is. */
+export const PAD_REACH = -0.6;
+export const onPad = () => g.pd <= PAD_REACH;
+
+/* ---------- the pad save ----------
+
+   Playtest, 2026-09-12: *"I want a quick save to be done at the launch pad
+   so that if someone exits out of the game, they start back at the launch
+   pad, don't lose too much progress, but can't abuse the system."*
+
+   A CHECKPOINT AT THE PAD. The save is only ever written while the ship is
+   on the pad, in play; a run in progress when the app closes is simply not
+   in it. So CONTINUE always lands you on the pad with the state exactly as
+   you left it, and quitting mid-run costs precisely what dying does - the
+   hold and the run - and nothing else. That is what closes both abuses at
+   once: there is no free ride home with a full hold, and there is no
+   quitting out of a death. At most one run, about three minutes, is lost.
+
+   `snapshot` is the pure half - what would be written, or null when nothing
+   should be - so the rule can be tested without a disk. */
+export function snapshot(): Record<string, unknown> | null {
+  if (!onPad()) return null;
+  if (g.mode === 'title' || g.mode === 'intro' || g.mode === 'arrive') return null;
+  return {
+    planet: g.planet, credits: g.credits, up: g.up,
+    world: g.world, trait: g.trait, coreOff: g.coreOff, rich: g.rich,
+    won: g.won,
+    dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
+    kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
+    drops: g.drops, damage: g.damage, charge: g.charge,
+    relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
+    found: g.found, foundKit: g.foundKit, seenOre: g.seenOre, seen: g.seen,
+    marks: g.marks,
+    ground: g.ground
+  };
+}
+
 export function save() {
+  const s = snapshot();
+  if (!s) return;
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      planet: g.planet, credits: g.credits, up: g.up,
-      world: g.world, trait: g.trait, coreOff: g.coreOff, rich: g.rich,
-      won: g.won,
-      dug: Array.from(g.dug), cargo: g.cargo, weight: g.weight, px: g.px, pd: g.pd,
-      kit: g.kit, stock: g.stock, rubble: Array.from(g.rubble), best: g.best,
-      drops: g.drops, damage: g.damage, charge: g.charge,
-      relics: g.relics, relicsTaken: g.relicsTaken, log: g.log,
-      found: g.found, foundKit: g.foundKit, seenOre: g.seenOre, seen: g.seen,
-      marks: g.marks,
-      ground: g.ground
-    }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
   } catch (e) { /* ignore */ }
+}
+
+/* Where a loaded save puts the ship. A save written by this version is
+   always on the pad; one written mid-run by 0.33.0 or earlier is landed
+   here, once, with the hold DROPPED - not sold, not kept. Kept would be the
+   free ride home the pad save exists to refuse; sold would be paying for
+   ore that never reached the surface. The tunnels, the credits and the
+   record stay: those were earned. */
+export function landSave(s: { px?: unknown; pd?: unknown; cargo?: unknown; weight?: unknown }):
+  { px: number; pd: number; cargo: Record<string, number>; weight: number } {
+  const pd = typeof s.pd === 'number' ? s.pd : -1;
+  if (pd > PAD_REACH) return { px: START_X, pd: -1, cargo: {}, weight: 0 };
+  return {
+    px: typeof s.px === 'number' ? s.px : START_X,
+    pd,
+    cargo: (s.cargo as Record<string, number>) || {},
+    weight: typeof s.weight === 'number' ? s.weight : 0
+  };
 }
 
 export function load() {
@@ -355,10 +404,11 @@ export function load() {
       /* loadLog defaults every field, so a save from before the log existed
          comes back zeroed rather than full of undefined that render as NaN. */
       g.log = loadLog(s.log);
-      g.cargo = s.cargo || {}; g.weight = s.weight || 0;
       g.stock = s.stock || grandfatherStock();
-      if (typeof s.px === 'number') g.px = s.px;
-      if (typeof s.pd === 'number') g.pd = s.pd;
+      /* On the pad, always - see landSave. The M5 floor check above may
+         already have moved a ship parked inside bedrock; this lands it. */
+      const at = landSave({ px: s.px, pd: g.pd > floor ? 0 : s.pd, cargo: s.cargo, weight: s.weight });
+      g.px = at.px; g.pd = at.pd; g.cargo = at.cargo; g.weight = at.weight;
       resetSeen();
       return;
     }

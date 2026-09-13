@@ -1,7 +1,7 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, SUPPLY_OF, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
 import { setGauges, setFuelReserve } from './gauges';
 import { clamp } from './sim/util';
-import { g, S, save, coreM, valueM, worldTrait, padFuel, worldUnrest } from './sim/state';
+import { g, S, save, coreM, valueM, worldTrait, padFuel, worldUnrest, onPad } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
 import type { Upgrade, Supply } from './types';
 import { VERSION, CHANGELOG } from './changelog';
@@ -173,7 +173,7 @@ export function flash(color: string, ms?: number) {
   ui.flash.style.opacity = '1';
   setTimeout(() => { ui.flash.style.opacity = '0'; }, ms || 220);
 }
-export const atSurface = () => g.pd <= -0.6;
+export const atSurface = onPad;
 
 export function updateHUD() {
   /* The chip names WHERE YOU ARE, and it is the only always-visible place that

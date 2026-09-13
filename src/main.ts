@@ -30,6 +30,7 @@ import { collapseTarget, lightAnchor, wake, WAKE_AT, isAwake, feed, feedValue, M
 import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells,
          vaultOpen, VAULT_CORE_X, VAULT_CORE_D } from './sim/vaults';
 import { setStartHandler, wireTitle, showTitle, showIntro, startIntro } from './titleui';
+import { hallEye } from './sim/intro';
 import './input';
 
 /* ============ build stamp ============
@@ -152,6 +153,8 @@ if (new URLSearchParams(location.search).has('debug')) {
       startIntro();
       if (R.intro) R.intro.t = t;
     },
+    /* Where the way in starts, so a spec can ask rather than type a cell. */
+    hallEye,
     pickBay, selectBay, selectedBay, bays, stationCamera, roomReady,
     /* The aisles, so a smoke test can drive the shop the way a thumb does. */
     goAisle, stepAisle, currentAisle, currentGroup, aisleStocked, AISLE_COUNT,

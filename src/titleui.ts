@@ -48,7 +48,6 @@ export function showTitle() {
   g.mode = 'title';
   R.intro = null;
   R.arrive = null;
-  dipTo(0);
   /* The intro and the title are alternatives, and only one of them used to say
      so: showIntro hid the title but not the other way round, so reaching the
      title while the intro was up drew both at once. */
@@ -93,7 +92,6 @@ export function showIntro() {
   el('introText').classList.remove('on');
   el('introText').textContent = '';
   document.body.classList.add('crossing');
-  dipTo(0);
 
   /* THE SKIP BUTTON IS FOR PEOPLE WHO HAVE FINISHED THE GAME.
 
@@ -143,16 +141,19 @@ export function endIntro() {
 /* ---------- CONTINUE ---------- */
 
 /* Playtest: *"a very short intro after hitting the continue button as well.
-   It should only take a few seconds to start playing again."*
+   It should only take a few seconds to start playing again"*, then *"have
+   the same starting point as new game but move the camera to the launch pad
+   faster and don't display the text."*
 
-   Two seconds, and no flight. The title already shows the surface at night
-   with no ship on it; CONTINUE brings the ship down onto the pad as the sky
-   wakes, or - on a mid-run save - dips to black and drops the camera down the
-   shaft to where the ship is. intro.ts has the timeline; the loop draws it. */
+   The intro's own way, compressed and silent: the title is already the hall
+   in the dark, so CONTINUE begins with no cut - the light comes up, the eye
+   runs to the pad, the ship comes down. Under four seconds. There is no
+   mid-run case, because the save is only ever taken on the pad. intro.ts has
+   the timeline; the loop draws it. */
 function startGame() {
   hideTitle();
   g.mode = 'arrive';
-  R.arrive = newArrive(g.pd);
+  R.arrive = newArrive();
 }
 
 export function endArrive() {
@@ -171,19 +172,7 @@ function leave() {
   R.lampLevel = 1;
   lamp.color.setHex(LAMP_COLOR);
   setDuck(1);
-  dipTo(0);
   document.body.classList.remove('crossing');
-}
-
-/* The dip to black on a mid-run CONTINUE. The flash element is a full-screen
-   sheet already in the DOM; this drives its opacity directly instead of
-   through flash()'s timer. Darkness hides a swap in a way brightness cannot -
-   the eye is not adapted to it - and here it is hiding a camera move of
-   several hundred metres. */
-export function dipTo(a: number) {
-  const f = el('flash');
-  f.style.background = '#000';
-  f.style.opacity = String(a);
 }
 
 export function wireTitle() {
