@@ -12,17 +12,10 @@ left; there is no core, no chart and no jump drive any more.
 Live: **https://gideon6222.github.io/lattice/**
 Repo: github.com/gideon6222/lattice
 
-**THE FOLDER IS STILL NAMED `coreward` AND SHOULD BE `lattice`.** The rename on
-2026-09-13 moved the game, the GitHub repo, the live URL, the manifest, the
-wordmark and every document; the folder itself refused, because Windows will
-not rename a directory that is any running process's working directory and the
-session doing the rename was inside it. **Rename it as the first act of the
-next session**, from anywhere else:
-
-    powershell -NoProfile -Command "Rename-Item C:\dev\coreward -NewName lattice"
-
-Nothing inside the repo refers to the folder by name, so nothing needs editing
-afterwards, and the git remote already points at the renamed repo.
+The folder is `C:\dev\lattice` since 2026-09-14. It was `coreward` for a day after the
+rename of everything else, because Windows will not rename a directory that is a running
+process's working directory; the studio's bulletin acks and store switches followed the
+folder to the new name.
 Target: Samsung S26 Ultra, Chrome, portrait, installed to the home screen.
 Current version: see `src/changelog.ts` — that file is the player-facing history.
 
