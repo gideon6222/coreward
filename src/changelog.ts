@@ -16,9 +16,15 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.46.0';
+export const VERSION = '0.47.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.47.0', date: '2026-09-14', title: 'A menu keeps the keyboard',
+    notes: [
+      'With a menu open, the keyboard stays in it. Tabbing used to walk straight past the menu into the buttons of the game running behind it.'
+    ]
+  },
   {
     version: '0.46.0', date: '2026-09-14', title: 'The warning is readable now',
     notes: [

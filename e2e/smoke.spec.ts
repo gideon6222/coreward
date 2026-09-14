@@ -4601,3 +4601,56 @@ test('every piece of text on screen meets WCAG AA for contrast', async ({ page }
   expect(bad.map((b) => `${b.ratio}:1 (needs ${b.need}) ${b.px}px "${b.t}"`).join('\n  '),
     'text below WCAG AA').toBe('');
 });
+
+/* ---------- a panel that covers the game takes the keyboard with it ----------
+
+   Found by tabbing with the pause sheet open: focus walked past it into MENU,
+   MANIFEST, MAP, BALLAST, SHOP and then the d-pad - every control of the game
+   running behind the modal. The focus ring is the browser's own and perfectly
+   visible, which makes it worse rather than better: a keyboard player watches
+   the ring travel around a screen they cannot see.
+
+   This game supports the keyboard deliberately - the Outfitter is drivable
+   with the arrows and a confirm, and has its own test - so half-finished
+   keyboard support is not a non-issue, it is an invitation that fails. */
+test('with a panel open, the keyboard cannot reach the game behind it', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  /* While nothing is open the HUD is of course reachable - asserted so that a
+     version of this that simply disabled the HUD forever would fail. */
+  expect(await page.evaluate(() => (window as any).__cw.gameIsInert()),
+    'the game was already unreachable with no panel open').toBe(false);
+
+  await page.locator('#btnPause').dispatchEvent('click');
+  await expect(page.locator('#pause')).not.toHaveClass(/hidden/);
+  await page.waitForTimeout(250);
+
+  expect(await page.evaluate(() => (window as any).__cw.gameIsInert()),
+    'the game behind the open panel is still in the tab order').toBe(true);
+
+  /* And the tab key actually proves it: ten presses, and the focus never lands
+     on anything belonging to the game underneath. */
+  const visited: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press('Tab');
+    visited.push(await page.evaluate(() => {
+      const e = document.activeElement as HTMLElement | null;
+      if (!e || e === document.body) return 'body';
+      const under = ['hud', 'actions', 'ctrl', 'cluster', 'kit', 'ord'];
+      const owner = under.find((id) => document.getElementById(id)?.contains(e));
+      return owner ? 'GAME:' + (e.id || e.className) : 'panel';
+    }));
+  }
+  expect(visited.filter((v) => v.startsWith('GAME:')),
+    'tabbing with a panel open reached these controls behind it').toEqual([]);
+
+  /* Closing gives it back. */
+  await page.locator('#btnResume').dispatchEvent('click');
+  await expect(page.locator('#pause')).toHaveClass(/hidden/);
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => (window as any).__cw.gameIsInert()),
+    'closing the panel did not give the game back to the keyboard').toBe(false);
+});

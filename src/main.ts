@@ -37,6 +37,7 @@ import './input';
 import { installWakeLock, wakeHeld, wakeWanted, wakeState } from './wakelock';
 import { reducedMotion } from './motion';
 import { installContextGuard, contextLost } from './context';
+import { installModalFocus, gameIsInert } from './modalfocus';
 import { applyVisuals } from './visualsapply';
 
 /* The screen must not sleep while a thumb is held on the d-pad - see
@@ -47,6 +48,10 @@ installWakeLock();
 /* The GPU can be taken away at any moment on a phone; without a handler the
    game keeps simulating behind a black screen. See context.ts. */
 installContextGuard();
+/* A panel that covers the game must take the keyboard with it. See
+   modalfocus.ts - tabbing with the pause sheet open used to walk into the HUD
+   behind it. */
+installModalFocus();
 
 /* And the saved visuals tier, in full.
 
@@ -175,7 +180,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wakeHeld, wakeWanted, wakeState,
     /* The screen flash, so a spec can fire one and read what it actually drew
        rather than asserting against an element nothing touched. */
-    flash, reducedMotion, contextLost,
+    flash, reducedMotion, contextLost, gameIsInert,
     setDrillTier, setUpgradeHardware,
     showTitle, showIntro,
     /* Jump the intro to a beat and repaint it. Through the seam and not a

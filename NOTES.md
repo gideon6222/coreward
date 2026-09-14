@@ -4976,3 +4976,30 @@ colour cannot be introduced without it failing, and it refuses to run on fewer
 than twenty nodes so a selector that stops matching fails loudly instead of
 passing on nothing. Verified by putting `#5a6780` back and watching it name the
 restart warning.
+
+# The keyboard walked behind the menu, 2026-09-14, v0.47.0
+
+Found by pressing Tab with the pause sheet open. Focus went to MENU, MANIFEST,
+MAP, BALLAST, SHOP and then a d-pad key - every control of the game running
+behind the modal. **The focus ring being the browser's own and perfectly
+visible makes this worse rather than better**: a keyboard player watches the
+ring travel around a screen they cannot see, behind a panel they cannot leave.
+
+This is not a hypothetical for this game. The Outfitter is drivable with the
+arrows and a confirm on purpose, and has its own test saying so, so the keyboard
+is a supported input here - and half-finished keyboard support is worse than
+none, because it invites use and then fails.
+
+`inert` is the whole fix. One attribute removes a subtree from the tab order,
+from hit testing and from the accessibility tree, which is exactly the set of
+things a covered UI should lose. On a browser without it the attribute is
+ignored and the behaviour is what it was, which is the right way to fail.
+
+**Driven by a MutationObserver on the panels' own `class`, not by a call at
+each open and close.** There are six panels opened from a dozen places; a hook
+at every one of them is a hook somebody forgets, and the observer watches the
+thing that actually changes. The test tabs ten times and asserts the focus never
+lands on anything under `#hud`, `#actions`, `#ctrl`, `#cluster`, `#kit` or
+`#ord` - and it also asserts the game is REACHABLE with nothing open, so a
+version of this that simply disabled the HUD forever would fail rather than
+pass.
