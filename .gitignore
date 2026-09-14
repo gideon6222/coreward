@@ -4,3 +4,9 @@ dist/
 test-results/
 playwright-report/
 blob-report/
+
+# The Android wrapper's output. `scripts/twa.ps1` builds an .aab/.apk in here,
+# and a session that runs `git add -A` while another one is mid-build commits a
+# megabyte of binary that nothing reads back. That happened on 2026-09-13: the
+# T4 commit carried build/lattice.aab into the pushed history.
+build/
