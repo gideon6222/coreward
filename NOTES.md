@@ -4815,3 +4815,31 @@ there is nothing public.` That is a **false pass**: the GitHub repo is
 doctor matches a repo by DIRECTORY name, and this directory is still `coreward`.
 So the repo-visibility rule is not being checked on this game at all. Belongs to
 `/studio-admin`, not here; recorded so it is not found twice.
+
+## And the way out of the pause sheet was below the fold
+
+Third fault of the same family, found by opening the same menu at the same
+shapes. The sheet is `max-height:86vh; overflow:auto`, so it scrolls when it
+has to. What it did not do was keep the way OUT in sight: at 915x412 its
+content is 920 px inside a 352 px box, and what a player sees on opening is
+four blocks of statistics, no control of any kind, and nothing indicating there
+is more below. This menu is also the only thing that pauses this game, so "I
+cannot find the way back in" is not a cosmetic complaint.
+
+RESUME is pinned to the bottom of the scrolling box. Everything under it -
+restart, the run log, the credits - scrolls behind, which is the right
+priority: those are things you go looking for, and RESUME is the one you must
+never have to look for.
+
+**The threshold was wrong on the first attempt and the test is what said so.**
+It was set at 620 px because that was the height the fault was FOUND at, and a
+360x640 phone still showed RESUME 0% on screen. The honest line comes from the
+sheet's own content: about 920 px against a cap of 86vh, so it stops fitting
+below roughly 1070 px of viewport. 900 is above every shape that scrolls and
+below his own 996, where the button is in normal flow and a pinned bar would be
+furniture.
+
+A skirt was needed under it too. `position:sticky` leaves the sheet's own 18 px
+of bottom padding as a window onto the text still scrolling behind, and the
+first version showed "Deepest 0 m" sliding along underneath RESUME - which
+reads as a rendering fault rather than as a pinned control.

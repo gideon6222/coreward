@@ -4344,3 +4344,52 @@ test('the camera never frames more columns than the terrain window streams', asy
   expect((await framed()).rows, 'the portrait framing moved, so this clamp changed the game as it is played')
     .toBeCloseTo(18, 1);
 });
+
+/* ---------- the way out of a sheet is never below the fold ----------
+
+   The pause sheet is `max-height:86vh; overflow:auto`, so on a short screen it
+   scrolls, correctly. What it did not do was keep the way OUT in sight:
+   measured at 915x412 its content is 920 px inside a 352 px box, and what a
+   player saw was four blocks of statistics, no control of any kind, and
+   nothing indicating there was more. The menu is also the only thing that
+   pauses this game, so "I cannot find the way back in" is not a cosmetic
+   complaint.
+
+   Asserted for the PRIMARY action specifically. The rest of the sheet - the
+   restart, the run log, the credits - may live below the fold; they are things
+   you go looking for. RESUME is the thing you must never have to look for. */
+test('the way out of the pause sheet is on screen without scrolling, at every shape', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  for (const [name, w, h] of [
+    ['his phone', 460, 996], ['a small phone', 360, 640], ['a phone held sideways', 915, 412]
+  ] as [string, number, number][]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(200);
+    await page.locator('#btnPause').dispatchEvent('click');
+    await expect(page.locator('#pause')).not.toHaveClass(/hidden/);
+    await page.waitForTimeout(250);
+
+    /* Without touching the scroll position: this is what the player is looking
+       at the moment the sheet opens. */
+    const seen = await page.evaluate(() => {
+      const b = document.getElementById('btnResume');
+      if (!b) return null;
+      const r = b.getBoundingClientRect();
+      const vis = Math.max(0, Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0));
+      return { height: r.height, visible: vis, top: r.top, bottom: r.bottom };
+    });
+    expect(seen, `${name}: there is no RESUME button at all`).not.toBeNull();
+    expect(seen!.visible / seen!.height,
+      `${name} (${w}x${h}): RESUME is ${Math.round(100 * seen!.visible / seen!.height)}% on screen when the ` +
+      'sheet opens, so the only way to unpause has to be hunted for')
+      .toBeGreaterThan(0.9);
+
+    /* And it still works from there. */
+    await page.locator('#btnResume').dispatchEvent('click');
+    await expect(page.locator('#pause')).toHaveClass(/hidden/);
+  }
+});

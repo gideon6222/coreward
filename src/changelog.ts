@@ -24,6 +24,7 @@ export const CHANGELOG: Release[] = [
     notes: [
       'Held sideways, or on a small phone, the buttons down the left no longer disappear under the fuel gauge. MAP and BALLAST were completely covered and AUTOPILOT was off the bottom of the screen.',
       'On a wide screen the ground no longer stops in mid-air with empty space either side of it. The camera was framing twice as much world as the game actually draws.',
+      'The pause menu keeps RESUME on screen when the menu is too tall to fit. On a short screen it was below the fold with nothing saying so, and the pause menu is the only thing that unpauses the game.',
       'Nothing changed on a phone held upright, which is deliberate: the framing there is identical to before.'
     ]
   },

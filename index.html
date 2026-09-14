@@ -1032,6 +1032,38 @@
        left so it stays anchored to the corner it belongs in. */
     #cluster{ transform:scale(.74); transform-origin:left bottom; }
   }
+  /* The way OUT of the pause sheet must be visible without scrolling.
+
+     The sheet is `max-height:86vh; overflow:auto`, so it scrolls when it has
+     to - correctly - but RESUME then sits below the fold with nothing saying
+     so. Measured at 915x412: 920 px of content in a 352 px box, and what is on
+     screen is four blocks of statistics and no control at all. This menu is
+     also the only thing that pauses the game, so "I cannot find the way back
+     in" is not cosmetic.
+
+     THE THRESHOLD IS THE SHEET'S CONTENT, NOT A ROUND NUMBER. The content runs
+     about 920 px and the sheet is capped at 86vh, so it stops fitting below
+     roughly 1070 px of viewport - which is why 620 px was the wrong line to
+     draw and a 360x640 phone was still failing after the first attempt. 900 is
+     comfortably above every shape that scrolls and below his own 996, where
+     the button is in normal flow and a pinned bar would be furniture.
+
+     Everything below RESUME in the sheet - restart, the run log, the credits -
+     scrolls behind it, which is the right priority: those are things you go
+     looking for, and RESUME is the one you must never have to look for. */
+  @media (max-height: 900px) {
+    #pause #btnResume{
+      position:sticky; bottom:0; z-index:2;
+      background:var(--panel); border-top:1px solid var(--line);
+      margin-top:6px; padding-top:14px; padding-bottom:14px;
+      /* A solid skirt below the button, the height of the sheet's own bottom
+         padding. Without it those eighteen pixels are a window onto the text
+         still scrolling behind - the first version showed "Deepest 0 m"
+         sliding along underneath RESUME, which reads as a rendering fault
+         rather than as a pinned control. */
+      box-shadow:0 18px 0 var(--panel);
+    }
+  }
   @media (max-height: 620px) {
     /* Short: the button column starts higher, packs tighter, and the cluster
        gives more, so the two never reach each other. */
