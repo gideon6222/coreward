@@ -16,9 +16,15 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.45.0';
+export const VERSION = '0.46.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.46.0', date: '2026-09-14', title: 'The warning is readable now',
+    notes: [
+      'The restart warning - the line that tells you what erasing your progress actually costs - was the hardest text in the game to read. It and the build stamp are both legible now, and every other word on screen was measured to make sure it already was.'
+    ]
+  },
   {
     version: '0.45.0', date: '2026-09-14', title: 'When the phone takes the graphics away',
     notes: [

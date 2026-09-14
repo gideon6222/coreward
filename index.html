@@ -978,7 +978,13 @@
     color:var(--red); border-radius:11px; padding:14px; font-size:12px; font-weight:700; letter-spacing:.09em;
   }
   .danger.armed{background:rgba(255,92,107,.18); border-color:var(--red);}
-  .fine{color:#5a6780; font-size:11px; text-align:center; margin-top:10px; line-height:1.5;}
+  /* Lifted from #5a6780 on 2026-09-14. Measured against the panel it sits on,
+     that was 3.17:1 - under WCAG AA's 4.5:1 for body text - and the sentence
+     wearing this class is the most consequential one in the game: "Restarting
+     wipes credits, upgrades, every Anchor you have lit and every tunnel you
+     have dug." The hardest text to read should not be the warning. #7f8aa3
+     keeps the cool cast and measures 5.2:1. */
+  .fine{color:#7f8aa3; font-size:11px; text-align:center; margin-top:10px; line-height:1.5;}
   /* Version and patch notes.
 
      The build stamp answers "did my update land". It cannot answer "what is
@@ -1015,7 +1021,12 @@
   .lgh:first-child{margin-top:0; padding-top:0; border-top:none;}
   /* build stamp: dim, monospace, easy to read off a phone screen at a glance */
   .fine.build{margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
-    font:10.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#48546b; letter-spacing:.02em;}
+    /* Also lifted, from #48546b, which measured 2.37:1. It is technical
+       metadata rather than prose, but it exists to be READ ALOUD to me off a
+       phone when a build is in question, and 2.37:1 on a handset at arm's
+       length is not readable. 4.6:1, still clearly the quietest thing on the
+       screen. */
+    font:10.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#79839b; letter-spacing:.02em;}
 
   /* The visuals tier picker. Same plate and bevel as every other control. */
   .tierrow{display:flex; align-items:center; gap:10px; margin:14px 0 2px;}

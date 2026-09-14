@@ -4536,3 +4536,68 @@ test('losing the GPU stops the game and says so, and getting it back resumes', a
   expect(await page.evaluate(() => (window as any).__cw.clockRunning()),
     'the game did not start again after the context came back').toBe(true);
 });
+
+/* ---------- every word on screen is readable ----------
+
+   WCAG AA: 4.5:1 for body text, 3:1 for large or bold-large. Audited on the
+   real rendered colours rather than on the palette, because what matters is
+   the colour against whatever it actually ends up sitting on.
+
+   Two failed when this was first run, both in the pause sheet, and the worse
+   one was the sentence that matters most: *"Restarting wipes credits,
+   upgrades, every Anchor you have lit and every tunnel you have dug"* at
+   3.17:1. The hardest text in the game to read should not be the warning. The
+   build stamp was 2.37:1, and it exists to be read off a phone at arm's length
+   when a build is in question.
+
+   The whole set is asserted rather than those two, so a new dim colour cannot
+   be introduced without this failing. */
+test('every piece of text on screen meets WCAG AA for contrast', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.locator('#btnPause').dispatchEvent('click');
+  await expect(page.locator('#pause')).not.toHaveClass(/hidden/);
+  await page.waitForTimeout(400);
+
+  const rows = await page.evaluate(() => {
+    const lin = (c: number) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    const lum = (p: number[]) => 0.2126 * lin(p[0]) + 0.7152 * lin(p[1]) + 0.0722 * lin(p[2]);
+    const parse = (s: string) => {
+      const m = s.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);
+      return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]] : null;
+    };
+    /* The first ancestor with an opaque background is what the text is really
+       sitting on; a transparent panel over the game is not a background. */
+    const bgOf = (el: Element | null) => {
+      let e: Element | null = el;
+      while (e) {
+        const c = parse(getComputedStyle(e).backgroundColor);
+        if (c && c[3] > 0.5) return c;
+        e = e.parentElement;
+      }
+      return [5, 7, 13, 1];
+    };
+    const out: { t: string; px: number; ratio: number; need: number }[] = [];
+    for (const el of Array.from(document.querySelectorAll('#pause *, #hud *, #actions button'))) {
+      const txt = (el.textContent || '').trim();
+      if (!txt || el.children.length > 0) continue;
+      if ((el as HTMLElement).offsetParent === null) continue;
+      const cs = getComputedStyle(el);
+      const fg = parse(cs.color);
+      if (!fg || fg[3] < 0.5) continue;
+      const L1 = lum(fg), L2 = lum(bgOf(el));
+      const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+      const px = parseFloat(cs.fontSize);
+      const large = px >= 24 || (px >= 18.66 && parseInt(cs.fontWeight) >= 700);
+      out.push({ t: txt.slice(0, 30), px, ratio: +ratio.toFixed(2), need: large ? 3 : 4.5 });
+    }
+    return out;
+  });
+
+  expect(rows.length, 'no text was measured at all, so this test proves nothing').toBeGreaterThan(20);
+  const bad = rows.filter((r) => r.ratio < r.need);
+  expect(bad.map((b) => `${b.ratio}:1 (needs ${b.need}) ${b.px}px "${b.t}"`).join('\n  '),
+    'text below WCAG AA').toBe('');
+});

@@ -4952,3 +4952,27 @@ Rule 7 wants the number rather than the caution, including when the answer is
   software rasteriser, 77 KB transferred for the document. JS heap 14 MB at the
   pad and **14 MB after digging to 43 m** across 300 seconds of game time, so
   the block and growth pools are recycling as intended.
+
+# Contrast, measured, 2026-09-14, v0.46.0
+
+WCAG AA is 4.5:1 for body text and 3:1 for large or bold-large. Audited on the
+RENDERED colours rather than on the palette, walking up to the first ancestor
+with an opaque background, because what matters is what the text actually ends
+up sitting on rather than what its own rule says.
+
+**51 text nodes, 2 below AA, and the worse one was the sentence that matters
+most:** *"Restarting wipes credits, upgrades, every Anchor you have lit and
+every tunnel you have dug. It cannot be undone."* at **3.17:1**. The hardest
+text in the game to read should not be the warning attached to the one
+irreversible button in it. The build stamp was **2.37:1**, and that line exists
+to be read off a phone at arm's length when a build is in question.
+
+Both are `.fine`; `#5a6780` went to `#7f8aa3` (5.2:1) and the build stamp's
+`#48546b` to `#79839b` (4.6:1). Both keep the cool cast and stay the quietest
+things on the screen.
+
+**The test asserts the whole set rather than those two lines**, so a new dim
+colour cannot be introduced without it failing, and it refuses to run on fewer
+than twenty nodes so a selector that stops matching fails loudly instead of
+passing on nothing. Verified by putting `#5a6780` back and watching it name the
+restart warning.
