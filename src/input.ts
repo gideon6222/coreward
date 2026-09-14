@@ -29,13 +29,73 @@ function firstTouch() { audioInit(); }
 window.addEventListener('pointerdown', firstTouch, { once: true });
 window.addEventListener('keydown', firstTouch, { once: true });
 
+/* ---------- the d-pad, and the forgiveness in it ----------
+
+   `mechanics/FOUNDATIONS.md` principle 3: forgiveness is invisible and is most
+   of "feel". Round ten's research ranked input BUFFERING first for a game at
+   this stage, and measuring it here said it was the wrong forgiveness: the
+   only press this game refuses on a timescale a buffer could bridge is
+   ordnance with an empty meter, and `CHARGE_SECONDS` is 42 seconds a point, so
+   a 150 ms window bridges nothing. The forgiveness that was actually missing
+   was one step upstream, in who owns the pointer.
+
+   The keys are 60 px on a 5 px grid, which is about 10 mm on his phone against
+   a thumb nearer 18 mm. They used to bind `pointerleave` to a release, so:
+
+     A THUMB THAT DRIFTS STOPPED THE SHIP. Three pixels into the gutter ended
+     a dig, silently, in the middle of the one action this game is about. A
+     player does not report that as "the key released", they report it as the
+     controls feeling wrong, which is exactly what principle 3 predicts.
+     A SLIDE BETWEEN KEYS DEAD-ENDED. `pointerleave` fired on the key the
+     thumb left and `pointerdown` never fired on the key it reached, because
+     the pointer was already down. So the ship simply stopped.
+
+   `setPointerCapture` fixes both and is the whole change. A press owns the
+   pointer until it is lifted, which suppresses the boundary events outright,
+   and a move is hit-tested against the grid so the thumb can slide from one
+   key to another and hand the ship over. Drifting OFF the pad entirely keeps
+   the last direction: the press is still live, and guessing that the player
+   meant to stop is the same mistake `pointerleave` was making. */
+const keyUnder = (x: number, y: number): HTMLElement | null => {
+  const el = document.elementFromPoint(x, y);
+  return el ? (el.closest('#dpad .k') as HTMLElement | null) : null;
+};
+
 document.querySelectorAll<HTMLElement>('#dpad .k').forEach((b) => {
-  const dir = b.dataset.dir as Dir;
-  b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.classList.add('on'); R.held = dir; });
-  const up = (e?: Event) => { if (e) e.preventDefault(); b.classList.remove('on'); if (R.held === dir) R.held = null; };
+  /* Which key is lit is the thumb's business, not this element's, because a
+     slide moves the light to a key that never saw a pointerdown. */
+  const light = (el: HTMLElement | null) => {
+    document.querySelectorAll<HTMLElement>('#dpad .k').forEach((k) => k.classList.toggle('on', k === el));
+  };
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    /* Capture can throw when the pointer is already gone (a cancel that
+       arrived first). The press must still register if it does. */
+    try { b.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+    light(b);
+    R.held = b.dataset.dir as Dir;
+  });
+  b.addEventListener('pointermove', (e) => {
+    if (!b.hasPointerCapture(e.pointerId)) return;
+    const k = keyUnder(e.clientX, e.clientY);
+    /* Off the grid is not a release. Only landing on a DIFFERENT key changes
+       anything, which also means the gutters between keys cost nothing. */
+    if (!k || k === b) return;
+    e.preventDefault();
+    light(k);
+    R.held = k.dataset.dir as Dir;
+  });
+  const up = (e: PointerEvent) => {
+    e.preventDefault();
+    try { b.releasePointerCapture(e.pointerId); } catch { /* already released */ }
+    light(null);
+    /* Unconditional, unlike the old `R.held === dir` guard: after a slide the
+       direction being flown is not this key's, and it is still this key's
+       pointer that is ending. */
+    R.held = null;
+  };
   b.addEventListener('pointerup', up);
   b.addEventListener('pointercancel', up);
-  b.addEventListener('pointerleave', up);
 });
 
 const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };

@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.39.0';
+export const VERSION = '0.40.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.40.0', date: '2026-09-13', title: 'Your thumb can move',
+    notes: [
+      'The d-pad no longer lets go when your thumb drifts. A key is held until you lift it, even if your hand slides off the edge of it mid-dig - which it did, and which quietly ended a lot of digs.',
+      'Slide from one key to the next without lifting and the ship follows. It used to simply stop.',
+      'Every fade, slide and press in the game now runs on the same four speeds and the same curve, instead of the fourteen different ones that had built up.'
+    ]
+  },
   {
     version: '0.39.0', date: '2026-09-13', title: 'A hull older than the halls',
     notes: [

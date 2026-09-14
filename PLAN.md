@@ -2532,10 +2532,39 @@ opinions:
       cut the Anchor halls - so the ship and the Lattice finally read as one
       world. Designed at thirty pixels first, as the hull it replaces was.
 
-- [ ] **T4 The completeness pass.** Whatever the research names that this game
-      does not have and that is cheap: the things a shipped game has and a
-      competent hobby build does not. Scoped once the brief lands, and every
-      item measured against `mechanics/FOUNDATIONS.md` rather than a checklist.
+- [x] **T4 The completeness pass.** Done 2026-09-13, v0.40.0. The research's ranked
+      list of what a shipped game has and a hobby build does not, audited item by
+      item against this game rather than applied as a checklist. Two were real and
+      are fixed; three were already true and the audit says so, which is the
+      honest half of a pass like this.
+
+      **Fixed. The d-pad let go of your thumb.** The keys bound `pointerleave` to
+      a release, so a three-pixel drift ended a dig silently and a slide between
+      keys dead-ended (leave fired on the key left, `pointerdown` never fired on
+      the key reached, because the pointer was already down). `setPointerCapture`
+      plus a hit-test on move. This is `FOUNDATIONS.md` principle 3, and it is
+      NOT the forgiveness the research ranked first: input buffering was measured
+      and rejected for this game, because the only press it refuses on a
+      bufferable timescale is ordnance on an empty meter and `CHARGE_SECONDS` is
+      42 seconds a point, so a 150 ms window bridges nothing.
+
+      **Fixed. One tween, four speeds.** Fourteen transition declarations carried
+      nine durations and four curve treatments, none of them chosen against the
+      others. Now `--t-press`, `--t-fast`, `--t-base`, `--t-slow` and one
+      `--ease`, with `test/tween.test.mjs` asserting the scatter cannot come
+      back and asserting it is not inspecting an empty set.
+
+      **Already true, checked not assumed.** Settings persist and apply live
+      (last round). The title is not a frozen frame - two screenshots two and a
+      half seconds apart show the motes and the ambience moving; only the camera
+      is fixed, which is a framing choice. Edge states have their own polish:
+      `.none` removes what you do not own rather than leaving it dead, `.cold`
+      and `.idle` refuse with their own words, and death is cause-specific with
+      alarm, flash, shake, haptic and spray. Haptics shipped in `haptics.ts`.
+      Vlambeer's per-hit white flash was considered and does not map: damage to
+      rock here is continuous progress through a cell, not discrete hits.
+      Per-material juice variety is left, and the research ranks it last on
+      purpose - a content multiplier, not a systemic fix.
 
 # The second month
 

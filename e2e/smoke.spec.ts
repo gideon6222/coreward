@@ -3920,3 +3920,62 @@ test('growth is a thing on the rock: seated, per cell, and it does not pop', asy
     .toEqual(a.counts);
   expect(b.counts.moss === undefined || b.counts.moss > 0).toBe(true);
 });
+
+/* ---------- T4a: the thumb does not have to stay still ----------
+
+   `mechanics/FOUNDATIONS.md` principle 3: forgiveness is invisible and is most
+   of "feel", and the report you get is never "the window is too short", it is
+   *"the controls feel wrong"*.
+
+   The research for this round ranked input buffering first. MEASURED, it is
+   the wrong forgiveness for this game: the only press that gets refused on a
+   timescale a buffer could bridge is ordnance with an empty meter, and
+   `CHARGE_SECONDS` is 42 seconds per point, so a 150 ms window bridges
+   nothing. What IS wrong is upstream of that. The d-pad keys are 60 px with a
+   5 px gap, about 10 mm on his phone against a thumb nearer 18 mm, and the
+   keys bound `pointerleave` to a release. So a thumb that drifts a couple of
+   millimetres mid-dig stops the ship and says nothing, and a thumb that slides
+   from one key to the next dead-ends: leave fires on the key it left, and
+   `pointerdown` never fires on the key it arrived at, because the pointer was
+   already down. */
+test('a thumb that drifts off the key is still holding it, and sliding hands over', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+
+  const box = async (dir: string) => {
+    const b = await page.locator(`#dpad .k[data-dir=${dir}]`).boundingBox();
+    if (!b) throw new Error('no ' + dir + ' key');
+    return b;
+  };
+  const held = () => page.evaluate(() => (window as any).__cw.R.held);
+  const down = await box('down');
+  const left = await box('left');
+
+  /* Press the down key with a real pointer, where a thumb would land. */
+  await page.mouse.move(down.x + down.width / 2, down.y + down.height / 2);
+  await page.mouse.down();
+  expect(await held(), 'pressing the down key did not hold down').toBe('down');
+
+  /* Drift into the 5 px gutter above the key - off it, but nowhere near
+     another control. The ship must still be digging. */
+  await page.mouse.move(down.x + down.width / 2, down.y - 3);
+  expect(await held(),
+    'a thumb that drifted 3 px off the key released it, so a long dig ends whenever the hand moves')
+    .toBe('down');
+
+  /* Slide onto the left key without lifting. The ship must go left. */
+  await page.mouse.move(left.x + left.width / 2, left.y + left.height / 2);
+  expect(await held(),
+    'sliding from one key to another handed over to nothing, so the d-pad dead-ends mid-slide')
+    .toBe('left');
+
+  /* And the key the thumb is actually on is the one that looks pressed. */
+  expect(await page.locator('#dpad .k[data-dir=left]').getAttribute('class'))
+    .toContain('on');
+  expect(await page.locator('#dpad .k[data-dir=down]').getAttribute('class'))
+    .not.toContain('on');
+
+  await page.mouse.up();
+  expect(await held(), 'lifting the thumb did not stop the ship').toBe(null);
+});

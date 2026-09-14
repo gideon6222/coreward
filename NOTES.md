@@ -4481,3 +4481,98 @@ file and the studio rule is a row per imported asset. Two things to do when you 
 that folder: confirm which kit the station props came from and add the rows, and rewrite the
 closing paragraph, because right now the file tells the next reader that the game imports no
 kits while twenty kit models sit in `public/models/`.
+
+# Round ten, T4, 2026-09-13: the completeness pass, and the item that measured wrong
+
+The round's brief was *"look into things that official games have that make
+them feel complete"*, and the research came back with a ranked list. The value
+of this milestone turned out to be in auditing that list against this game
+rather than in applying it, because **the item ranked first does not fit here
+and the fault it was pointing at was one step upstream of where it pointed.**
+
+## Input buffering, measured and rejected
+
+The brief put input buffering first: *"a button press just before an action
+becomes legal is queued a few frames rather than dropped... the single biggest
+controls-feel-tight lever on touch specifically."* `mech_forgiveness` in the
+mechanics library agrees and gives the band: buffer 6 to 9 frames, 100 to
+150 ms, and past 250 ms it is perceptible rather than forgiving.
+
+So the question is what this game refuses. Movement is a HOLD, not a press, so
+there is nothing to queue. The discrete actions are the supplies and the
+ordnance, and everything unaffordable or unowned is either removed from the
+screen (`.sup.none{display:none}`) or refuses with its own sentence. The one
+press that gets refused on a clock at all is ordnance against an empty meter -
+and `CHARGE_SECONDS` is **42 seconds per point**. A 150 ms buffer bridges
+nothing. A buffer long enough to bridge it would fire a bomb the better part of
+a minute after the thumb asked for one, which is not forgiveness, it is the
+stale-press bug `mech_forgiveness.clear()` exists to prevent.
+
+**So the module's number is what said no.** Without the band written down, the
+plausible move was to build a buffer, watch it never fire, and call the item
+done.
+
+## What was actually wrong: the d-pad let go of the thumb
+
+One step upstream, in who owns the pointer. The keys are 60 px on a 5 px grid,
+about **10 mm on his phone against a thumb nearer 18 mm**, and each one bound
+`pointerleave` to a release. Two consequences, both measured with a real
+pointer in Chromium before the fix:
+
+- **A three-pixel drift ended a dig.** Silently, mid-action, in the one thing
+  this game is about. `R.held` went to null and nothing said so.
+- **A slide between keys dead-ended.** `pointerleave` fired on the key the
+  thumb left; `pointerdown` never fired on the key it reached, because the
+  pointer was already down. The ship simply stopped.
+
+`setPointerCapture` on the press, a hit-test against the grid on move, and the
+`pointerleave` binding deleted. Off the pad entirely keeps the last direction:
+the press is still live, and guessing that the player meant to stop is the same
+mistake `pointerleave` was making.
+
+This is `FOUNDATIONS.md` principle 3 exactly - *"the report you get is never
+'the coyote window is too short', it is 'the controls feel wrong'"*. Nobody
+would have reported this as a pointer-capture bug.
+
+## Fourteen transitions, nine durations, four curves
+
+The second item on the list, and the only one that was true as written: *"a
+hobby build has three different fades; a shipped game has one tween function
+called everywhere."* `index.html` held .06, .12, .2, .25, .3, .35, .38, .4 and
+.5 seconds, with the default curve, `linear`, `ease` and `ease-out` scattered
+across them. Every one was picked in the round that added its element and never
+against the others.
+
+Four speeds now, because they are four different physical claims, and one
+ease-out for all of them. `--t-press` at .06 s is the deliberate outlier and
+the only one with a perceptual floor rather than a taste under it: past about
+80 ms a key stops reading as attached to the thumb, and `tween.test.mjs`
+asserts that bound specifically.
+
+**The test is the point, not the tokens.** A consistency claim cannot be judged
+from any one screen, only by reading every declaration at once, which is what a
+test can do and an eye cannot. It also asserts it found at least ten
+declarations, so moving the CSS to its own file fails loudly instead of passing
+vacuously (rule 11), and it was verified by putting a bespoke `.33s linear`
+back and watching both checks go red.
+
+`animation:` is deliberately not covered: a keyframed pulse has a period that
+means something about the thing pulsing, and putting those on the same clock
+would say something false.
+
+## Three that were already true, and the checking is the deliverable
+
+- **Settings persist and apply live** - the previous round.
+- **The title is not a frozen frame.** Two screenshots two and a half seconds
+  apart show the motes and the ambience moving. `titleEye()` returns a constant,
+  which looked like the frozen-frame tell in the code and is not one in the
+  picture: only the CAMERA is fixed, and that is a framing choice on a
+  hand-composed shot. Not touched.
+- **Edge states have their own polish.** `.none` removes what you do not own
+  instead of leaving a dead control, `.cold` and `.idle` refuse in their own
+  words, and death is cause-specific with alarm, flash, shake, haptic and spray.
+
+Vlambeer's per-hit white flash was considered and does not map: damage to rock
+here is continuous progress through a cell rather than discrete hits, and the
+break already carries spray, shake and its own sound. Per-material juice
+variety is the one item left, and the research ranks it last on purpose.
