@@ -2634,6 +2634,77 @@ opinions:
       Per-material juice variety is left, and the research ranks it last on
       purpose - a content multiplier, not a systemic fix.
 
+# Round eleven: the professional-polish sweep
+
+*2026-09-14, v0.43.0 to v0.48.0.* His words: *"look into and fix anything that
+a professional game shouldn't have."*
+
+**Every one of these was found by opening the game at a shape, a setting or a
+state nobody had opened it at before.** The mechanical checks were clean - no
+`console.log` in `src/`, no TODO or FIXME anywhere, no placeholder text, a
+clean tree, and the doctor's full run with nothing but PASS lines against this
+repo. The faults were not in the code's hygiene, and none of them would have
+been found by reading it.
+
+**Each has a test that asserts the INVARIANT rather than the number, and every
+test was verified by putting the bug back.** That is the durable half: the
+fixes are CSS and a few modules, the tests are what stop the next round of
+work reintroducing them.
+
+- [x] **E1 No control may be buried, and nothing may run off screen.** Measured
+      at four shapes. On a phone held sideways MAP and BALLAST were 100%
+      covered by the fuel dial, SHOP 55%, and AUTOPILOT was entirely off the
+      bottom; on a 360-wide phone the cluster sat over half the left d-pad key.
+      His own phone and a laptop were clean, which is why it stood - every
+      screenshot this game has ever had was 460x996.
+
+- [x] **E2 The camera may not frame more than is streamed.** The terrain is a
+      21-column window and the camera was framing 40 columns on a sideways
+      phone and 28.8 on a laptop, so the ground stopped in mid-air. `resize()`
+      had a clamp for exactly this, written against the 63-column WORLD instead
+      of the window, so it had never once fired. Portrait framing is unchanged
+      and the test asserts that too.
+
+- [x] **E3 The way out of a sheet is never below the fold.** The pause sheet's
+      920 px of content in a 352 px box put RESUME out of sight with nothing
+      saying so - in the only menu that unpauses the game.
+
+- [x] **E4 `prefers-reduced-motion`, without losing the warning.** The shake
+      goes to zero and the flash to 30%, and every pulsing warning is HELD at
+      the loud end of its own swing instead of switched off - `fuelpulse` runs
+      opacity 1 to .55, so `animation:none` would have left the dry-tank alarm
+      looking exactly like a full tank.
+
+- [x] **E5 The link describes itself.** No description, no Open Graph, no
+      `apple-touch-icon`. For a game distributed as a link that is the front
+      door. iOS was saving a screenshot of whatever was on screen as the icon.
+
+- [x] **E6 Losing the GPU.** Android drops a WebGL context on a backgrounded
+      tab, a driver reset or memory pressure. There was no handler, so three.js
+      stopped drawing while the loop kept running: the game carried on
+      simulating - fuel burning, heat climbing - behind a black screen with a
+      live HUD, with no way out but killing the app. `preventDefault()` on the
+      lost event is what makes it recoverable at all.
+
+- [x] **E7 Every word on screen meets WCAG AA.** Two of 51 nodes failed and the
+      worse one was the restart warning at 3.17:1 - the hardest text in the
+      game to read was the warning on the one irreversible button in it.
+
+- [x] **E8 A menu keeps the keyboard.** Tabbing with the pause sheet open
+      walked into the HUD behind it. This game supports the keyboard on purpose
+      (the Outfitter has a test for it), and half-finished keyboard support
+      invites use and then fails.
+
+- [x] **E9 A browser that cannot run it says why.** No WebGL check and no
+      `<noscript>`. The common case is not an old phone, it is desktop Chrome
+      with hardware acceleration off, and what those players got was a three.js
+      stack trace.
+
+**Two things were measured and found already fine**, recorded so nobody spends
+the time twice: the save cannot outgrow its storage (digging out the ENTIRE
+world is 232 KB against a ~5 MB limit) and there is no leak (14 MB of heap at
+the pad, still 14 MB after digging to 43 m, booting in 804 ms).
+
 # The Play listing
 
 **These four landed in this repo without boxes, and a box is how the outline
