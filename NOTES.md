@@ -4417,6 +4417,30 @@ ship with the phone attached. And for this stack specifically, the service
 worker cannot be exercised anywhere but real Chrome or the phone (`WEB.md`),
 so the PWA install and offline check is owed with them.
 
+### The floor phone is real now, and this game has no tiers (2026-09-13)
+
+The studio grew a second handset on 2026-09-13: a Galaxy S22+, Snapdragon 8
+Gen 1, Adreno 730, addressed as the `floor` role with its own lease
+(`C:\dev\.studio\phones.json`, `DEVICE.md`). Measured against the S26 on the
+Godot template, it costs **1.33x to 1.42x for real drawing** and the same for a
+frame that is mostly overhead. Two things follow for this game.
+
+**The phone pass owed above is now two phones, not one.** The S26 says whether
+it is good on his phone; the S22+ says whether it is good on a phone one
+generation back, and this game is fill-rate bound rather than draw-call bound
+(`86 of 150 draw calls`, the PBR terrain note above), so the ratio that matters
+is the drawing one. Both readings are one lease each.
+
+**OWED: this game ships one visual setting, not three** (INDEX.md rule 18).
+`scene.ts:10-11` is the whole of it: `antialias: true` and a pixel ratio capped
+at 2, fixed for every device. The doctor's visuals-tier check looks for a Godot
+`src\game\visuals.gd`, so it has never fired on this repo and never will, which
+is exactly the "a rule nothing looks at" failure rule 13 names. The cheap web
+equivalent of the three tiers is the pixel-ratio cap plus antialias plus the
+shader-heavy passes (the propagated lightmap, `ROCK_BUMP`), which is a real
+milestone and not a same-commit fix. Not silently deferred: it is here, and it
+wants deciding alongside R9a.
+
 ## Left for you: five review screenshots in a folder with a mangled name
 
 A studio sweep on 2026-09-12 found `SERSGIDEOAPPDATAocaltemp/review2/` sitting in this
