@@ -4741,3 +4741,77 @@ typecheck, build, size guard at 980.0 KB), 86 draw calls of 150 in the worst
 window the game can build, and the filmed contact sheets of the way in and the
 first minute. The PWA install and offline check is owed with them, because a
 service worker cannot be exercised anywhere but real Chrome or the phone.
+
+# The professional-polish sweep, 2026-09-14, v0.43.0
+
+Asked to find and fix anything a professional game should not have. The
+mechanical checks came back clean - no `console.log` in `src/`, no TODO, FIXME
+or HACK anywhere, no placeholder text, a clean working tree, the stray
+`SERSGIDEO...` folder gone, and the doctor's full run has nothing but PASS lines
+against this repo. So the faults were not in the code's hygiene. They were found
+by **opening the game at shapes nobody had ever opened it at.**
+
+## Every screenshot this game has ever had was 460x996
+
+That is the whole reason both faults below survived. The design target is his
+phone, the filmstrips shoot at his phone, the e2e suite runs at his phone, and
+at his phone both of these are invisible.
+
+## The left buttons were buried under the fuel gauge
+
+`#actions` is anchored to the TOP and grows down. `#cluster` and `#ctrl` are
+anchored to the BOTTOM. Nothing sits between them, so on a tall screen they
+never meet and on a short one they collide. Measured:
+
+| shape | what happened |
+|---|---|
+| 460x996, his phone | clean |
+| 1280x800, a laptop | clean |
+| 360x640, a small phone | the cluster over **50%** of the left d-pad key |
+| 915x412, held sideways | MAP and BALLAST **100% covered**, SHOP 55%, AUTOPILOT **off the bottom of the screen** |
+
+At 360 wide it could not be otherwise: a 172 px cluster and a 190 px d-pad are
+362 px of controls on a 360 px screen.
+
+Two media queries, one on width and one on height. **The test is the durable
+part, not the CSS**: it asserts the INVARIANT - no interactive control overlaps
+another by more than a quarter of its area, and nothing runs off the bottom or
+the right - at four shapes, with Ballast and Autopilot forced visible because
+they make the column longer and are hidden until owned.
+
+## The ground stopped in mid-air on a wide screen
+
+The terrain is a streamed window of **21 columns** around the ship, not the
+61-column world. The camera frames `18 * aspect` columns. Portrait is 0.46, so
+8.3 columns - comfortably inside. Anything wider than about 7:6 frames more than
+is drawn, and the player sees the void where the ground stops.
+
+`resize()` already had a clamp for exactly this and **it was written against the
+wrong number**: `(W + 2) / aspect`, the whole WORLD at 63, instead of the
+window at 21. It could therefore never fire. Measured before the fix: **40
+columns framed on a phone held sideways, 28.8 on a laptop.**
+
+The clamp now reads the window. Crucially, `camZ` at 460x996 and at 360x640 is
+**18.45 before and after, 18 rows exactly** - this changes nothing about the
+game as it is played, and the test asserts that too, because a camera fix that
+quietly re-framed the game would be worse than the bug.
+
+`WINDOW_ROWS` and `WINDOW_COLS` moved into `streamwindow.ts`, a leaf module with
+no imports. They could not live in `blocks.ts` where they were, because
+`scene.ts` now needs them and `blocks -> growth -> scene` would close a cycle;
+import cycles in this repo have form, and the last one silently made
+`VAULT_CORE_X` NaN and deleted the Vault.
+
+**A floor under the camera distance was tried and removed in the same session.**
+It held the camera back far enough at 1600x400 to frame 23.4 columns of a
+21-column window - the exact fault being fixed. An absurdly wide window now gets
+an absurdly short view of the shaft, which is correct and which nobody plays at.
+
+## One thing found that is not ours
+
+`doctor.ps1` reports `PASS coreward - no repo of that name under this owner, so
+there is nothing public.` That is a **false pass**: the GitHub repo is
+`gideon6222/lattice` and it is public, as a Pages-served web game must be. The
+doctor matches a repo by DIRECTORY name, and this directory is still `coreward`.
+So the repo-visibility rule is not being checked on this game at all. Belongs to
+`/studio-admin`, not here; recorded so it is not found twice.

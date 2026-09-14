@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { W } from './sim/config';
+import { WINDOW_COLS } from './streamwindow';
 import { S } from './sim/state';
 import { LAMP_DECAY, LAMP_INTENSITY } from './sim/feel';
 import { R } from './sim/runtime';
@@ -184,10 +185,30 @@ export function resize() {
      is what makes the world feel large: the ship shrinks against the terrain and
      more of the shaft is legible at once. Affordable because terrain is
      instanced; before Stage 2 this would have been ~300 draw calls. */
-  const rows = 18, halfV = Math.tan((camera.fov * Math.PI) / 360);
-  let z = rows / (2 * halfV);
-  const needW = (W + 2) / camera.aspect;
-  if (needW < rows) z = Math.max(9, needW / (2 * halfV));
+  const halfV = Math.tan((camera.fov * Math.PI) / 360);
+
+  /* THE CAMERA MAY NOT SEE MORE COLUMNS THAN ARE STREAMED.
+
+     The terrain is a moving window of `WINDOW_COLS` (21) columns around the
+     ship, not the whole 61-column world, and 18 rows at a given aspect shows
+     `18 * aspect` columns. Portrait is 0.46, which is 8.3 columns and well
+     inside the window; the clamp below used to be written against W + 2, the
+     whole WORLD, which is 63 and therefore never fired. So on anything wider
+     than about 7:6 the camera framed empty space either side of the streamed
+     terrain, and the player saw the void where the ground stops. Measured:
+     40 columns visible on a phone held sideways, 28.8 on a laptop.
+
+     His phone and a small phone both come out at 18 rows unchanged, which is
+     the point - this changes nothing about the game as it is played and stops
+     a wide window showing what it should not. Two columns of margin so the
+     edge of the window is never the edge of the picture. */
+  const rows = Math.min(18, (WINDOW_COLS - 2) / camera.aspect);
+  /* No floor under this. A floor was tried and it defeated the whole point:
+     at 1600x400 it held the camera back far enough to frame 23.4 columns of a
+     21-column window, which is the exact fault being fixed. An absurdly wide
+     window gets an absurdly short view of the shaft - correct, and nobody
+     plays at 4:1 - rather than a view of the void. */
+  const z = rows / (2 * halfV);
   R.camZ = z;
   camera.updateProjectionMatrix();
 }

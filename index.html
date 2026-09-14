@@ -1005,6 +1005,40 @@
     box-shadow:var(--bevel); font:600 11px/1 system-ui, sans-serif; letter-spacing:.08em;
     transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);}
   .tierb[aria-checked="true"]{color:var(--cyan); border-color:var(--cyan);}
+  /* ---------- the HUD on a screen that is not his phone ----------
+
+     The layout above is laid out for 460x996, and two of its columns grow
+     TOWARD each other with nothing between them: `#actions` is anchored to the
+     top and grows down, `#cluster` and `#ctrl` are anchored to the bottom. On
+     a tall screen they never meet. Measured on the shapes a player can
+     actually produce, they meet badly:
+
+       915x412, a phone held sideways: MAP and BALLAST 100% covered by the
+       fuel dial, SHOP 55% covered, and AUTOPILOT entirely off the bottom of
+       the screen.
+       360x640, a small phone: the cluster over half the left d-pad key. At
+       360 wide it cannot be otherwise - a 172 px cluster and a 190 px d-pad
+       are 362 px of controls on a 360 px screen.
+
+     His own phone and a laptop are both clean, which is exactly why this
+     stood: every screenshot ever taken of this game was at one of those two.
+
+     Two thresholds, because they are two different squeezes - one on width
+     and one on height - and `e2e` asserts the invariant (no control buried,
+     nothing off screen) at all four shapes rather than these numbers. */
+  @media (max-width: 400px) {
+    /* Narrow: only the cluster has to give, and it is a readout rather than a
+       control, so it is the right thing to shrink. Origin at its own bottom
+       left so it stays anchored to the corner it belongs in. */
+    #cluster{ transform:scale(.74); transform-origin:left bottom; }
+  }
+  @media (max-height: 620px) {
+    /* Short: the button column starts higher, packs tighter, and the cluster
+       gives more, so the two never reach each other. */
+    #actions{ top:calc(env(safe-area-inset-top,0px) + 88px); gap:5px; }
+    #actions button{ padding:7px 10px; font-size:10px; }
+    #cluster{ transform:scale(.58); transform-origin:left bottom; }
+  }
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity var(--t-base) var(--ease); z-index:30;}
   #boot{
     position:fixed; inset:0; z-index:40; background:#05070d; display:flex; align-items:center;

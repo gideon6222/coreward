@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.42.0';
+export const VERSION = '0.43.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.43.0', date: '2026-09-14', title: 'It looks right on a screen that is not mine',
+    notes: [
+      'Held sideways, or on a small phone, the buttons down the left no longer disappear under the fuel gauge. MAP and BALLAST were completely covered and AUTOPILOT was off the bottom of the screen.',
+      'On a wide screen the ground no longer stops in mid-air with empty space either side of it. The camera was framing twice as much world as the game actually draws.',
+      'Nothing changed on a phone held upright, which is deliberate: the framing there is identical to before.'
+    ]
+  },
   {
     version: '0.42.0', date: '2026-09-14', title: 'Detail, and a screen that stays on',
     notes: [

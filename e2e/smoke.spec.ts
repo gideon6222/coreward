@@ -4215,3 +4215,132 @@ test('a lower tier thins the dust as well as the resolution', async ({ page }) =
 });
 
 });
+
+/* ---------- no control may be buried under another ----------
+
+   Found by shooting the game at sizes a player can actually produce rather
+   than at the one it is designed for. At 915x412 - a phone held sideways - the
+   left button column (`#actions`, anchored to the TOP and growing down with no
+   bottom bound) runs straight under the instrument cluster (`#cluster`,
+   anchored to the BOTTOM). MAP disappears entirely and SHOP is half covered by
+   the fuel dial.
+
+   Two anchors growing toward each other with nothing between them is a bug
+   that only exists at some viewport heights, which is exactly the kind a
+   portrait-only test suite never sees. So this asserts the invariant instead
+   of the size: NO interactive control overlaps another, at every shape the
+   game can be opened at. */
+test('no HUD control is covered by another, at any shape the game opens at', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  /* Ballast and Autopilot are hidden until owned, and they make the column
+     longer - so the worst case is the one where everything is shown. */
+  await page.evaluate(() => {
+    for (const id of ['btnBallast', 'btnAuto']) {
+      const b = document.getElementById(id);
+      if (b) b.style.display = '';
+    }
+  });
+
+  const shapes: [string, number, number][] = [
+    ['his phone', 460, 996],
+    ['a small phone', 360, 640],
+    ['a phone held sideways', 915, 412],
+    ['a laptop', 1280, 800]
+  ];
+
+  for (const [name, w, h] of shapes) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(250);
+
+    const boxes = await page.evaluate(() => {
+      const out: { id: string; x: number; y: number; w: number; h: number }[] = [];
+      /* Everything the thumb is meant to hit, plus the cluster, which is not
+         tappable but must not SIT ON something that is. */
+      const sel = '#actions button, #dpad .k, #cluster, #hud .chip';
+      for (const e of Array.from(document.querySelectorAll<HTMLElement>(sel))) {
+        if (e.offsetParent === null && e.id !== 'cluster') continue;
+        const b = e.getBoundingClientRect();
+        if (b.width < 1 || b.height < 1) continue;
+        out.push({ id: e.id || e.className || e.textContent?.trim().slice(0, 12) || '?',
+                   x: b.x, y: b.y, w: b.width, h: b.height });
+      }
+      return out;
+    });
+
+    expect(boxes.length, `${name}: found no controls at all, so this shape tested nothing`)
+      .toBeGreaterThan(4);
+
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i], b = boxes[j];
+        const over = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) *
+                     Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+        /* A couple of square pixels of a shadow touching is not a covered
+           control; a quarter of the smaller one is. */
+        const small = Math.min(a.w * a.h, b.w * b.h);
+        expect(over / small,
+          `${name} (${w}x${h}): "${a.id}" and "${b.id}" overlap - one of them is buried`)
+          .toBeLessThan(0.25);
+      }
+    }
+
+    /* And nothing may hang off the bottom or the right, where a phone's
+       gesture bar and a rounded corner live. */
+    for (const b of boxes) {
+      expect(b.y + b.h, `${name}: "${b.id}" runs past the bottom of the screen`).toBeLessThanOrEqual(h + 1);
+      expect(b.x + b.w, `${name}: "${b.id}" runs past the right of the screen`).toBeLessThanOrEqual(w + 1);
+    }
+  }
+});
+
+/* ---------- the camera may not frame more than is streamed ----------
+
+   The terrain is a moving window of 21 columns around the ship, not the whole
+   61-column world, so a camera that frames more columns than that shows the
+   void where the ground stops. `resize()` had a clamp for this and it was
+   written against the WORLD width (63) instead of the window (21), so it never
+   fired once: measured at 40 visible columns on a phone held sideways and 28.8
+   on a laptop, both of which drew terrain that ended in mid-air.
+
+   Asserted as the invariant rather than as a number, because the fix is a
+   relationship between two constants that live in different files. */
+test('the camera never frames more columns than the terrain window streams', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  const framed = () => page.evaluate(() => {
+    const c = (window as any).__cw.camera;
+    const halfV = Math.tan((c.fov * Math.PI) / 360);
+    const rows = 2 * halfV * (window as any).__cw.R.camZ;
+    return { rows, cols: rows * c.aspect };
+  });
+
+  /* 21, from src/streamwindow.ts. Hard-coded here on purpose: a test that
+     imports the number it is checking cannot catch the number changing. */
+  const WINDOW_COLS = 21;
+
+  for (const [name, w, h] of [
+    ['his phone', 460, 996], ['a small phone', 360, 640],
+    ['a phone held sideways', 915, 412], ['a laptop', 1280, 800],
+    ['something absurdly wide', 1600, 400]
+  ] as [string, number, number][]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(200);
+    const f = await framed();
+    expect(f.cols, `${name} (${w}x${h}) frames ${f.cols.toFixed(1)} columns of a ${WINDOW_COLS}-column window, ` +
+      'so the terrain ends before the screen does')
+      .toBeLessThanOrEqual(WINDOW_COLS);
+    expect(f.rows, `${name}: the camera collapsed to ${f.rows.toFixed(1)} rows, which is not a game you can play`)
+      .toBeGreaterThan(3);
+  }
+
+  /* And the shape the game is designed for is untouched by all of the above -
+     18 rows, the framing every screenshot and every filmed run was judged at. */
+  await page.setViewportSize({ width: 460, height: 996 });
+  await page.waitForTimeout(200);
+  expect((await framed()).rows, 'the portrait framing moved, so this clamp changed the game as it is played')
+    .toBeCloseTo(18, 1);
+});

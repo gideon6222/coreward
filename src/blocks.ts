@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { beginGrowth, addGrowth, finishGrowth } from './growth';
 import { W } from './sim/config';
 import { key } from './sim/util';
+import { WINDOW_ROWS, WINDOW_COLS } from './streamwindow';
 import { g } from './sim/state';
 import { R } from './sim/runtime';
 import { regionAt } from './sim/region';
@@ -33,7 +34,9 @@ import type { Block } from './types';
 
 /* the streaming window, which must comfortably exceed the framed rows or
    terrain pops in at the edges as the camera moves */
-const WINDOW_ROWS = 29;
+/* Both live in streamwindow.ts now: `scene.ts` has to clamp the camera to the
+   same numbers, and two copies of that fact is how the void ended up on screen
+   in the first place (rule 10). */
 /* ---------- and a horizontal axis, which it did not have ----------
 
    The window streamed ROWS around the ship and then walked the full width on
@@ -47,7 +50,6 @@ const WINDOW_ROWS = 29;
    twenty-one is comfortably wider than anything on screen and still a fifth of
    a wide world. The same argument as the rows: the window must exceed the
    frame or terrain pops in at the edges as the camera moves. */
-const WINDOW_COLS = 21;
 const MAX_CELLS = WINDOW_ROWS * Math.min(W, WINDOW_COLS);
 /* up to `shards` front crystals plus two mirrored to the back face */
 const MAX_DETAILS = MAX_CELLS * 10;
