@@ -1,7 +1,25 @@
 name: Test and deploy
 
 on:
+  # Prose does not change the game, and every push here runs the full gate and
+  # redeploys Pages - about twenty minutes. Nine polish commits on 2026-09-14
+  # queued nine full runs, several of which existed only to republish an
+  # identical bundle beside an edited NOTES.md. INDEX.md rule 3 asks for
+  # paths-ignore for exactly this and it was missing.
+  #
+  # assets/CREDITS.md IS DELIBERATELY NOT IGNORED. The credits screen imports
+  # it with `?raw`, so it is a source file wearing a .md extension: editing it
+  # really does change what ships, and a blanket '**.md' would silently stop
+  # rebuilding the one markdown file that matters.
   push:
+    paths-ignore:
+      - 'NOTES.md'
+      - 'PLAN.md'
+      - 'README.md'
+      - 'CLAUDE.md'
+      - 'PRIVACY.md'
+      - 'store/**'
+      - 'twa/**'
   pull_request:
   workflow_dispatch:
 

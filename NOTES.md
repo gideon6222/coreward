@@ -5027,3 +5027,20 @@ itself waits for a body. Creating a canvas needs no parsed document.
 The test drives it by stubbing `getContext` to refuse every `webgl*` id before
 the page loads, and asserts both halves: the plain notice appears, AND the
 stack overlay does not also appear on top of it - which was the entire point.
+
+## The CI ran the full gate on prose, and that was my doing
+
+Nine polish commits on 2026-09-14 queued nine full runs of about twenty minutes
+each, and several of them existed only to republish a byte-identical bundle
+next to an edited `NOTES.md`. `INDEX.md` rule 3 asks for `paths-ignore` for
+exactly this and this workflow never had one; `concurrency` and
+`retention-days: 7` were already in place.
+
+**`assets/CREDITS.md` is deliberately NOT in the ignore list.** `ui.ts` imports
+it with `?raw`, so it is a source file wearing a `.md` extension - editing it
+really does change what ships, and the blanket `'**.md'` that would have been
+the obvious thing to write would have silently stopped rebuilding the one
+markdown file in this repo that matters.
+
+The lesson for me rather than for the config: batch. Nine separate pushes of
+work that was all one sweep is nine deploys of the same game.
