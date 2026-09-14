@@ -4843,3 +4843,58 @@ A skirt was needed under it too. `position:sticky` leaves the sheet's own 18 px
 of bottom padding as a window onto the text still scrolling behind, and the
 first version showed "Deepest 0 m" sliding along underneath RESUME - which
 reads as a rendering fault rather than as a pinned control.
+
+# Three more, 2026-09-14, v0.44.0: the ones that are standards rather than bugs
+
+Kept auditing after the shapes. These are not faults in the sense that anything
+misbehaves - the game did exactly what it was written to do. They are things a
+shipped game is expected to have and this one did not.
+
+## prefers-reduced-motion was ignored entirely
+
+This game washes the whole screen white on a find and on a death, shakes the
+camera on every cell of rock broken, and pulses two readouts continuously while
+you are in trouble. None of it was behind the OS setting.
+
+**The trap in implementing it is that every one of those is carrying
+information.** The naive fix is `animation: none`, and here that is actively
+harmful: `fuelpulse` runs opacity 1 to .55, so switching it off leaves the
+dry-tank warning sitting at its CALM end, looking exactly like a full tank. A
+player who asked for less motion would be given less warning. Same for the heat
+ember and the weight arc.
+
+So each warning is HELD at the loud end of its own swing - a red glow instead of
+a flashing cluster, brightness 1.45 instead of an ember, the amber stroke
+instead of a swing to it. Nothing moves and nothing is lost. The camera shake
+goes to zero, because it is the one piece of feedback carrying nothing the sound
+and the broken cell do not already carry. The flash stays at 30%: it still marks
+the event and its colour still tells a gas pocket from a relic.
+
+The test asserts the part that is easy to get wrong - that the dry-tank state
+does not render identically to a full tank under reduced motion - and it was
+verified by putting the shake back and watching it go red.
+
+## The link had no preview, which for this game is the distribution
+
+No `description`, no Open Graph, no Twitter card. Pasting the Pages URL anywhere
+produced a bare grey address. That matters more here than for most games,
+because a link IS how this one is delivered. The og:description is the store
+listing's own short line, and the test asserts that exact sentence, so the two
+places that describe this game cannot drift into describing it differently.
+
+## And no apple-touch-icon
+
+iOS does not read the web manifest's icons. Without this tag, adding the game to
+an iPhone home screen saves a SCREENSHOT of whatever was on screen at the time
+as the icon. One line.
+
+## One test of mine was silently passing on nothing
+
+Worth recording because it nearly shipped. The reduced-motion spec fired a
+screen flash with `w.flash ? w.flash(...) : null` - and `flash` was not on the
+debug seam, so the ternary quietly did nothing and the test then asserted
+against an element no one had touched. It read the default opacity of 0 and
+failed with "the flash was switched off entirely", which looked like a finding
+about the GAME and was a finding about the test. A guard that turns a missing
+dependency into a silent skip is the same fault as a check that inspects
+nothing (rule 11). `flash` is on the seam now and the call is unguarded.

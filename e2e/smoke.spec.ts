@@ -4393,3 +4393,91 @@ test('the way out of the pause sheet is on screen without scrolling, at every sh
     await expect(page.locator('#pause')).toHaveClass(/hidden/);
   }
 });
+
+/* ---------- reduced motion is respected, without losing the warning ----------
+
+   This game flashes the whole screen on a find and on a death, shakes the
+   camera on every cell of rock broken, and pulses two readouts continuously
+   while the player is in trouble. None of that was behind
+   `prefers-reduced-motion`.
+
+   The claim asserted here is the one that is easy to get wrong: turning the
+   motion down must NOT turn the information off. `fuelpulse` swings opacity
+   from 1 to .55, so the naive `animation:none` leaves the dry-tank warning
+   sitting at its CALM end and looking exactly like a full tank - a player who
+   asked for less motion would be given less warning. */
+test.describe(() => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('reduced motion stops the shake and the wash, and keeps every warning', async ({ page }) => {
+    await page.goto('/?debug');
+    await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+    await enterGame(page);
+    await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+    /* The camera must not move, however hard the game shakes it. */
+    const moved = await page.evaluate(() => {
+      const w = (window as any).__cw;
+      const before = { x: w.camera.position.x, y: w.camera.position.y };
+      w.R.shake = 3;
+      let max = 0;
+      for (let i = 0; i < 40; i++) {
+        w.advance(1 / 60);
+        max = Math.max(max, Math.abs(w.camera.position.x - before.x), Math.abs(w.camera.position.y - before.y));
+      }
+      return max;
+    });
+    expect(moved, 'the camera still shook with reduced motion asked for').toBeLessThan(0.02);
+
+    /* The flash still marks the event, at a fraction of the brightness. */
+    expect(await page.evaluate(() => (window as any).__cw.reducedMotion()),
+      'the page was opened with reduced motion asked for and the game did not see it')
+      .toBe(true);
+
+    const op = await page.evaluate(() => {
+      const w = (window as any).__cw;
+      w.flash('rgba(255,255,255,.5)', 4000);
+      const f = document.getElementById('flash');
+      return parseFloat(getComputedStyle(f as HTMLElement).opacity);
+    });
+    expect(op, 'the flash was switched off entirely, which removes the event and not the motion')
+      .toBeGreaterThan(0);
+    expect(op, 'the flash still washes the screen at full strength').toBeLessThan(0.6);
+
+    /* And the warnings are still legible with nothing moving: the dry-tank
+       state must not render identically to a full tank. */
+    const warn = await page.evaluate(() => {
+      const c = document.getElementById('cluster');
+      if (!c) return null;
+      const calm = getComputedStyle(c).filter;
+      c.classList.add('dry');
+      const dry = getComputedStyle(c).filter;
+      c.classList.remove('dry');
+      return { calm, dry };
+    });
+    expect(warn, 'no cluster to check').not.toBeNull();
+    expect(warn!.dry,
+      'with reduced motion the dry-tank warning renders exactly like a full tank, so the accommodation ate the warning')
+      .not.toBe(warn!.calm);
+  });
+});
+
+/* The link is how this game is distributed, so it has to look like something
+   when it is pasted. Without these it was a bare grey URL. */
+test('the page describes itself for a shared link, and names an icon for iOS', async ({ page }) => {
+  await page.goto('/?debug');
+  const meta = async (sel: string) =>
+    page.locator(sel).first().getAttribute('content');
+
+  expect(await meta('meta[name="description"]')).toBeTruthy();
+  expect(await meta('meta[property="og:title"]')).toBe('The Lattice');
+  expect((await meta('meta[property="og:description"]'))?.length || 0).toBeGreaterThan(20);
+  expect(await meta('meta[property="og:image"]')).toMatch(/^https:\/\/.+\.(png|jpg|webp)$/);
+  expect(await page.locator('link[rel="apple-touch-icon"]').getAttribute('href')).toBeTruthy();
+
+  /* The same sentence as the store listing's short description, deliberately:
+     two places describing one game is exactly where they drift apart. If the
+     listing is reworded, this fails and says so. */
+  expect(await meta('meta[property="og:description"]'))
+    .toBe('Dig down, light nine Anchors, and open the center of a dead world.');
+});

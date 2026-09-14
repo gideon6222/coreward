@@ -14,6 +14,7 @@ import { tilesSeen } from './sim/region';
 import { R } from './sim/runtime';
 import type { Dir } from './types';
 import { keepAwake } from './wakelock';
+import { shakeScale } from './motion';
 import {
   FREEZE_ORE, FREEZE_ROCK,
   SHAKE_CRACK, SHAKE_ROCK, SHAKE_ORE, SHAKE_LANDING, SHAKE_DECAY,
@@ -1052,8 +1053,13 @@ export function tick(raw: number, draw = true) {
   stepParallax(camera.position.x, camera.position.y);
 
   if (R.shake > 0) {
-    camera.position.x += (Math.random() - 0.5) * R.shake;
-    camera.position.y += (Math.random() - 0.5) * R.shake;
+    /* Scaled to nothing when the player has asked for reduced motion. The
+       shake is the one piece of feedback here that carries no information the
+       sound and the broken cell do not already carry, so it is the one that
+       can go entirely. See motion.ts. */
+    const sh = R.shake * shakeScale();
+    camera.position.x += (Math.random() - 0.5) * sh;
+    camera.position.y += (Math.random() - 0.5) * sh;
     R.shake = Math.max(0, R.shake - raw * SHAKE_DECAY);
   }
 

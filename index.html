@@ -73,6 +73,27 @@
 </script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<!-- iOS uses this for a home-screen icon; without it Safari saves a screenshot
+     of whatever was on screen when the player tapped Add to Home Screen. The
+     manifest's icons are Android's answer and iOS does not read them. -->
+<link rel="apple-touch-icon" href="icon-512.png">
+
+<!-- What the link looks like when it is shared, which for this game is how it
+     is DISTRIBUTED - a Pages URL he sends to a phone. Without these, pasting it
+     anywhere produced a bare grey URL with no name, no sentence and no picture.
+     The description is the store listing's own short line, so the two cannot
+     drift into saying different things about the same game (rule 10). -->
+<meta name="description" content="Dig down, light nine Anchors, and open the center of a dead world.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Lattice">
+<meta property="og:title" content="The Lattice">
+<meta property="og:description" content="Dig down, light nine Anchors, and open the center of a dead world.">
+<meta property="og:image" content="https://gideon6222.github.io/lattice/icon-512.png">
+<meta property="og:url" content="https://gideon6222.github.io/lattice/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Lattice">
+<meta name="twitter:description" content="Dig down, light nine Anchors, and open the center of a dead world.">
+<meta name="twitter:image" content="https://gideon6222.github.io/lattice/icon-512.png">
 <style>
   /* Chakra Petch, SIL Open Font License, self-hosted.
 
@@ -1070,6 +1091,31 @@
     #actions{ top:calc(env(safe-area-inset-top,0px) + 88px); gap:5px; }
     #actions button{ padding:7px 10px; font-size:10px; }
     #cluster{ transform:scale(.58); transform-origin:left bottom; }
+  }
+  /* ---------- prefers-reduced-motion ----------
+
+     The pulses in this HUD are WARNINGS, not decoration: the cluster pulses
+     when the tank is dry, the heat bar embers while the hull is cooking, and
+     the weight arc swings colour when the hold is heavy. Turning the animation
+     off would leave every one of them sitting at its calm end - `fuelpulse`
+     runs opacity 1 to .55, so `animation:none` is literally the normal look -
+     and a player who asked for less motion would be given less information.
+
+     So each one is held at the end of its own swing instead. Same warning,
+     same colour, nothing moving. The camera shake and the full-screen flash
+     are handled in `motion.ts`, because they are drawn rather than styled. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;
+      scroll-behavior:auto !important;
+    }
+    /* And then each warning put back, statically, at the loud end. */
+    #cluster.dry{ filter:drop-shadow(0 0 7px var(--red)) drop-shadow(0 0 2px var(--red)); }
+    #dry.on{ opacity:1; }
+    #soakBar.hot{ filter:brightness(1.45); }
+    #cluster.heavy #weightArc{ stroke:#ffd27a; }
   }
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity var(--t-base) var(--ease); z-index:30;}
   #boot{

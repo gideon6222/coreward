@@ -1,6 +1,7 @@
 import { HULL_MAX, DEF, isOre, ORES, GEODE, UPGRADES, SUPPLIES, SUPPLY_OF, BOMB_CHARGE, LASER_CHARGE, coreDepth, planetName, traitOf, valueMult, costOf, matCost, TRAIT_OF, heatDepth } from './sim/config';
 import { setGauges, setFuelReserve } from './gauges';
 import { clamp } from './sim/util';
+import { flashScale } from './motion';
 import { g, S, save, coreM, valueM, worldTrait, padFuel, worldUnrest, docked, atSurface as aboveGround } from './sim/state';
 import { heatDamagePerSecond } from './sim/feel';
 import type { Upgrade, Supply } from './types';
@@ -173,7 +174,12 @@ export function retireHint() {
 
 export function flash(color: string, ms?: number) {
   ui.flash.style.background = color;
-  ui.flash.style.opacity = '1';
+  /* Dimmed rather than dropped under reduced motion: the flash still marks the
+     event and its colour still tells a gas pocket from a relic, it just stops
+     washing the whole screen white. Applied to the element's opacity rather
+     than by rewriting the colour, so every caller keeps passing the same
+     rgba() it always did. */
+  ui.flash.style.opacity = String(flashScale());
   setTimeout(() => { ui.flash.style.opacity = '0'; }, ms || 220);
 }
 /* Re-exported so the modules that already import it from here keep working.

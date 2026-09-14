@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.43.0';
+export const VERSION = '0.44.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.44.0', date: '2026-09-14', title: 'Less motion, if you ask for it',
+    notes: [
+      'If your phone is set to reduce motion, the game now listens. The camera stops shaking and the screen stops washing white - but every warning stays exactly as visible as it was, held steady instead of pulsing. Turning the motion down does not turn the information off.',
+      'Sharing the link now shows the game’s name, a line about it and its icon, instead of a bare address.',
+      'Added to an iPhone home screen, the game gets its own icon rather than a screenshot of whatever was on screen.'
+    ]
+  },
   {
     version: '0.43.0', date: '2026-09-14', title: 'It looks right on a screen that is not mine',
     notes: [

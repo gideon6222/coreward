@@ -18,7 +18,7 @@ import { selectableKeys } from './station';
 import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen, roomDrawer,
          stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
-import { el, updateHUD, audioLabels, buildShop, toast, foundBanner, buildBallast } from './ui';
+import { el, updateHUD, audioLabels, buildShop, toast, foundBanner, buildBallast, flash } from './ui';
 import { frame, tick, advance, stopClock, startClock } from './loop';
 import { installPanelGrain } from './grain';
 import { growthCounts, growthKindAt } from './growth';
@@ -35,6 +35,7 @@ import { setStartHandler, wireTitle, showTitle, showIntro, startIntro } from './
 import { hallEye } from './sim/intro';
 import './input';
 import { installWakeLock, wakeHeld, wakeWanted, wakeState } from './wakelock';
+import { reducedMotion } from './motion';
 import { applyVisuals } from './visualsapply';
 
 /* The screen must not sleep while a thumb is held on the d-pad - see
@@ -168,6 +169,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     /* The wake lock's two facts, so a spec can tell "the game never asked"
        apart from "the browser refused" - which look identical from outside. */
     wakeHeld, wakeWanted, wakeState,
+    /* The screen flash, so a spec can fire one and read what it actually drew
+       rather than asserting against an element nothing touched. */
+    flash, reducedMotion,
     setDrillTier, setUpgradeHardware,
     showTitle, showIntro,
     /* Jump the intro to a beat and repaint it. Through the seam and not a
