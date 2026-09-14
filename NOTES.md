@@ -4898,3 +4898,57 @@ failed with "the flash was switched off entirely", which looked like a finding
 about the GAME and was a finding about the test. A guard that turns a missing
 dependency into a silent skip is the same fault as a check that inspects
 nothing (rule 11). `flash` is on the seam now and the call is unguarded.
+
+# The GPU can be taken away, 2026-09-14, v0.45.0
+
+A WebGL context is not guaranteed, and this game has the exact profile that
+meets that: installed, on an Android phone, in long sessions. Chrome drops the
+context when a tab has been backgrounded a while, when the driver resets, and
+under memory pressure. There was no handler of any kind.
+
+**What happened without one is worse than a crash.** three.js stops drawing and
+`requestAnimationFrame` keeps running, so the game carries on simulating -
+fuel burning, heat climbing, the ship still flying wherever the thumb points -
+behind a black screen with a live HUD on top of it. No error, nothing in a log
+the player can see, and no way out but killing the app. A run can be lost to it
+without the player ever learning what happened.
+
+Three things, and the first is the one that is easy to miss:
+
+- **`preventDefault()` on the lost event.** Without it the browser does not
+  attempt restoration at all; the default action is to give up permanently.
+  That one line is the difference between a recoverable blackout and a dead tab.
+- **Stop the clock and save.** Nothing may keep simulating where it cannot be
+  seen.
+- **Say so**, and offer a reload if the context has not returned in four
+  seconds.
+
+## Two things this cost that are worth remembering
+
+**The test had to assert the clock, not the ship.** The first version held the
+d-pad and compared depth before and after, which measured the harness rather
+than the game: headless Chromium throttles `requestAnimationFrame` to about two
+frames a second, so "it did not move in 600 ms" passes whether the guard works
+or not - and indeed it failed on the SETUP assertion, that the ship was moving
+beforehand. `clockRunning()` is the honest question and it is exposed for it.
+
+**`hidden` lost to `display:flex`.** The overlay is centred with flex, which
+beats the user agent's own `[hidden]{display:none}`, so setting the attribute
+hid nothing and the notice stayed on screen after the context came back. The
+test caught it. `#gpulost[hidden]{display:none}` is the fix.
+
+# Two checks that came back clean, recorded so nobody measures them twice
+
+Rule 7 wants the number rather than the caution, including when the answer is
+"this is fine".
+
+- **The save cannot outgrow its storage.** `g.dug` is every cell ever dug, and
+  the worry was silently exceeding localStorage's ~5 MB. Measured by seeding
+  the set at increasing fractions of the whole world and saving: 2% dug is
+  4.6 KB, 10% is 21.5 KB, 50% is 113 KB, and **digging out the ENTIRE world -
+  all 27,572 cells - is 232 KB**. A real campaign digs a few percent. There is
+  two orders of magnitude of headroom and no reason to compress anything.
+- **No leak and a fast boot.** 804 ms from navigation to playable under a
+  software rasteriser, 77 KB transferred for the document. JS heap 14 MB at the
+  pad and **14 MB after digging to 43 m** across 300 seconds of game time, so
+  the block and growth pools are recycling as intended.

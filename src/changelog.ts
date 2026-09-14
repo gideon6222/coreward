@@ -16,9 +16,15 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.44.0';
+export const VERSION = '0.45.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.45.0', date: '2026-09-14', title: 'When the phone takes the graphics away',
+    notes: [
+      'If the phone drops the game’s graphics - which Android does when an app has been in the background a while, or when the driver resets - the game now stops, saves, and tells you, then picks up again when the graphics come back. It used to keep playing behind a black screen: fuel burning, heat climbing, the ship still going wherever your thumb pointed, with no way out but closing the app.'
+    ]
+  },
   {
     version: '0.44.0', date: '2026-09-14', title: 'Less motion, if you ask for it',
     notes: [

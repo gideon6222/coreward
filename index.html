@@ -1117,6 +1117,22 @@
     #soakBar.hot{ filter:brightness(1.45); }
     #cluster.heavy #weightArc{ stroke:#ffd27a; }
   }
+  /* The GPU-loss notice. Plain and unstyled by the game's own plate, like the
+     crash screen and for the same reason: what it is reporting is the game not
+     working, so it must not look like part of it. */
+  #gpulost{position:fixed; inset:0; z-index:55; background:rgba(5,7,13,.94);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; padding:24px; text-align:center; color:var(--ink);
+    font:13px/1.6 system-ui, sans-serif;}
+  /* `display:flex` on the rule above beats the user agent's own
+     `[hidden]{display:none}`, so hiding it by setting the attribute did
+     nothing and the notice stayed on screen after the context came back. */
+  #gpulost[hidden]{display:none;}
+  #gpulost p{margin:0; max-width:30em; color:var(--dim);}
+  #gpulost button{min-height:46px; padding:0 22px; cursor:pointer;
+    background:var(--plate); color:var(--ink); border:1px solid var(--line);
+    border-radius:3px; box-shadow:var(--bevel);
+    font:600 13px/1 system-ui, sans-serif; letter-spacing:.08em;}
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity var(--t-base) var(--ease); z-index:30;}
   #boot{
     position:fixed; inset:0; z-index:40; background:#05070d; display:flex; align-items:center;

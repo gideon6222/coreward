@@ -19,7 +19,7 @@ import { pickBay, selectBay, selectedBay, bays, kitCases, refreshKit, drawerOpen
          stationCamera, stationScene, roomReady, goAisle, stepAisle,
          currentAisle, currentGroup, aisleStocked, AISLE_COUNT } from './station';
 import { el, updateHUD, audioLabels, buildShop, toast, foundBanner, buildBallast, flash } from './ui';
-import { frame, tick, advance, stopClock, startClock } from './loop';
+import { frame, tick, advance, stopClock, startClock, clockRunning } from './loop';
 import { installPanelGrain } from './grain';
 import { growthCounts, growthKindAt } from './growth';
 import { buildGauges } from './gauges';
@@ -36,6 +36,7 @@ import { hallEye } from './sim/intro';
 import './input';
 import { installWakeLock, wakeHeld, wakeWanted, wakeState } from './wakelock';
 import { reducedMotion } from './motion';
+import { installContextGuard, contextLost } from './context';
 import { applyVisuals } from './visualsapply';
 
 /* The screen must not sleep while a thumb is held on the d-pad - see
@@ -43,6 +44,9 @@ import { applyVisuals } from './visualsapply';
    index.html's first <script>, registered before Vite's hoisted entry, which
    is earlier than anything here can be. */
 installWakeLock();
+/* The GPU can be taken away at any moment on a phone; without a handler the
+   game keeps simulating behind a black screen. See context.ts. */
+installContextGuard();
 
 /* And the saved visuals tier, in full.
 
@@ -161,7 +165,7 @@ requestAnimationFrame(frame);
    usually means to make: DEPTH 0 m is true at pd 0.0 and at pd 0.49. */
 if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as { __cw: unknown }).__cw = {
-    tick, advance, stopClock, startClock, g, S, R, save, markSeen,
+    tick, advance, stopClock, startClock, clockRunning, g, S, R, save, markSeen,
     /* The renderer's own handles, for tuning an art pass live. Every lighting
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
@@ -171,7 +175,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wakeHeld, wakeWanted, wakeState,
     /* The screen flash, so a spec can fire one and read what it actually drew
        rather than asserting against an element nothing touched. */
-    flash, reducedMotion,
+    flash, reducedMotion, contextLost,
     setDrillTier, setUpgradeHardware,
     showTitle, showIntro,
     /* Jump the intro to a beat and repaint it. Through the seam and not a

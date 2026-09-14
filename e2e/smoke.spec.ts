@@ -4481,3 +4481,58 @@ test('the page describes itself for a shared link, and names an icon for iOS', a
   expect(await meta('meta[property="og:description"]'))
     .toBe('Dig down, light nine Anchors, and open the center of a dead world.');
 });
+
+/* ---------- losing the GPU ----------
+
+   Android Chrome drops a WebGL context when a tab has been backgrounded a
+   while, when the driver resets, and under memory pressure. Without a handler,
+   three.js silently stops drawing while `requestAnimationFrame` keeps running -
+   so the game carries on simulating, fuel burning and all, behind a black
+   screen with a live HUD on top of it, and there is no way out but killing the
+   app.
+
+   Driven with `WEBGL_lose_context`, which is exactly what the browser does to
+   the page for real. */
+test('losing the GPU stops the game and says so, and getting it back resumes', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  await page.evaluate(() => (window as any).__cw.startClock());
+
+  const ext = await page.evaluate(() => {
+    const gl = (window as any).__cw.renderer.getContext();
+    const e = gl.getExtension('WEBGL_lose_context');
+    (window as any).__lose = e;
+    return !!e;
+  });
+  test.skip(!ext, 'this browser has no WEBGL_lose_context, so the claim cannot be exercised here');
+
+  /* The clock is what decides whether the game is still running, and it is
+     asserted directly. Timing the ship's depth instead would be measuring the
+     harness: headless Chromium throttles requestAnimationFrame to a couple of
+     frames a second, so "it did not move in 600 ms" would pass whether the
+     guard worked or not. */
+  expect(await page.evaluate(() => (window as any).__cw.clockRunning()),
+    'the clock was not running before the context was lost, so this test proves nothing')
+    .toBe(true);
+
+  await page.evaluate(() => (window as any).__lose.loseContext());
+  await page.waitForFunction(() => (window as any).__cw.contextLost(), null, { timeout: 5_000 });
+
+  /* It says so. */
+  await expect(page.locator('#gpulost')).toBeVisible();
+
+  /* And it is not still playing the game where nobody can see it. */
+  expect(await page.evaluate(() => (window as any).__cw.clockRunning()),
+    'the clock kept running behind a black screen - fuel and heat were burning where the player could not see them')
+    .toBe(false);
+
+  /* Coming back puts it away and starts the clock again. */
+  await page.evaluate(() => (window as any).__lose.restoreContext());
+  await page.waitForFunction(() => !(window as any).__cw.contextLost(), null, { timeout: 8_000 });
+  await expect(page.locator('#gpulost')).toBeHidden();
+
+  expect(await page.evaluate(() => (window as any).__cw.clockRunning()),
+    'the game did not start again after the context came back').toBe(true);
+});

@@ -175,6 +175,12 @@ export function frame(now: number) {
   keepAwake(g.mode === 'play' || g.mode === 'fly');
 }
 
+/* Whether the real-time clock is running. The GPU-loss guard stops it and
+   starts it again, and "is the game still simulating behind a black screen"
+   is the thing that actually has to be asserted - timing a position under a
+   headless rAF that fires twice a second measures the harness, not the game. */
+export function clockRunning() { return raf !== 0; }
+
 /* Stop the real-time clock so a caller can drive the loop itself. */
 export function stopClock() {
   if (raf) cancelAnimationFrame(raf);
