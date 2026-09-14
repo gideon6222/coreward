@@ -1,0 +1,6 @@
+# Everything Bubblewrap generates is an Android project rebuilt from twa-manifest.json by
+# scripts\twa.ps1. Only the manifest and the README are source.
+*
+!.gitignore
+!twa-manifest.json
+!README.md

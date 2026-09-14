@@ -1,0 +1,52 @@
+{
+    "packageId":  "com.gideon.lattice",
+    "host":  "gideon6222.github.io",
+    "name":  "The Lattice",
+    "launcherName":  "Lattice",
+    "display":  "fullscreen",
+    "themeColor":  "#05070D",
+    "themeColorDark":  "#05070D",
+    "navigationColor":  "#05070D",
+    "navigationColorDark":  "#05070D",
+    "navigationDividerColor":  "#05070D",
+    "navigationDividerColorDark":  "#05070D",
+    "backgroundColor":  "#05070D",
+    "enableNotifications":  false,
+    "startUrl":  "/lattice/",
+    "iconUrl":  "https://gideon6222.github.io/lattice/icon-512.png",
+    "splashScreenFadeOutDuration":  300,
+    "signingKey":  {
+                       "path":  "C:/dev/keys/upload.keystore",
+                       "alias":  "upload"
+                   },
+    "appVersionName":  "0.39.0",
+    "appVersionCode":  1,
+    "shortcuts":  [
+
+                  ],
+    "generatorApp":  "bubblewrap-cli",
+    "webManifestUrl":  "https://gideon6222.github.io/lattice/manifest.webmanifest",
+    "fallbackType":  "customtabs",
+    "features":  {
+
+                 },
+    "alphaDependencies":  {
+                              "enabled":  false
+                          },
+    "enableSiteSettingsShortcut":  true,
+    "isChromeOSOnly":  false,
+    "isMetaQuest":  false,
+    "fullScopeUrl":  "https://gideon6222.github.io/lattice/",
+    "minSdkVersion":  21,
+    "orientation":  "portrait",
+    "fingerprints":  [
+
+                     ],
+    "additionalTrustedOrigins":  [
+
+                                 ],
+    "retainedBundles":  [
+
+                        ],
+    "appVersion":  "0.39.0"
+}
