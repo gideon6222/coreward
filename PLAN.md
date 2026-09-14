@@ -634,11 +634,36 @@ normal-mapped floor at low roughness so the lights streak across it.
       repeating rack behind. Retires the plinths and the group filtering
 - [x] **R4 The pump** - hose, nozzle, ticking readout
 - [ ] **R5 Wet ground** - mirrored fittings and ship under a translucent floor.
-      *Never built, and it is the only thing from this round that was not.*
-      Left unticked on purpose rather than quietly dropped: there is no
-      reflection or translucent floor anywhere in `stationroom.ts`, and the
-      room reads well enough without one that nobody has missed it. Judge it
-      against the room as it stands before spending a day on it.
+      *Still not built, and now measured rather than guessed at. Left unticked:
+      a box is `[x]` or `[ ]` and nothing else, and dropping a milestone is
+      Gideon's call, not a session's.*
+
+      Its own brief said to judge it against the room before spending a day on
+      it, so on 2026-09-13 the room was screenshotted at 460x996 and measured.
+      **The floor is barely in the picture.** `#shopStage`, the 3D room, runs
+      from y 120 to y **782** of a 996-tall screen; everything below that is
+      DOM. Unprojecting the camera onto the deck plane and then confirming it
+      by tinting `deckMat` emissive magenta put the visible deck in the last
+      ~20 px of the stage. A mirror in a twenty-pixel strip is not worth a day,
+      and "the ship under a translucent floor" would be showing the ship
+      through a letterbox.
+
+      **What the same measurement did find** is that the big dead band at the
+      bottom of that screen is not the floor at all - it is `#shopCard`, 124 px
+      of DOM, blank because nothing is selected. Fixed under the completeness
+      pass rather than here (v0.41.0).
+
+      **Two small things were kept** from the attempt, because they are right
+      on their own: the deck is glossy instead of matte, and a third roaming
+      light walks with the aisle and washes it in that aisle's color, which
+      costs one light rather than one per aisle and leaves `NEON_LIGHT_BUDGET`
+      untouched. Nothing was lighting the deck at all before - the neon
+      fittings' pool distance is 1.6 and they sit two and a half metres above
+      it.
+
+      **The recommendation: drop it.** Re-frame the room so the floor is worth
+      reflecting into, or say plainly that this room is a shelf-height shot and
+      the floor is trim. Either is a decision about the framing, which is his.
 - [x] **R6 The phone pass** - all of it judged at 1080x2340 rather than on a contact sheet,
       which is where the last three rounds of this room went wrong.
       *Done as part of round eight's W10*, which shot every screen in the game

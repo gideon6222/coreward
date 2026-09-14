@@ -407,9 +407,20 @@ export function buildCard() {
   ui.shopHint.classList.toggle('gone', !!key || aisleHintSeen());
   ui.shopCard.innerHTML = '';
   if (!key) {
-    /* Deliberately empty: the hint line floating over the room already says
-       what to do, and saying it twice on one screen reads as a bug. */
-    ui.shopCard.innerHTML = '<div class="cempty">&nbsp;</div>';
+    /* Deliberately empty WHILE the floating hint is up: it already says what to
+       do, and saying it twice on one screen reads as a bug. That reasoning was
+       right and it EXPIRES - `retireHint` puts the hint away for good on the
+       first walk and remembers it in localStorage, so from the second visit
+       onward the hint was gone AND this slab said nothing, leaving 124 px of
+       blank under the room with no line anywhere telling you what to do. The
+       `.cempty` rule in the stylesheet was written for a sentence that was
+       never put in it.
+
+       So the line moves here when the hint goes. The two are still never both
+       on screen, which is what the original note was protecting. */
+    ui.shopCard.innerHTML = aisleHintSeen()
+      ? '<div class="cempty">Tap a case to inspect it</div>'
+      : '<div class="cempty">&nbsp;</div>';
     return;
   }
   const sup = SUPPLY_OF[key];

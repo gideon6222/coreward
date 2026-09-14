@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.40.0';
+export const VERSION = '0.41.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.41.0', date: '2026-09-13', title: 'The Outfitter says what to do',
+    notes: [
+      'The panel under the shop shelves is no longer blank. The floating "swipe to walk the aisles" hint retires for good after your first visit, and from then on nothing on that screen told you anything - now the panel picks the line up when the hint puts it down.',
+      'The Outfitter deck is wet. It is glossy instead of matte, and the aisle you are standing in throws its own color across it.'
+    ]
+  },
   {
     version: '0.40.0', date: '2026-09-13', title: 'Your thumb can move',
     notes: [

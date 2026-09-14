@@ -3979,3 +3979,48 @@ test('a thumb that drifts off the key is still holding it, and sliding hands ove
   await page.mouse.up();
   expect(await held(), 'lifting the thumb did not stop the ship').toBe(null);
 });
+
+/* ---------- the shop's empty card says something once the hint retires ----------
+
+   `buildCard` left the card slot deliberately blank while the floating
+   "SWIPE TO WALK THE AISLES" hint was up, so the same sentence would not be on
+   one screen twice. Correct - and it expires. `retireHint` puts the hint away
+   for good on the first walk and remembers it in `localStorage`, so from the
+   second visit onward the hint is gone AND the slot is blank: 124 px of empty
+   under the room with nothing anywhere saying what to do. The `.cempty` rule
+   in the stylesheet had been styled for a sentence nobody ever wrote. */
+test('the shop tells you what to do after the hint has retired, and never twice at once', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const openShop = async () => {
+    await page.locator('#btnShop').dispatchEvent('click');
+    await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
+    await page.waitForTimeout(400);
+  };
+  const hintUp = () => page.locator('#shopHint').evaluate((e) => !e.classList.contains('gone'));
+  const cardText = () => page.locator('#shopCard').innerText();
+
+  /* First visit: the floating hint carries it, so the card stays quiet. */
+  await openShop();
+  expect(await hintUp(), 'the floating hint was not up on a first visit').toBe(true);
+  expect((await cardText()).trim(),
+    'the card spoke while the floating hint was also up - the same sentence twice on one screen')
+    .toBe('');
+
+  /* Retire the hint the way a player does - by walking an aisle - rather than
+     by calling the function, so the wiring from the arrow to the retirement is
+     part of what this asserts. */
+  await page.locator('#aisleR').click();
+  await page.waitForTimeout(300);
+  await page.locator('#shopClose').dispatchEvent('click');
+  await page.waitForTimeout(300);
+  await openShop();
+
+  expect(await hintUp(), 'the hint came back after being retired').toBe(false);
+  expect((await cardText()).trim().length,
+    'the hint has retired and the card is still blank, so nothing on this screen says what to do')
+    .toBeGreaterThan(0);
+});

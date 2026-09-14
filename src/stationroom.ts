@@ -60,8 +60,29 @@ let loading: Promise<void> | null = null;
    use one: a kit's baked look next to a hand-tuned scene is the join that
    shows in the first frame. Two variants only - the deck and the machinery -
    because more than that stops reading as one place. */
+/* The deck, and why it is wet.
+
+   R5 in `PLAN.md` asked for *"mirrored fittings and ship under a translucent
+   floor"*, and its own brief said to judge it against the room before spending
+   a day on it. Judged from a screenshot at 460x996: the bottom sixth of the
+   frame was a flat dead navy band under an otherwise rich picture, so there is
+   a real fault there - but it was not the one the brief names, and a mirror is
+   not what fixes it.
+
+   MEASURED: nothing was lighting the deck at all. The neon fittings are real
+   PointLights with a pool distance of 1.6, and they sit two and a half metres
+   above a deck at y -1.35, so their light stopped well short of it. A glossier
+   floor under no light is still a dead floor, which is why this is a material
+   change AND a light, and why neither alone was tried.
+
+   So: low roughness and high metalness, and the deck catches the aisle's own
+   neon in a long soft streak instead of being a matte plate. That is the wet
+   read, it costs one material and one light, and it keeps the room's own
+   standing rule - *"anything neon should feel like it is actually coming from
+   an object or light in the room, not an overlay"*. A translucent floor with
+   the ship under it remains unbuilt and is recorded that way. */
 const deckMat = new THREE.MeshStandardMaterial({
-  color: 0x39404b, metalness: 0.35, roughness: 0.78, flatShading: true
+  color: 0x2f353f, metalness: 0.62, roughness: 0.26, flatShading: true
 });
 const gearMat = new THREE.MeshStandardMaterial({
   color: 0x767f8c, metalness: 0.6, roughness: 0.55, flatShading: true
@@ -983,6 +1004,18 @@ export function buildRoom(): Room | null {
   const signLight = new THREE.PointLight(0xffffff, 3.6, 3.2, 2);
   signLight.castShadow = false;
   root.add(signLight);
+  /* The third roaming light, and the only one aimed downward: the aisle's
+     color on the deck. It walks with the other two for the same reason they
+     walk - only one aisle is ever on screen - so the wet floor costs one light
+     in the scene rather than one per aisle, and the budget above is untouched.
+
+     Sits forward of the rack and low, so the falloff puts the bright of the
+     streak near the front of the deck where the camera actually sees it and
+     lets the back of the floor stay dark. A deck lit evenly reads as a lit
+     plate; a deck with a hot streak and a dark edge reads as wet. */
+  const deckLight = new THREE.PointLight(0xffffff, 9.0, 7.0, 2);
+  deckLight.castShadow = false;
+  root.add(deckLight);
 
   /* And one for the forecourt, which has no bay of its own but does have the
      ship in it. Warm, filament-coloured, so the brass reads as brass: the
@@ -1021,6 +1054,7 @@ export function buildRoom(): Room | null {
       const at = i >= 1 && i <= bays.length;
       lipLight.visible = at;
       signLight.visible = at;
+      deckLight.visible = at;
       drawer.group.visible = at;
       if (!at) { drawer.setOpen(false); return; }
       drawer.group.position.x = stationX(i);
@@ -1030,6 +1064,8 @@ export function buildRoom(): Room | null {
       lipLight.position.set(ax, -0.42, 1.8);
       signLight.color.setHex(col);
       signLight.position.set(ax, 1.1, -2.0);
+      deckLight.color.setHex(col);
+      deckLight.position.set(ax, -0.30, 1.70);
     },
     step(t: number, dt: number) {
       crt.step(t);
