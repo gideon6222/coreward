@@ -2566,6 +2566,60 @@ opinions:
       Per-material juice variety is left, and the research ranks it last on
       purpose - a content multiplier, not a systemic fix.
 
+# The Play listing
+
+**These four landed in this repo without boxes, and a box is how the outline
+stays true** (INDEX.md rule 3: one `- [ ]` line per milestone, ticked in the
+commit that finishes it). Three of them were built by other sessions working in
+this repo on 2026-09-13, which is why the plan did not have them; they are
+recorded here rather than left uncounted, with the commit that did the work.
+The reasoning behind each belongs to the session that wrote it and is in the
+commit messages, not restated here.
+
+- [x] **P1 A 512 PNG icon**, which the Play wrapper and the Android home screen
+      both need. Done 2026-09-13, `76cd79a`.
+
+- [x] **P2 The Android wrapper.** A Trusted Web Activity, so Google Play can
+      list a web game at all: `scripts/twa.ps1` and `twa/`. Done 2026-09-13,
+      `1e0bd12`. Its build output is `build/`, which is gitignored as of
+      `ccf0dbd` - a `git add -A` in this repo had committed a 1.25 MB `.aab`
+      into the pushed history.
+
+- [x] **P3 The privacy policy** Play requires, and the one fact a web game has
+      to state. Done 2026-09-13, `4056acc`, `PRIVACY.md`.
+
+- [x] **P4 The store listing, rendered from the built game.** `npm run store`
+      drives `scripts/store.mjs`, a filmstrip driver at 1080x1920 (16:9, because
+      a 19.5:9 phone screenshot is rejected by Play), one frame per named state
+      into `store/listing/en-US/`. Done 2026-09-13, `675ad99`. The listing does
+      NOT go to Play from that commit - `autoListing` is off, and the three
+      listing text files are drafts for Gideon to read. Two findings from its
+      first run are filed as lessons: advancing the clock does not descend,
+      because the ship digs while a control is HELD, and a pixel comparison
+      cannot catch a wrong state in a game whose stars twinkle - assert the sim,
+      not the picture.
+
+- [ ] **P5 Gideon reads the listing text, and three things in it are wrong.**
+      Title, short description and full description are drafted in
+      `store/listing/en-US/`. Nothing goes to Play until he has read them, and
+      the PITCH is his call and not a session's - which is why the draft is
+      flagged here rather than quietly rewritten. What is not a matter of pitch
+      is that the copy describes the game as it was around round three:
+
+      **It never mentions the Anchors, the Lattice or the Vault.** The game's
+      own title screen says *"Dig down. Light the Anchors. Open the center."*
+      and the full description says *"depth is the only score that matters"*.
+      This game has nine Anchors, a campaign and an ending; the draft sells a
+      scoreless sandbox, and a player who buys that one and finds this one has
+      been told the wrong thing about the product.
+      **"Nothing is chasing you" appears twice and is not true.** Gas pockets,
+      heat soak, tremors, and from the fifth Anchor a planet that reshapes the
+      ground behind you.
+      **The ore order is reversed.** Copper is the shallow one (`min: 3`) and
+      iron is below it (`min: 16`); the draft has it the other way, and then
+      compresses amethyst, emerald, ruby, magmite, coreite, umbrite and
+      solmarrow into "stranger things".
+
 # The second month
 
 **A sketch, not a plan, and it is deliberately not started.** `POLISH.md` asks

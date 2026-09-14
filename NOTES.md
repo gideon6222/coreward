@@ -4576,3 +4576,66 @@ Vlambeer's per-hit white flash was considered and does not map: damage to rock
 here is continuous progress through a cell rather than discrete hits, and the
 break already carries spray, shake and its own sound. Per-material juice
 variety is the one item left, and the research ranks it last on purpose.
+
+# Reviewing the studio's new rules after round ten, 2026-09-13
+
+Pulled the knowledge base and read the board. Most of it changes nothing here;
+four things did, and two of them were faults in this repo.
+
+## Both lessons from T4 are folded, and this repo is where they came from
+
+`80a7e35` put them into `CRAFT.md` ("a mechanics module's written-down number is
+what REFUSES a mechanic") and `WEB.md` ("on touch, `pointerleave` is not a
+release - capture the pointer"). Nothing owed.
+
+## MINE: `git add -A` committed a megabyte of build output
+
+The T4 commit carried `build/lattice.aab` into the pushed history, 1.25 MB of
+binary, because `build/` was not in `.gitignore` and another session was
+mid-wrapper-build when I staged everything. Untracked and ignored in `ccf0dbd`.
+It stays in history - not worth rewriting a pushed branch for a megabyte - and
+the `.gitignore` comment says what happened so the next session does not repeat
+it. The studio's own rule about never running a blanket add is written for
+`gamedev-notes`; this is the same failure one repo over.
+
+## MINE: four milestones had landed with no boxes
+
+Other sessions built the Play wrapper, the privacy policy, the 512 icon and the
+store listing in this repo on 2026-09-13 and none of it was in `PLAN.md`. Rule 3
+is that the milestone list is the official outline, so work with no box is
+invisible to `progress.ps1` and to the dashboard - the same fault as an unticked
+box, in the other direction. Recorded as P1 to P5, ticked, each naming the
+commit that did it. Their reasoning stays in their commit messages; restating it
+here would be inventing it.
+
+## MINE: the dashboard could not see this game
+
+`INDEX.md` says a session writes what it is doing through its own
+`scripts\status.ps1`, and this repo had none, so the site showed this game as
+unknown. The template's script reads git and writes one JSON file and has
+nothing Godot in it, so it is copied byte-identical and needs no
+`DIVERGENCE.md` row.
+
+## The store listing describes a different game
+
+Read before believing. The draft in `store/listing/en-US/` never mentions the
+Anchors, the Lattice or the Vault, says *"depth is the only score that matters"*
+about a game with nine Anchors and an ending, says *"nothing is chasing you"*
+twice about a game with gas, heat, tremors and a planet that moves, and has
+copper and iron the wrong way round. Written up on P5 rather than rewritten: the
+pitch is his, and handing him corrected copy he believes is the original draft
+is worse than handing him the draft with the faults named.
+
+## The two bulletins do not apply, and one of them was done anyway
+
+Both are scoped `applies: godot`. The store-listing one was nevertheless carried
+out in this repo by another session and acked under the slug `coreward`, which
+is the right outcome and means the `applies` field is advice rather than a
+filter. `deliver.ps1` still does not apply: it is a Godot export and install,
+and the way he plays this game is the Pages link.
+
+**One thing to know about the board here.** `bulletin.ps1 list -Game lattice`
+answers "no open entry applies" because the slug is the DIRECTORY name, which is
+still `coreward`. Every studio tool keys off that: the acks file is
+`.studio\bulletins\coreward.json`, `progress.ps1` prints "PLAN coreward". So
+until the folder is renamed, ask the board with `-Game coreward`.
