@@ -4654,3 +4654,39 @@ test('with a panel open, the keyboard cannot reach the game behind it', async ({
   expect(await page.evaluate(() => (window as any).__cw.gameIsInert()),
     'closing the panel did not give the game back to the keyboard').toBe(false);
 });
+
+/* ---------- a browser that cannot run it is told so ----------
+
+   WebGL is not a given, and the common case is not an old phone: desktop
+   Chrome turns hardware acceleration off on plenty of machines - a driver on
+   the blocklist, or a setting somebody changed - and then the renderer throws
+   while the module is still being evaluated. What the player got was the
+   developer overlay with a three.js stack in it, which tells them nothing they
+   can act on. */
+test('a browser with no WebGL gets a plain explanation, not a stack trace', async ({ page }) => {
+  /* The page will throw during module evaluation, on purpose. */
+  page.removeAllListeners('pageerror');
+  await page.addInitScript(() => {
+    const real = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, id: string, ...rest: unknown[]) {
+      if (typeof id === 'string' && id.indexOf('webgl') === 0) return null;
+      return (real as unknown as (...a: unknown[]) => unknown).call(this, id, ...rest);
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+
+  await page.goto('/?debug');
+  await expect(page.locator('#nogl')).toBeVisible({ timeout: 15_000 });
+
+  const text = await page.locator('#nogl').innerText();
+  expect(text, 'the notice does not name WebGL, so it cannot be acted on').toMatch(/WebGL/i);
+  expect(text, 'the notice does not say what to try').toMatch(/acceleration|browser/i);
+
+  /* And the boot spinner is gone, rather than sitting under it forever. */
+  await expect(page.locator('#boot')).toHaveClass(/hidden/);
+
+  /* The stack-trace overlay must NOT also appear. A player who has just been
+     told plainly what is wrong should not then be shown a three.js stack about
+     it - that was the whole point of the notice. */
+  await page.waitForTimeout(600);
+  await expect(page.locator('#err')).toHaveClass(/hidden/);
+});

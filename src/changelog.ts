@@ -16,9 +16,16 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.47.0';
+export const VERSION = '0.48.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.48.0', date: '2026-09-14', title: 'It says why it cannot run',
+    notes: [
+      'A browser that cannot run the game now says so in a sentence you can act on, instead of showing a page of developer error text. The usual cause on a computer is graphics acceleration being switched off, and it says that.',
+      'With scripts turned off the page says what it needs instead of loading forever.'
+    ]
+  },
   {
     version: '0.47.0', date: '2026-09-14', title: 'A menu keeps the keyboard',
     notes: [

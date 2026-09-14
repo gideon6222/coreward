@@ -12,13 +12,61 @@
      hoists the bundled entry script into <head> during build, so a handler
      left down in <body> would be registered too late to catch it. -->
 <script>
+  /* Set once the "this browser cannot run it" notice is up, so the stack-trace
+     overlay does not pile in on top of it. Without WebGL the renderer throws
+     during module evaluation, and a player who has just been told plainly what
+     is wrong should not then be shown a stack about it. */
+  var GL_REFUSED = false;
+
   function showErr(m){
+    if (GL_REFUSED) return;
     var e = document.getElementById('err');
     e.classList.remove('hidden');
     e.textContent += m + '\n\n';
     var b = document.getElementById('boot');
     if (b) b.classList.add('hidden');
     addRecovery();
+  }
+
+  /* WebGL is not a given, and the common case is not an old phone.
+
+     Desktop Chrome turns hardware acceleration off on plenty of machines - a
+     work laptop with a driver on the blocklist, or a setting somebody changed
+     - and then `new THREE.WebGLRenderer()` throws while the module is still
+     being evaluated. What the player saw was the developer overlay with a
+     three.js stack in it, which tells them nothing they can act on. This says
+     the one thing that is actually true and actionable instead. */
+  function glMissing(){
+    try {
+      var c = document.createElement('canvas');
+      return !(c.getContext('webgl2') || c.getContext('webgl'));
+    } catch (x) { return true; }
+  }
+  function refuseNoGL(){
+    GL_REFUSED = true;
+    if (document.getElementById('nogl')) return;
+    var b = document.getElementById('boot');
+    if (b) b.classList.add('hidden');
+    var d = document.createElement('div');
+    d.id = 'nogl';
+    d.innerHTML = '<h1>The Lattice</h1>' +
+      '<p>This game needs WebGL, and this browser is not offering it.</p>' +
+      '<p>On a computer this is usually hardware acceleration being switched off: ' +
+      'look for "Use graphics acceleration when available" in your browser settings, ' +
+      'turn it on, and reload. On a phone, try a different browser.</p>';
+    document.body.appendChild(d);
+  }
+  /* Decided SYNCHRONOUSLY, here, and not on DOMContentLoaded.
+
+     The entry is a module script, which is deferred, and deferred scripts run
+     BEFORE DOMContentLoaded. So a flag set in that listener is set after the
+     renderer has already thrown and the stack overlay is already on screen -
+     which is exactly what happened on the first attempt. Creating a canvas
+     needs no parsed document, so only the notice itself waits for a body. */
+  GL_REFUSED = glMissing();
+  if (GL_REFUSED) {
+    if (document.body) refuseNoGL();
+    else document.addEventListener('DOMContentLoaded', refuseNoGL);
   }
   /* A way out of a broken save without a console.
 
@@ -1144,6 +1192,16 @@
     background:var(--plate); color:var(--ink); border:1px solid var(--line);
     border-radius:3px; box-shadow:var(--bevel);
     font:600 13px/1 system-ui, sans-serif; letter-spacing:.08em;}
+  /* The no-WebGL notice. Like the crash screen, deliberately not wearing the
+     game's plate: it is reporting that the game cannot run. */
+  #nogl{position:fixed; inset:0; z-index:58; background:#05070d; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:28px; text-align:center; font:14px/1.6 system-ui, sans-serif;}
+  #nogl h1{margin:0 0 4px; font-size:22px; letter-spacing:.14em; font-weight:600;}
+  #nogl p{margin:0; max-width:32em; color:var(--dim); font-size:13px;}
+  #nojs{position:fixed; inset:0; z-index:59; background:#05070d; color:#e6e3dc;
+    display:flex; align-items:center; justify-content:center; padding:28px;
+    text-align:center; font:14px/1.6 system-ui, sans-serif;}
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity var(--t-base) var(--ease); z-index:30;}
   #boot{
     position:fixed; inset:0; z-index:40; background:#05070d; display:flex; align-items:center;
@@ -1158,6 +1216,9 @@
 </style>
 </head>
 <body>
+<!-- A page that is entirely a script owes this one sentence to anyone who has
+     scripts off, rather than showing them a loading screen that never ends. -->
+<noscript><div id="nojs">The Lattice is a game and needs JavaScript. Turn it on for this page and reload.</div></noscript>
 
 <div id="game"></div>
 <div id="vignette"></div>

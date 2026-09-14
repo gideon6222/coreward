@@ -5003,3 +5003,27 @@ lands on anything under `#hud`, `#actions`, `#ctrl`, `#cluster`, `#kit` or
 `#ord` - and it also asserts the game is REACHABLE with nothing open, so a
 version of this that simply disabled the HUD forever would fail rather than
 pass.
+
+# A browser that cannot run it, 2026-09-14, v0.48.0
+
+No WebGL availability check and no `<noscript>`. Both are one-time courtesies
+and both were missing.
+
+**The WebGL case is not an exotic one.** Desktop Chrome turns hardware
+acceleration off on plenty of machines - a driver on the blocklist, or a
+setting somebody changed - and then `new THREE.WebGLRenderer()` throws while
+the module is still being evaluated. What the player saw was the developer
+overlay with a three.js stack in it: accurate, and useless to them. Now they
+get the one sentence that is actionable, naming acceleration by the words the
+setting actually uses.
+
+**The ordering trap, which cost a round trip.** The first version decided this
+on `DOMContentLoaded`. The entry is a module script, module scripts are
+DEFERRED, and deferred scripts run BEFORE `DOMContentLoaded` - so the renderer
+had already thrown and the stack overlay was already on screen by the time the
+flag was set. The check is synchronous in the head script now; only the notice
+itself waits for a body. Creating a canvas needs no parsed document.
+
+The test drives it by stubbing `getContext` to refuse every `webgl*` id before
+the page loads, and asserts both halves: the plain notice appears, AND the
+stack overlay does not also appear on top of it - which was the entire point.
