@@ -4024,3 +4024,194 @@ test('the shop tells you what to do after the hint has retired, and never twice 
     'the hint has retired and the card is still blank, so nothing on this screen says what to do')
     .toBeGreaterThan(0);
 });
+
+/* ---------- the screen does not sleep mid-descent ----------
+
+   `POLISH.md` asks for screen sleep to be prevented during play. The Godot
+   games get it from a project setting; a web game has to ask for it, and this
+   one never did. It matters more here than the checklist line suggests,
+   because a descent in this game is ONE HELD THUMB and no taps at all, and
+   Android's display timeout does not treat a held touch as activity the way a
+   tap is. The screen dimming in the middle of the most committed part of a run
+   reads as the game crashing.
+
+   The lock is stubbed rather than exercised: Chromium under a test harness has
+   no real screen to keep awake, so what is asserted is that the game ASKS
+   while it is being played and gives it back when it is not. */
+test('the screen is held awake while flying, and released when it is not', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as any;
+    w.__wake = { taken: 0, released: 0, held: false };
+    /* defineProperty, not assignment. Chromium HAS a real `navigator.wakeLock`
+       whose accessor lives on the prototype, so a plain assignment loses to it
+       and the game talks to the real API - which in a headless run answers
+       "Wake Lock permission request denied". That is exactly how this stub
+       failed to take the first time, and the game was reported as never
+       asking when it had asked twenty-two times and been refused. */
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: {
+      request: async () => {
+        w.__wake.taken++; w.__wake.held = true;
+        return {
+          released: false,
+          release: async () => { w.__wake.released++; w.__wake.held = false; },
+          addEventListener: () => {}
+        };
+      }
+    } });
+  });
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+  /* The real clock, because the lock is taken from `frame()` and `enterGame`
+     gets here on the tick seam with the clock stopped. Asserting a
+     requestAnimationFrame behaviour means letting rAF actually run. */
+  await page.evaluate(() => (window as any).__cw.startClock());
+
+  /* The request is async, so give the frame that asked a moment to land. */
+  await page.waitForFunction(() => (window as any).__wake.held === true, null, { timeout: 5_000 })
+    .catch(() => { throw new Error('the game never asked to keep the screen awake while flying'); });
+  expect(await page.evaluate(() => (window as any).__wake.taken),
+    'the lock was taken more than once for one uninterrupted stretch of play')
+    .toBe(1);
+
+  /* Into the Outfitter: a menu must not hold a phone awake. */
+  await page.locator('#btnShop').dispatchEvent('click');
+  await expect(page.locator('#shop')).not.toHaveClass(/hidden/);
+  await page.waitForFunction(() => (window as any).__wake.held === false, null, { timeout: 5_000 })
+    .catch(() => { throw new Error('the screen was still held awake inside the shop'); });
+
+  /* And back out: it must be re-taken, not held once and forgotten. */
+  await page.locator('#shopClose').dispatchEvent('click');
+  await page.waitForFunction(() => (window as any).__wake.held === true, null, { timeout: 8_000 })
+    .catch(() => { throw new Error('the screen was not held awake again after leaving the shop'); });
+});
+
+/* A rejected promise must report WHERE, not only what.
+
+   The `error` handler in index.html was fixed to print the stack on
+   2026-09-10 and the `unhandledrejection` one beside it was left printing the
+   message alone. That is the wrong one to leave bare: the faults that land
+   there rather than in `error` are the async ones - a failed model fetch, a
+   dynamic import, a rejected permission - and those are exactly the ones whose
+   message names no file. */
+test('an unhandled rejection reports its stack, not just its message', async ({ page }) => {
+  /* This spec causes the one thing the suite-wide guard in `beforeEach` exists
+     to catch, on purpose, so the guard has to be taken off for this page - and
+     only this page. Without it the harness fails the test with the very error
+     the test is asserting gets reported properly. */
+  page.removeAllListeners('pageerror');
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+
+  await page.evaluate(() => {
+    function deepInside() { return Promise.reject(new Error('a made-up async fault')); }
+    void deepInside();
+  });
+  await expect(page.locator('#err')).not.toHaveClass(/hidden/, { timeout: 5_000 });
+
+  const text = await page.locator('#err').innerText();
+  expect(text, 'the promise handler did not report the message').toContain('a made-up async fault');
+  expect(text, 'the promise handler reported the message with no stack under it, so nothing says where it came from')
+    .toMatch(/deepInside|at\s/);
+});
+
+/* ---------- the three visuals tiers reach the renderer ----------
+
+   The unit test asserts the table is three tiers ordered by cost. That proves
+   nothing about whether choosing one changes a single pixel - the Godot side
+   learned that the hard way and answers it in the smoke suite, where the tier
+   has to be seen reaching the renderer. Same claim here: pick a tier, and the
+   pixel ratio, the mote count and the rock relief must all follow, live, with
+   no reload. */
+/* A REAL device scale factor for this spec only.
+
+   Headless Chromium reports `devicePixelRatio` 1, and the game takes
+   `min(tier.dpr, devicePixelRatio)` - correctly, since no tier should ever ask
+   a display for more than it has. So on a 1x display every tier lands on 1 and
+   the pixel-ratio lever is untestable, which is not the game being wrong, it
+   is the harness not being a phone. His is 2.625; 3 is the nearest round
+   number above the highest tier. */
+test.describe(() => {
+  test.use({ deviceScaleFactor: 3 });
+
+test('picking a visuals tier changes the renderer live, and is remembered', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const open = async () => {
+    await page.locator('#btnPause').dispatchEvent('click');
+    await expect(page.locator('#pause')).not.toHaveClass(/hidden/);
+  };
+  const ratio = () => page.evaluate(() => (window as any).__cw.renderer.getPixelRatio());
+  const pick = async (t: string) => {
+    await page.locator(`#tierPick .tierb[data-tier=${t}]`).dispatchEvent('pointerdown');
+    await page.waitForTimeout(500);
+  };
+
+  await open();
+  await pick('high');
+  const high = await ratio();
+  await pick('low');
+  const low = await ratio();
+
+  expect(low, 'choosing low did not lower the pixel ratio, so the tier never reached the renderer')
+    .toBeLessThan(high);
+
+  /* The checked state is the readout, and a control that does not show what it
+     did is the one POLISH.md refuses. */
+  expect(await page.locator('#tierPick .tierb[data-tier=low]').getAttribute('aria-checked')).toBe('true');
+  expect(await page.locator('#tierPick .tierb[data-tier=high]').getAttribute('aria-checked')).toBe('false');
+
+  /* Remembered across a reload, and applied BEFORE the first frame - an older
+     phone must never render one full-resolution frame on its way to the
+     setting it asked for. */
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  expect(await ratio(), 'the tier was not remembered across a reload').toBe(low);
+  expect(await page.locator('#tierPick .tierb[data-tier=low]').getAttribute('aria-checked'),
+    'the saved tier was not painted onto the control at boot').toBe('true');
+});
+
+/* A second lever, and deliberately one that does not depend on the display:
+   if the pixel-ratio assertion above ever passes for an environmental reason,
+   this one still has to be earned. */
+test('a lower tier thins the dust as well as the resolution', async ({ page }) => {
+  await page.goto('/?debug');
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  await page.waitForFunction(() => (window as any).__cw.g.mode === 'play', null, { timeout: 15_000 });
+
+  const motes = () => page.evaluate(() => {
+    let n = -1;
+    (window as any).__cw.scene.traverse((o: any) => { if (o.isPoints) n = o.geometry.drawRange.count; });
+    return n;
+  });
+  const pick = async (t: string) => {
+    await page.locator('#btnPause').dispatchEvent('click');
+    await page.locator(`#tierPick .tierb[data-tier=${t}]`).dispatchEvent('pointerdown');
+    await page.waitForTimeout(500);
+    await page.locator('#btnResume').dispatchEvent('click');
+    await page.waitForTimeout(200);
+  };
+
+  await pick('high');
+  const hi = await motes();
+  expect(hi, 'no Points object in the scene, so this test measured nothing').toBeGreaterThan(0);
+  await pick('low');
+  const lo = await motes();
+  expect(lo, 'choosing low did not thin the dust field').toBeLessThan(hi);
+
+  /* And it survives a reload. The pixel ratio is read by `scene.ts` before the
+     first frame; everything else is applied at boot by `main.ts`, and without
+     that a saved low tier came back carrying every mote until the player
+     opened the menu and touched the control again. */
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveClass(/hidden/, { timeout: 15_000 });
+  await enterGame(page);
+  expect(await motes(), 'the saved tier was not applied to the dust field at boot').toBe(lo);
+});
+
+});

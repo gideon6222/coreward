@@ -61,7 +61,14 @@
             (st ? '\n' + st : ''));
   });
   window.addEventListener('unhandledrejection', function(e){
-    showErr('PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+    /* The stack here too. The handler above was fixed to print it on 2026-09-10
+       and this one was left behind, which matters because the faults that land
+       HERE rather than there are the async ones - a failed model fetch, a
+       dynamic import, a rejected wake lock - and those are precisely the ones
+       whose message names no file at all. */
+    var r = e.reason;
+    var st = (r && r.stack) ? String(r.stack).split('\n').slice(0, 6).join('\n') : '';
+    showErr('PROMISE: ' + (r && r.message ? r.message : r) + (st ? '\n' + st : ''));
   });
 </script>
 <link rel="manifest" href="manifest.webmanifest">
@@ -989,6 +996,15 @@
   .fine.build{margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
     font:10.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,monospace; color:#48546b; letter-spacing:.02em;}
 
+  /* The visuals tier picker. Same plate and bevel as every other control. */
+  .tierrow{display:flex; align-items:center; gap:10px; margin:14px 0 2px;}
+  .tierlab{font-size:11px; letter-spacing:.12em; color:var(--dim); flex:0 0 auto;}
+  .tiers{display:flex; flex:1 1 auto; gap:6px;}
+  .tierb{flex:1 1 0; min-height:38px; padding:0 6px; cursor:pointer; color:var(--dim);
+    background:var(--plate); border:1px solid var(--line); border-radius:3px;
+    box-shadow:var(--bevel); font:600 11px/1 system-ui, sans-serif; letter-spacing:.08em;
+    transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);}
+  .tierb[aria-checked="true"]{color:var(--cyan); border-color:var(--cyan);}
   #flash{position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; transition:opacity var(--t-base) var(--ease); z-index:30;}
   #boot{
     position:fixed; inset:0; z-index:40; background:#05070d; display:flex; align-items:center;
@@ -1263,6 +1279,19 @@
       <label class="slider" for="volSfx"><span>SOUND</span>
         <input id="volSfx" type="range" min="0" max="100" step="5" value="100"
                aria-label="Sound volume"></label>
+    </div>
+    <!-- The three visuals tiers (INDEX.md rule 18). Segmented rather than a
+         slider: three named states with meanings, not a continuum, and the
+         one that is on has to be readable at a glance on a phone. Applies
+         live - no reload, which POLISH.md names as the most common prototype
+         tell. -->
+    <div class="tierrow" role="radiogroup" aria-label="Visual detail">
+      <span class="tierlab">DETAIL</span>
+      <div class="tiers" id="tierPick">
+        <button class="tierb" data-tier="low" role="radio" aria-checked="false">LOW</button>
+        <button class="tierb" data-tier="medium" role="radio" aria-checked="true">MEDIUM</button>
+        <button class="tierb" data-tier="high" role="radio" aria-checked="false">HIGH</button>
+      </div>
     </div>
     <button id="btnResume" class="wide">RESUME</button>
     <button id="btnReset" class="danger">RESTART PROGRESS</button>

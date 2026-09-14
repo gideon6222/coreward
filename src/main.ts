@@ -34,6 +34,24 @@ import { anchorAt, anchorSealed, anchorCells, ANCHOR_COUNT, vaultCells,
 import { setStartHandler, wireTitle, showTitle, showIntro, startIntro } from './titleui';
 import { hallEye } from './sim/intro';
 import './input';
+import { installWakeLock, wakeHeld, wakeWanted, wakeState } from './wakelock';
+import { applyVisuals } from './visualsapply';
+
+/* The screen must not sleep while a thumb is held on the d-pad - see
+   wakelock.ts. The crash reporter this file used to also install lives in
+   index.html's first <script>, registered before Vite's hoisted entry, which
+   is earlier than anything here can be. */
+installWakeLock();
+
+/* And the saved visuals tier, in full.
+
+   `scene.ts` already read it for the pixel ratio, which has to happen before
+   the renderer draws anything. The other three levers - the mote count, the
+   rock relief and the growth density - are not urgent in that way but they ARE
+   part of the setting, and without this a player who chose low got a
+   low-resolution frame still carrying every mote and every patch of moss until
+   the next time they opened the menu and touched the control. */
+void applyVisuals();
 
 /* ============ build stamp ============
    Vite replaces __BUILD_SHA__ and __BUILD_TIME__ at build time. This is the
@@ -147,6 +165,9 @@ if (new URLSearchParams(location.search).has('debug')) {
        value in feel.ts was set by eye, and setting one by eye through a
        rebuild-and-reload cycle is how an afternoon disappears. */
     scene, camera, lamp, amb, sun, rim, fog, renderer, lmDebug,
+    /* The wake lock's two facts, so a spec can tell "the game never asked"
+       apart from "the browser refused" - which look identical from outside. */
+    wakeHeld, wakeWanted, wakeState,
     setDrillTier, setUpgradeHardware,
     showTitle, showIntro,
     /* Jump the intro to a beat and repaint it. Through the seam and not a

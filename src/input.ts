@@ -24,6 +24,8 @@ import { dockShip, undockShip, pickBay, selectBay, selectedBay, resizeStation,
 import type { Dir } from './types';
 import { autopilot, hardReset, useSupply, fireBomb, fireLaser } from './actions';
 import { sfx, audioInit, setAudio, setVolume, audioFocus, audioState } from './audio';
+import { setTier, tier, type Tier } from './visuals';
+import { applyVisuals } from './visualsapply';
 
 function firstTouch() { audioInit(); }
 window.addEventListener('pointerdown', firstTouch, { once: true });
@@ -411,6 +413,28 @@ for (const [el, kind] of [[ui.volMusic, 'music'], [ui.volSfx, 'sfx']] as const) 
     setVolume(kind, Number(el.value) / 100);
   });
 }
+
+/* The visuals tier. Three buttons, one checked, applied live (visuals.ts).
+   `pointerdown` like every other control in this game that spends or changes
+   something, so it answers the thumb rather than the click that follows it. */
+for (const b of document.querySelectorAll<HTMLElement>('#tierPick .tierb')) {
+  b.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const t = b.dataset.tier as Tier;
+    sfx.ui();
+    if (setTier(t)) void applyVisuals();
+    paintTiers();
+  });
+}
+
+/* One writer for which button reads as on, called after a change and once at
+   boot so the control shows the saved tier rather than the markup's default. */
+export function paintTiers() {
+  for (const b of document.querySelectorAll<HTMLElement>('#tierPick .tierb')) {
+    b.setAttribute('aria-checked', String(b.dataset.tier === tier()));
+  }
+}
+paintTiers();
 
 /* Focus. `POLISH.md`: audio ducks and pauses on focus loss and resumes on
    return. `visibilitychange` covers the phone (home, app switcher, screen

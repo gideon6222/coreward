@@ -136,6 +136,15 @@ const mat = new THREE.ShaderMaterial({
   depthWrite: false
 });
 
+/* How many motes are actually drawn. The buffers are always built at
+   DUST_COUNT - they are a few kilobytes and allocating per tier would mean a
+   rebuild - and the tier moves the draw range instead, which is live and free.
+   The motes that stay are the same motes, so lowering the tier thins the field
+   rather than rearranging it. */
+export function setDustCount(n: number) {
+  geo.setDrawRange(0, Math.max(0, Math.min(DUST_COUNT, Math.floor(n))));
+}
+
 export const dustField = new THREE.Points(geo, mat);
 dustField.frustumCulled = false;
 scene.add(dustField);

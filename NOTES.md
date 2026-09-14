@@ -4639,3 +4639,105 @@ answers "no open entry applies" because the slug is the DIRECTORY name, which is
 still `coreward`. Every studio tool keys off that: the acks file is
 `.studio\bulletins\coreward.json`, `progress.ps1` prints "PLAN coreward". So
 until the folder is renamed, ask the board with `-Game coreward`.
+
+# The ship walk, 2026-09-14, v0.42.0
+
+`POLISH.md` walked line by line instead of assumed. It refused three times.
+Writing down what it refused matters more than the fact it eventually passed,
+because two of the three had been wrong since before this game had a plan.
+
+## Three levels of detail, and why this game had none
+
+Standing rule 18 says every game ships low, medium and high. This one shipped a
+pixel ratio capped at 2 and antialias on, fixed for every device, and **no check
+in the studio was ever going to say so**: the doctor's tier check looks for a
+Godot `src\game\visuals.gd`, so on a web repo it inspects nothing and passes.
+That is the exact failure the framework exists to prevent, one repo over from
+where anyone was looking.
+
+`visuals.ts` is the table and `visualsapply.ts` puts it on the renderer. They
+are two files for a reason - the table has to be importable by a unit test
+without dragging in three.js and its `.webp` textures, which is the same wall
+`src/sim` has and it failed the same way on the first try.
+
+**Four levers, and every one is a cost rather than a rule.** Resolution first,
+because this game is fill-bound (86 draw calls of 150, PBR terrain over the
+whole screen) and fragments go as the SQUARE of the pixel ratio, so low at 1.0
+shades a quarter of what high at 2.0 does. Then mote count, growth density and
+rock relief. `DEVICE.md` is explicit that a tier changes what things cost and
+never what they are, so the test asserts the SET OF FIELDS in the table: adding
+a `lampReach` there fails a test rather than shipping three different games.
+
+**Growth thins by tightening the threshold on the cell's own stable roll**, not
+by capping the instance pool. The pool holds 700 against a real density near
+240, so a cap below that is a patch that silently does not draw - which is
+precisely the pop T2 removed. Tightening the roll keeps a strict subset of the
+same patches in the same places.
+
+**Antialias is deliberately not a lever.** It is a context attribute fixed when
+the WebGL context is created, so putting it on a tier means a setting that needs
+a reload, and `POLISH.md` names that as the most common prototype tell.
+
+**Default is medium.** High is what the game did before tiers existed, so
+defaulting to it would make the whole feature invisible to anyone who already
+has it installed.
+
+## The screen slept in the middle of a descent
+
+Never asked for a wake lock. It matters more here than the checklist line
+suggests: a descent is ONE HELD THUMB and no taps at all, and Android's display
+timeout does not treat a held touch as activity the way a tap is, so the display
+dimmed during the longest and most committed part of a run - which on a phone
+reads as the game crashing.
+
+**The test caught a real bug in the first version of it, before a phone could.**
+It was edge-triggered: it asked once when play began, and if that request was
+skipped or refused it never asked again for the whole session, with `want`
+sitting true and nothing retrying. Now it retries while it wants the lock and
+does not have it.
+
+**And then the diagnostic caught the opposite fault.** Having made it retry, a
+headless run showed 22 requests against `refused: Wake Lock permission request
+denied` - retrying a denied permission every frame forever. A refusal is sticky
+now until the page comes back to the foreground, which is the one moment it
+might not still hold.
+
+That diagnostic is kept (`wakeState()`): a wake lock fails in four ways that
+look identical from outside - no API, refused, page hidden, never asked - and on
+a phone with no console that difference is the whole diagnosis.
+
+## A near miss: a second crash reporter
+
+Wrote one, styled it, wired it into boot. It was a duplicate. This game has had
+a complete crash reporter since 2026-09-10, and it is BETTER than the one being
+written: it is the first `<script>` in `index.html`, registered before Vite's
+hoisted entry, which is earlier than anything a module can do, and its save wipe
+clears the service worker too because a boot crash and a stale cached bundle
+look identical from there. Mine would have registered too late to catch the
+faults that matter most.
+
+**The reason it was missed is worth more than the file that was deleted:** the
+search was `grep -rn "onerror" src/*.ts`, and the answer was in `index.html`.
+A grep scoped to where you expect the answer cannot tell you the answer is
+somewhere else. Deleted in the same commit it was written, per rule 12.
+
+One real gap was found beside it: the `error` handler prints a stack and the
+`unhandledrejection` handler next to it did not, which is the wrong one to leave
+bare - the faults that land there rather than in `error` are the async ones, and
+those are exactly the ones whose message names no file at all.
+
+## Phone readings
+
+**Not run, no device.** `phone.ps1 devices` answers "phone not connected", which
+is the one carve-out `POLISH.md` allows. Owed on the next ship with a handset,
+and it is now TWO passes rather than one: the S26 Ultra says whether it is good
+on his phone, and the S22+ - the floor phone, which the new low tier is aimed at
+- says whether it is good one generation back. This game is fill-bound, so the
+ratio that applies to it is the drawing one (1.33x to 1.42x), not the flat
+low-tier result `DEVICE.md` measured on a nearly empty scene.
+
+Desk evidence standing in: the full gate green (320 unit tests, 52 e2e,
+typecheck, build, size guard at 980.0 KB), 86 draw calls of 150 in the worst
+window the game can build, and the filmed contact sheets of the way in and the
+first minute. The PWA install and offline check is owed with them, because a
+service worker cannot be exercised anywhere but real Chrome or the phone.

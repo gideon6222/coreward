@@ -2,18 +2,24 @@ Hold down and the ship digs. Everything below you is rock until you cut it, and 
 
 A mining game about depth, fuel, and knowing when to turn around.
 
+THERE IS SOMETHING DOWN THERE
+Nine Anchors are buried across a planet four hundred and fifty meters deep, and each one lights when you stand in its hall. Light them all and the Vault at the center opens. That is the whole campaign, and it is the reason to keep going down rather than a score to beat.
+
 DIG WHERE YOU LIKE
 There is no route. The whole face is diggable, so the shaft is whatever shape you make it, and the one you cut on the way down is the one you climb on the way back. Cutting straight is fast and cutting wide finds more.
 
 FUEL IS THE CLOCK
-Nothing is chasing you. What limits the run is the tank, and every meter costs the same going down as coming up. Turning around with half a tank left is the correct play and it never feels like one.
+Nothing hunts you, but the ground is not safe. Gas pockets open the hull, deep rock cooks it, and tremors close tunnels behind you. What actually limits a run is the tank, and every meter costs the same going down as coming up. Turning around with half a tank left is the correct play and it never feels like one.
 
 THE HOLD FILLS UP
-Iron near the surface, then copper, silver, gold, and stranger things further down. Weight is real: a full hold climbs slower and burns more. Deciding what to leave in the rock is the decision the whole game is built on.
+Copper near the surface, then iron, silver and gold, and further down amethyst, emerald, ruby, and things with no names you would recognize. Weight is real: a full hold climbs slower and burns more. Deciding what to leave in the rock is the decision the whole game is built on.
 
 SPEND IT BETWEEN RUNS
-Sell the haul at the surface and put it into the ship. A bigger tank, a better drill, a stronger hull. Each one buys depth, and depth is the only score that matters.
+Sell the haul at the landing pad and put it into the ship. A bigger tank, a better drill, a stronger hull, a lamp that reaches further. Each one buys depth, and depth is what the Anchors are waiting in.
 
-Plays in the browser or installed from the store. No timer, no ads, nothing chasing you.
+THE PLANET NOTICES
+Light the fifth Anchor and the ground stops staying where you left it. The back half of the game is dug through a world that is moving.
 
-Free. No ads. No in-app purchases. Nothing is collected and nothing is sent.
+Plays in the browser or installed from the store. No timer and no ads.
+
+Free. No ads, no in-app purchases, no accounts and no analytics. Your progress is saved on your device and nothing you do is sent anywhere.

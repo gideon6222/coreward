@@ -6,6 +6,7 @@ import { setRockSurface } from './materials';
 import { applyLight } from './lightmap';
 import { g, region } from './sim/state';
 import { rnd } from './sim/util';
+import { spec } from './visuals';
 
 /* What lives, settles or leaks on the rock face.
 
@@ -276,7 +277,12 @@ export function addGrowth(x: number, d: number, px: number, py: number, ao: numb
   /* ITS OWN OFFSET. See the note at the top - this is the line that must never
      be changed to reuse a roll that already exists. */
   const r = rnd(x + 91, d + 29, g.planet + 131);
-  if (r > band.chance) return;
+  /* The visuals tier thins this by tightening the threshold on the cell's own
+     stable roll, so a lower tier keeps a strict subset of the same patches in
+     the same places. Not an instance cap: the pool holds 700 against a real
+     density near 240, and a cap under that is a patch that silently does not
+     draw, which is the pop T2 removed. */
+  if (r > band.chance * spec().growth) return;
 
   const p = poolFor(kind);
   if (p.n >= MAX - 3) return;

@@ -168,9 +168,25 @@ const ROCK_NORMAL_SCALE = 0.25;
    flatShading derives normals from screen-space derivatives of the final
    position, so lighting follows the displaced surface for free - no normal
    recalculation needed. */
+/* Every `uBump` uniform this function has created, with the relief it was
+   asked for. The visuals tier turns rock relief off on low, and a uniform is
+   the only place that can happen live: the displacement is a vertex shader
+   injected at compile time, so rebuilding materials to change it would mean a
+   setting that needs a reload, which `POLISH.md` calls the most common
+   prototype tell. Holding the uniform objects costs one array of a dozen
+   entries and makes the toggle free. */
+const bumps: { u: { value: number }; base: number }[] = [];
+let reliefOn = true;
+
+export function setRelief(on: boolean) {
+  reliefOn = on;
+  for (const b of bumps) b.u.value = on ? b.base : 0;
+}
+
 export function displaceLikeRock(m: THREE.Material, bump: number) {
   chainCompile(m, (shader) => {
-    shader.uniforms.uBump = { value: bump };
+    shader.uniforms.uBump = { value: reliefOn ? bump : 0 };
+    bumps.push({ u: shader.uniforms.uBump as { value: number }, base: bump });
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',

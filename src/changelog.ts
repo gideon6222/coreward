@@ -16,9 +16,17 @@ export interface Release {
   notes: string[];
 }
 
-export const VERSION = '0.41.0';
+export const VERSION = '0.42.0';
 
 export const CHANGELOG: Release[] = [
+  {
+    version: '0.42.0', date: '2026-09-14', title: 'Detail, and a screen that stays on',
+    notes: [
+      'Three levels of visual detail in the menu - LOW, MEDIUM and HIGH - which change straight away and are remembered. They change the resolution, how much dust is in the air, how much grows on the rock and whether the rock has relief. They never change the game: the same reach, the same rules, the same ore.',
+      'The screen no longer sleeps while you are flying. A long dig is one held thumb and no taps, which Android does not count as using the phone, so the display used to go dark in the middle of a descent.',
+      'A crash caused by a broken promise now says where it came from, not just what it was.'
+    ]
+  },
   {
     version: '0.41.0', date: '2026-09-13', title: 'The Outfitter says what to do',
     notes: [

@@ -13,6 +13,7 @@ import { blockAt, findHere, climbCells } from './sim/world';
 import { tilesSeen } from './sim/region';
 import { R } from './sim/runtime';
 import type { Dir } from './types';
+import { keepAwake } from './wakelock';
 import {
   FREEZE_ORE, FREEZE_ROCK,
   SHAKE_CRACK, SHAKE_ROCK, SHAKE_ORE, SHAKE_LANDING, SHAKE_DECAY,
@@ -164,6 +165,13 @@ export function frame(now: number) {
   const raw = Math.min(0.05, (now - last) / 1000);
   last = now;
   tick(raw);
+  /* Hold the screen awake only while the ship is actually being flown. A long
+     descent is one held thumb and no taps at all, which Android's display
+     timeout does not treat as activity - see wakelock.ts. Not on the title, in
+     the shop or on a card: holding a phone awake on a menu is a battery bug.
+     `keepAwake` is idempotent, so calling it per frame is cheaper than
+     tracking the edge here. */
+  keepAwake(g.mode === 'play' || g.mode === 'fly');
 }
 
 /* Stop the real-time clock so a caller can drive the loop itself. */

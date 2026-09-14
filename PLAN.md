@@ -633,12 +633,14 @@ normal-mapped floor at low roughness so the lights streak across it.
 - [x] **R3 The counter and the wall** - expensive under glass and spot-lit, standard on a
       repeating rack behind. Retires the plinths and the group filtering
 - [x] **R4 The pump** - hose, nozzle, ticking readout
-- [ ] **R5 Wet ground** - mirrored fittings and ship under a translucent floor.
-      *Still not built, and now measured rather than guessed at. Left unticked:
-      a box is `[x]` or `[ ]` and nothing else, and dropping a milestone is
-      Gideon's call, not a session's.*
+**R5 Wet ground - DROPPED 2026-09-13, on Gideon's word after the measurement
+below.** It has no box because it is no longer owed work, and a `- [ ]` that
+nobody intends to build is a permanent false negative in every count the studio
+runs. The reasoning is kept rather than deleted, because the next session to
+look at this room will have the same idea.
 
-      Its own brief said to judge it against the room before spending a day on
+The ask was mirrored fittings and the ship under a translucent floor. Its own
+      brief said to judge it against the room before spending a day on
       it, so on 2026-09-13 the room was screenshotted at 460x996 and measured.
       **The floor is barely in the picture.** `#shopStage`, the 3D room, runs
       from y 120 to y **782** of a 996-tall screen; everything below that is
@@ -661,9 +663,13 @@ normal-mapped floor at low roughness so the lights streak across it.
       fittings' pool distance is 1.6 and they sit two and a half metres above
       it.
 
-      **The recommendation: drop it.** Re-frame the room so the floor is worth
-      reflecting into, or say plainly that this room is a shelf-height shot and
-      the floor is trim. Either is a decision about the framing, which is his.
+      **Dropped rather than deferred.** The room is a shelf-height shot: the
+      camera is at y 0.48 looking a few degrees down at cases and signs, and
+      that is the right framing for a portrait phone, where the product has to
+      be big. A floor worth reflecting into would mean lowering or pulling back
+      the camera, which trades the thing the screen is for against a surface
+      nobody looks at. If the room is ever re-framed, this is the note that
+      says a wet floor becomes worth building again.
 - [x] **R6 The phone pass** - all of it judged at 1080x2340 rather than on a contact sheet,
       which is where the last three rounds of this room went wrong.
       *Done as part of round eight's W10*, which shot every screen in the game
@@ -2384,9 +2390,46 @@ the shape of the game is not up for revision until R9a has happened.
       The value is not the probe. It is that nothing currently proves the
       campaign is completable end to end, only that each piece of it works.
 
-- [ ] **R9d Ship it.** `/ship`, which walks `POLISH.md` and refuses on a no.
-      The deploy is GitHub Pages; `WEB.md` has the recipe. Version, changelog
-      and a screenshot at the phone's aspect go out together.
+- [x] **R9d Ship it.** Done 2026-09-14, v0.42.0. `POLISH.md` walked line by
+      line rather than assumed, and it refused three times before it passed.
+      The deploy is GitHub Pages through CI; version, changelog and a screenshot
+      at the phone's aspect went out together.
+
+      **What the walk refused, and what it cost to clear:**
+
+      *Visuals low/medium/high* (Shell). This game shipped one fixed setting -
+      pixel ratio capped at 2, antialias on - and had never been caught, because
+      the doctor's tier check looks for a Godot `src\game\visuals.gd`. Built as
+      `visuals.ts`: four levers that are costs and never rules (resolution, mote
+      count, growth density, rock relief), applied live with no reload, saved,
+      and asserted by `test/visuals.test.mjs` plus two e2e specs that make the
+      tier reach the renderer. Default is medium, not high, so the setting is
+      not invisible to anyone who already has the game.
+
+      *Screen sleep during play* (Shell). Never asked for. A descent in this
+      game is one held thumb and no taps, which Android's display timeout does
+      not count as activity, so the screen slept mid-run. `wakelock.ts`, held
+      only while flying and given back in menus.
+
+      *A stack on a rejected promise* (Shell). The `error` handler in
+      `index.html` was fixed to print stacks in 2026-09-10 and the
+      `unhandledrejection` one beside it was left bare - the wrong one to leave,
+      since the faults that land there are the async ones whose message names no
+      file.
+
+      **What was checked and found already right:** the crash reporter (it is
+      the first script in `index.html`, earlier than any module can be, prints
+      the stack and offers a confirm-gated save wipe that also clears the
+      service worker - a second one was written for this milestone and deleted
+      as a duplicate); portrait lock; safe area; save on `visibilitychange`;
+      version agreeing everywhere; credits; the content ladder; the second
+      month sketched.
+
+      **Deferred, and only what the carve-out allows:** the `perf` reading and
+      the full launch-to-quit pass on the handset. `phone.ps1 devices` says not
+      connected. Recorded in `NOTES.md` with the desk evidence that stood in,
+      and owed on the next ship with a phone attached - now on two handsets,
+      since the S22+ is the floor phone the low tier above is aimed at.
 
 - [x] **R9e The second month, sketched.** Done 2026-09-13; the sketch is the
       section "The second month" immediately below this list. Original brief:

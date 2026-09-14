@@ -3,12 +3,22 @@ import { W } from './sim/config';
 import { S } from './sim/state';
 import { LAMP_DECAY, LAMP_INTENSITY } from './sim/feel';
 import { R } from './sim/runtime';
+import { loadTier, spec } from './visuals';
 import { applyLightUnlit, haze } from './lightmap';
 
 export const scene = new THREE.Scene();
 export const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 400);
 export const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+/* The pixel ratio is the visuals tier's biggest lever, because this game is
+   fill-bound: fragments go as the SQUARE of it, so low at 1.0 shades a quarter
+   of what high at 2.0 does. Read from the saved tier before the first frame so
+   an older phone never renders one full-resolution frame on its way to the
+   setting it asked for. */
+export function applyPixelRatio() {
+  renderer.setPixelRatio(Math.min(spec().dpr, window.devicePixelRatio || 1));
+}
+loadTier();
+applyPixelRatio();
 export const gameEl = document.getElementById('game')!;
 gameEl.appendChild(renderer.domElement);
 
