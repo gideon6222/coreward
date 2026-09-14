@@ -14,7 +14,8 @@
     "size": "node scripts/check-bundle-size.mjs",
     "size:update": "node scripts/check-bundle-size.mjs --update",
     "film": "node scripts/filmstrip.mjs",
-    "econ": "node scripts/econ.mjs"
+    "econ": "node scripts/econ.mjs",
+    "store": "npm run build && node scripts/store.mjs"
   },
   "dependencies": {
     "three": "0.166.0"

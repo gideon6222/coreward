@@ -1,0 +1,19 @@
+Hold down and the ship digs. Everything below you is rock until you cut it, and everything you cut is a shaft you have to climb back up.
+
+A mining game about depth, fuel, and knowing when to turn around.
+
+DIG WHERE YOU LIKE
+There is no route. The whole face is diggable, so the shaft is whatever shape you make it, and the one you cut on the way down is the one you climb on the way back. Cutting straight is fast and cutting wide finds more.
+
+FUEL IS THE CLOCK
+Nothing is chasing you. What limits the run is the tank, and every meter costs the same going down as coming up. Turning around with half a tank left is the correct play and it never feels like one.
+
+THE HOLD FILLS UP
+Iron near the surface, then copper, silver, gold, and stranger things further down. Weight is real: a full hold climbs slower and burns more. Deciding what to leave in the rock is the decision the whole game is built on.
+
+SPEND IT BETWEEN RUNS
+Sell the haul at the surface and put it into the ship. A bigger tank, a better drill, a stronger hull. Each one buys depth, and depth is the only score that matters.
+
+Plays in the browser or installed from the store. No timer, no ads, nothing chasing you.
+
+Free. No ads. No in-app purchases. Nothing is collected and nothing is sent.
