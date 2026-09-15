@@ -1,0 +1,33 @@
+<!--
+  The themed (monochrome) launcher icon. Android takes ONLY the alpha of this and tints it
+  itself, so everything here is white on transparent and no colour in this file survives.
+
+  Same geometry as icon.svg, reduced to what still reads at 48dp: the planet as a RING rather
+  than a disc (a disc would swallow the core), the lit core, and the probe going into it.
+
+  The `cut` mask punches a gap around the probe so it stays a separate shape where it crosses
+  the ring, instead of merging into one blob at small sizes.
+
+  public/icon-monochrome.png is this shape rasterised at 512. If you change one, change both.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <mask id="cut">
+      <rect width="512" height="512" fill="#fff"/>
+      <g fill="#000" stroke="#000" stroke-width="20" stroke-linejoin="round">
+        <rect x="232" y="112" width="48" height="70" rx="10"/>
+        <path d="M232 182h48l-24 46z"/>
+      </g>
+    </mask>
+  </defs>
+
+  <g mask="url(#cut)">
+    <circle cx="256" cy="256" r="150" fill="none" stroke="#fff" stroke-width="18"/>
+    <circle cx="256" cy="256" r="50" fill="#fff"/>
+  </g>
+
+  <g fill="#fff">
+    <rect x="232" y="112" width="48" height="70" rx="10"/>
+    <path d="M232 182h48l-24 46z"/>
+  </g>
+</svg>

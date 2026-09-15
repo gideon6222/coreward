@@ -14,6 +14,8 @@
     "enableNotifications":  false,
     "startUrl":  "/lattice/",
     "iconUrl":  "https://gideon6222.github.io/lattice/icon-512.png",
+    "maskableIconUrl":  "https://gideon6222.github.io/lattice/icon-512.png",
+    "monochromeIconUrl":  "https://gideon6222.github.io/lattice/icon-monochrome.png",
     "splashScreenFadeOutDuration":  300,
     "signingKey":  {
                        "path":  "C:/dev/keys/upload.keystore",
