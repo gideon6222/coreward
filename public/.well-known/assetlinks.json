@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.gideon.lattice",
+      "sha256_cert_fingerprints": [
+        "D1:6D:27:61:EC:E4:48:C5:4D:EC:FE:2D:39:26:E6:B1:06:B6:B4:74:F0:2E:3C:60:97:E1:9D:BB:F2:DF:22:B8",
+        "2E:8A:95:BB:9E:C7:00:DE:A4:D8:BA:3E:92:38:AE:D1:18:88:19:C9:3B:5F:1E:0E:F0:CE:CB:23:FC:8B:D1:9E"
+      ]
+    }
+  }
+]
